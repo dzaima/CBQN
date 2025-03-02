@@ -110,12 +110,12 @@ INS B i_FN2O(B w, B f, B x, u32* bc) { POS_UPD;
   return r;
 }
 INS B i_FN1Oi(B x, FC1 fm, u32* bc) { POS_UPD;
-  B r = q_N(x)? x : fm(b((u64)0), x);
+  B r = q_N(x)? x : fm(r_uB(0), x);
   return r;
 }
 INS B i_FN2Oi(B w, B x, FC1 fm, FC2 fd, u32* bc) { POS_UPD;
   if (q_N(x)) { dec(w); return x; }
-  else return q_N(w)? fm(b((u64)0), x) : fd(b((u64)0), w, x);
+  else return q_N(w)? fm(r_uB(0), x) : fd(r_uB(0), w, x);
 }
 INS B i_LST_0(void) { // TODO combine with ADDI
   return emptyHVec();
@@ -230,7 +230,7 @@ INS void i_SETCv(B f,      Scope* sc, u32 p, u32* bc) { POS_UPD; B r = c1(f,v_ge
 INS B i_FLDG(B ns, u32 p, Scope* sc, u32* bc) { POS_UPD;
   if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
   B r = inc(ns_getU(ns, p));
-  dec(ns);
+  decG(ns);
   return r;
 }
 INS B i_VFYM(B o) { // TODO this and ALIM allocate and thus can error on OOM
@@ -309,7 +309,7 @@ static OptRes opt(u32* bc0) {
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     #define S(N,I) SRef N = stk[TSSIZE(stk)-1-(I)];
     switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: fatal("optimization: didn't expect already immediate FN__");
-      case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(b(L64), pos)); break;
+      case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(r_uB(L64), pos)); break;
       case POPS: { assert(TSSIZE(actions) > 0);
         u64 asz = TSSIZE(actions);
         if (actions[asz-1]!=2) goto defIns;
@@ -463,13 +463,13 @@ static OptRes opt(u32* bc0) {
         A64(data[dpos++]);
         break;
       case 5:;
-        u64 on = data[dpos++]; B ob = b(on);
+        u64 on = data[dpos++]; B ob = r_uB(on);
         TSADD(rbc, isVal(ob)? ADDI : ADDU);
         A64(on);
         if (isVal(ob)) refs = vec_addN(refs, ob);
         break;
       case 6:
-        dec(b(data[dpos++]));
+        dec(r_uB(data[dpos++]));
         break;
       case 10:
       case 11:case 12:case 13:case 14:case 15:case 16:case 17:case 18:case 19:
@@ -488,7 +488,7 @@ static OptRes opt(u32* bc0) {
   bc = bc0; pos = 0;
   TSFREE(data);
   TSFREE(actions);
-  if (IA(refs)==0) { dec(refs); refs=m_f64(0); }
+  if (IA(refs)==0) { decG(refs); refs=m_f64(0); }
   return (OptRes){.bc = rbc, .offset = roff, .refs = refs};
 }
 #undef SREF
@@ -663,7 +663,7 @@ Nvm_res m_nvm(Body* body) {
         // if (depth>1) MOV8rm(R_RES, SPOS(R_A3, -1, 0));
         NORES(1);
       break;
-      case ADDI: TOPs; { u64 x = L64; IMM(R_RES, x); IMM(R_A3, v(b(x))); INCV(R_A3); break; } // (u64 v, S)
+      case ADDI: TOPs; { u64 x = L64; IMM(R_RES, x); IMM(R_A3, v(r_uB(x))); INCV(R_A3); break; } // (u64 v, S)
       case ADDU: TOPs; IMM(R_RES, L64); break;
       case FN1C: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1C); break; // (     B f, B x, u32* bc)
       case FN1O: TOPp;                GET(R_A1,1,1); IMM(R_A2,off); CCALL(i_FN1O); break; // (     B f, B x, u32* bc)

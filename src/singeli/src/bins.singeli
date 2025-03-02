@@ -19,6 +19,9 @@ def for_vec_overlap{vl}{vars,begin==0,n,iter} = {
 # Shift as u16, since x86 is missing 8-bit shifts
 def shr16{v:V, n} = V~~(re_el{u16, v} >> n)
 
+# Copy half of a vector to the other half
+def dup_half{vec,half} = shuf{[4]u64, vec, 2*half+tup{0,1,0,1}}
+
 # Forward or backwards in-place max-scan
 # Assumes a whole number of vectors and minimum 0
 include './scan_common'
@@ -31,7 +34,7 @@ fn max_scan{T, up}(x:*T, len:u64) : void = {
     p := V**0
     @for_dir{up} (v in *V~~x over len/vl) {
       v = op{pre{v}, p}
-      p = toLast{v, up}
+      p = broadcast_last{v, up}
     }
   } else {
     m:T=0; @for_dir{up} (x over len) { if (x > m) m = x; x = m }
@@ -41,24 +44,24 @@ fn max_scan{T, up}(x:*T, len:u64) : void = {
 def getsel{...x} = assert{'shuffling not supported', show{...x}}
 if_inline (hasarch{'AVX2'}) {
   def getsel{h:H=[16]T if width{T}==8} = {
-    sel{H, pair{h,h}, .}
+    shuf{H, pair{h,h}, .}
   }
   def getsel{v:V=[vl==32]T if width{T}==8} = {
     def H = n_h{V}
     vtop := V**(vl/2)
-    hs := each{shuf{[4]u64, v, .}, tup{4b3232, 4b1010}}
-    {i} => homBlend{...each{sel{H,.,i}, hs}, V~~i<vtop}
+    hs := each{dup_half{v, .}, tup{1,0}}
+    {i} => blend_hom{...each{shuf{H,.,i}, hs}, V~~i<vtop}
   }
-  def getsel{v:V=[8]T if width{T}==32} = sel{V, v, .}
+  def getsel{v:V=[8]T if width{T}==32} = shuf{V, v, .}
 }
 
 # Move evens to half 0 and odds to half 1
 def uninterleave{x:V=[vl]T if hasarch{'AVX2'}} = {
   def bytes = width{T}/8
   def i = 2*iota{vl/4}
-  def i2= join{table{+, bytes*merge{i,i+1}, iota{bytes}}}
-  t := V~~sel{[16]u8, re_el{u8,x}, make{[32]u8, merge{i2,i2}}}
-  shuf{[4]u64, t, 4b3120}
+  def i2= flat_table{+, bytes*merge{i,i+1}, iota{bytes}}
+  t := shuf{[16]u8, x, i2}
+  shuf{[4]u64, t, 0,2,1,3}
 }
 
 def rtypes = tup{i8, i16, i32, f64}
@@ -140,7 +143,7 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
   def nb = 256/vl
   nu:u8 = 0; def addu{b} = { nu+=cast_i{u8,popc{b}}; b } # Number of uniques
   vb := U~~make{[nb](ty_u{vl}),
-    @collect (t in *V~~t0 over nb) addu{homMask{t > V**0}}
+    @collect (t in *V~~t0 over nb) addu{hom_to_int{t > V**0}}
   }
   dup := promote{u64,nu} < wn
   # Unique index to w index conversion
@@ -153,9 +156,9 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
     @for (tui over promote{u64,nu}) { i = load{t, load{w, i}}; tui = i }
     def tv = load{*V~~tui, .}
     ui = tv{0}
-    if (nu > 16) ui1 = shuf{[4]u64, ui, 4b3232}
-    ui = shuf{[4]u64, ui, 4b1010}
-    if (nu > vl) ui2 = each{shuf{[4]u64, tv{1}, .}, tup{4b1010, 4b3232}}
+    if (nu > 16) ui1 = dup_half{ui, 1}
+    ui = dup_half{ui, 0}
+    if (nu > vl) ui2 = each{dup_half{tv{1}, .}, tup{0,1}}
   }
   # Popcount on 8-bit values
   def sums{n} = if (n==1) tup{0} else { def s=sums{n/2}; merge{s,s+1} }
@@ -166,33 +169,33 @@ def bins_vectab_i8{up, w, wn, x, xn, rp, t0, t, done if hasarch{'AVX2'}} = {
     s{shr16{v,4}} + s{v}
   }
   # Bit table
-  def swap{v} = shuf{[4]u64, v, 4b1032} # For signedness
+  def swap{v} = shuf{[4]u64, v, 2,3,0,1} # For signedness
   def sel_b = getsel{swap{vb}}
   # Masks for filtering bit table
   def ms = if (up) 256-(1<<(1+iota{8})) else (1<<iota{8})-1
   def sel_m = getsel{make{H, merge{ms - 256*(ms>127), 8**0}}}
   # Exact values for multiples of 8
-  store{*V~~t0, 0, vpopc{vb}}
+  store{t0, vpopc{vb}}
   st:i8=0; @for_dir{up} (t0 over 256/8) { st += t0; t0 = st }
-  def sel_c = getsel{swap{load{*V~~t0, 0} - V**dup}}
+  def sel_c = getsel{swap{load{V, t0} - V**dup}}
   # Top 5 bits select bytes from tables; bottom 3 select from mask
   bot3 := U**0x07
   @for_vec_overlap{vl} (j to xn) {
-    xv := load{*U~~(x+j), 0}
+    xv := U~~load{V, x+j}
     xb := xv & bot3
     xt := shr16{xv &~ bot3, 3}
     ind := sel_c{xt} - vpopc{sel_b{xt} & U~~sel_m{xb}}
     if (dup) {
       i0 := V~~ind # Can contain -1
-      def isel{u} = sel{H, u, i0}
+      def isel{u} = shuf{H, u, i0}
       ind = isel{ui}
       if (nu > 16) {
         b := V~~(re_el{u16, i0} << (7 - lb{vl/2}))
-        ind = topBlend{ind, isel{ui1}, b}
-        if (nu > 32) ind = homBlend{topBlend{...each{isel,ui2}, b}, ind, i0 < V**vl}
+        ind = blend_top{ind, isel{ui1}, b}
+        if (nu > 32) ind = blend_hom{blend_top{...each{isel,ui2}, b}, ind, i0 < V**vl}
       }
     }
-    store{*V~~(*T~~rp+j), 0, ind}
+    store{*T~~rp+j, ind}
   }
   goto{done}
   setlabel{no_bittab}
@@ -217,7 +220,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
   # Fill with minimum value at the beginning
   def pre = if (search) load{w} else (if (up) minvalue else maxvalue){T}
   wg := *V~~(w-gap)
-  wv0:= homBlend{load{wg}, V**pre, maskOf{V,gap}}
+  wv0:= blend_hom{load{wg}, V**pre, mask_of_first{V,gap}}
   # For multiple lanes, interleave like transpose
   def maxstep = lb{maxwn}
   def lstep = lb{svl}
@@ -227,7 +230,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
   if (ex>=1 and wn >= svl) {
     --gap # Allows subtracting < instead of adding <=
     def un = uninterleave
-    def tr_half{a, b} = each{shufHalves{a,b,.}, tup{16b20, 16b31}}
+    def tr_half{a, b} = each{vec_select{128,tup{a,b},.}, tup{tup{0,2}, tup{1,3}}}
     def un{{a,b}} = tr_half{un{a},un{b}}
     if (not lanes) select{wv,1} = load{wg, 1}
     wv = un{wv}
@@ -251,13 +254,13 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
     def last = klog==lstep
     def this = if (not last) log==klog else log>=klog
     if (this) @for_vec_overlap{vl} (j to xn) {
-      xv:= load{*V~~(x+j), 0}
+      xv:= load{V, x+j}
       s := U**bb{iota{isub}}  # Select sequential bytes within each U
       def cmpx{cmp}{se,ind} = cmp{xv, V~~se{re_el{I,ind}}}
       def ltx = cmpx{lt}; def eqx = cmpx{==}
       @unroll (j to klog) {
         m := s | select{bits,klog-1-j}
-        s = homBlend{m, s, ltx{selw, m}}
+        s = blend_hom{m, s, ltx{selw, m}}
       }
       r := if (isub==1) s else s>>(lb{isub}+wd-wi)
       # b records if xv was found; c is added to the index
@@ -279,7 +282,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
       }
       if (r_out) {
         r -= off
-        if (prim=='⊐') r = homBlend{U**cast_i{u8,wn}, r, b}
+        if (prim=='⊐') r = blend_hom{U**cast_i{u8,wn}, r, b}
         rn := if (T==i8) r
               else if (T==i16) half{narrow{u8, r}, 0}
               else extract{re_el{i64, narrow{u8, r}}, 0}
@@ -287,7 +290,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
         if (isvec{type{rn}}) store{rnp, 0, rn}
         else storeu{rnp, rn}
       } else {
-        def B = ty_u{vl}; out := cast_i{B, homMask{b}}
+        def B = ty_u{vl}; out := cast_i{B, hom_to_int{b}}
         store{*B~~rp, cdiv{j,vl}, out>>((-j)%vl)}
       }
     }
@@ -298,11 +301,11 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
   fn avx2_search_bin{prim, T, maxwn}(rp:*(if (prim=='∊') u64 else i8), w:*void, wn:u64, x:*void, xn:u64) : void = {
     bin_search_vec{prim, T, *T~~w, wn, *T~~x, xn, rp, maxwn}
   }
-  exportT{
+  export_tab{
     'avx2_member_sort',
     each{avx2_search_bin{'∊',.,.}, tup{i16,i32}, tup{32,16}}
   }
-  exportT{
+  export_tab{
     'avx2_indexOf_sort',
     each{avx2_search_bin{'⊐',.,.}, tup{i8,i16,i32}, tup{64,16,16}}
   }
@@ -363,7 +366,7 @@ fn bins{T, up}(w:*void, wn:u64, x:*void, xn:u64, rp:*void, rty:u8) : void = {
   }
 }
 
-exportT{
+export_tab{
   'si_bins',
   join{table{bins, tup{i8,i16,i32,f64}, tup{1,0}}}
 }
@@ -373,17 +376,17 @@ include './f64'
 require{'math.h'}
 fn saturate{F,T,...up}(dst:*void, src:*void, n:u64) : void = {
   # Auto-vectorizes, although not that well for f64
-  def a = minvalue{T}; af := cast_i{F,a}
-  def b = maxvalue{T}; bf := cast_i{F,b}
+  def a = minvalue{T}
+  def b = maxvalue{T}
   @for (d in *T~~dst, xf in *F~~src over n) {
     x := if (F==f64) (if (select{up,0}) floor else ceil){xf} else xf
     d = cast_i{T, x}
-    if (x<af) d = a
-    if (x>bf) d = b
+    if (not x<b) d = b
+    if (x<a) d = a
   }
 }
 
-exportT{
+export_tab{
   'si_saturate',
   each{{a}=>saturate{...a}, merge{
     tup{tup{i16,i8}, tup{i32,i8}, tup{i32,i16}},

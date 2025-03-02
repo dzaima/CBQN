@@ -26,15 +26,15 @@ def reinterpret{T, a:M=[l==width{T}](u1)} = {
   re_mask{M, {l,w,W} => cast_i{T, emit{W, merge{'_cvtmask',l,'_u',w}, a}}}
 }
 
-def maskStore{p:*V, m:[l](u1), v:V=[l]_ if has512e{V}} = {
+def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
   emit{void, merge{pref{V}, 'mask_storeu_', suf{V}}, p, m, v}
 }
 
-def topMaskReg{x:V=[k]_} = emit{[k]u1, merge{pref{V},'mov',suf{V},'_mask'}, x}
-def topMask{x:V=[k]_ if 512==width{V}} = ty_u{k}~~topMaskReg{x}
-def homMask{x:V=[_]_ if 512==width{V}} = topMask{x}
+def top_to_mask{x:V=[k]_} = emit{[k]u1, merge{pref{V},'mov',suf{V},'_mask'}, x}
+def top_to_int{x:V=[k]_ if 512==width{V}} = ty_u{k}~~top_to_mask{x}
+def hom_to_int{x:V=[_]_ if 512==width{V}} = top_to_int{x}
 
-def maskToHom{V=[l]_, x:[l](u1)} = emit{V, merge{pref{V},'movm_',suf{V}}, x}
+def mask_to_hom{V=[l]_, x:[l](u1)} = emit{V, merge{pref{V},'movm_',suf{V}}, x}
 
 def sel{(ty_u{V}), x:V=[_]E, i:I==(ty_u{V}) if (if (width{E}>8) has512e{V} else has512{V, 'VBMI'})} = emit{V, merge{pref{V}, 'permutexvar_', suf{V}}, i, x}
 

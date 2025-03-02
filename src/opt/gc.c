@@ -215,7 +215,7 @@ void gc_forceGC(bool toplevel) {
 }
 
 STATIC_GLOBAL bool gc_wantTopLevelGC;
-bool gc_maybeGC(bool toplevel) {
+NOINLINE bool gc_maybeGC(bool toplevel) {
   if (gc_depth) return false;
   u64 used = tot_heapUsed();
   if (used > gc_lastAlloc*2 || (toplevel && gc_wantTopLevelGC)) {

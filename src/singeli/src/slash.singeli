@@ -1,12 +1,12 @@
 include './base'
 if_inline (hasarch{'X86_64'}) {
   if_inline (hasarch{'PCLMUL'}) include './clmul'
-  if_inline (hasarch{'BMI2'}) include './bmi2'
+  if_inline (hasarch{'BMI2'}) include './bmi'
 }
 include './mask'
 
-def popcRand{x:T if isint{T} and width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
-def popcRand{x:T if isint{T} and width{T}<=32} = emit{u8, 'rand_popc64', x}
+def popc_rand{x:T if isint{T} and width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
+def popc_rand{x:T if isint{T} and width{T}<=32} = emit{u8, 'rand_popc64', x}
 
 # Table from l bits to w-bit indices, shifted left by s, and G applied afterwards
 def maketab{l,w,s,G} = {
@@ -64,9 +64,9 @@ def for_special_buffered{r:*T, write_len}{vars,begin,sum,iter} = {
       def bufw = bufn * tw
       def vc = tern{hasarch{'X86_64'} and bufw==128, 128, arch_defvw} / tw;
       def R = [vc]T
-      @unroll ((ov/vc)>>0) if (end-buf>vc) { store{*R~~r0, 0, load{*R~~buf}}; r0+=vc; buf+=vc }
+      @unroll ((ov/vc)>>0) if (end-buf>vc) { store{r0, load{R, buf}}; r0+=vc; buf+=vc }
       assert{bufw % width{R} == 0} # to make sure the below doesn't read out-of-bounds on the stack
-      homMaskStoreF{*R~~r0, maskOf{R, end-buf}, load{*R~~buf}}
+      store_blended_hom{r0, mask_of_first{R, end-buf}, load{R, buf}}
     } else {
       @for (r0, buf over u64~~(end-buf)) r0 = buf
     }
@@ -216,17 +216,17 @@ fn slash{c, T if hasarch{'AVX2'} and T>=i32}(wp:*u64, x:arg{c,T}, r:*T, l:u64, s
   }
   def tab = if (tw==32) itab else i64tab
   def step{r, w} = {
-    s:= loadBatch{*u8~~(tab+w), 0, V}
+    s:= load_widen{*u8~~(tab+w), 0, V}
     store{*V~~r, 0, from_ind{s}}
   }
-  @for_special_buffered{r,8} (w in *u8~~wp to sum) {
+  @for_special_buffered{r,8} (w in *u8~~wp over sum) {
     pc := popc{w}
     if (tw==32) {
       step{r,w}
     } else {
       h := w&0xf
       step{r, h}
-      step{r+popcRand{h}, w>>4}
+      step{r+popc_rand{h}, w>>4}
     }
     r += pc
   }
@@ -255,7 +255,7 @@ fn slash{c, T if hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64
     cs := cast_i{I,promote{i64,1}<<(c%64) - 1}
     if (vl==64) cs -= cast_i{I,c}>>6
     v := emitT{V, 'mask_compress', x, m, x}
-    maskStore{*V~~r, [vl]u1~~cs, v}
+    store_masked_hom{r, [vl]u1~~cs, v}
     r += c
   }
 }

@@ -3,7 +3,7 @@ include './mask'
 include './vecfold'
 include './hashtab'
 
-def findFirst{C, M, F, ...v1} = {
+def find_first{C, M, F, ...v1} = {
   def exit = makelabel{}
   def args = undef{M{...each{select{., 0}, v1}}}
   def am = length{select{v1,0}}
@@ -21,15 +21,15 @@ def findFirst{C, M, F, ...v1} = {
 def search{E, x, n:(u64), OP} = {
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
-  def end = makeBranch{
+  def end = make_branch{
     tup{u64, ty_u{VT}},
-    {i,c} => return{i*bulk + promote{u64, ctzX{homMaskX{c}}}}
+    {i,c} => return{i*bulk + promote{u64, first_hom{c}}}
   }
-  @muLoop{bulk, tern{arch_defvw>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
+  @for_mu{bulk, tern{arch_defvw>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
     eq:= each{OP, x}
-    if (homAny{M{tree_fold{|, eq}}}) {
-      findFirst{
-        {i,c} => homAny{c},
+    if (any_hom{M, ...eq}) {
+      find_first{
+        {i,c} => any_hom{c},
         {i,c} => tup{i,c},
         end,
         is, eq
@@ -53,8 +53,8 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
   def E = f64
   def bulk = arch_defvw/width{E}
   def VT = [bulk]E
-  @maskedLoop{bulk}(x in tup{VT,x}, sr in tup{'g',r}, M in 'm' over i to len) {
-    if (homAny{M{x!=x}}) return{1}
+  @for_masked{bulk}(x in tup{VT,x}, sr in tup{'g',r}, M in 'm' over i to len) {
+    if (any_hom{M, x!=x}) return{1}
     sr{x + VT**0}
   }
   0
@@ -95,13 +95,13 @@ def bittab_selector{loadtab} = {
     top := hi4 + VI~~((arch_vec{u32}~~(x&~low))>>3)
     byte:= sel{[16]i8, t0, hi4^top} | sel{[16]i8, t1, top}
     mask:= sel{[16]i8, b, x & low}
-    homMask{(mask & byte) == mask}
+    hom_to_int{(mask & byte) == mask}
   }
   
   def selector{x:([16]i8) if hasarch{'AARCH64'}} = {
     byte:= [16]u8~~sel{tup{t0,t1}, ty_u{x}>>3}
     mask:= [16]u8**1 << ty_u{x & low}
-    res:= homMask{(mask & byte) == mask}
+    res:= hom_to_int{(mask & byte) == mask}
   }
   
   def reload{} = { tup{t0,t1} = loadtab{} }
@@ -112,11 +112,11 @@ def readbytes{vtab}{} = {
   def [k]_ = VI; def l = 128/k
   def side{i} = {
     def U = arch_vec{ty_u{k}}
-    def m = @collect (vtab over _ from i to i+l) homMask{vtab} # TODO multi-value homMask
+    def m = @collect (vtab over _ from i to i+l) hom_to_int{vtab} # TODO multi-value hom_to_int
     VI~~make{U, if (vcount{U}>l) merge{m,m} else m}
   }
   def side{i if hasarch{'AARCH64'}} = {
-    def m = each{homMask, split{4, @collect (vtab over _ from i to i+l) vtab}}
+    def m = each{hom_to_int, split{4, @collect (vtab over _ from i to i+l) vtab}}
     VI~~make{[2]u64, m}
   }
   each{side, l*iota{2}}
@@ -220,8 +220,8 @@ def do_bittab{x0:(*void), n:(u64), tab:(*void), u:(u8), t, mode, r0} = {
           # Filter out values equal to the previous, or first new
           def pind = (iota{k}&15) - 1
           prev:= make{VI, each{max{0, .}, pind}}
-          e:= ~homMask{v == VI**TI~~xi}
-          e&= base{2,pind<0} | ~homMask{v == sel{[16]i8, v, prev}}
+          e:= ~hom_to_int{v == VI**TI~~xi}
+          e&= base{2,pind<0} | ~hom_to_int{v == sel{[16]i8, v, prev}}
           if (rbit) rv&= e | -m # Don't remove first bit
           m&= e
           while (m != 0) {
@@ -311,7 +311,7 @@ def isI64{x:T=[_](f64) if hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
 def isI64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
 
 def maskBlend{b:T, x:T, M} = x
-def maskBlend{b:T, x:T, M if M{0}} = homBlend{b, x, M{T, 'to homogeneous bits'}}
+def maskBlend{b:T, x:T, M if M{0}} = blend_hom{b, x, M{T, 'to homogeneous bits'}}
 
 fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   assert{n>0}
@@ -324,8 +324,8 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
     def unr = tern{E==f64 and hasarch{'X86_64'}, 1, 2}
     def minA = acc{2, VT**min1}
     def maxA = acc{2, VT**min1}
-    @muLoop{bulk, unr, {} => { minA{'tr',min}; maxA{'tr',max} }}(cx in tup{VT,x}, M in 'm' over is to n) {
-      if (E==f64 and homAny{M{tree_fold{|, each{{c} => ~isI64{c}, cx}}}}) return{0}
+    @for_mu{bulk, unr, {} => { minA{'tr',min}; maxA{'tr',max} }}(cx in tup{VT,x}, M in 'm' over is to n) {
+      if (E==f64 and any_hom{M, ...each{{c} => ~isI64{c}, cx}}) return{0}
       minA{'upd', is, {a} => eachx{maskBlend, a, each{min, a, cx}, M}} # blend
       maxA{'upd', is, {a} => eachx{maskBlend, a, each{max, a, cx}, M}} # blend
     }
@@ -343,7 +343,7 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   1
 }
 
-exportT{'simd_getRangeRaw', each{getRange, tup{i8,i16,i32,f64}}}
+export_tab{'simd_getRangeRaw', each{getRange, tup{i8,i16,i32,f64}}}
 
 
 # Hash tables
@@ -637,7 +637,7 @@ def try_vec_memb{T==u32, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
       @unroll (f in fp+u*i over a to u) c |= V**(1<<(rw*a)) & test{f}
       r = vswap ^ vfold{|, c}
     }
-    @for (rp, fp over _ from u*l to n) rp = promote{R, swap ^ homAny{test{fp}}}
+    @for (rp, fp over _ from u*l to n) rp = promote{R, swap ^ any_hom{test{fp}}}
     goto{done}
   }
   def try{nv} = {
@@ -658,6 +658,6 @@ def try_vec_memb{T==u32, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
 }
 
 def exp_hash{name} = {
-  exportT{merge{'si_',name,'_c2_hash'}, each{hashtab{., name}, tup{u32,u64}}}
+  export_tab{merge{'si_',name,'_c2_hash'}, each{hashtab{., name}, tup{u32,u64}}}
 }
 each{exp_hash, names}

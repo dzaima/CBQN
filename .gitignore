@@ -42,9 +42,10 @@ cbqn-jit.bqn
 /local/
 perf.data*
 
-# clangd
+# clangd / compile commands
 compile_commands.json
-/.cache/
+.cache/
+.singeli_compile_commands.json
 
 # things not used anymore, but still may be present in existing clones
 /SingeliClone/

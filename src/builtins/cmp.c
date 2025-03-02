@@ -6,7 +6,7 @@ static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
   memset((u8*)dst, v?0xff:0, BIT_N(sz)*8);
 }
 static NOINLINE void fillBitsDec(u64* dst, u64 sz, bool v, u64 x) {
-  dec(b(x));
+  dec(r_uB(x));
   fillBits(dst, sz, v);
 }
 
@@ -97,7 +97,7 @@ CMP_REC(ne, ne, swapped=0;)
   #define CMP_TO_FILL(N, T) cmp_fill_##N(r, l, xr)
   
   #define CMP_SA0(N, T, Q, SLOW, BODY) void base_##N##AS##_##T(u64* r, void* w, u64 xr, u64 l) { \
-    assert(l>0); B x=b(xr);     \
+    assert(l>0); B x=r_uB(xr);  \
     if (LIKELY(q_##Q(x))) BODY; \
     else SLOW(N, T);            \
   }
@@ -154,7 +154,7 @@ B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
   if (ria) cmp_fns_##NAME##AA[we](rp, tyany_ptr(w), tyany_ptr(x), ria); \
   decG(w);decG(x); return r;            \
   base: return NAME##_rec(swapped,w,x); \
-  badShape: thrF("%U: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", swapped?CR:CN, swapped?x:w, swapped?w:x); \
+  badShape: thrF("𝕨%U𝕩: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", swapped?CR:CN, swapped?x:w, swapped?w:x); \
 }
 CMP_AA_D("≥", "≤", ge, )
 CMP_AA_D(">", "<", gt, )

@@ -52,7 +52,7 @@ INIT_GLOBAL RangeFn getRange_fns[el_f64+1];
 #else
   #define GETRANGE(T,CHK) bool getRange_##T(void* x0, i64* res, u64 ia) { \
     assert(ia>0); T* x=x0; T min=*x,max=min; \
-    { T c=min; CHK; (void)c; }               \
+    { MAYBE_UNUSED T c=min; CHK; }           \
     for (ux i=1; i<ia; i++) { T c=x[i]; CHK; \
       {if(c<min)min=c;} {if(c>max)max=c;}    \
     }                                        \
@@ -154,11 +154,11 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
   #define SYMB (mode==0? "∊" : mode==1? "⊐" : "⊒")
   #define ARG_N (mode? "𝕩" : "𝕨")
   #define ARG_P (mode? "𝕨" : "𝕩")
-  if (isAtm(p) || RNK(p)==0) thrF("%U: %U cannot have rank 0", SYMB, ARG_P);
+  if (isAtm(p) || RNK(p)==0) thrF("𝕨%U𝕩: %U cannot have rank 0", SYMB, ARG_P);
   ur pr = RNK(p);
   if (isAtm(n)) n = m_unit(n);
   ur nr = RNK(n);
-  if (nr < pr-1) thrF("%U: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, mode?p:n, mode?n:p);
+  if (nr < pr-1) thrF("𝕨%U𝕩: Rank of %U must be at least the cell rank of %U (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", SYMB, ARG_N, ARG_P, mode?p:n, mode?n:p);
   ur pcr = pr-1;
   ur nco = nr-pcr;
   if (nco>0 && eqShPart(SH(n)+nco, SH(p)+1, pcr)) {
@@ -248,7 +248,7 @@ static NOINLINE usz indexOfOne(B l, B e) {
   } else
 
 B indexOf_c2(B t, B w, B x) {
-  bool split = 0; (void) split;
+  MAYBE_UNUSED bool split = 0;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     split = 1;
     B2 t = splitCells(x, w, 1);
@@ -361,7 +361,7 @@ B indexOf_c2(B t, B w, B x) {
 
 GLOBAL B enclosed_0, enclosed_1;
 B memberOf_c2(B t, B w, B x) {
-  bool split = 0; (void) split;
+  MAYBE_UNUSED bool split = 0;
   if (isAtm(x) || RNK(x)!=1) {
     split = 1;
     B2 t = splitCells(w, x, false);
@@ -466,7 +466,7 @@ B memberOf_c2(B t, B w, B x) {
 }
 
 B count_c2(B t, B w, B x) {
-  bool split = 0; (void) split;
+  MAYBE_UNUSED bool split = 0;
   if (RARE(!isArr(w) || RNK(w)!=1)) {
     split = 1;
     B2 t = splitCells(x, w, 2);
@@ -498,8 +498,8 @@ B count_c2(B t, B w, B x) {
       void* fp = tyany_ptr(x);
       // Initialize
       if (xe==el_i16 && n<ft/(64/sizeof(i32)))
-           { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=wia; }
-      else { for (i64 i=0; i<ft; i++) tab[i-ft/2]=wia; }
+           { for (usz i=0; i<n;  i++) tab[((i16*)fp)[i]] = wia; }
+      else { for (i64 i=0; i<ft; i++) tab[i - (i64)ft/2] = wia; }
       // Set
       #define SET(T) for (usz i=m; i--; ) { i32* p=tab+((T*)ip)[i]; wnext[i]=*p; *p=i; }
       if (we==el_i8) { SET(i8) } else { SET(i16) }
@@ -743,7 +743,7 @@ void hashmap_set(B* vars, B w, B x) {
     vars[2] = bi_N; // hashmap_resize might free then alloc
     map = hashmap_resize(map);
     vars[2] = tag(map, OBJ_TAG);
-    hp=map->a; sh=map->sh;
+    // hp=map->a; sh=map->sh;
   }
   vars[0] = vec_addN(vars[0], w);
   vars[1] = vec_addN(vars[1], x);

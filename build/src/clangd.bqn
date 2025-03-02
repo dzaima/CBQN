@@ -6,20 +6,38 @@ Esc←{
   𝕩 ↩ i ⊏⟜out⌾((i<≠out)⊸/) 𝕩 # Replace
   ∾(i<≠in) /⟜"\"⊸∾¨ 𝕩        # Insert \
 }
-n←@+10
+lf←@+10
 JStr ← {∾⟨"""",Esc 𝕩,""""⟩}
-JArr ← {'['∾']'∾˜2↓∾𝕨⊸∾¨ 𝕩}
-JObj ← {∾⟨'{',n,¯2↓∾(JStr¨𝕨) {∾⟨"  ",𝕨,": ",𝕩,',',n⟩}¨ 𝕩, n,'}'⟩}
+JArr ← {'['∾']'∾˜ (≠𝕨) ↓ ∾ 𝕨⊸∾¨ 𝕩}
+JObj ← {∾⟨'{',lf,¯2↓∾(JStr¨𝕨) {∾⟨"  ",𝕨,": ",𝕩,',',lf⟩}¨ 𝕩, lf,'}'⟩}
 
 
 
 precompFiles ← ⥊"bytecodeLocal"‿"bytecodeSubmodule" {∾⟨"../build/",𝕨,"/gen/",𝕩⟩}⌜ "compiles"‿"explain"‿"formatter"‿"runtime0"‿"runtime1"‿"runtime1x"
-Files ⇐ {
+RecursiveFiles ⇐ {
   res ← ⟨⟩
   {'d'=•file.Type AtRoot 𝕩? 𝕊¨ 𝕩⊸•file.At¨ •file.List AtRoot 𝕩; res∾↩ <𝕩} 𝕩
-  {⊑(<¯2↑𝕩)∊".c"‿".h"}¨⊸/ res
+  res
+}
+
+CFiles ⇐ {
+  res ← RecursiveFiles 𝕩
+  res {⊑(<¯2↑𝕩)∊".c"‿".h"}¨⊸/↩
   res ∾ 𝕩⊸•file.At¨ precompFiles
 }
+
+cObjects ← ⟨⟩
+_addC ⇐ {cObjects∾↩ <⟨𝕩, (𝔽@)∾<𝕩⟩}
+
+singeliState ← @
+singeliObjects ← ⟨⟩
+AddSingeli ⇐ {
+  singeliObjects∾↩ <𝕨‿𝕩
+}
+SingeliInit ⇐ { 𝕊 po:
+  singeliState ↩ ⟨po.singeliDir, 1↓∾ ','⊸∾¨ {𝕩.basearch/𝕩.feats} po.SingeliArchInfo 1⟩
+}
+
 
 ModifyCBQNFlags ← {
   filenames ← 4↓¨ ⊑¨ 𝕩
@@ -87,20 +105,37 @@ ModifyCBQNFlags ← {
   𝕩 {n‿f 𝕊 f2: ⟨n, f∾⟨"-Wno-undefined-internal", "-DCLANGD"⟩∾f2⟩}¨ (gfk⊐•file.At¨ filenames)⊏gfv ∾ <⟨⟩
 }
 
-objects ← ⟨⟩
 Finish ⇐ { 𝕊 write:
-  objects ModifyCBQNFlags⌾(({"src/"≡4↑⊑𝕩}¨ objects)⊸/)↩
-  FileObj ← { name‿flags:
-    "file"‿"directory"‿"arguments" JObj ⟨JStr name, JStr AtRoot "", ", " JArr JStr¨ flags⟩
+  _doWrite ← {
+    𝕩 •FChars⍟write 𝕗
+    •Out ∾⟨{write? "Wrote "; "Would write "}, 𝕨, " to ", •file.At 𝕩⟩
   }
-  res ← (","∾n) JArr FileObj¨ objects
-  resPath ← AtRoot "compile_commands.json"
+  TLArr ← (","∾lf)⊸JArr
+  
   {
-    write?
-      resPath •FChars res
-      •Out "Wrote clangd compile commands to "∾•file.At resPath
-    ;
-      •Out "Would write clangd compile commands to "∾•file.At resPath
+    cObjects ModifyCBQNFlags⌾(({"src/"≡4↑⊑𝕩}¨ cObjects)⊸/)↩
+    FileObj ← { name‿flags:
+      "file"‿"directory"‿"arguments" JObj ⟨JStr name, JStr AtRoot "", ", " JArr JStr¨ flags⟩
+    }
+    res ← TLArr FileObj¨ cObjects
+    {
+      •Out {write? "Removing"; "Would remove"} ∾ " old "∾𝕩
+      •file.Remove⍟write 𝕩
+    }⍟•file.Exists AtRoot "compile_commands.json"
+    
+    
+    "clangd compile commands" res _doWrite AtRoot "build/compile_commands.json"
+  }
+  
+  AtRootRel ← "../"⊸•file.At
+  
+  {
+    singeliState≡@? @;
+    dir‿arch ← singeliState
+    cmd0 ← ⟨"-a", arch, "-l", "="∾dir •file.At "include"⟩
+    res ← TLArr { cmd‿name:
+      "file"‿"arguments" JObj ⟨JStr AtRootRel name, ", " JArr JStr¨ cmd0 ∾ cmd⟩
+    }¨ singeliObjects
+    "Singeli compile commands" res _doWrite AtRoot "build/.singeli_compile_commands.json"
   }
 }
-_add ⇐ {objects∾↩ <⟨𝕩, (𝔽@)∾<𝕩⟩}

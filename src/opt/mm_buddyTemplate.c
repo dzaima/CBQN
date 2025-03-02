@@ -13,7 +13,7 @@ GLOBAL AllocInfo* al;
 GLOBAL u64 alCap;
 GLOBAL u64 alSize;
 
-FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
+FORCE_INLINE void BN(splitTo)(EmptyValue* c, ux from, ux to, bool notEqual) {
   c->mmInfo = MMI(to);
   PLAINLOOP while (from != to) {
     from--;
@@ -33,7 +33,7 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, i64 from, i64 to, bool notEqual) {
   STATIC_GLOBAL bool BN(allocMore_rec);
 #endif
 
-static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
+static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
   if (from >= ALSZ) from = ALSZ;
   if (from < (bucket&63)) from = bucket&63;
   u64 sz = BSZ(from);
@@ -68,6 +68,7 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
     u8* mem = calloc(reqsz, 1);
     if (mem_log_enabled) fprintf(stderr, "\n");
   #else
+    if (reqsz != (size_t) reqsz) thrOOM(); // otherwise it gets silently truncated in 32-bit builds
     u8* mem = MMAP(reqsz);
     if (mem_log_enabled) fprintf(stderr, ": %s\n", mem==MAP_FAILED? "failed" : "success");
     if (mem==MAP_FAILED) thrOOM();
@@ -96,9 +97,9 @@ static NOINLINE void* BN(allocateMore)(i64 bucket, u8 type, i64 from, i64 to) {
   return BN(allocL)(bucket, type);
 }
 
-NOINLINE void* BN(allocS)(i64 bucket, u8 type) {
-  i64 to = bucket&63;
-  i64 from = to;
+NOINLINE void* BN(allocS)(ux bucket, u8 type) {
+  ux to = bucket&63;
+  ux from = to;
   EmptyValue* c;
   while (true) {
     if (from >= 63) return BN(allocateMore)(bucket, type, from, to);

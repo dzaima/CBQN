@@ -25,13 +25,16 @@
   INIT_GLOBAL BitSelFn* bitselFns = bitselFnsRaw;
 #endif
 
-#if defined(__BMI2__) && !SLOW_PDEP
+#if __BMI2__ && __x86_64__ && !SLOW_PDEP
   #define FAST_PDEP 1
   #include <immintrin.h>
 #endif
 
 NOINLINE Arr* allZeroes(usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] =  0;    return r; }
 NOINLINE Arr* allOnes  (usz ia) { u64* rp; Arr* r = m_bitarrp(&rp, ia); for (usz i = 0; i < BIT_N(ia); i++) rp[i] = ~0ULL; return r; }
+
+NOINLINE Arr* allZeroesFl(usz ia) { return FLV_SET(allZeroes(ia), fl_asc|fl_dsc|fl_squoze); }
+NOINLINE Arr* allOnesFl  (usz ia) { return FLV_SET(allOnes  (ia), fl_asc|fl_dsc|fl_squoze); }
 
 NOINLINE B bit_sel(B b, B e0, B e1) {
   u8 t0 = selfElType(e0);
@@ -57,7 +60,7 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
       t_i8:  type=t_i8arr;  width=0; e0i=( u8)( i8)f0; e1i=( u8)( i8)f1; goto sel;
       t_i16: type=t_i16arr; width=1; e0i=(u16)(i16)f0; e1i=(u16)(i16)f1; goto sel;
       t_i32: type=t_i32arr; width=2; e0i=(u32)(i32)f0; e1i=(u32)(i32)f1; goto sel;
-      t_f64: type=t_f64arr; width=3; e0i=     b(f0).u; e1i=     b(f1).u; goto sel;
+      t_f64: type=t_f64arr; width=3; e0i=r_Bu(m_f64(f0)); e1i=r_Bu(m_f64(f1)); goto sel;
       
     } else if (elChr(t0) && isC32(e1)) {
       u32 u0 = o2cG(e0); u32 u1 = o2cG(e1);

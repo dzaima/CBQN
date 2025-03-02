@@ -31,7 +31,7 @@ GLOBAL u64 mm_heapAlloc;
 //     [
 //       type, // 0: function; 1: 1-modifier; 2: 2-modifier
 //       immediateness, // 0: non-immediate; 1: immediate
-//       ambivalentIndex OR [monadicIndices, dyadicIndices], // indexes into body data array
+//       ambivalentIndex OR [...caseIndices], // indexes into body data array; cases being some set of monadic, dyadic, and inverses
 //     ]*
 //   ],
 //   [ // body data
@@ -501,7 +501,7 @@ void load_init() { // very last init function
     B rtObjRaw = Get(rtRes,0);
     B setPrims = Get(rtRes,1);
     B setInv = Get(rtRes,2);
-    dec(rtRes);
+    decG(rtRes);
     dec(c1G(setPrims, m_lvB_2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
     dec(c2G(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); decG(setInv);
     
@@ -686,6 +686,12 @@ static void def_visit(Value* x) { fatal("undefined visit for object\n"); }
 static void def_print(FILE* f, B x) { fprintf(f, "(%d=%s)", v(x)->type, type_repr(v(x)->type)); }
 static bool def_canStore(B x) { return false; }
 static B def_identity(B f) { return bi_N; }
+static NOINLINE B makeDecompose(i32 i, B x) { return m_hvec2(m_i32(i), x); }
+static B def_decompose(B x) { assert(!isCallable(x)); return makeDecompose(-1, x); }
+static B funBI_decompose(B x) { return makeDecompose(NID(c(BFn, x))>=firstImpurePFN? 1 : 0, x); }
+static B md1BI_decompose(B x) { return makeDecompose(NID(c(BMd1,x))>=firstImpurePM1? 1 : 0, x); }
+static B md2BI_decompose(B x) { return makeDecompose(NID(c(BMd2,x))>=firstImpurePM2? 1 : 0, x); }
+B block_decompose(B x) { return makeDecompose(1, x); }
 static B def_get(Arr* x, usz n) { fatal("def_get"); }
 static B def_getU(Arr* x, usz n) { fatal("def_getU"); }
 static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
@@ -751,11 +757,11 @@ void def_fallbackTriv(Value* v) { // used while vtables aren't yet fully loaded;
   TIv(v,freeF)(v);
 }
 
-static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 id) {
+static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 nid) {
   BFn* f = mm_alloc(sizeof(BFn), t_funBI);
   f->c1 = c1;
   f->c2 = c2;
-  f->extra = id;
+  f->nid = nid;
   f->ident = bi_N;
   f->uc1 = def_fn_uc1;
   f->ucw = def_fn_ucw;
@@ -768,11 +774,11 @@ static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 id) {
   B r = tag(f,FUN_TAG); gc_add(r);
   return r;
 }
-static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 id) {
+static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 nid) {
   BMd1* m = mm_alloc(sizeof(BMd1), t_md1BI);
   m->c1 = c1;
   m->c2 = c2;
-  m->extra = id;
+  m->nid = nid;
   m->im = def_m1_im;
   m->iw = def_m1_iw;
   m->ix = def_m1_ix;
@@ -780,11 +786,11 @@ static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 id) {
   return r;
 }
 
-static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 id) {
+static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 nid) {
   BMd2* m = mm_alloc(sizeof(BMd2), t_md2BI);
   m->c1 = c1;
   m->c2 = c2;
-  m->extra = id;
+  m->nid = nid;
   m->im = def_m2_im;
   m->iw = def_m2_iw;
   m->ix = def_m2_ix;
@@ -822,6 +828,7 @@ void base_init() { // very first init function
     TIi(i,fn_is) = def_fn_is;
     TIi(i,fn_iw) = def_fn_iw; TIi(i,m1_iw) = def_m1_iw; TIi(i,m2_iw) = def_m2_iw;
     TIi(i,fn_ix) = def_fn_ix; TIi(i,m1_ix) = def_m1_ix; TIi(i,m2_ix) = def_m2_ix;
+    TIi(i,byRef) = false;
   }
   TIi(t_empty,freeO) = empty_free; TIi(t_invalid,freeO) = empty_free; TIi(t_freed,freeO) = def_freeO;
   TIi(t_empty,freeF) = empty_free; TIi(t_invalid,freeF) = empty_free; TIi(t_freed,freeF) = def_freeF;
@@ -834,10 +841,16 @@ void base_init() { // very first init function
   TIi(t_shape,visit) = noop_visit;
   TIi(t_temp,visit) = noop_visit;
   TIi(t_talloc,visit) = noop_visit;
-  TIi(t_funBI,visit) = TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
-  TIi(t_funBI,freeO) = TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = builtin_free;
-  TIi(t_funBI,freeF) = TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = builtin_free;
+  
+  TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
+  TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = TIi(t_funBI,freeO) = builtin_free;
+  TIi(t_md1BI,freeF) = TIi(t_md2BI,freeF) = TIi(t_funBI,freeF) = builtin_free;
+  TIi(t_md1BI,byRef) = TIi(t_md2BI,byRef) = TIi(t_funBI,byRef) = true;
   TIi(t_funBI,visit) = funBI_visit;
+  TIi(t_funBI,decompose) = funBI_decompose;
+  TIi(t_md1BI,decompose) = md1BI_decompose;
+  TIi(t_md2BI,decompose) = md2BI_decompose;
+  
   TIi(t_hashmap,visit) = noop_visit;
   TIi(t_customObj,freeO) = customObj_freeO;
   TIi(t_customObj,freeF) = customObj_freeF;
@@ -846,6 +859,8 @@ void base_init() { // very first init function
   
   // making sure that expected properties of constants hold
   assert((MD1_TAG>>1) == (MD2_TAG>>1)); // dependencies: isMd
+  assert(MD1_TAG+1 == MD2_TAG); // dependencies: isCallable
+  assert(MD2_TAG+1 == FUN_TAG); // dependencies: isCallable
   
   // dependencies: v_tagCheck & the JIT equivalent
   assert(v_bad17_read == (bi_noVar.u >>47));

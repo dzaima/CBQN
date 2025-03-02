@@ -17,11 +17,11 @@
   ! (⊑¨r1‿r3) ≡ ⍷⊑¨r1‿r2‿r3‿r4
 )
 
-!"•Import: cyclic import of "".../cyclic.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic.bqn"
-!"•Import: cyclic import of "".../cyclic.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic.bqn"
-!"•Import: cyclic import of "".../cyclic.bqn""" % %USE file ⋄ ⟨⟩•Import⎊CleanPath File "cyclic.bqn"
-!"•Import: cyclic import of "".../cyclic_A.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic_A.bqn"
-!"•Import: cyclic import of "".../cyclic_B.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic_B.bqn"
-!"•Import: cyclic import of "".../cyclic_A.bqn""" % %USE file ⋄ ⟨⟩•Import⎊CleanPath File "cyclic_B.bqn"
-!"•Import: cyclic import of "".../cyclic_B.bqn""" % %USE file ⋄ ⟨⟩•Import⎊CleanPath File "cyclic_A.bqn"
+!"•Import 𝕩: cyclic import of "".../cyclic.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic.bqn"
+!"•Import 𝕩: cyclic import of "".../cyclic.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic.bqn"
+!"•Import 𝕩: cyclic import of "".../cyclic.bqn""" % %USE file ⋄ ⟨⟩•Import⎊CleanPath File "cyclic.bqn"
+!"•Import 𝕩: cyclic import of "".../cyclic_A.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic_A.bqn"
+!"•Import 𝕩: cyclic import of "".../cyclic_B.bqn""" % %USE file ⋄ •Import⎊CleanPath File "cyclic_B.bqn"
+!"•Import 𝕩: cyclic import of "".../cyclic_A.bqn""" % %USE file ⋄ ⟨⟩•Import⎊CleanPath File "cyclic_B.bqn"
+!"•Import 𝕩: cyclic import of "".../cyclic_B.bqn""" % %USE file ⋄ ⟨⟩•Import⎊CleanPath File "cyclic_A.bqn"
 %USE file ⋄ 3 •Import File "notCyclic.bqn" %% 30

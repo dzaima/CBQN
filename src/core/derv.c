@@ -157,7 +157,7 @@ static B m2BI_d(B t, B f, B g) { return m_md2D(c(Md2,t), f, g); }
 
 static B md1D_identity(B t) {
   Md1D* d = c(Md1D, t);
-  if (d->m1->flags-1 == n_tbl) {
+  if (PRTID(d->m1) == n_tbl) {
     B i = TI(d->f,identity)(d->f);
     return q_N(i)? i : m_unit(i);
   }

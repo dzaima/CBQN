@@ -6,26 +6,57 @@
 #include <unistd.h>
 #include <errno.h>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32)
   #include <direct.h>
+  #include "../windows/utf16.h"
+  // use wide char functions for unicode support / longer paths (potentially)
   #include "../windows/realpath.c"
 #endif
 
+#if !defined(_WIN32)
+  typedef char* OsStr;
+  #define OS_C(C) C
+  #define toOsStr     toCStr
+  #define freeOsStr   freeCStr
+  #define OsStrDecode0 utf8Decode0
+#else 
+  typedef WCHAR* OsStr;
+  #define OS_C(C) L##C
+  #define toOsStr     toWStr
+  #define freeOsStr   freeWStr
+  #define OsStrDecode0 utf16Decode0
+  #define DIR       _WDIR
+  #define dirent    _wdirent
+  #define opendir   _wopendir
+  #define readdir   _wreaddir
+  #define closedir  _wclosedir
+  #define mkdir(P, IGNORE) _wmkdir(P)
+  #define access _waccess
+  #define rename _wrename
+  #define unlink _wunlink
+#endif
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
+#if !defined(_WIN32)
   char* p = toCStr(path);
   FILE* f = fopen(p, mode);
   freeCStr(p);
+#else
+  WCHAR wmode[8] = {0};
+  u64 len = strlen(mode);
+  assert(len<(sizeof(wmode)/sizeof(WCHAR)));
+  for (u64 i = 0; i<len; ++i) wmode[i] = (WCHAR)mode[i];
+  WCHAR *p = toWStr(path);
+  FILE* f = _wfopen(p, wmode);
+  freeWStr(p);
+#endif
   if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
   return f;
 }
 static DIR* dir_open(B path) { // doesn't consume
-  u64 plen = utf8lenB(path);
-  TALLOC(char, p, plen+1);
-  toUTF8(path, p);
-  p[plen] = 0;
+  OsStr p = toOsStr(path);
   DIR* f = opendir(p);
-  TFREE(p);
+  freeOsStr(p);
   if (f==NULL) thrF("Couldn't open directory \"%R\"", path);
   return f;
 }
@@ -122,8 +153,8 @@ B path_rel(B base, B rel, char* name) {
   if (!isStr(rel)) thrF("%U: Path must be a list of characters", name);
   usz ria = IA(rel);
   if (ria>0 && isAbsolutePath(rel)) return rel;
-  if (q_N(base)) thrM("%U: Using relative path with no absolute base path known");
-  if (ria==0) { dec(rel); return incG(base); }
+  if (q_N(base)) thrF("%U: Using relative path with no absolute base path known", name);
+  if (ria==0) { decG(rel); return incG(base); }
   usz bia = IA(base);
   if (bia==0) return rel;
   SGetU(base)
@@ -134,7 +165,7 @@ B path_rel(B base, B rel, char* name) {
   rp[ri++] = PREFERRED_SEP;
   SGetU(rel)
   for (usz i = 0; i < ria; i++) rp[ri++] = o2cG(GetU(rel, i));
-  dec(rel);
+  decG(rel);
   return r;
 }
 
@@ -147,7 +178,7 @@ B path_parent(B path) {
     if (isPathSep(o2cG(GetU(path, i)))) return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
   }
   if (isAbsolutePath(path)) return path;
-  dec(path);
+  decG(path);
   u32* rp; B r = m_c32arrv(&rp, 2); rp[0] = '.'; rp[1] = PREFERRED_SEP;
   return r;
 }
@@ -171,16 +202,13 @@ B path_abs(B path) {
   return path; // lazy
   #else
   if (q_N(path)) return path;
-  u64 plen = utf8lenB(path);
-  TALLOC(char, p, plen+1);
-  toUTF8(path, p);
-  p[plen] = 0;
-  char* res = realpath(p, NULL);
+  OsStr p = toOsStr(path);
+  OsStr res = realpath(p, NULL);
   if (res==NULL) thrF("Failed to resolve \"%R\": %S", path, strerror(errno));
-  B r = utf8Decode0(res);
+  B r = OsStrDecode0(res);
   free(res);
   dec(path);
-  TFREE(p);
+  freeOsStr(p);
   return r;
   #endif
 }
@@ -251,8 +279,10 @@ B path_list(B path) {
   struct dirent *c;
   B res = emptySVec();
   while ((c = readdir(d)) != NULL) {
-    char* name = c->d_name;
-    if (name[0]=='.'? !(name[1]==0 || (name[1]=='.'&&name[2]==0)) : true) res = vec_addN(res, utf8Decode(name, strlen(name)));
+    OsStr name = c->d_name;
+    if (name[0]==OS_C('.')? !(name[1]==0 || (name[1]==OS_C('.')&&name[2]==0)) : true) {
+      res = vec_addN(res, OsStrDecode0(name));
+    }
   }
   closedir(d);
   dec(path);
@@ -267,7 +297,7 @@ B path_list(B path) {
 #include <unistd.h>
 #else
 #include <windows.h>
-#include "../windows/winError.c"
+#include "../windows/winError.h"
 #endif
 
 typedef struct MmapHolder {
@@ -301,9 +331,9 @@ static NOINLINE Arr* mmapH_slice(B x, usz s, usz ia) {
 }
 
 B mmap_file(B path) {
+#if !defined(_WIN32)
   char* p = toCStr(path);
   dec(path);
-#if !defined(_WIN32)
   int fd = open(p, 0);
   freeCStr(p);
   if (fd==-1) thrF("Failed to open file: %S", strerror(errno));
@@ -316,11 +346,12 @@ B mmap_file(B path) {
   }
 #else
   // see https://learn.microsoft.com/en-us/windows/win32/memory/creating-a-view-within-a-file
-
-  HANDLE hFile = CreateFileA(
+  WCHAR* p = toWStr(path);
+  dec(path);
+  HANDLE hFile = CreateFileW(
     p, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, NULL, 
     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  freeCStr(p);
+  freeWStr(p);
   if (hFile==INVALID_HANDLE_VALUE) thrF("Failed to open file: %S", winError());
   LARGE_INTEGER fileSize;
   if (!GetFileSizeEx(hFile, &fileSize)) {
@@ -329,7 +360,7 @@ B mmap_file(B path) {
   }
   u64 len = fileSize.QuadPart;
   
-  HANDLE hMapFile = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+  HANDLE hMapFile = CreateFileMappingW(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
   if (hMapFile==INVALID_HANDLE_VALUE) {
     CloseHandle(hFile);
     thrF("Failed to create file mapping: %S", winError());
@@ -341,7 +372,7 @@ B mmap_file(B path) {
     thrF("Failed to map view of file: %S", winError());
   }
 #endif
-  
+
   MmapHolder* holder = m_arrUnchecked(sizeof(MmapHolder), t_mmapH, len);
   holder->a = data;
 #if !defined(_WIN32)
@@ -379,39 +410,39 @@ void mmap_init() { }
 #include <sys/stat.h>
 
 bool dir_create(B path) {
-  char* p = toCStr(path);
-  #if defined(_WIN32) || defined(_WIN64)
-    bool r = _mkdir(p) == 0;
-  #else
-    bool r = mkdir(p, S_IRWXU) == 0;
-  #endif
-  freeCStr(p);
+  OsStr p = toOsStr(path);
+  bool r = mkdir(p, S_IRWXU) == 0;
+  freeOsStr(p);
   return r;
 }
 
 bool path_rename(B old_path, B new_path) {
-  char* old = toCStr(old_path);
-  char* new = toCStr(new_path);
+  OsStr old = toOsStr(old_path);
+  OsStr new = toOsStr(new_path);
   // TODO Fix race condition, e.g., with renameat2 on Linux, etc.
   bool ok = access(new, F_OK) != 0 && rename(old, new) == 0;
-  freeCStr(new);
-  freeCStr(old);
+  freeOsStr(new);
+  freeOsStr(old);
   dec(old_path);
   return ok;
 }
 
 bool path_remove(B path) {
-  char* p = toCStr(path);
+  OsStr p = toOsStr(path);
   bool ok = unlink(p) == 0;
-  freeCStr(p);
+  freeOsStr(p);
   dec(path);
   return ok;
 }
 
 int path_stat(struct stat* s, B path) { // doesn't consume; get stat of s; errors if path isn't string; returns non-zero on failure
-  char* p = toCStr(path);
+  OsStr p = toOsStr(path);
+#if !defined(_WIN32)
   int r = stat(p, s);
-  freeCStr(p);
+#else
+  int r = wstat(p, s);
+#endif
+  freeOsStr(p);
   return r;
 }
 

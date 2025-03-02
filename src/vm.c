@@ -533,9 +533,9 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
     B* xp = harr_ptr(cells);
     for (usz i = 0; i < oia; i++) {
       if (!hdr) v_set (pscs, op[i], xp[i], upd, true, false, false);
-      else if (!v_seth(pscs, op[i], xp[i])) { dec(cells); return false; }
+      else if (!v_seth(pscs, op[i], xp[i])) { decG(cells); return false; }
     }
-    dec(cells);
+    decG(cells);
   }
   return true;
 }
@@ -767,11 +767,11 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         break;
       }
       case ADDI: {
-        ADD(incG(b(L64)));
+        ADD(incG(r_uB(L64)));
         break;
       }
       case ADDU: {
-        ADD(b(L64));
+        ADD(r_uB(L64));
         break;
       }
       case FN1C: { P(f)P(x)
@@ -899,7 +899,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       case FLDG: { P(ns) GS_UPD; u32 p = *bc++; POS_UPD;
         if (!isNsp(ns)) thrM("Trying to read a field from non-namespace");
         ADD(inc(ns_getU(ns, p)));
-        dec(ns);
+        decG(ns);
         break;
       }
       case ALIM: { P(o) GS_UPD; u32 l = *bc++;
@@ -1159,8 +1159,7 @@ void scExt_print(FILE* f, B x) { fprintf(f,"(scope extension with %d vars)", c(S
 void funBl_print(FILE* f, B x) { fprintf(f,"{function"" block}"); }
 void md1Bl_print(FILE* f, B x) { fprintf(f,"{1-modifier block}"); }
 void md2Bl_print(FILE* f, B x) { fprintf(f,"{2-modifier block}"); }
-
-B block_decompose(B x) { return m_hvec2(m_i32(1), x); }
+B block_decompose(B x);
 
 #if !defined(_WIN32) && !defined(_WIN64)
 STATIC_GLOBAL usz pageSizeV;
@@ -1272,9 +1271,13 @@ void comp_init(void) {
   TIi(t_fldAlias,freeO) = alias_freeO; TIi(t_fldAlias,freeF) = alias_freeF; TIi(t_fldAlias,visit) = alias_visit; TIi(t_fldAlias,print) = alias_print;
   TIi(t_vfyObj  ,freeO) = wrobj_freeO; TIi(t_vfyObj  ,freeF) = wrobj_freeF; TIi(t_vfyObj  ,visit) = wrobj_visit; TIi(t_vfyObj  ,print) = vfymO_print;
   TIi(t_arrMerge,freeO) = wrobj_freeO; TIi(t_arrMerge,freeF) = wrobj_freeF; TIi(t_arrMerge,visit) = wrobj_visit; TIi(t_arrMerge,print) = marrO_print;
-  TIi(t_funBl   ,freeO) = funBl_freeO; TIi(t_funBl   ,freeF) = funBl_freeF; TIi(t_funBl   ,visit) = funBl_visit; TIi(t_funBl   ,print) = funBl_print; TIi(t_funBl,decompose) = block_decompose;
-  TIi(t_md1Bl   ,freeO) = md1Bl_freeO; TIi(t_md1Bl   ,freeF) = md1Bl_freeF; TIi(t_md1Bl   ,visit) = md1Bl_visit; TIi(t_md1Bl   ,print) = md1Bl_print; TIi(t_md1Bl,decompose) = block_decompose; TIi(t_md1Bl,m1_d)=md1Bl_d;
-  TIi(t_md2Bl   ,freeO) = md2Bl_freeO; TIi(t_md2Bl   ,freeF) = md2Bl_freeF; TIi(t_md2Bl   ,visit) = md2Bl_visit; TIi(t_md2Bl   ,print) = md2Bl_print; TIi(t_md2Bl,decompose) = block_decompose; TIi(t_md2Bl,m2_d)=md2Bl_d;
+  TIi(t_funBl   ,freeO) = funBl_freeO; TIi(t_funBl   ,freeF) = funBl_freeF; TIi(t_funBl   ,visit) = funBl_visit; TIi(t_funBl   ,print) = funBl_print;
+  TIi(t_md1Bl   ,freeO) = md1Bl_freeO; TIi(t_md1Bl   ,freeF) = md1Bl_freeF; TIi(t_md1Bl   ,visit) = md1Bl_visit; TIi(t_md1Bl   ,print) = md1Bl_print;
+  TIi(t_md2Bl   ,freeO) = md2Bl_freeO; TIi(t_md2Bl   ,freeF) = md2Bl_freeF; TIi(t_md2Bl   ,visit) = md2Bl_visit; TIi(t_md2Bl   ,print) = md2Bl_print;
+  
+  TIi(t_funBl,decompose) = block_decompose; TIi(t_funBl,byRef) = true;
+  TIi(t_md1Bl,decompose) = block_decompose; TIi(t_md1Bl,byRef) = true; TIi(t_md1Bl,m1_d)=md1Bl_d;
+  TIi(t_md2Bl,decompose) = block_decompose; TIi(t_md2Bl,byRef) = true; TIi(t_md2Bl,m2_d)=md2Bl_d;
   
   TIi(t_funBl,fn_uc1) = funBl_uc1;
   TIi(t_funBl,fn_im) = funBl_im; TIi(t_md1Bl,m1_im) = md1Bl_im; TIi(t_md2Bl,m2_im) = md2Bl_im;
@@ -1606,7 +1609,7 @@ void profiler_displayResults(void) {
   printf("Got %zu samples\n", count);
   if (profiler_mode==1) {
     B compList, mapList;
-    u64 specialResults[ENT_SP_END];
+    u64 specialResults[ENT_SP_END] = {0};
     usz compCount = profiler_getResults(&compList, &mapList, specialResults, true);
     
     if (specialResults[ENT_SP_GC] > 0) printf("GC: "N64d" samples\n", specialResults[ENT_SP_GC]);
@@ -1648,8 +1651,8 @@ void profiler_displayResults(void) {
         }
       }
     }
-    dec(compList);
-    dec(mapList);
+    decG(compList);
+    decG(mapList);
 #if PROFILE_IP
   } else if (profiler_mode==2) {
     f64* rp; B r = m_f64arrv(&rp, count);

@@ -42,6 +42,7 @@ extern B ud_c1(B, B);
 extern B sub_c2(B, B, B);
 extern B mul_c2(B, B, B);
 extern B indexOf_c2(B, B, B);
+extern B take_c2(B, B, B);
 extern B scan_add_bool(B x, u64 ia);
 extern B scan_max_num(B x, u8 xe, u64 ia);
 
@@ -58,6 +59,13 @@ extern NOINLINE void memset64(u64* p, u64 v, usz l);
 #else
   #define TRY_HASHTAB_RET(NAME, W, RET) (void)0;
 #endif
+
+static u8 fast_sameness(B x, u8 xe) { // 0: unknown; 1: all same; 2: all different
+  assert(IA(x)>0);
+  if (!FL_HAS_ALL(x, fl_asc|fl_dsc)) return 0;
+  B x0 = IGetU(x,0);
+  return equal(x0, x0)? 1 : 2;
+}
 
 static inline bool use_sorted(B x, u8 logw) {
   if (!FL_HAS(x, fl_asc|fl_dsc)) return 0;
@@ -147,7 +155,7 @@ extern u64  (*const simd_deduplicate_u8)(void*,uint64_t,void*,void*);
 
 #define PRUP ptr_roundUpToEl
 B memberOf_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("∊: Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("∊𝕩: 𝕩 cannot have rank 0");
   u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allOnes(1))) : emptyIVec(); }
   
@@ -161,10 +169,18 @@ B memberOf_c1(B t, B x) {
     rp[0]=1; if (i<n) bitp_set(rp, i, 1);
     return r;
   }
+  
+  u8 sameness = fast_sameness(x, TI(x,elType));
+  if (sameness == 1) goto allSame;
+  if (RARE(sameness == 2)) {
+    decG(x);
+    return taga(arr_shVec(allOnesFl(n)));
+  }
+  
   if (use_sorted(x, lw)) {
     return shift_ne(x, n, lw, 1);
   }
-  #define BRUTE(T) \
+  #define BRUTE(T) assert(n <= 64); \
     i##T* xp = xv;                                                     \
     u64 rv = 1;                                                        \
     for (usz i=1; i<n; i++) {                                          \
@@ -258,7 +274,13 @@ B memberOf_c1(B t, B x) {
       }
       i++;
     }
-    decG(x);
+    allSame:;
+    if (v(x)->refc > 1) {
+      FL_SET(x, fl_asc|fl_dsc);
+      incByG(x, -1);
+    } else {
+      decG(x);
+    }
     Arr* r = allZeroes(n);
     bitarrv_ptr((TyArr*) r)[0] = 1;
     return taga(arr_shVec(r));
@@ -266,10 +288,10 @@ B memberOf_c1(B t, B x) {
 }
 
 B count_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⊒: Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("⊒𝕩: 𝕩 cannot have rank 0");
   u64 n = *SH(x);
   if (n<=1) { decG(x); return n ? taga(arr_shVec(allZeroes(1))) : emptyIVec(); }
-  if (n>(usz)I32_MAX+1) thrM("⊒: Argument length >2⋆31 not supported");
+  if (n>(usz)I32_MAX+1) thrM("⊒𝕩: 𝕩 length >2⋆31 not supported");
   
   usz csz = arr_csz(x);
   if (csz==0) { decG(x); return C1(ud, m_f64(n)); }
@@ -379,10 +401,10 @@ static B reduceI32WidthBelow(B r, usz after) {
 B find_c1(B, B);
 
 B indexOf_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⊐: 𝕩 cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("⊐𝕩: 𝕩 cannot have rank 0");
   u64 n = *SH(x);
-  if (n<=1) { zeroRes: decG(x); return n? taga(arr_shVec(allZeroes(n))) : emptyIVec(); }
-  if (n>(usz)I32_MAX+1) thrM("⊐: Argument length >2⋆31 not supported");
+  if (n<=1) { zeroRes: decG(x); return n? taga(arr_shVec(allZeroesFl(n))) : emptyIVec(); }
+  if (n>(usz)I32_MAX+1) thrM("⊐𝕩: 𝕩 length >2⋆31 not supported");
   
   usz csz = arr_csz(x);
   if (csz==0) goto zeroRes;
@@ -494,10 +516,13 @@ B indexOf_c1(B t, B x) {
 }
 
 B find_c1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM("⍷: Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("⍷𝕩: 𝕩 cannot have rank 0");
   usz n = *SH(x);
   if (n<=1) return x;
   u8 xe = TI(x,elType);
+  u8 sameness = IA(x)==0? 1 : fast_sameness(x, xe);
+  if (sameness == 1) return C2(take, m_i32(1), x);
+  if (RARE(sameness == 2)) return x;
   if (xe==el_bit && RNK(x)==1) {
     u64* xp = bitany_ptr(x);
     u64 x0 = 1 & *xp;

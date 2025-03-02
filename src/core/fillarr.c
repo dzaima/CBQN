@@ -5,7 +5,7 @@ B asFill(B x) { // consumes
     u8 xe = TI(x,elType);
     usz ia = IA(x);
     if (elNum(xe)) {
-      B r = taga(arr_shCopy(allZeroes(ia), x));
+      B r = taga(arr_shCopy(allZeroesFl(ia), x));
       decG(x);
       return r;
     }
@@ -149,9 +149,7 @@ B withFill(B x, B fill) { // consumes both
   } else {
     FillArr* rf = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
     rf->fill = fill;
-    
-    B* rp = rf->a; SGet(x)
-    for (usz i = 0; i < ia; i++) rp[i] = Get(x,i);
+    COPY_TO(rf->a, el_B, 0, x, 0, ia);
     r = (Arr*)rf;
   }
   arr_shCopy(r, x);

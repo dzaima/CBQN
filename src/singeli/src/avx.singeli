@@ -3,16 +3,11 @@ def v2i{x:T=[_]E if w256{T}} = if(isint{E}) x else [32]u8 ~~ x
 def v2f{x:T if w256{T}} = [8]f32 ~~ x
 def v2d{x:T if w256{T}} = [4]f64 ~~ x
 
-def undefPromote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
-def zeroPromote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_zextsi128_si256', v2i{x}}
+def undef_promote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
+def zero_promote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_zextsi128_si256', v2i{x}}
 
-# load & store
-def loadLow{ptr:*V, w if w256{V} and w<=128} = undefPromote{V, loadLow{*n_h{V} ~~ ptr, w}}
-def loadLow{ptr:*V, w if w256{V} and w==256} = load{ptr}
-
-def storeLow{ptr:*E, w, x:X=[_]E if w256{X} and w<=128} = storeLow{ptr, w, half{x, 0}}
-def storeLow{ptr:*E, w, x:X=[_]E if w256{X} and w==256} = store{*X~~ptr, 0, x}
-
+def load{V=[_]E, ptr:*E, vl if w256{V} and vl*width{E}<=128} = undef_promote{V, load{n_h{V}, ptr, vl}}
+def store{ptr:*E, x:V=[k]E, vl if w256{V} and vl*width{E}<=128} = store{ptr, half{x, 0}, vl}
 
 # float comparison
 local def f32cmpAVX{a,b,n} = [8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', a, b, n}
@@ -36,26 +31,25 @@ def widen{T=[k]_, x:X=[l]_ if w256{X} and l>k} = widen{T, half{x,0}}
 
 
 # structural operations
-def topBlend{f:T, t:T, m:M if w256{T,32} and w256i{M,32}} = T ~~ emit{[8]f32, '_mm256_blendv_ps', v2f{f}, v2f{t}, v2f{m}}
-def topBlend{f:T, t:T, m:M if w256{T,64} and w256i{M,64}} = T ~~ emit{[4]f64, '_mm256_blendv_pd', v2d{f}, v2d{t}, v2d{m}}
-def homBlend{f:T, t:T, m:M if w256{T}} = topBlend{f, t, m}
+def blend_top{f:T, t:T, m:M if w256i{T,32} and w256i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, v2f{m}}
+def blend_top{f:T, t:T, m:M if w256i{T,64} and w256i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, v2d{m}}
 
 # shuffles
 # TODO rename to shuf, move shuf to shuf_imm or something
-def shufInd{a:T, b:T=[8]E, {...is} if width{E}==32 and length{is}==8 and ({l,h} => same{l,h-4} and x86_shufps_range{l, 8}){slice{is,0,4}, slice{is,4,8}}} = {
-  T~~emit{[8]f32, '_mm256_shuffle_ps', v2f{a}, v2f{b}, base{4, slice{is,0,4} & 3}}
+def shuf_ind{a:T, b:T=[8]E, {...is} if width{E}==32 and length{is}==8 and ({l,h} => same{l,h-4} and x86_shufps_range{l, 8}){slice{is,0,4}, slice{is,4,8}}} = {
+  vec_shuffle{[4]f32, tup{a, b}, slice{is,0,4} & 3}
 }
-def shufInd{a:T, b:T=[4]E, {...is} if width{E}==64 and length{is}==4} = T~~shufInd{re_el{u32,a}, re_el{u32,b}, merge{...each{{i} => tup{i*2, i*2+1}, is}}}
+def shuf_ind{a:T, b:T=[4]E, {...is} if width{E}==64 and length{is}==4} = T~~shuf_ind{re_el{u32,a}, re_el{u32,b}, merge{...each{{i} => tup{i*2, i*2+1}, is}}}
 
 # mask stuff
-def andAllZero{x:T, y:T if w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
+def and_bit_none{x:T, y:T if w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
 
-def topMask{x:T if w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
-def topMask{x:T if w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
-def homMask{x:T if w256{T}} = topMask{x}
+def top_to_int{x:T if w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
+def top_to_int{x:T if w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
+def hom_to_int{x:T if w256{T}} = top_to_int{x}
 
-def homAny{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} != 0
-def homAll{x:T if w256i{T} and elwidth{T}>=32} = homMask{[8]u32 ~~ x} == 0xff
+def any_hom{x:T if w256i{T} and elwidth{T}>=32} = hom_to_int{[8]u32 ~~ x} != 0
+def all_hom{x:T if w256i{T} and elwidth{T}>=32} = hom_to_int{[8]u32 ~~ x} == 0xff
 
-def topAny{x:T=[_]E if w256i{T} and width{E}>=32} = topMask{x} != 0
-def topAll{x:T=[k]E if w256i{T} and width{E}>=32} = topMask{x} == (1<<k)-1
+def any_top{x:T=[_]E if w256i{T} and width{E}>=32} = top_to_int{x} != 0
+def all_top{x:T=[k]E if w256i{T} and width{E}>=32} = top_to_int{x} == (1<<k)-1

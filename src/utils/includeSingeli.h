@@ -36,8 +36,8 @@
     #define vg_loadLUT64(p, i) p[i]
   #endif
   
-  #define BCALL(N, X) N(b(X))
-  #define interp_f64(X) b(X).f
+  #define BCALL(N, X) N(r_uB(X))
+  #define interp_f64(X) r_u64f(X)
   
   #define SINGELI_FILE0(X) #X
   #define SINGELI_FILE1(X) SINGELI_FILE0(X)

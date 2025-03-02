@@ -26,8 +26,8 @@ ALLOC_FN void BN(free)(Value* x) {
   BN(freeLink)(x, true);
 }
 
-NOINLINE void* BN(allocS)(i64 bucket, u8 type);
-static   void* BN(allocL)(i64 bucket, u8 type) {
+NOINLINE void* BN(allocS)(ux bucket, u8 type);
+static   void* BN(allocL)(ux bucket, u8 type) {
   EmptyValue* x = buckets[bucket];
   if (RARE(x==NULL)) return BN(allocS)(bucket, type);
   buckets[bucket] = vg_def_v(x->next);

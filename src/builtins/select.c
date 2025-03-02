@@ -40,8 +40,15 @@
 //   Sparse initialization if 𝕨 is much smaller than 𝕩
 //   COULD call Mark Firsts (∊) for very short 𝕨 to avoid allocation
 
-// Select Cells - inds⊸⊏⎉1 x
-// Squeeze indices if too wide for given x
+// Select Cells - inds⊸⊏⎉1 𝕩
+// Squeeze indices if too wide for given 𝕩
+// Single index: (also used for monadic ⊏˘ ⊣˝˘ ⊢˝˘)
+//   Selecting a column of bits:
+//     Row size <64: extract as with fold-cells
+//   Selecting a column of 1, 2, 4, or 8-byte elements:
+//     Short cells: pack vectors from 𝕩, or blend and permute
+//     Long cells: dedicated scalar loop for each type
+//   Otherwise, loop with mutable copy
 // Boolean indices:
 //   Short inds and short cells: Widen to i8
 //   Otherwise: bitsel call per cell
@@ -57,7 +64,7 @@
 //   COULD generate full list of indices via arith
 // 1-element cells: use (≠inds)/⥊x after checking ∧´inds∊0‿¯1
 // Used for ⌽⎉1
-// SHOULD use for atom⊸⊏⎉k, /⎉k, ⌽⎉k, ↑⎉k, ↓⎉k, ↕⎉k, ⍉⎉k, probably more
+// SHOULD use for /⎉k, ⌽⎉k, ↑⎉k, ↓⎉k, ↕⎉k, ⍉⎉k, probably more
 
 #include "../core.h"
 #include "../utils/talloc.h"
@@ -119,10 +126,10 @@ FORCE_INLINE void cf_call(CFRes f, void* r, ux rs, void* x, ux xs) {
 
 extern GLOBAL B rt_select;
 B select_c1(B t, B x) {
-  if (isAtm(x)) thrM("⊏: Argument cannot be an atom");
+  if (isAtm(x)) thrM("⊏𝕩: 𝕩 cannot be an atom");
   ur xr = RNK(x);
-  if (xr==0) thrM("⊏: Argument cannot be rank 0");
-  if (SH(x)[0]==0) thrF("⊏: Argument shape cannot start with 0 (%H ≡ ≢𝕩)", x);
+  if (xr==0) thrM("⊏𝕩: 𝕩 cannot be rank 0");
+  if (SH(x)[0]==0) thrF("⊏𝕩: 𝕩 shape cannot start with 0 (%H ≡ ≢𝕩)", x);
   usz ia = shProd(SH(x), 1, xr);
   Arr* r = TI(x,slice)(incG(x), 0, ia);
   usz* sh = arr_shAlloc(r, xr-1);
@@ -138,13 +145,13 @@ static NOINLINE NORETURN void select_properError(B w, B x) {
 }
 
 B select_c2(B t, B w, B x) {
-  if (isAtm(x)) thrM("⊏: 𝕩 cannot be an atom");
+  if (isAtm(x)) thrM("𝕨⊏𝕩: 𝕩 cannot be an atom");
   ur xr = RNK(x);
-  if (xr==0) thrM("⊏: 𝕩 cannot be a unit");
+  if (xr==0) thrM("𝕨⊏𝕩: 𝕩 cannot be a unit");
   if (isAtm(w)) {
     watom:;
     usz xn = *SH(x);
-    usz wi = WRAP(o2i64(w), xn, thrF("⊏: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, xn));
+    usz wi = WRAP(o2i64(w), xn, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, xn));
     if (xr==1) {
       B xf = getFillR(x);
       B xv = IGet(x, wi);
@@ -213,7 +220,7 @@ B select_c2(B t, B w, B x) {
     
   #else
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
-    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xn, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))]; break
+    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xn, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))]; break
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
       if (sizeof(W) >= 4) {                           \
         switch(xl) { default:UD; CASEW(3,u8); CASEW(4,u16); CASEW(5,u32); CASEW(6,u64); } \
@@ -291,8 +298,8 @@ B select_c2(B t, B w, B x) {
     if (xl!=6) goto generic_l;                        \
     M_HARR(ra, wia); B* xp = arr_bptr(x);             \
     SLOWIF(xp==NULL) SLOW2("𝕨⊏𝕩", w, x);              \
-    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))])); } \
-    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP(wp[i], xia, thrF("⊏: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn)) )); } \
+    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP(wp[i], xia, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))])); } \
+    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP(wp[i], xia, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn)) )); } \
     r = a(withFill(HARR_FV(ra), xf)); goto setsh;     \
   }
   
@@ -313,7 +320,7 @@ B select_c2(B t, B w, B x) {
       if (xia<2) {
         u64* wp=bitany_ptr(w);
         usz i; for (i=0; i<wia/64; i++) if (wp[i]) break;
-        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("⊏: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xn);
+        if (i<wia/64 || bitp_l0(wp,wia)!=0) thrF("𝕨⊏𝕩: Indexing out-of-bounds (1∊𝕨, %s≡≠𝕩)", xn);
         x1 = x0;
       } else {
         x1 = GetU(x,1);
@@ -380,14 +387,14 @@ B select_c2(B t, B w, B x) {
     bad1:;
     mut_pfree(rm, i*csz);
     if (!q_fi64(badw)) expI_f64(badw);
-    thrF("⊏: Indexing out-of-bounds (%f∊𝕨, %s≡≠𝕩)", badw, xn);
+    thrF("𝕨⊏𝕩: Indexing out-of-bounds (%f∊𝕨, %s≡≠𝕩)", badw, xn);
   }
   
   
   
   setsh:
   if (rr>1) {
-    if (rr > UR_MAX) thrF("⊏: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+    if (rr > UR_MAX) thrF("𝕨⊏𝕩: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
     ShArr* sh = m_shArr(rr);
     shcpy(sh->a, SH(w), wr);
     shcpy(sh->a+wr, SH(x)+1, xr-1);
@@ -575,6 +582,62 @@ static void* m_arrv_same(B* r, usz ia, B src) { // makes a new array with same e
 
 B slash_c2(B, B, B);
 B select_cells_base(B inds, B x0, ux csz, ux cam);
+extern void (*const si_select_cells_bit_lt64)(u64*,u64*,usz,usz,usz); // from fold.c (fold.singeli)
+extern usz (*const si_select_cells_byte)(void*,void*,usz,usz,u8);
+
+B select_cells_single(usz ind, B x, usz cam, usz l, usz csz, bool leaf) { // ⥊ ind {leaf? <∘⊑; ⊏}˘ cam‿l‿csz ⥊ x
+  usz take = leaf? 1 : csz;
+  Arr* ra;
+  if (l==1 && take==csz) {
+    ra = cpyWithShape(incG(x));
+    arr_shErase(ra, 1);
+  } else {
+    u8 xe = TI(x,elType);
+    u8 ewl= elwBitLog(xe);
+    u8 xl = leaf? ewl : multWidthLog(csz, ewl);
+    usz ria = cam*take;
+    if (xl>=7 || (xl<3 && xl>0)) { // generic case
+      MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
+      usz jump = l * csz;
+      usz xi = take*ind;
+      usz ri = 0;
+      for (usz i = 0; i < cam; i++) {
+        mut_copyG(rm, ri, x, xi, take);
+        xi+= jump;
+        ri+= take;
+      }
+      ra = mut_fp(rm);
+    } else if (xe==el_B) {
+      assert(take == 1);
+      SGet(x)
+      HArr_p rp = m_harrUv(ria);
+      for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*l+ind);
+      NOGC_E; ra = (Arr*)rp.c;
+    } else {
+      void* rp = m_tyarrlbp(&ra, ewl, ria, el2t(xe));
+      void* xp = tyany_ptr(x);
+      if (xl == 0) {
+        #if SINGELI
+        if (l < 64) si_select_cells_bit_lt64(xp, rp, cam, l, ind);
+        else
+        #endif
+        for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*l+ind));
+      } else {
+        usz i0 = 0;
+        #if SINGELI
+        i0 = si_select_cells_byte((u8*)xp + (ind<<(xl-3)), rp, cam, l, xl-3);
+        #endif
+        switch(xl) { default: UD;
+          case 3: PLAINLOOP for (usz i=i0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*l+ind]; break;
+          case 4: PLAINLOOP for (usz i=i0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*l+ind]; break;
+          case 5: PLAINLOOP for (usz i=i0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*l+ind]; break;
+          case 6: PLAINLOOP for (usz i=i0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*l+ind]; break;
+        }
+      }
+    }
+  }
+  return taga(ra);
+}
 
 #define CLZC(X) (64-(CLZ((u64)(X))))
 
@@ -591,7 +654,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   assert(csz*cam == IA(x));
   assert(ie<=el_i32);
   
-  u8 inds_buf[INDS_BUF_MAX]; (void)inds_buf;
+  MAYBE_UNUSED u8 inds_buf[INDS_BUF_MAX];
   bool generic_allowed = true; // whether required interpretation of x hasn't changed from its real one
   if (csz==1) { // TODO maybe move to select_rows_B and require csz>=2 here?
     i64 bounds[2];
@@ -621,7 +684,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
     }
   }
   
-  bool fast; (void) fast;
+  MAYBE_UNUSED bool fast;
   ux xbump = csz<<lb;
   ux rbump = indn<<lb;
   i64 bounds[2];
@@ -840,7 +903,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   return r;
 }
 
-B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸⊏˘ cam‿csz⥊x
+B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸⊏˘ cam‿csz⥊x; if inds isn't rank 1, result may or may not be high rank
   assert(csz*cam == IA(x));
   if (csz==0) goto generic;
   if (cam<=1) {
@@ -850,6 +913,11 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   
   ux in = IA(inds);
   if (in == 0) return taga(emptyArr(x, 1));
+  if (in == 1) {
+    B w = IGetU(inds,0); if (!isF64(w)) goto generic;
+    B r = select_cells_single(WRAP(o2i64(w), csz, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, csz)), x, cam, csz, 1, false);
+    decG(x); decG(inds); return r;
+  }
   u8 ie = TI(inds,elType);
   if (csz<=2? ie!=el_bit : csz<=128? ie>el_i8 : !elInt(ie)) {
     inds = num_squeeze(inds);
@@ -885,8 +953,7 @@ B select_ucw(B t, B o, B w, B x) {
   }
   usz xr = RNK(x);
   usz wr = RNK(w);
-  usz rr = RNK(rep);
-  bool ok = !isAtm(rep) && xr+wr==rr+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
+  bool ok = isArr(rep) && xr+wr == RNK(rep)+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
   if (!ok) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (%H ≡ shape of a, %2H ≡ shape of ⊏𝕩, %H ≡ shape of result of 𝔽)", w, xr-1, SH(x)+1, rep);
   usz csz = arr_csz(x);
   if (csz == 0) { decG(rep); decG(w); return x; }

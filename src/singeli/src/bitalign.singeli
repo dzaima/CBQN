@@ -41,7 +41,7 @@ def new_shuf{...vs0 if isvec{try_same_type{vs0,'!'}}, {...is}} = { # : [length{i
 }
 def new_shuf{w if istype{w} or knum{w}, ...vs if isvec{try_same_type{vs,'!'}} and (not isvec{w} or width{w} == width{type0{vs}}), {...is}} = {
   def S = type0{vs}
-  def D = if (isvec{w}) w else re_el{if (isprim{w}) w else primtype{'u',w}, S}
+  def D = if (isvec{w}) w else re_el{if (isprim{w}) w else ty_u{w}, S}
   S~~new_shuf{...each{{c} => reinterpret{D, c}, vs}, is}
 }
 
@@ -56,7 +56,7 @@ local def perm_split{x:X, lanes, chunks} = {
     def si0 = join{each{index_of, u, gr}*b + lanes%b}
     def si = tern{join{lanes>=0}, si0, 0xff}
     # def si = join{each{{u,g,l} => l>=0) index_of{u,g}*b + lanes%b else 0xff, u, gr, lanes}}
-    sel{[16]u8,
+    shuf{[16]u8,
       new_shuf{re_el{ty_u{b*8},X}, x, join{each{shiftright{.,chunks**0}, u}}},
       make{X, si}
     }
@@ -70,18 +70,18 @@ local def perm_shufb{x, is} = {
 }
 # TODO accept narrower inputs
 def shuf_impl{256, 256, data if hasarch{'AVX2'} and not same{perm_shufb{...data{u8}},'!'}} = perm_shufb{...data{u8}}
-def shuf_impl{256, 128, data if hasarch{'AVX2'} and data{'h',u8}} = { def {x,is} = data{u8}; sel{[16]u8, pair{x, x}, make{[32]i8, is}} }
+def shuf_impl{256, 128, data if hasarch{'AVX2'} and data{'h',u8}} = { def {x,is} = data{u8}; shuf{[16]u8, pair{x, x}, is} }
 
 def shuf_impl{512, 512, data if hasarch{'AVX512F'} and data{'h','nz',u8}} = { def {x,is} = data{u8}; sel{[64]u8, x, make{[64]u8, is}} }
 
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u32}} = { def {x,is} = data{'nz',u32}; sel{[8]u32, x, make{[8]u32, is}} }
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u64}} = { def {x,is} = data{'nz',u64}; shuf_imm{[4]u64, x, base{4,is}} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u32}} = { def {x,is} = data{'nz',u32}; shuf{[8]u32, x, is} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and data{'h','nz',u64}} = { def {x,is} = data{'nz',u64}; shuf_imm{[4]u64, x, is} }
 
 def in_chunks{c, is} = { def ls = split{c, is}; all{{l, s} => all{(l<0) | ((l>=s) & (l<s+c))}, ls, inds{ls}*c} }
-def shuf_impl{256, 256, data if hasarch{'AVX2'} and in_chunks{16,select{data{u8},1}}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[32]u8, is}} }
-def shuf_impl{128, 128, data if hasarch{'SSSE3'}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[16]i8, is}} }
+def shuf_impl{256, 256, data if hasarch{'AVX2'} and in_chunks{16,select{data{u8},1}}} = { def {x,is} = data{u8}; shuf{[16]u8, x, is} }
+def shuf_impl{128, 128, data if hasarch{'SSSE3'}} = { def {x,is} = data{u8}; shuf{[16]u8, x, is} }
 
-def shuf_impl{128, 128, data if hasarch{'AARCH64'}} = { def {x,is} = data{u8}; sel{[16]u8, x, make{[16]i8, is}} }
+def shuf_impl{128, 128, data if hasarch{'AARCH64'}} = { def {x,is} = data{u8}; shuf{[16]u8, x, is} }
 
 
 
@@ -125,15 +125,15 @@ def bitalign{s, 8 if s<7, a:V=[k](u8) if hasarch{'X86_64'}} = {
   re_el{u8, d|e}
   # def d = re_el{u8, c >> (8 -s)}
   # def e = re_el{u8, c >> (16-s*2)}
-  # homBlend{e, d, make{V, cycle{k, tup{0, 0xff}}}} & V**tail{s}
+  # blend_hom{e, d, make{V, cycle{k, tup{0, 0xff}}}} & V**tail{s}
 }
 def bitalign{7, 8, a:V=[k](u8) if hasarch{'X86_64'}} = {
   def V16 = re_el{u16,V}
   
-  def b = new_shuf{a, range{k} - (((range{k}+2)/8)>>0)}
-  def c = blend{[8]u16, b, b <<{u64} 4, 2b01100110}
-  def d = (V16~~c * make{V16, cycle{k/2, 1<<tup{2,0,2,0}}}) >> 2 # TODO ofence constant for clang
-  homBlend{V~~d, V~~(d+d), make{V, cycle{k, tup{0, 0xff}}}} & V**0x7f
+  def b = V16~~new_shuf{a, range{k} - (((range{k}+2)/8)>>0)}
+  def c = blend_units{b, b <<{u64} 4, tup{0,1,1,0}}
+  def d = (c * make{V16, cycle{k/2, 1<<tup{2,0,2,0}}}) >> 2 # TODO ofence constant for clang
+  blend_hom{V~~d, V~~(d+d), make{V, cycle{k, tup{0, 0xff}}}} & V**0x7f
 }
 
 def bitalign{{2,8,s}, 8, G if hasarch{'X86_64'}} = {
@@ -154,7 +154,7 @@ def bitalign{{2,8,s}, 8, G if hasarch{'AVX512VBMI'}} = G{s, {a:V=[k](u8)} => {
 
 
 def __shl{a:([16]u8), sh:([16]i8) if hasarch{'AARCH64'}} = a << [16]u8~~sh
-def bitalign{{2,8,s}, 8, G if hasarch{'AARCH64'}} = G{s, {a:V=([16]u8)} => {
+def bitalign{{2,8,s}, 8, G if hasarch{'AARCH64'}} = G{s, {a:V==[16]u8} => {
   def {shuf1, shift1, shuf2, shift2} = makevtabs{16, xrange{2,8},
     tup{u8, {s,r} =>  r   *s>>3},  tup{i8, {s,r} =>   -  r   *s%8},
     tup{u8, {s,r} => (r+1)*s>>3},  tup{i8, {s,r} => s - (r+1)*s%8},
@@ -197,7 +197,7 @@ def bitalign{8, {2,8,d}, G if hasarch{'AARCH64'}} = {
     tup{i8, {d,r} => select{props{d},2}},
   }
   
-  def run{do_blend}{a:V=([16]u8)} = {
+  def run{do_blend}{a:V==[16]u8} = {
     def shuf1 = shuf0 + V**1
     def shift1 = shift0 + [16]i8**cast_i{i8,d}
     def b = a & V**cast_i{u8, tail{d}}

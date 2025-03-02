@@ -9,12 +9,6 @@
 #ifndef CHECK_VALID
   #define CHECK_VALID 1
 #endif
-#ifndef EACH_FILLS
-  #define EACH_FILLS 0
-#endif
-#ifndef SFNS_FILLS
-  #define SFNS_FILLS 1
-#endif
 #ifndef MM
   #define MM 1
 #endif
@@ -52,12 +46,14 @@
 #ifndef SEMANTIC_CATCH
   #define SEMANTIC_CATCH USE_SETJMP
 #endif
-#if SEMANTIC_CATCH
-  #define PROPER_FILLS (EACH_FILLS & SFNS_FILLS)
-#else
-  #undef EACH_FILLS
-  #define EACH_FILLS 0
-  #define PROPER_FILLS 0
+#ifndef EACH_FILLS
+  #define EACH_FILLS 0 // must stay 0 if !SEMANTIC_CATCH
+#endif
+#ifndef SFNS_FILLS
+  #define SFNS_FILLS 1
+#endif
+#ifndef PROPER_FILLS
+  #define PROPER_FILLS (SEMANTIC_CATCH & EACH_FILLS & SFNS_FILLS)
 #endif
 
 #if ALL_R0 || ALL_R1
@@ -100,6 +96,7 @@ typedef size_t ux;
 #define U16_MAX ((u16)~(u16)0)
 #define U32_MAX ((u32)~(u32)0)
 #define U64_MAX ((u64)~(u64)0)
+#define MAYBE_UNUSED __attribute__((unused))
 #define NOINLINE     __attribute__((noinline))
 #define FORCE_INLINE __attribute__((always_inline)) static inline
 #define NORETURN     __attribute__((noreturn))
@@ -197,25 +194,26 @@ static const u16 ARR_TAG = 0b1111111111110111; // FFF7 1111111111110111ppppppppp
 static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110................................................... pointer to Value, needs refcounting
 #define ftag(X) ((u64)(X) << 48)
 #define ptr2u64(X) ((u64)(uintptr_t)(X))
-#define tagu64(V, T) b((u64)(V) | ftag(T))
-#define tag(V, T) b(ptr2u64(V) | ftag(T))
+#define tagu64(V, T) r_uB((u64)(V) | ftag(T))
+#define TOPTR(T,X) ((T*)(uintptr_t)(X))
+#define c(T,X) TOPTR(T, (X).u&0xFFFFFFFFFFFFull)
+#define tag(V, T) ({ void* tagv_ = (V); r_uB(ptr2u64(tagv_) | ftag(T)); })
 #define taga(V) tag(V,ARR_TAG)
 
 typedef union B {
   u64 u;
   f64 f;
 } B;
-#define b(x) ((B)(x))
 
 typedef union { u32 u; f32 f; } F32R;
-FORCE_INLINE u64 r_f64u(f64 x) { return ((B) x).u; }
-FORCE_INLINE f64 r_u64f(u64 x) { return ((B) x).f; }
-FORCE_INLINE u32 r_f32u(f32 x) { return ((F32R) x).u; }
-FORCE_INLINE f32 r_u32f(u32 x) { return ((F32R) x).f; }
+FORCE_INLINE u64 r_f64u(f64 x) { return (B){.f=x}.u; }
+FORCE_INLINE f64 r_u64f(u64 x) { return (B){.u=x}.f; }
+FORCE_INLINE u32 r_f32u(f32 x) { return (F32R){.f=x}.u; }
+FORCE_INLINE f32 r_u32f(u32 x) { return (F32R){.u=x}.f; }
 FORCE_INLINE u64 r_Bu(B x) { return x.u; }
 FORCE_INLINE f64 r_Bf(B x) { return x.f; }
-FORCE_INLINE B r_uB(u64 x) { return b(x); }
-FORCE_INLINE B r_fB(f64 x) { return b(x); }
+FORCE_INLINE B r_uB(u64 x) { return (B){.u=x}; }
+FORCE_INLINE B r_fB(f64 x) { return (B){.f=x}; }
 
 #if defined(RT_WRAP) || defined(WRAP_NNBI)
   #define IF_WRAP(X) X
@@ -354,11 +352,11 @@ u64 tot_heapUsed(void);
 #endif
 
 // some primitive actions
-static const B bi_N      = b((u64)0x7FF2000000000000ull);
-static const B bi_noVar  = b((u64)0x7FF2C00000000001ull);
-static const B bi_okHdr  = b((u64)0x7FF2000000000002ull);
-static const B bi_optOut = b((u64)0x7FF2800000000003ull);
-static const B bi_noFill = b((u64)0x7FF2000000000005ull);
+static const B bi_N      = (B) {.u = (u64)0x7FF2000000000000ull };
+static const B bi_noVar  = (B) {.u = (u64)0x7FF2C00000000001ull };
+static const B bi_okHdr  = (B) {.u = (u64)0x7FF2000000000002ull };
+static const B bi_optOut = (B) {.u = (u64)0x7FF2800000000003ull };
+static const B bi_noFill = (B) {.u = (u64)0x7FF2000000000005ull };
 extern GLOBAL B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptyHVec() incG(bi_emptyHVec)
 #define emptyIVec() incG(bi_emptyIVec)
@@ -410,8 +408,7 @@ extern GLOBAL B thrownMsg;
 void freeThrown(void);
 
 
-#define TOPTR(T,X) ((T*)(uintptr_t)(X))
-#define c(T,X) TOPTR(T, (X).u&0xFFFFFFFFFFFFull)
+
 #define v(X) c(Value, X)
 #define a(X) c(Arr  , X)
 
@@ -426,6 +423,11 @@ void freeThrown(void);
 #define SH(X)  PSH(a(X))
 #define TY(X)  PTY(v(X))
 #define RNK(X) PRNK(v(X))
+
+#define RTID_NONE -1
+#define PRTID(X) ((X)->flags-1)
+#define RTID(X) PRTID(v(X))
+#define NID(X) ((X)->nid)
 
 #define VTY(X,T) assert(isVal(X) && TY(X)==(T))
 
@@ -448,18 +450,18 @@ FORCE_INLINE bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }
 FORCE_INLINE bool isNsp(B x) { return (x.u>>48) == NSP_TAG; }
 FORCE_INLINE bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
 // FORCE_INLINE bool isVal(B x) { return ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0); }
-// FORCE_INLINE bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(b(1.0/0.0).u<<1)); }
+// FORCE_INLINE bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(r_Bu(m_f64(1.0/0.0))<<1)); }
 FORCE_INLINE bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
 FORCE_INLINE bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
 FORCE_INLINE bool isNum(B x) { return isF64(x); }
 
 FORCE_INLINE bool isAtm(B x) { return !isArr(x); }
-FORCE_INLINE bool isCallable(B x) { return isMd(x) | isFun(x); }
-FORCE_INLINE bool isPrim(B x) { return isCallable(x) && v(x)->flags; }
+FORCE_INLINE bool isCallable(B x) { u16 tag = x.u>>48; return tag>=MD1_TAG && tag<=FUN_TAG; }
+FORCE_INLINE bool isPrim(B x) { return isCallable(x) && RTID(x)!=RTID_NONE; }
 
 
 // make objects
-static B m_f64(f64 n) { assert(isF64(b(n))); return b(n); } // assert just to make sure we're actually creating a float
+static B m_f64(f64 n) { assert(isF64(r_fB(n))); return r_fB(n); } // assert just to make sure we're actually creating a float
 static B m_c32(u32 n) { return tagu64(n,C32_TAG); } // TODO check validity?
 static B m_i32(i32 n) { return m_f64(n); }
 static B m_usz(usz n) { return m_f64(n); }
@@ -578,6 +580,7 @@ typedef B (*D2C2)(Md2D*, B, B);
   F(B2B, decompose) /* consumes; must return a HArr */ \
   F(bool, isArr) /* whether this type would have an ARR_TAG tag, in cases where the tag is unknown */ \
   F(bool, arrD1) /* is always an array with depth 1 */ \
+  F(bool, byRef) /* is always compared by reference */ \
 
 #define F(TY,N) extern GLOBAL TY ti_##N[t_COUNT];
   FOR_TI(F)
@@ -600,12 +603,16 @@ enum Flags {
   fl_asc=2, // sorted ascending (non-descending)
   fl_dsc=4, // sorted descending (non-ascending)
 };
+#define FL_GET(X) (v(X)->flags)
+#define FLV_GET(X) ((X)->flags)
 #define FL_SET(X,F)  ({ B    x_ = (X); v(x_)->flags|= (F); x_; })
 #define FLV_SET(X,F) ({ AUTO x_ = (X);    x_->flags|= (F); x_; })
 #define FL_KEEP(X,F)  ({ B    x_ = (X); v(x_)->flags&= (F); x_; })
 #define FLV_KEEP(X,F) ({ AUTO x_ = (X);    x_->flags&= (F); x_; })
 #define FL_HAS(X,F) ((v(X)->flags&(F)) != 0)
 #define FLV_HAS(X,F) (((X)->flags&(F)) != 0)
+#define FL_HAS_ALL(X,F) ((v(X)->flags&(F)) == (F))
+#define FLV_HAS_ALL(X,F) (((X)->flags&(F)) == (F))
 
 // refcount stuff
 static bool reusable(B x) { return v(x)->refc==1; }

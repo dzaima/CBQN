@@ -3,7 +3,7 @@ DIR="$(dirname $0)"
 PREV_BQN="$DIR/obj2/for_build4"
 if [ ! -f "$PREV_BQN" ]; then
   TMP_BQN="$DIR/obj2/for_build_tmp"
-  if make -C "$DIR/.." for-build OUTPUT="$TMP_BQN"; then
+  if "${MAKE:-make}" -C "$DIR/.." for-build OUTPUT="$TMP_BQN"; then
     if [ "4" = "$("$TMP_BQN" -p "2+2")" ]; then
       true
     else

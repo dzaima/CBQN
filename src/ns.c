@@ -234,4 +234,5 @@ void ns_init(void) {
   TIi(t_ns,freeF) = ns_freeF;
   TIi(t_ns,visit) = ns_visit; TIi(t_nsDesc,visit) = noop_visit;
   TIi(t_ns,print) = ns_print; TIi(t_nsDesc,print) = nsDesc_print;
+  TIi(t_ns,byRef) = true;
 }

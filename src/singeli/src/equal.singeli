@@ -20,34 +20,34 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   if (W==u1) {
     if (X==u1) { # bitarr ≡ bitarr
       def BT = [vw/8]u8
-      @maskedLoop{vw}(w in *BT~~w, x in *BT~~x, M in 'm' over l) if (anyneBit{w,x,M}) return{0}
+      @for_masked{vw}(w in *BT~~w, x in *BT~~x, M in 'm' over l) if (anyne_bit{w,x,M}) return{0}
     } else if (X==f64) { # bitarr ≡ f64arr
       def TF = [vw/64]f64
       def TU = [vw/64]u64
       f0:= TF**0.0
       f1:= TF**1.0
-      @maskedLoopPositive{bulk}(M in 'm' over i to l) {
+      @for_masked_pos{bulk}(M in 'm' over i to l) {
         wu:= (if (hasarch{'AVX2'}) {
-          cw:= b_getBatchLo{bulk, *u64~~w, i}
-          topBlend{f0, f1, TU**cw << make{TU,63-iota{vcount{TU}}}}
+          cw:= load_bits_lo{bulk, *u64~~w, i}
+          blend_top{f0, f1, TU**cw << make{TU,63-iota{vcount{TU}}}}
         } else {
-          cw:= loadBatchBit{TU, *u64~~w, i}
-          homBlend{f0, f1, cw}
+          cw:= load_expand_bits{TU, *u64~~w, i}
+          blend_hom{f0, f1, cw}
         })
         cx:= load{*TF ~~ x, i}
-        if (anynePositive{wu, cx, M}) return{0}
+        if (anyne_positive{wu, cx, M}) return{0}
       }
     } else { # bitarr ≡ i8/i16/i32arr
       def T = [bulk]X
       def sh{c} = c << (width{X}-1)
       def sh{c if X==u8} = T ~~ (re_el{u16,c}<<7)
-      def mask{x:X if hasarch{'X86_64'}} = topMask{x}
-      def mask{x:X if hasarch{'AARCH64'}} = homMask{andnz{x, ~T**0}}
+      def mask{x:X if hasarch{'X86_64'}} = top_to_int{x}
+      def mask{x:X if hasarch{'AARCH64'}} = hom_to_int{andnz{x, ~T**0}}
       
       # TODO compare with doing the comparison in vector registers
       badBits:= T ** ~(X~~1)
-      @maskedLoop{bulk}(cw in tup{'b',w}, x in *T~~x, M in 'm' over i to l) {
-        if (~andAllZero{M{x}, badBits}) return{0}
+      @for_masked{bulk}(cw in tup{'b',w}, x in *T~~x, M in 'm' over i to l) {
+        if (~and_bit_none{M{x}, badBits}) return{0}
         if (anyne{promote{u64,mask{sh{x}}}, promote{u64,cw}, M}) return{0}
       }
       1
@@ -57,10 +57,10 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
     
     def R = [bulk]X
     
-    @maskedLoopPositive{bulk}(M in 'm' over i to l) {
-      cw:= loadBatch{*W~~w, i, R}
-      cx:= loadBatch{*X~~x, i, R}
-      if (anynePositive{cw,cx,M}) return{0}
+    @for_masked_pos{bulk}(M in 'm' over i to l) {
+      cw:= load_widen{*W~~w, i, R}
+      cx:= load_widen{*X~~x, i, R}
+      if (anyne_positive{cw,cx,M}) return{0}
     }
   }
   1

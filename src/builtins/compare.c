@@ -54,36 +54,50 @@ NOINLINE i32 compareF(B w, B x) {
 }
 
 NOINLINE bool atomEqualF(B w, B x) {
-  if (TY(w)!=TY(x)) return false;
+  if (TI(w,byRef) || TY(w)!=TY(x)) return false;
+  
   B2B dcf = TI(w,decompose);
-  if (dcf == def_decompose) return false;
-  B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
-  B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
-  if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
+  B xd=dcf(incG(x)); B* xdp=harr_ptr(xd);
+  if (o2i(xdp[0])<=1) goto decx_ne;
+  B wd=dcf(incG(w)); B* wdp=harr_ptr(wd);
+  
   usz wia = IA(wd);
-  if (wia!=IA(xd))    { decG(wd);decG(xd); return false; }
-  for (u64 i = 0; i<wia; i++) if(!equal(wdp[i], xdp[i]))
-                      { decG(wd);decG(xd); return false; }
-                        decG(wd);decG(xd); return true;
+  if (wia != IA(xd)) goto dec_ne;
+  for (ux i = 0; i < wia; i++) {
+    if(!equal(wdp[i], xdp[i])) goto dec_ne;
+  }
+  decG(wd); decG(xd);
+  return true;
+  
+  dec_ne:; decG(wd);
+  decx_ne:; decG(xd);
+  return false;
 }
 
 bool atomEEqual(B w, B x) { // doesn't consume
   if (w.u==x.u) return true;
   #if !NEEQUAL_NEGZERO
-    if (isF64(w)&isF64(x)) return w.f==x.f;
+    if (isF64(w) & isF64(x)) return w.f==x.f;
   #endif
-  if (!isVal(w) | !isVal(x)) return false;
-  if (TY(w)!=TY(x)) return false;
+  if (!isVal(w) || !isVal(x)) return false;
+  
+  if (TI(w,byRef) || TY(w)!=TY(x)) return false;
   B2B dcf = TI(w,decompose);
-  if (dcf == def_decompose) return false;
-  B wd=dcf(incG(w)); B* wdp = harr_ptr(wd);
-  B xd=dcf(incG(x)); B* xdp = harr_ptr(xd);
-  if (o2i(wdp[0])<=1) { decG(wd);decG(xd); return false; }
+  B xd=dcf(incG(x)); B* xdp=harr_ptr(xd);
+  if (o2i(xdp[0])<=1) goto decx_ne;
+  B wd=dcf(incG(w)); B* wdp=harr_ptr(wd);
+  
   usz wia = IA(wd);
-  if (wia!=IA(xd))    { decG(wd);decG(xd); return false; }
-  for (u64 i = 0; i<wia; i++) if(!eequal(wdp[i], xdp[i]))
-                      { decG(wd);decG(xd); return false; }
-                        decG(wd);decG(xd); return true;
+  if (wia != IA(xd)) goto dec_ne;
+  for (ux i = 0; i < wia; i++) {
+    if(!eequal(wdp[i], xdp[i])) goto dec_ne;
+  }
+  decG(wd); decG(xd);
+  return true;
+  
+  dec_ne:; decG(wd);
+  decx_ne:; decG(xd);
+  return false;
 }
 
 // Functions in eqFns compare segments for matching

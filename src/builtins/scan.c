@@ -6,11 +6,11 @@
 // Boolean operand, rank 1:
 //   + AVX2 expansion (SHOULD have better generic, add SSE, NEON)
 //   ∨⌈ ∧×⌊ search+copy, then memset (COULD vectorize search)
-//   ≠ SWAR shifts, CLMUL, VPCLMUL (SHOULD add SSE, NEON)
+//   ≠ SWAR/SIMD shifts, CLMUL, VPCLMUL (SHOULD add NEON polynomial mul)
 //   < SWAR
 //   =≤≥>- in terms of ≠<∨∧+ with adjustments
 // Arithmetic operand, rank 1:
-//   ⌈⌊ Scalar, SSE, AVX in log(vector width) steps (SHOULD add NEON)
+//   ⌈⌊ Scalar, SIMD in log(vector width) steps
 //     Check in 6-vector blocks to quickly write result if constant
 //   + Overflow-checked scalar or AVX2
 //   Ad-hoc boolean-valued handling for ≠∨
@@ -22,15 +22,19 @@
 // SHOULD optimize dyadic scan with rank
 // Empty 𝕩, length 1, ⊢: return 𝕩
 // Boolean operand, cell size 1:
-//   ≠∨∧⊣ and synonyms, rows <64: SWAR, AVX2 (SHOULD add SSE, NEON)
+//   ≠∨∧⊣ (and synonyms), rows <64: SWAR, SIMD
 //     Power of two row size: autovectorized
 //     COULD have dedicated SIMD for CPU widths, little improvement
-//   ⊣ SWAR for <64, select for ≥
-//   ∨⌈ ∧×⌊ SWAR with addition for small rows, search for large
-//     Rows 64≤l<160: SWAR specialized for ≤1 boundary
-//     Large rows: word-at-a-time search
-//   ≠ power-of-two shifts for <64, rank-1 scans and boundary corrections if ≥
-//     SHOULD have a better intermediate-size (< ~256) SIMD method
+//     COULD get unaligned row boundaries in 4x groups with &
+//   ≠∨∧⊣ medium rows (upper bound varies, <320): SIMD
+//     Generate boundary masks with index tracking and shifts
+//     Scan within words, propagate carries stopping at masks
+//   ≠ small and medium rows uses power-of-two shifts
+//     COULD try CLMUL
+//   ≠∨∧⊣ large rows: per-row loops
+//     ∨∧: word-at-a-time search
+//     ≠: rank-1 scans and boundary corrections
+//     ⊣: branchless boundary plus fixed-size loop
 //   + scan in blocks, correct with mask, ⌊`, subtract
 //   = as ≠`⌾¬, - as (2×⊣`)-+`
 // SHOULD optimize non-boolean scan with rank
@@ -192,11 +196,12 @@ SHOULD_INLINE B scan2_max_num(B w, B x, u8 xe, usz ia) { MINMAX2(max,>,MIN,or ,0
 static B scan_lt(B x, u64 p, usz ia) {
   u64* xp = bitany_ptr(x);
   u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia);
-  u64 m10 = 0x5555555555555555;
+  u64 m = 0x5555555555555555;
   for (usz i=0; i<n; i++) {
     u64 x = xp[i];
-    u64 c  = (m10 & ~(x<<1)) & ~(p>>63);
-    rp[i] = p = x & (m10 ^ (x + c));
+    u64 u = -(p>>63) &~ (x+1);
+    u64 c = ((x<<1) | m) - x;
+    rp[i] = p = x & (m ^ c ^ u);
   }
   decG(x); return r;
 }
@@ -229,7 +234,7 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
 
 extern B scan_arith(B f, B w, B x, usz* xsh); // from cells.c
 B scan_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("`: Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("𝔽`𝕩: 𝕩 cannot have rank 0");
   ur xr = RNK(x);
   usz ia = IA(x);
   if (*SH(x)<=1 || ia==0) return x;
@@ -243,8 +248,8 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     return withFill(mut_fcd(rm, x), xf);
   }
   u8 xe = TI(x,elType);
-  if (v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
+  if (RTID(f) != RTID_NONE) {
+    u8 rtid = RTID(f);
     if (rtid==n_rtack) return x;
     if (rtid==n_ltack) {
       usz csz = arr_csz(x);
@@ -306,9 +311,9 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
 }
 
 B scan_c2(Md1D* d, B w, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("`: 𝕩 cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM("𝕨𝔽`𝕩: 𝕩 cannot have rank 0");
   ur xr = RNK(x); usz* xsh = SH(x); usz ia = IA(x);
-  if (isArr(w)? !ptr_eqShape(SH(w), RNK(w), xsh+1, xr-1) : xr!=1) thrF("`: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
+  if (isArr(w)? !ptr_eqShape(SH(w), RNK(w), xsh+1, xr-1) : xr!=1) thrF("𝕨𝔽`𝕩: Shape of 𝕨 must match the cell of 𝕩 (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
   if (ia==0) { dec(w); return x; }
   if (RARE(!isFun(f))) {
     if (isMd(f)) thrM("Calling a modifier");
@@ -318,8 +323,8 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     return withFill(mut_fcd(rm, x), xf);
   }
   u8 xe = TI(x,elType);
-  if (v(f)->flags) {
-    u8 rtid = v(f)->flags-1;
+  if (RTID(f) != RTID_NONE) {
+    u8 rtid = RTID(f);
     if (rtid==n_rtack) { dec(w); return x; }
     if (rtid==n_ltack) return C2(shape, C1(fne, x), w);
     if (!(xr==1 && elNum(xe) && xe<=el_f64)) goto base;

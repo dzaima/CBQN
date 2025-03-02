@@ -24,7 +24,7 @@
 
 // base interface defs for when GC stuff needs to be added in
 static B getB(BQNV v) {
-  return b(v);
+  return r_uB(v);
 }
 static BQNV makeX(B x) {
   return x.u;
@@ -650,7 +650,7 @@ NOINLINE B cpyF32Bits(B x) { // copy x to a 32-bit float array (output being an 
   B t = toF64Any(x); f64* tp = f64any_ptr(t);
   i32* rp; B r = m_i32arrv(&rp, ia);
   vfor (usz i=0; i<ia; i++) ((f32*)rp)[i] = tp[i];
-  dec(t); return r;
+  decG(t); return r;
 }
 
 // versions of cpyU(8|16|32)Bits, but without a guarantee of returning a new array; consumes argument
@@ -792,7 +792,7 @@ void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
         if (IA(c) != mul) thrF("FFI: Bad array corresponding to %R: expected %s elements, got %s", ty_fmt(o), (usz)mul, IA(c));
         B cG = toW(reT, reW, incG(c));
         memcpy(ptr, tyany_ptr(cG), 8); // may over-read, but CBQN-allocations allow that; may write past the end, but that's fine too? maybe? idk actually; TODO
-        dec(cG);
+        decG(cG);
       } else { // *scalar:any / &scalar:any / *:any / **:any
         BQNFFIType* t2 = c(BQNFFIType, o2);
         B ore = t2->a[0].o;
@@ -1082,6 +1082,7 @@ static u64 calcStaticSize(B o) {
 }
 
 B ffiload_c2(B t, B w, B x) {
+  if (!isArr(x) || RNK(x)!=1) thrM("•FFI: 𝕩 must be a list");
   usz xia = IA(x);
   if (xia<2) thrM("FFI: Function specification must have at least two items");
   usz argn = xia-2;
@@ -1168,7 +1169,7 @@ B ffiload_c2(B t, B w, B x) {
   char* nameStr = toCStr(name);
   void* sym = dlsym(dl, nameStr);
   freeCStr(nameStr);
-  dec(x);
+  decG(x);
   
   if (sym==NULL) thrF("FFI: Failed to find symbol: %S", dlerror());
   

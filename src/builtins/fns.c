@@ -5,7 +5,6 @@
 #include "../utils/talloc.h"
 #include "../utils/each.h"
 #include "../builtins.h"
-#include "../nfns.h"
 
 
 NOINLINE B intRange16(ux s, ux n) { // s+↕n with i16arr result
@@ -61,8 +60,8 @@ static B* ud_rec(B* p, usz d, usz r, i32* pos, usz* sh) {
 NOINLINE B list_range(B x) {
   SGetU(x)
   usz xia = IA(x);
-  if (RNK(x)!=1) thrF("↕: Argument must be either an integer or integer list (had rank %i)", RNK(x));
-  if (xia>UR_MAX) thrF("↕: Result rank too large (%s≡≠𝕩)", xia);
+  if (RNK(x)!=1) thrF("↕𝕩: 𝕩 must be either an integer or integer list (had rank %i)", RNK(x));
+  if (xia>UR_MAX) thrF("↕𝕩: Result rank too large (%s≡≠𝕩)", xia);
   if (xia==0) { decG(x); return m_funit(emptyIVec()); }
   usz sh[xia]; // stack allocation of rank items
   i32 pos[xia];
@@ -74,7 +73,7 @@ NOINLINE B list_range(B x) {
     good|= c==0;
     bad|= (c > I32_MAX) | mulOn(ria, c);
   }
-  if (bad && !good) thrM("↕: Result too large");
+  if (bad && !good) thrM("↕𝕩: Result too large");
   decG(x);
   
   Arr* r = m_fillarr0p(ria);
@@ -99,10 +98,11 @@ B ud_c1(B t, B x) {
   if (LIKELY(xu<=I8_MAX+1)) {
     if (RARE(xu<=2)) return taga(ptr_inc(bitUD[xu]));
     i8* rp; B r = m_i8arrv(&rp, xu);
+    FL_SET(r, fl_asc|fl_squoze);
     NOUNROLL for (usz i = 0; i < xu; i++) rp[i] = i;
     return r;
   }
-  return intRange(0, xu);
+  return FL_SET(intRange(0, xu), fl_asc|fl_squoze);
 }
 
 B slash_c2(B t, B w, B x);
@@ -110,13 +110,13 @@ B slash_c2(B t, B w, B x);
 B ud_c2(B t, B w, B x) {
   usz wia=1;
   if (isArr(w)) {
-    if (RNK(w)>1) thrM("↕: 𝕨 must have rank at most 1");
+    if (RNK(w)>1) thrM("𝕨↕𝕩: 𝕨 must have rank at most 1");
     wia = IA(w);
     if (wia==0) { decG(w); return isArr(x)? x : m_unit(x); }
   }
   ur xr;
-  if (isAtm(x) || (xr=RNK(x))<wia) thrM("↕: Length of 𝕨 must be at most rank of 𝕩");
-  if (xr+wia > UR_MAX) thrM("↕: Result rank too large");
+  if (isAtm(x) || (xr=RNK(x))<wia) thrM("𝕨↕𝕩: Length of 𝕨 must be at most rank of 𝕩");
+  if (xr+wia > UR_MAX) thrM("𝕨↕𝕩: Result rank too large");
   ur wr = wia;
   ur rr = xr + wr;
   ShArr* sh = m_shArr(rr);
@@ -135,7 +135,7 @@ B ud_c2(B t, B w, B x) {
   for (usz i=0; i<wr; i++) {
     usz l = xsh[i] + 1;
     usz m = wsh[i];
-    if (l<m) thrM("↕: Window length 𝕨 must be at most axis length plus one");
+    if (l<m) thrM("𝕨↕𝕩: Window length 𝕨 must be at most axis length plus one");
     empty|= m==0 | m==l;
     rsh[i] = l - m;
   }
@@ -153,9 +153,9 @@ B ud_c2(B t, B w, B x) {
   
   ur fr=2*wr; // Frame rank in result
   usz cia=1; // Cell length
-  for (usz i=fr; i<rr; i++) if (mulOn(cia, rsh[i])) thrM("↕: result shape too large");
+  for (usz i=fr; i<rr; i++) if (mulOn(cia, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
   usz ria=cia;
-  for (usz i=0;  i<fr; i++) if (mulOn(ria, rsh[i])) thrM("↕: result shape too large");
+  for (usz i=0;  i<fr; i++) if (mulOn(ria, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
   TALLOC(usz, ri, fr-1);
   MAKE_MUT_INIT(r, ria, TI(x,elType));
   MUTG_INIT(r);
@@ -198,7 +198,7 @@ B fne_c1(B t, B x) {
   ur xr = RNK(x);
   usz* sh = SH(x);
   usz or = 0;
-  for (i32 i = 0; i < xr; i++) or|= sh[i];
+  NOUNROLL for (i32 i = 0; i < xr; i++) or|= sh[i];
   B r;
   if      (or<=I8_MAX ) { i8*  rp; r = m_i8arrv (&rp, xr); PLAINLOOP for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
   else if (or<=I16_MAX) { i16* rp; r = m_i16arrv(&rp, xr); PLAINLOOP for (i32 i = 0; i < xr; i++) rp[i] = sh[i]; }
@@ -233,7 +233,7 @@ extern GLOBAL B rt_find;
 B find_c2(B t, B w, B x) {
   ur wr = isAtm(w) ? 0 : RNK(w);
   ur xr = isAtm(x) ? 0 : RNK(x);
-  if (wr > xr) thrF("⍷: Rank of 𝕨 must be at most rank of 𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  if (wr > xr) thrF("𝕨⍷𝕩: Rank of 𝕨 must be at most rank of 𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   u8 xe, we ONLY_GCC(= 0);
   B r;
   if (xr==1 && (xe=TI(x,elType))!=el_B && xe!=el_bit && (isAtm(w) || (we=TI(w,elType))!=el_B)) {
@@ -241,7 +241,7 @@ B find_c2(B t, B w, B x) {
     usz wl = IA(w);
     usz xl = IA(x);
     if (wl > xl) { r = emptyIVec(); goto dec_ret; }
-    if (wl == 0) { r = taga(arr_shVec(allOnes(xl+1))); goto dec_ret; }
+    if (wl == 0) { r = taga(arr_shVec(allOnesFl(xl+1))); goto dec_ret; }
     // Compare elements of w to slices of x
     usz rl = xl - wl + 1; // Result length
     u8* xp = tyany_ptr(x);
@@ -314,7 +314,7 @@ B find_c2(B t, B w, B x) {
         rsh[i] = c;
       }
     }
-    r = taga(arr_shSetUO(allOnes(ia), xr, sh));
+    r = taga(arr_shSetUO(allOnesFl(ia), xr, sh));
     goto dec_ret;
   }
   
@@ -384,7 +384,7 @@ B tack_uc1(B t, B o, B x) {
 void fun_gcFn(void) {
   if (globalNames!=NULL) mm_visitP(globalNames);
 }
-static void print_funBI(FILE* f, B x) { fprintf(f, "%s", pfn_repr(c(Fun,x)->extra)); }
+static void print_funBI(FILE* f, B x) { fprintf(f, "%s", pfn_repr(NID(c(BFn,x)))); }
 static B funBI_uc1(B t, B o,      B x) { return c(BFn,t)->uc1(t, o,    x); }
 static B funBI_ucw(B t, B o, B w, B x) { return c(BFn,t)->ucw(t, o, w, x); }
 static B funBI_im(B t, B x) { return c(BFn,t)->im(t, x); }

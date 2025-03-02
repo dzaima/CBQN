@@ -13,7 +13,12 @@ typedef struct TAlloc {
 #define TSIZE(N) (mm_sizeUsable(TOBJ(N))-TOFF)
 static inline void* talloc_realloc(TAlloc* t, u64 am) { // TODO maybe shouldn't be inline?
   u64 stored = mm_sizeUsable((Value*)t)-TOFF;
-  if (stored > am) return t->data;
+  if (stored > am) {
+    #if VERIFY_TAIL
+      tailVerifySetMinTallocSize(t, am);
+    #endif
+    return t->data;
+  }
   TALLOC(u8,r,am);
   memcpy(r, t->data, stored);
   mm_free((Value*)t);

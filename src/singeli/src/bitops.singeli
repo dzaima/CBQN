@@ -1,30 +1,28 @@
-def ones{T, n} = (cast{T,1}<<cast{T,n}) - 1
-
-def b_get{x:(*u64), n:(ux)} = {
+def load_bit{x:(*u64), n:(ux)} = {
   ((load{x,n>>6}>>(n&63)) & 1) != 0
 }
 
-def b_getBatchLo{sz, x:(*u64), n:(ux)} = match (sz) {
+def load_bits_lo{sz, x:(*u64), n:(ux)} = match (sz) {
   {2} => (load{*u8~~x, n>>2} >> cast_i{u8, (n&3)*2})
   {4} => (load{*u8~~x, n>>1} >> cast_i{u8, (n&1)*4})
   {sz if sz>=8} => load{*ty_u{sz}~~x, n}
 }
 
-def b_getBatch{sz, x:(*u64), n:(ux)} = match (sz) {
-  {2} => b_getBatchLo{sz, x, n} & 3
-  {4} => b_getBatchLo{sz, x, n} & 15
+def load_bits{sz, x:(*u64), n:(ux)} = match (sz) {
+  {2} => load_bits_lo{sz, x, n} & 3
+  {4} => load_bits_lo{sz, x, n} & 15
   {sz if sz>=8} => load{*ty_u{sz}~~x, n}
 }
 
 
-def b_set{x:(*u64), n:(ux), v:(u1)} = {
+def store_bit{x:(*u64), n:(ux), v:(u1)} = {
   m:u64 = cast{u64,1}<<(n&63)
   p:u64 = load{x,n>>6}
   if (v) store{x,n>>6,p |  m}
   else   store{x,n>>6,p & ~m}
 }
 
-def b_setBatch{sz, x:(*u64), n:(ux), v} = match (sz) {
+def store_bits{sz, x:(*u64), n:(ux), v} = match (sz) {
   {4} => {
     x8:= *u8 ~~ x
     
@@ -53,57 +51,57 @@ def b_setBatch{sz, x:(*u64), n:(ux), v} = match (sz) {
     am:u64 = 64/sz
     w:u64 = load{x,n/am}
     sh:u64 = (n&(am-1)) * sz
-    w&= ~(ones{u64,sz}<<sh)
+    w&= ~(u64~~tail{sz} << sh)
     w|= (vc<<sh)
     store{x, n/am, w}
   }
 }
 
-def spreadBits{T==[32]u8, a:(u32)} = {
+def expand_bits{T==[32]u8, a:(u32)} = {
   def idxs = iota{32}
   b:= [8]u32**a
   c:= [32]u8~~b
-  d:= sel{[16]u8, c, make{[32]i8, idxs>>3 + bit{4, idxs}}}
+  d:= shuf{[16]u8, c, make{[32]i8, idxs>>3 + bit{4, idxs}}}
   e:= make{[32]u8, 1<<tail{3, idxs}}
   e == (d&e)
 }
 
-def spreadBits{T==[16]u8, a:(u16) if hasarch{'AARCH64'}} = {
+def expand_bits{T==[16]u8, a:(u16) if hasarch{'AARCH64'}} = {
   b:= sel{T, T~~[8]u16**a, make{[16]i8, iota{16}>=8}}
   andnz{b, make{T, 1<<(iota{16}&7)}}
 }
-def spreadBits{T==[16]u8, a:(u16) if hasarch{'X86_64'}} = {
+def expand_bits{T==[16]u8, a:(u16) if hasarch{'X86_64'}} = {
   b:= T~~[8]u16**a
-  exp:= T~~shuf{[4]i32, shuf16Lo{mzip{b,b,0}, 4b1100}, 4b1100}
+  exp:= T~~shuf{[4]i32, vec_shuffle16_lo{mzip{b,b,0}, tup{0,0,1,1}}, 0,0,1,1}
   (exp & make{T, 1<<(iota{16}&7)}) != T**0
 }
 
-def spreadBits{V=[k]T, a:A if k<=width{T} and quality{T}=='u'} = {
+def expand_bits{V=[k]T, a:A if k<=width{T} and quality{T}=='u'} = {
   b:= make{V, 1<<iota{k}}
   b == (b & V ~~ re_el{A, V}**a) # not just V**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
 }
 
 # vector with type V with each element being either all 0s or 1s
-def loadBatchBit{V=[k]T, x:(*u64), n:(ux)} = {
-  spreadBits{V, b_getBatchLo{k, x, n}}
+def load_expand_bits{V=[k]T, x:(*u64), n:(ux)} = {
+  expand_bits{V, load_bits_lo{k, x, n}}
 }
 
 # load bits starting at bit i, leaving garbage at the top. Only the bottom 57 bits are guaranteed correct; 58 and 60 will be correct if `i` is a multiple of it
-def loaduBitRaw{x:(*u64), i} = {
+def loadu_bits_raw{x:(*u64), i} = {
   loadu{*u64~~((*u8~~x) + (i>>3))} >> (i&7)
 }
-def loaduBit{x:(*u64), i, n} = {
+def loadu_bits{x:(*u64), i, n} = {
   assert{n<58 or ((n==58 or n==60) and (i%n == 0))}
-  loaduBitRaw{x, i}
+  loadu_bits_raw{x, i}
 }
-def loaduBitTrunc{x:(*u64), i, n if knum{n}} = truncBits{n, loaduBit{x, i, n}}
+def loadu_bits_trunc{x:(*u64), i, n if knum{n}} = trunc_bits{n, loadu_bits{x, i, n}}
 
 
-def loadBatchBit{T, x:(*u64), {...is}} = {
+def load_expand_bits{T, x:(*u64), {...is}} = {
   # def len = length{is}
   # def [count]_ = T
   # assert{count*len <= 64}
-  # bits:= b_getBatchLo{count*len, x, select{is,0}}
-  # @collect(i to len) spreadBits{T, truncBits{count, bits>>(i*count)}}
-  each{loadBatchBit{T, x, .}, is}
+  # bits:= load_bits_lo{count*len, x, select{is,0}}
+  # @collect(i to len) expand_bits{T, trunc_bits{count, bits>>(i*count)}}
+  each{load_expand_bits{T, x, .}, is}
 }

@@ -1,8 +1,5 @@
 t0g ← •MonoTime@
-#!build/obj2/for_build
-# todo:
-#   forcing bytecode/singeli/replxx directories to whatever's applicable
-#   cache warning messages
+# todo: forcing bytecode/singeli/replxx directories to whatever's applicable
 
 ⟨Spawn, WaitForOne⟩ ← ⟨⟩ •Import "fork.bqn"
 ⟨Serialize, Deserialize⟩ ← •Import "serialize.bqn"
@@ -59,7 +56,7 @@ opts ← ⟨
   ⟨1, "singeli",   0, "Enable Singeli usage"⟩
   ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
   
-  ⟨0, "usz", "32", "Size of array length fields in bits; 32 or 64 (default: 32)"⟩
+  ⟨0, "usz", "64", "Size of array length fields in bits; 32 or 64 (default: 64)"⟩
   ⟨1, "c",      0, "Disable some default flags"⟩
   ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
   ⟨1, "native", @, "Use '-march=native'"⟩
@@ -283,11 +280,13 @@ po ← { # parsed options
   
   singeliArch ⇐ @
   singeliCFlags ⇐ ⟨⟩
+  SingeliArchInfo ⇐ ! # takes arg of infer
   
   {
     ¬singeli? @;
     UpdateSubmodule singeliDir
     SingeliUtil ← {𝕨 •Import AtRoot singeliDir •file.At 𝕩}
+    SingeliArchInfo ↩ {⟨{native? ⟨⟩; singeliArch}, 𝕩⟩ SingeliUtil "arch.bqn"}
     singeliArch ↩ {
       truecc ∧ @≡GetOpt"arch"?
         archutil ← SingeliUtil "archutil.bqn"
@@ -300,9 +299,8 @@ po ← { # parsed options
     {
       arch≡"X86_64"?
         singeliArch∾↩ Uppercase ∊⟜"ssse3"‿"sse4.1"‿"sse4.2"‿"avx2"‿"bmi2"‿"pclmul"⊸/ has
-        ArchInfo ← {(⟨{native? ⟨⟩; singeliArch}, 𝕩⟩ SingeliUtil "arch.bqn").GetCFlags @}
-        singeliCFlags ↩ ArchInfo 1
-        {𝕊: Log "Note: inferred the following C flags:"∾∾' '⊸∾¨𝕩}⍟(loud ∧ ×∘≠) singeliCFlags (¬∘∊/⊣) ArchInfo 0
+        singeliCFlags ↩ (SingeliArchInfo 1).GetCFlags @
+        {𝕊: Log "Note: inferred the following C flags:"∾∾' '⊸∾¨𝕩}⍟(loud ∧ ×∘≠) singeliCFlags (¬∘∊/⊣) (SingeliArchInfo 0).GetCFlags @
       ;@
     }
   }
@@ -690,10 +688,10 @@ AddRule ← { 𝕊 cache‿cacheKey‿dst‿GetCMD‿disp‿deps:
   res
 }
 
-clangd ← {¬po.clangd? {_add⇐{𝕨𝔽_𝕣𝕩:@} ⋄ Files⇐⊣}; ⟨AtRoot⟩ •Import "clangd.bqn"}
+clangd ← {¬po.clangd? {_addC⇐{𝕨𝔽_𝕣𝕩:@} ⋄ AddSingeli⇐{𝕊:@} ⋄ SingeliInit⇐⊢ ⋄ CFiles⇐⊣}; ⟨AtRoot⟩ •Import "clangd.bqn"}
 
 MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
-  GetArgs clangd._add src
+  GetArgs clangd._addC src
   dst ← cache.File id∾".o"
   GetCMD ← { 𝕊:
     Init @
@@ -704,11 +702,11 @@ MakeCCInv ← { 𝕊 GetArgs‿Init‿cache‿id‿src‿customDeps: # src shoul
 }
 
 MakeSingeliInv ← { 𝕊 args‿Init‿cache‿id‿src‿customDeps: # src should be CBQN-base-dir-relative, so that cache doesn't store full paths
+  args clangd.AddSingeli src
   dst ← cache.File id∾".c"
   GetCMD ← { 𝕊:
     Init @
-    dep ← AtRoot cache.File id∾".d"
-    ⟨"singeli", rootDir, AtRoot dst, AtRoot po.singeliDir, args, AtRoot src, dep⟩
+    ⟨"singeli", rootDir, AtRoot dst, AtRoot po.singeliDir, args, AtRoot src⟩
   }
   AddRule ⟨cache, id, dst, GetCMD, •file.Name src, customDeps⟩
 }
@@ -734,7 +732,7 @@ cachedBin‿linkerCache ← {
     ⟨"src/jit/", "nvm.c"⟩
     ⟨"src/utils/", "ryu.c", "utf.c", "hash.c", "file.c", "mut.c", "each.c", "bits.c"⟩
   ⟩
-  cbqnSrc ↩ cbqnSrc clangd.Files "src"
+  cbqnSrc ↩ cbqnSrc clangd.CFiles "src"
   singeliMap ← 1↓¨ ({⊑ ({"X86_64":'x'; "AARCH64":'a'; "RV64":'g'; "NONE":'g'} po.arch) ∊ 𝕩}¨ ⊑¨)⊸/ ⟨
     "xa."‿"src/builtins/arithm.c"‿"monarith", "xa."‿"src/builtins/compare.c"‿"equal",
     "xa."‿"src/builtins/arithd.c"‿"dyarith",  "xa."‿"src/builtins/cmp.c"‿"cmp",
@@ -782,6 +780,7 @@ cachedBin‿linkerCache ← {
       (⊑"slow-pdep"<⊸∊ po.has) / ⟨"-c", "SLOW_PDEP=1"⟩
       {po.native? ⟨⟩; "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch}
     ⟩
+    clangd.SingeliInit po
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
     {𝕊: "Singeli-determined C arch: "∾•Repr po.singeliCFlags; @} _verboseLog @
     singeliObjs ↩ {MakeSingeliInv ⟨singeliArgs, {𝕊:UpdateSubmodule po.singeliDir}, singeliCache, 𝕩, "src/singeli/src/"•file.At 𝕩∾".singeli", (𝕩≡"dyarith")/⟨gaRule⟩⟩}¨ 1⊑¨singeliMap

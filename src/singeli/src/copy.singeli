@@ -6,7 +6,7 @@ include './bitops'
 def copyFromBits{V=[bulk]T, loadFn, rp, l:(u64)} = {
   def U = ty_u{V}
   
-  @maskedLoop{bulk}(sr in tup{'g',*T~~rp} over i to l) {
+  @for_masked{bulk}(sr in tup{'g',*T~~rp} over i to l) {
     x:= loadFn{U, i}
     sr{V~~(x & U ~~ V**1)}
   }
@@ -25,20 +25,20 @@ fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
   def ur = tern{hasarch{'AARCH64'}, 4, 1}
   
   if (X==R and R!=u1) {
-    if (hasarch{'X86_64'} and l<=bulk) storeBatch{rp, 0, loadBatch{xp, 0, RV}, maskAfter{l}}
+    if (hasarch{'X86_64'} and l<=bulk) store_narrow{rp, 0, load_widen{xp, 0, RV}, mask_first{l}}
     else emit{void, 'memcpy', r, x, l*(width{X}/8)}
   } else if (R==u64) {
     # show{'R==u64', X, R}
     assert{X==u8 or X==u16 or X==u32}
     # TODO could maybe read 256 bits and use unpack to write >256
-    @maskedLoop{bulk}(sr in tup{'g',rp}, x in tup{RV,xp} over l) sr{x | RV**(cbqn_c32Tag{}<<48)}
+    @for_masked{bulk}(sr in tup{'g',rp}, x in tup{RV,xp} over l) sr{x | RV**(cbqn_c32Tag{}<<48)}
   } else if (X==u1 and R==u1) {
     # show{'u1u1', X, R}
     def V64 = [vw/64]u64
-    @maskedLoop{vcount{V64}}(sr in tup{'g',rp}, x in tup{V64,xp} over cdiv{l,64}) sr{x}
+    @for_masked{vcount{V64}}(sr in tup{'g',rp}, x in tup{V64,xp} over cdiv{l,64}) sr{x}
   } else if (X==u1) {
     # show{'X==u1', X, R}
-    copyFromBits{[bulk]R, loadBatchBit{., xp, .}, r, l}
+    copyFromBits{[bulk]R, load_expand_bits{., xp, .}, r, l}
   } else if (R==u1) {
     # show{'R==u1', X, R}
     
@@ -48,16 +48,16 @@ fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
     def unr = if (hasarch{'X86_64'} and width{X}==16) 2 else max{8/bulk, 1}
     def bulk2 = bulk*unr
     xi:ux = 0
-    @forNZ (i to cdiv{l,bulk2}) {
-      b_setBatch{bulk2, rp, i, homMask{each{{i} => op{loadBatch{xp, xi+i, XV}}, iota{unr}}}}
+    @for_nz (i to cdiv{l,bulk2}) {
+      store_bits{bulk2, rp, i, hom_to_int{each{{i} => op{load_widen{xp, xi+i, XV}}, iota{unr}}}}
       xi+= unr
     }
   } else if (width{X}<=width{R}) {
     # show{'w{X}<=w{R}', X, R}
-    @muLoop{bulk,ur}(sr in tup{'g',rp}, x in tup{RV,xp} over l) sr{x}
+    @for_mu{bulk,ur}(sr in tup{'g',rp}, x in tup{RV,xp} over l) sr{x}
   } else {
     # show{'w{X}>w{R}', X, R}
-    @muLoop{bulk,ur}(sr in tup{'g',rp}, x in tup{XV,xp} over l) sr{x}
+    @for_mu{bulk,ur}(sr in tup{'g',rp}, x in tup{XV,xp} over l) sr{x}
   }
 }
 
@@ -73,7 +73,7 @@ fn copy_ubit{R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
   def RV = [bulk]R
   rp:= *R~~r
   
-  copyFromBits{RV, {T=[k]_, i} => spreadBits{T, loaduBitTrunc{*u64~~x0, xs+i*k, k}}, r, l}
+  copyFromBits{RV, {T=[k]_, i} => expand_bits{T, loadu_bits_trunc{*u64~~x0, xs+i*k, k}}, r, l}
   # }
 }
 

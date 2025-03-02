@@ -44,10 +44,10 @@ B num_squeeze(B x) {
   switch (xe) { default: UD;
     case el_bit: goto r_x;
     #if SINGELI_SIMD
-      case el_i8:  { or = avx2_squeeze_i8 (i8any_ptr (x), ia); if(or>       1) goto r_x; else goto mostBit; }
-      case el_i16: { or = avx2_squeeze_i16(i16any_ptr(x), ia); if(or>  I8_MAX) goto r_x; else goto mostI8; }
-      case el_i32: { or = avx2_squeeze_i32(i32any_ptr(x), ia); if(or> I16_MAX) goto r_x; else goto mostI16; }
-      case el_f64: { or = avx2_squeeze_f64(f64any_ptr(x), ia); if(-1==(u32)or) goto r_x; else goto mostI32; }
+      case el_i8:  { or = si_squeeze_i8 (i8any_ptr (x), ia); if(or>       1) goto r_x; else goto mostBit; }
+      case el_i16: { or = si_squeeze_i16(i16any_ptr(x), ia); if(or>  I8_MAX) goto r_x; else goto mostI8; }
+      case el_i32: { or = si_squeeze_i32(i32any_ptr(x), ia); if(or> I16_MAX) goto r_x; else goto mostI16; }
+      case el_f64: { or = si_squeeze_f64(f64any_ptr(x), ia); if(-1==(u32)or) goto r_x; else goto mostI32; }
     #else
       case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; or|= (u8)c;                        } if(or>      1) goto r_x; goto mostBit; }
       case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } if(or> I8_MAX) goto r_x; goto mostI8; }
@@ -70,7 +70,7 @@ B num_squeeze(B x) {
   if (xp==NULL) goto r_f;
   
   #if SINGELI_SIMD
-    or = avx2_squeeze_numB(xp, ia);
+    or = si_squeeze_numB(xp, ia);
     if (-2==(i32)or) goto r_x;
     if (-1==(i32)or) goto r_f64;
     goto mostI32;
@@ -118,8 +118,8 @@ B chr_squeeze(B x) {
   switch(xe) { default: UD;
     case el_c8: goto r_x;
     #if SINGELI_SIMD
-    case el_c16: { u32 t = avx2_squeeze_c16(c16any_ptr(x), ia); if (t==0) goto r_c8; else goto r_x; }
-    case el_c32: { u32 t = avx2_squeeze_c32(c32any_ptr(x), ia); if (t==0) goto r_c8; else if (t==1) goto r_c16; else if (t==2) goto r_x; else UD; }
+    case el_c16: { u32 t = si_squeeze_c16(c16any_ptr(x), ia); if (t==0) goto r_c8; else goto r_x; }
+    case el_c32: { u32 t = si_squeeze_c32(c32any_ptr(x), ia); if (t==0) goto r_c8; else if (t==1) goto r_c16; else if (t==2) goto r_x; else UD; }
     #else
     case el_c16: {
       u16* xp = c16any_ptr(x);
@@ -143,7 +143,7 @@ B chr_squeeze(B x) {
   B* xp = arr_bptr(x);
   if (xp!=NULL) {
     #if SINGELI_SIMD
-    u32 t = avx2_squeeze_chrB(xp, ia);
+    u32 t = si_squeeze_chrB(xp, ia);
     if      (t==0) goto r_c8;
     else if (t==1) goto r_c16;
     else if (t==2) goto r_c32;
@@ -169,10 +169,36 @@ B chr_squeeze(B x) {
   /*when known typed:*/ r_x:   return FL_SET(x, fl_squoze);
 }
 
-B any_squeeze(B x) {
+NOINLINE B int_squeeze_sorted(B x) {
+  usz xia = IA(x);
+  if (xia==0) {
+    already_squoze:;
+    return FL_SET(x, fl_squoze);
+  }
+  SGetU(x);
+  u8 x0e = selfElType_i32(o2iG(GetU(x, 0)));
+  u8 x1e = selfElType_i32(o2iG(GetU(x, xia-1)));
+  u8 xse = x0e>x1e? x0e : x1e;
+  u8 xe = TI(x,elType);
+  if (xe == xse) goto already_squoze;
+  Arr* ra;
+  switch (xse) { default: UD;
+    case el_i16: ra = (Arr*)cpyI16Arr(x); break;
+    case el_i8:  ra = (Arr*)cpyI8Arr (x); break;
+    case el_bit: ra = (Arr*)cpyBitArr(x); break;
+  }
+  return taga(FLV_SET(ra, fl_squoze));
+}
+
+NOINLINE B any_squeeze(B x) {
   assert(isArr(x));
-  if (FL_HAS(x,fl_squoze)) return x;
-  if (IA(x)==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type
+  if (FL_HAS(x, fl_squoze|fl_asc|fl_dsc)) {
+    if (FL_HAS(x, fl_squoze)) return x;
+    u8 xe = TI(x,elType);
+    if (elInt(xe)) return int_squeeze_sorted(x);
+    // could check for sorted character arrays (even from a TI(x,el_B) input) but sorted character arrays aren't worth it
+  }
+  if (IA(x)==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type?
   B x0 = IGetU(x, 0);
   if (isNum(x0)) return num_squeeze(x);
   else if (isC32(x0)) return chr_squeeze(x);

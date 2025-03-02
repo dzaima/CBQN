@@ -1,19 +1,19 @@
 def nvec{T} = isvec{T} and (width{T}==64 or width{T}==128)
 def nvec{T,w} = nvec{T} and elwidth{T}==w
-def nveci = genchk{nvec,      isint}
-def nvecs = genchk{nvec,   issigned}
-def nvecu = genchk{nvec, isunsigned}
-def nvecf = genchk{nvec,    isfloat}
+def {nveci,nvecs,nvecu,nvecf} = genchks{nvec}
 
 
-def nty{T} = {
+local def nty{T} = {
   def q = quality{T}
   merge{if (q=='i') 's' else q, fmtnat{width{T}}}
 }
-def nty{[_]T} = nty{T}
-def ntyp{S, ...S2, T if w128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
-def ntyp{S, ...S2, T if  w64{T}} = merge{S,      ...S2, '_', nty{T}}
-def ntyp0{S, T} = merge{S, '_', nty{T}}
+local def nty{[_]T} = nty{T}
+local def ntyp{S, ...S2, T if w128{T}} = merge{S, 'q', ...S2, '_', nty{T}}
+local def ntyp{S, ...S2, T if  w64{T}} = merge{S,      ...S2, '_', nty{T}}
+local def ntyp0{S, T} = merge{S, '_', nty{T}}
+local def eqqi{A, B} = isint{A} and isint{B} and quality{A}==quality{B} # equal quality integers
+
+def __neg{a:T if nvecu{T}} = T~~(-ty_s{T}~~a)
 
 def __lt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcltz', T}, a}
 def __le{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vclez', T}, a}
@@ -21,28 +21,39 @@ def __gt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgtz', T}, a}
 def __ge{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgez', T}, a}
 def __eq{a:T, 0 if nveci{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vceqz', T}, a}
 
-def addwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vaddl', T}, a, b}
-def subwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vsubl', T}, a, b}
-def mulwLo{a:T,b:T if w64i{T}}  = emit{el_d{T}, ntyp{'vmull', T}, a, b}
-def mulwHi{a:T,b:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmull_high', T}, a, b}
-def mulw  {a:T,b:T if w128{T}} = tup{mulwLo{half{a,0}, half{b,0}}, mulwHi{a,b}}
+local def widening_op{root, el} = { def extend _{lo, hi, lh} = {
+  def lo{a:T=[_]E, b:T if w64{T}  and el{E}} = emit{el_d{T}, ntyp{root, T}, a, b}
+  def hi{a:T=[_]E, b:T if w128{T} and el{E}} = emit{el_m{T}, ntyp0{merge{root,'_high'}, T}, a, b}
+  def lh{a:T=[_]E, b:T if w128{T} and el{E}} = tup{lo{half{a,0}, half{b,0}}, hi{a,b}}
+}}
+extend (widening_op{'vmull', {E} => isint{E} and width{E}<=32}){mulw, mulw_upper, mulw_split}
+extend (widening_op{'vaddl', isint}){addw, addw_upper, addw_split}
+extend (widening_op{'vsubl', isint}){subw, subw_upper, subw_split}
 
-def  shrn{a:T, s      if w128i{T} and elwidth{T}>8} = { def H=el_h{T}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
-def  shrm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
-def  shlm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a<<s) | (d & (mask of new zeroes))
-
-def bitBlend{f:T, t:T, m:M if nvec{T} and nvecu{M,elwidth{T}} and width{T}==width{M}} = emit{T, ntyp{'vbsl', T}, m, t, f}
-def homBlend{f:T, t:T, m:M if nvec{M}} = bitBlend{f, t, m}
+def shrn{a:T, s      if w128i{T} and elwidth{T}>8} = { def H=el_h{T}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
+def shrm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
+def shlm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a<<s) | (d & (mask of new zeroes))
 
 def addpw {              x:T if nveci{T} and elwidth{T}<=32} = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
 def addpwa{a:D==el_m{T}, x:T if nveci{T} and elwidth{T}<=32} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
+
+# narrowing add/subtract, high half
+local def narrowing_op{name} = { def extend _{lower, upper} = {
+  def lower{a:V, b:V if w128i{V}} = emit{el_h{V}, ntyp0{name, V}, a, b}
+  def upper{lo:L=[k]RE, a:V=[k]XE, b:V if w128i{V} and w64i{L} and eqqi{RE,XE}} = emit{[k*2]RE, ntyp0{merge{name, '_high'}, V}, lo, a, b}
+}}
+extend (narrowing_op{'vaddhn'}){addhn,addhn_upper}
+extend (narrowing_op{'vsubhn'}){subhn,subhn_upper}
+extend (narrowing_op{'vraddhn'}){raddhn,raddhn_upper} # & rounding variants
+extend (narrowing_op{'vrsubhn'}){rsubhn,rsubhn_upper}
+
+# pairwise min/max
+def minp{a:V, b:V if w128i{V}} = emit{V, ntyp{'vpmin', V}, a, b}
+def maxp{a:V, b:V if w128i{V}} = emit{V, ntyp{'vpmax', V}, a, b}
+
 def mla{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmla', T}, a, x, y} # a + x*y
 def mls{a:T, x:T, y:T if nvec{T}} = emit{T, ntyp{'vmls', T}, a, x, y} # a - x*y
 def rbit{x:T if nvecu{T,8}} = emit{T, ntyp{'vrbit', T}, x}
-def rev{(width{T}), x:[_]T} = x
-def rev{16, x:T if nveci{T} and elwidth{T}<16} = emit{T, ntyp{'vrev16', T}, x} # reverse the order of elements in each w-bit window
-def rev{32, x:T if nveci{T} and elwidth{T}<32} = emit{T, ntyp{'vrev32', T}, x}
-def rev{64, x:T if nveci{T} and elwidth{T}<64} = emit{T, ntyp{'vrev64', T}, x}
 def popc{x:T if nvecu{T,8}} = emit{T, ntyp{'vcnt', T}, x}
 def clz{x:T if nvecu{T} and elwidth{T}<=32} = emit{T, ntyp{'vclz', T}, x}
 def cls{x:T if nveci{T} and elwidth{T}<=32} = ty_u{T}~~emit{ty_s{T}, ntyp{'vcls', T}, x}
@@ -55,48 +66,41 @@ def vfold{F, x:T if nvec{T} and ~nveci{T,64} and same{F, min}} = fold_min{x}
 def vfold{F, x:T if nvec{T} and ~nveci{T,64} and same{F, max}} = fold_max{x}
 def vfold{F, x:T if nvec{T} and same{F, +}} = fold_add{x}
 
-def storeLow{ptr:*E, w, x:T=[_]E if nvec{T} and w<=64} = { def E=ty_u{w}; storeu{*E~~ptr, extract{re_el{E,T}~~x, 0}} }
-def storeLow{ptr:*E, w, x:T=[_]E if nvec{T} and w==width{T}} = store{*T~~ptr, 0, x}
-
-def loadLow{ptr:*V, w if w<=64} = { # implemented via a broadcast load
-  def L=re_el{ty_u{w}, V}
-  V ~~ emit{L, ntyp{'vld1', '_dup', L}, *ty_u{w}~~ptr}
+def store{ptr:*E, x:V=[_]E, vl if nvec{V} and vl*width{E}<=64} = {
+  def E=ty_u{vl*width{E}}
+  storeu{*E~~ptr, extract{re_el{E,V}~~x, 0}}
 }
-def loadLow{ptr:*V, (width{V})} = load{ptr}
+
+def load{V=[_]E, ptr:*E, vl if nvec{V} and vl*width{E}<=64} = { # implemented via a broadcast load
+  def U = ty_u{vl*width{E}}
+  def L = re_el{U, V}
+  V ~~ emit{L, ntyp{'vld1', '_dup', L}, *U~~ptr}
+}
+
+def store_blended_hom{p:*E, m:M=[k]_, v:V=[k]E if nveci{M,width{E}} and nvec{V}} = store{p, blend_hom{load{V, p}, v, m}}
 
 
 
-
-def undefPromote{T=[_]E, x:X=[_]E if w64{X} and w128{T}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
+def undef_promote{T=[_]E, x:X=[_]E if w64{X} and w128{T}} = emit{T, ntyp{'vcombine', X}, x, x} # arm_neon.h doesn't actually provide a way to do this in a 0-instruction way. ¯\_(ツ)_/¯
 def half{x:T, (0) if w128{T}} = emit{n_h{T}, ntyp0{'vget_low',  T}, x}
 def half{x:T, (1) if w128{T}} = emit{n_h{T}, ntyp0{'vget_high', T}, x}
 def pair{a:T, b:T if w64{T}} = emit{n_d{T}, ntyp0{'vcombine', T}, a, b}
-def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w64{D}  and nvec{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
-def copyLane{dst:D=[_]E, di, src:S=[_]E, si if w128{D} and nvec{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
-def broadcastSel{x:T, i if nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq','_lane'}, T}, x, i}
-def vshl{a:T, b:T, n if knum{n}} = emit{T, ntyp{'vext', T}, a, b, n}
-
-def zip{a:T, b:T, 0 if nvec{T}} = emit{T, ntyp{'vzip1', T}, a, b}
-def zip{a:T, b:T, 1 if nvec{T}} = emit{T, ntyp{'vzip2', T}, a, b}
+def copy_lane{dst:D=[_]E, di, src:S=[_]E, si if w64{D}  and nvec{S}} = emit{D, ntyp{'vcopy_lane', S}, dst, di, src, si}
+def copy_lane{dst:D=[_]E, di, src:S=[_]E, si if w128{D} and nvec{S}} = emit{D, ntyp{'vcopyq_lane', S}, dst, di, src, si}
+def broadcast_sel{x:T, i if nvec{T}} = emit{T, ntyp{'vdup', tern{w128{T},'_laneq','_lane'}, T}, x, i}
 
 def unzip{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vuzp1', T}, T~~x, T~~y}
 def unzip{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vuzp2', T}, T~~x, T~~y}
-def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is,   2*range{vcount{T}}}} = T~~unzip{x,y,0}
-def shufInd{x:T, y:T, {...is} if nvec{T,32} and same{is, 1+2*range{vcount{T}}}} = T~~unzip{x,y,1}
+def shuf_ind{x:T, y:T, {...is} if nvec{T,32} and same{is,   2*range{vcount{T}}}} = T~~unzip{x,y,0}
+def shuf_ind{x:T, y:T, {...is} if nvec{T,32} and same{is, 1+2*range{vcount{T}}}} = T~~unzip{x,y,1}
 
 def trn{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
 def trn{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
 
-def sel{L, x:T, i:I if lvec{L,16,8} and w128{T} and nvec{I, 8}} = re_el{eltype{T}, emit{I, ntyp{'vqtbl1',I}, re_el{eltype{I},x}, ty_u{i}}}
-def sel{{x0:T}, i:I} = sel{T, x0, i}
-def sel{{...xs}, i:I if length{xs}>=2 and length{xs}<=4 and allSame{each{type,xs}} and lvec{oneType{xs},16,8} and nvec{I, 8}} = {
-  def T = oneType{xs}
-  re_el{eltype{T}, emit{I, ntyp{merge{'unpacked_vqtbl',fmtnat{length{xs}}}, I}, ...each{reinterpret{[16]u8,.}, xs}, ty_u{i}}}
-}
+def sel{L, x:T, i:I if lvec{L,16,8} and w128{T} and nvec{I, 8}} = vec_select{eltype{L}, x, i}
+def sel{{...xs}, i:I if length{xs}>=1 and length{xs}<=4 and all_same{each{type,xs}} and lvec{one_type{xs},16,8} and nvec{I, 8}} = vec_select{xs, i}
 
 
-
-local def eqqi{A, B} = isint{A} and isint{B} and quality{A}==quality{B} # equal quality integers
 
 def cvt{T==f64, x:X=[k]_ if nveci{X,64}} = emit{[k]T, ntyp{'vcvt', '_f64', X}, x}
 def cvt{T==i64, x:X=[k]_ if nvecf{X,64}} = emit{[k]T, ntyp{'vcvt', '_s64', X}, x}
@@ -107,62 +111,75 @@ def widen{R=[_]RE, x:X=[_]XE if w64{X} and eqqi{RE,XE} and width{RE}> width{XE}*
 def widen{R=[rn]RE, x:X=[xn]XE if w64{X} and isfloat{RE}!=isfloat{XE} and width{RE}>width{XE}} = cvt{RE, widen{[rn]to_w{XE,width{RE}}, x}}
 def widen{R=[rn]RE, x:X=[xn]XE if w128{X} and xn>rn} = widen{R, half{x,0}}
 
-def narrow     {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2< width{E}} = narrow{T, undefPromote{el_s{X}, narrow{w_h{E}, x}}}
-def narrowTrunc{T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = emit{el_h{X}, ntyp0{'vmovn', X}, x}
-def narrow     {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = narrowTrunc{T, x}
-def narrow     {T, x:X=[_]E if w128{X} and isfloat{T}!=isfloat{E} and width{T}<width{E}} = narrow{T, cvt{to_w{T, width{E}}, x}}
+def narrow      {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2< width{E}} = narrow{T, undef_promote{el_s{X}, narrow{w_h{E}, x}}}
+def narrow_trunc{T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = emit{el_h{X}, ntyp0{'vmovn', X}, x}
+def narrow      {T, x:X=[_]E if w128{X} and eqqi{T,E} and width{T}*2==width{E}} = narrow_trunc{T, x}
+def narrow      {T, x:X=[_]E if w128{X} and isfloat{T}!=isfloat{E} and width{T}<width{E}} = narrow{T, cvt{to_w{T, width{E}}, x}}
 
-def narrowUpper{lowRes:L=[k]E, x:X if w64i{L} and w128{X} and el_d{L}==X} = emit{[k*2]E, ntyp0{'vmovn_high', X}, lowRes, x}
-def narrowPair{a:T=[_]E, b:T} = narrowUpper{narrow{w_h{E}, a}, b}
-def narrowPair{a:T=[_]E, b:T if isint{E}} = pack{a, b, 0}
+def narrow_upper{lowRes:L=[k]E, x:X if w64i{L} and w128{X} and el_d{L}==X} = emit{[k*2]E, ntyp0{'vmovn_high', X}, lowRes, x}
+def narrow_pair{a:T=[_]E, b:T if nvec{T}} = narrow_upper{narrow{w_h{E}, a}, b}
+def narrow_pair{a:T, b:T if nveci{T}} = pack{a, b, 0}
 
-def widenUpper{x:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmovl_high', T}, x}
-def widen{x:T if w128{T}} = tup{widen{el_m{T}, x}, widenUpper{x}}
+def widen_upper{x:T if w128i{T}} = emit{el_m{T}, ntyp0{'vmovl_high', T}, x}
+def widen{x:T if w128{T}} = tup{widen{el_m{T}, x}, widen_upper{x}}
 
-def bitAny{x:T} = fold_max{re_el{u32, x}}!=0
-def bitAll{x:T} = fold_min{re_el{u32, x}}==0xffff_ffff
+local def bit_any_lo64{x:V} = extract{re_el{u64,x}, 0} != 0
+local def hom_any_lo64{x:V} = extract{re_el{f64,x}, 0} != 0.0 # safe to use float comparison as homogeneity guarantees not hitting -0.0; https://lemire.me/blog/2025/01/20/checking-whether-an-arm-neon-register-is-zero/
+local def bit_all_lo64{x:V} = extract{re_el{i64,x}, 0} == -1 # no special hom_all_lo64 possible with float comparison
+local def min_pack{x} = re_el{u64, minp{...2**re_el{u32,x}}}
+local def max_pack{x} = re_el{u64, maxp{...2**re_el{u32,x}}}
+def any_bit{x:V if  w64{V}} = bit_any_lo64{x}
+def any_bit{x:V if w128{V}} = bit_any_lo64{max_pack{x}}
+def any_hom{x:V if  w64{V}} = hom_any_lo64{x}
+def any_hom{x:V if w128{V}} = hom_any_lo64{max_pack{x}}
+def all_bit{x:V if  w64{V}} = bit_all_lo64{x}
+def all_bit{x:V if w128{V}} = bit_all_lo64{min_pack{x}}
 
-def topAny{x:T if nvec{T}} = fold_min{ty_s{x}}<0
-def topAll{x:T if nvec{T}} = fold_max{ty_s{x}}<0
-def homAny{x:T if nvec{T}} = bitAny{x}
-def homAll{x:T if nvec{T}} = bitAll{x}
+def all_hom{x:V if nvec{V}} = all_bit{x}
+def all_hom{x:V==[16]u8} = ~hom_any_lo64{subhn{re_el{u16,x}==0, re_el{u16,x}}}
+def all_hom{x:V if w128{V} and elwidth{V}>=16} = ~hom_any_lo64{subhn{[8]u16**16r2b1, [8]u16~~x}}
+def any_hom{x:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{narrow{u8,[8]u16~~x}} # narrow probably better than maxp
+def any_hom{a:V, b:V if w128{V} and elwidth{V}>=16} = hom_any_lo64{addhn{re_el{u16,a}, re_el{u16,b}}} # re_el to try to avoid https://github.com/llvm/llvm-project/issues/125611 in some cases
+
+def any_top{x:V if nvec{V}} = fold_min{ty_s{x}}<0
+def all_top{x:V if nvec{V}} = fold_max{ty_s{x}}<0
 
 
-def homMask{x:T=[k]E if nvecu{T} and width{E}>=k} = {
-  truncBits{k, fold_add{x & make{T, 1<<iota{k}}}}
+
+local def all_type{G, vs} = all{match { {x:T}=>G{T}; {_}=>0 }, vs}
+def hom_to_int{...vs if all_type{nvec,vs} and not all_type{nvecu,vs}} = hom_to_int{...each{ty_u, vs}}
+
+def hom_to_int{x:V=[k]E if nvecu{V} and width{E}>=k} = {
+  trunc_bits{k, fold_add{x & make{V, 1<<iota{k}}}}
 }
-def homMask{x:T=[16]E if width{E}==8} = {
-  t:= [8]u16~~sel{[16]u8, x, make{[16]u8, 0,8,1,9,2,10,3,11,4,12,5,13,6,14,7,15}}
+def hom_to_int{x:V==[16]u8} = {
+  t:= [8]u16~~sel{[16]u8, x, make{[16]u8, tr_iota{3,0,1,2}}}
   fold_add{t & make{[8]u16, (1<<iota{8})*0x0101}}
 }
-def homMask{a:T,b:T=[16]E if width{E}==8} = {
+def hom_to_int{a:V,b:V==[16]u8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
   s:= make{[16]u8, (range{16}>>2) | ((range{16}&3)<<2)}
-  # fold_add{addpw{addpw{addp{ty_u{a}&m, ty_u{b}&m}}}<<make{[4]u32,iota{4}*8}}
-  fold_add{[4]u32~~sel{[16]u8, addp{ty_u{a}&m, ty_u{b}&m}, s}}
+  # fold_add{addpw{addpw{addp{a&m, b&m}}}<<make{[4]u32,iota{4}*8}}
+  fold_add{[4]u32~~sel{[16]u8, addp{a&m, b&m}, s}}
   
   # def {l,h} = each{{i} => sel{tup{a,b}, make{[16]u8, ((range{16}&3)<<3) + (range{16}>>2) + i}}, tup{0, 4}}
   # t:= shrm{l, 4, h} & make{[16]u8, (1<<(range{16}>>2)) * 0x11}
   # fold_add{[4]u32~~t}
 }
-def homMask{a:T,b:T,c:T,d:T=[16]E if width{E}==8} = {
+def hom_to_int{a:V,b:V,c:V,d:V==[16]u8} = {
   m:= make{[16]u8, 1<<(iota{16}&7)}
-  t1:= addp{ty_u{a}&m, ty_u{b}&m}
-  t2:= addp{ty_u{c}&m, ty_u{d}&m}
+  t1:= addp{a & m, b & m}
+  t2:= addp{c & m, d & m}
   t3:= addp{t1, t2}
   extract{[2]u64~~addp{t3,t3},0}
 }
-def homMask{...as={a0:[_]E, _, ..._} if width{E}>=32} = homMask{...each{{i}=>narrowPair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
-def homMask{a:T,b:T=[k]E if k*2<=width{E}} = {
-  truncBits{k*2, fold_add{shrm{a,width{E}-k,b} & make{T, (1<<iota{k}) | (1<<(iota{k}+k))}}}
+def hom_to_int{...as={a0:V=[_]E, _, ..._} if w128u{V} and width{E}>=32} = hom_to_int{...each{{i}=>narrow_pair{select{as,i*2},select{as,i*2+1}}, iota{length{as}/2}}}
+def hom_to_int{a:V,b:V=[k]E if nvecu{V} and k*2<=width{E}} = {
+  trunc_bits{k*2, fold_add{shrm{a,width{E}-k,b} & make{V, (1<<iota{k}) | (1<<(iota{k}+k))}}}
 }
 
-def andAllZero{x:T, y:T if nveci{T}} = ~bitAny{x&y}
+def and_bit_none{x:T, y:T if nveci{T}} = ~any_bit{x&y}
 
-def homMaskX{a:T=[k]E if E!=u64} = {
-  def h = width{E}/2
-  tup{h, truncBits{k*h, extract{[1]u64~~shrn{el_m{T}~~a, h}, 0}}}
-}
-
-
-def homMaskStoreF{p:*T, m:M, v:T if nveci{M} and nvec{T,elwidth{M}}} = store{p, 0, homBlend{load{p}, v, m}}
+def hom_to_int_ext{a:V=[_]E if w128u{V}} = tup{width{E}/2, extract{[1]u64~~narrow_trunc{w_h{E}, a}, 0}} # E==u8 fully handled by the below cases
+def hom_to_int_ext{a:V=[_]E if w64u{V}} = tup{width{E}, extract{[1]u64~~a, 0}}
+def hom_to_int_ext{a:([16]u8)} = tup{4, extract{[1]u64~~shrn{re_el{u16,a}, 4}, 0}}

@@ -219,8 +219,8 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
 
 
 // fast special-case implementations
-extern void (*const si_select_cells_bit_lt64)(uint64_t*,uint64_t*,uint32_t,uint32_t,uint32_t); // from fold.c (fold.singeli)
-static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind {leaf? <∘⊑; ⊏}⎉¯k x; TODO probably can share some parts with takedrop_highrank and/or call ⊏?
+B select_cells_single(usz ind, B x, usz cam, usz l, usz csz, bool leaf); // from select.c
+static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind {leaf? <∘⊑; ⊏}⎉¯k x
   ur xr = RNK(x);
   assert(xr>1 && k<xr);
   usz* xsh = SH(x);
@@ -228,58 +228,15 @@ static NOINLINE B select_cells(usz ind, B x, usz cam, usz k, bool leaf) { // ind
   usz l = xsh[k];
   assert(0<=ind && ind<l);
   assert(cam*l*csz == IA(x));
-  Arr* ra;
-  usz take = leaf? 1 : csz;
-  if (l==1 && take==csz) {
-    ra = cpyWithShape(incG(x));
-    arr_shErase(ra, 1);
-  } else {
-    u8 xe = TI(x,elType);
-    u8 ewl= elwBitLog(xe);
-    u8 xl = leaf? ewl : multWidthLog(csz, ewl);
-    usz ria = cam*take;
-    if (xl>=7 || (xl<3 && xl>0)) { // generic case
-      MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
-      usz jump = l * csz;
-      usz xi = take*ind;
-      usz ri = 0;
-      for (usz i = 0; i < cam; i++) {
-        mut_copyG(rm, ri, x, xi, take);
-        xi+= jump;
-        ri+= take;
-      }
-      ra = mut_fp(rm);
-    } else if (xe==el_B) {
-      assert(take == 1);
-      SGet(x)
-      HArr_p rp = m_harrUv(ria);
-      for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*l+ind);
-      NOGC_E; ra = (Arr*)rp.c;
-    } else {
-      void* rp = m_tyarrlbp(&ra, ewl, ria, el2t(xe));
-      void* xp = tyany_ptr(x);
-      switch(xl) {
-        case 0:
-          #if SINGELI
-          if (l < 64) si_select_cells_bit_lt64(xp, rp, cam, l, ind);
-          else
-          #endif
-          for (usz i=0; i<cam; i++) bitp_set(rp, i, bitp_get(xp, i*l+ind));
-          break;
-        case 3: PLAINLOOP for (usz i=0; i<cam; i++) ((u8* )rp)[i] = ((u8* )xp)[i*l+ind]; break;
-        case 4: PLAINLOOP for (usz i=0; i<cam; i++) ((u16*)rp)[i] = ((u16*)xp)[i*l+ind]; break;
-        case 5: PLAINLOOP for (usz i=0; i<cam; i++) ((u32*)rp)[i] = ((u32*)xp)[i*l+ind]; break;
-        case 6: PLAINLOOP for (usz i=0; i<cam; i++) ((f64*)rp)[i] = ((f64*)xp)[i*l+ind]; break;
-      }
-    }
-  }
+  B r = select_cells_single(ind, x, cam, l, csz, leaf);
+  Arr* ra = a(r);
   usz* rsh = arr_shAlloc(ra, leaf? k : xr-1);
   if (rsh) {
     shcpy(rsh, xsh, k);
     if (!leaf) shcpy(rsh+k, xsh+k+1, xr-1-k);
   }
   decG(x);
-  return taga(ra);
+  return r;
 }
 
 static void set_column_typed(void* rp, B v, u8 e, ux p, ux stride, ux n) { // may write to all elements 0 ≤ i < stride×n, and after that too for masked stores
@@ -335,16 +292,16 @@ static NOINLINE B shift_cells(B f, B x, usz cam, usz csz, u8 e, u8 rtid) { // »
   return mut_fcd(r, x);
 }
 
-static B allBit(bool b, usz n) {
-  return taga(arr_shVec(b ? allOnes(n) : allZeroes(n)));
+static Arr* allBit(bool b, usz n) {
+  return b ? allOnes(n) : allZeroes(n);
 }
 static NOINLINE Arr* match_cells(bool ne, B w, B x, ur wr, ur xr, ur k, usz len) {
   usz* wsh = SH(w);
   if (wr!=xr || (wr>k && !eqShPart(wsh+k, SH(x)+k, wr-k))) {
-    return a(allBit(ne, len));
+    return allBit(ne, len);
   }
   usz csz = shProd(wsh, k, wr);
-  if (csz==0) return a(allBit(!ne, len));
+  if (csz==0) return allBit(!ne, len);
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   if (we>el_c32 || xe>el_c32) return NULL;
@@ -459,7 +416,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
   usz* xsh = SH(x);
   usz cam = shProd(xsh, 0, k); // from k>0 this will always include at least one item of shape; therefore, cam≡0 → IA(x)≡0 and IA(x)≢0 → cam≢0
   if (isFun(f)) {
-    u8 rtid = v(f)->flags-1;
+    u8 rtid = RTID(f);
     switch(rtid) {
       case n_ltack: case n_rtack:
         return x;
@@ -476,7 +433,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
         return select_cells(0, x, cam, k, true);
       case n_couple: {
         Arr* r = cpyWithShape(x); xsh=PSH(r);
-        if (xr==UR_MAX) thrF("≍%c: Result rank too large (%i≡=𝕩)", chr, xr);
+        if (xr==UR_MAX) thrF("≍%U 𝕩: Result rank too large (%i≡=𝕩)", chr==U'˘'? "˘" : "⎉𝕘", xr);
         ShArr* rsh = m_shArr(xr+1);
         shcpy(rsh->a, xsh, k);
         rsh->a[k] = 1;
@@ -530,7 +487,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
         usz l = xsh[k];
         if (l <= 1) {
           usz ia = l*cam;
-          Arr* r = rtid==n_memberOf? allOnes(ia) : allZeroes(ia);
+          Arr* r = allBit(rtid==n_memberOf, ia);
           usz* rsh = arr_shAlloc(r, k+1);
           shcpy(rsh, xsh, k+1);
           decG(x); return taga(r);
@@ -541,13 +498,13 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
     
     if (TY(f) == t_md1D) {
       Md1D* fd = c(Md1D,f);
-      u8 rtid = fd->m1->flags-1;
+      u8 rtid = PRTID(fd->m1);
       switch(rtid) {
         case n_const: f=fd->f; goto const_f;
         case n_cell: cr-= cr>0; return for_cells_c1(fd->f, xr, cr, xr-cr, x, U'˘');
         case n_fold: if (cr != 1) break; // else fall through
         case n_insert: if (cr>0 && isFun(fd->f)) {
-          u8 frtid = v(fd->f)->flags-1;
+          u8 frtid = RTID(fd->f);
           if (frtid==n_join && rtid==n_insert) return insert_cells_join(x, xsh, cr, k);
           usz m = xsh[k];
           if (m==0) return insert_cells_identity(x, fd->f, xsh, xr, k, rtid);
@@ -581,7 +538,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
           usz m = xsh[k];
           if (m<=1 || IA(x)==0) return x;
           if (!isFun(fd->f)) break;
-          u8 frtid = v(fd->f)->flags-1;
+          u8 frtid = RTID(fd->f);
           if (frtid==n_rtack) return x;
           if (TI(x,elType)==el_bit && (isPervasiveDyExt(fd->f)||frtid==n_ltack)
               && 1==shProd(xsh, k+1, xr)) {
@@ -590,7 +547,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
           break;
         }
         case n_undo: if (isFun(fd->f)) {
-          u8 frtid = v(fd->f)->flags-1;
+          u8 frtid = RTID(fd->f);
           if (frtid==n_couple && cr!=0 && xsh[k]==1) {
             assert(xr>=2);
             if (xr==2) return C1(shape, x);
@@ -604,7 +561,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
       }
     } else if (TY(f) == t_md2D) {
       Md2D* fd = c(Md2D,f);
-      u8 rtid = fd->m2->flags-1;
+      u8 rtid = PRTID(fd->m2);
       if (rtid==n_before && !isCallable(fd->f)) return for_cells_SA(fd->g, inc(fd->f), x, cr, xr, chr);
       if (rtid==n_after  && !isCallable(fd->g)) return for_cells_AS(fd->f, x, inc(fd->g), cr, xr, chr);
     }
@@ -707,7 +664,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr 
   usz* wsh=SH(w); usz cam=shProd(wsh,0,wk);
   if (cam==0) return rank2_empty(f, w, wk, x, 0, chr);
   if (isFun(f)) {
-    u8 rtid = v(f)->flags-1;
+    u8 rtid = RTID(f);
     switch (rtid) {
       case n_ltack: dec(x); return w;
       case n_rtack: return const_cells(w, wk, wsh, x, chr);
@@ -739,28 +696,33 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
   usz* xsh=SH(x); usz cam=shProd(xsh,0,xk);
   if (cam==0) return rank2_empty(f, w, 0, x, xk, chr);
   if (isFun(f)) {
-    u8 rtid = v(f)->flags-1;
+    u8 rtid = RTID(f);
     switch(rtid) {
       case n_rtack: dec(w); return x;
       case n_ltack: return const_cells(x, xk, xsh, w, chr);
       case n_select:
-        if (isArr(w) && RNK(w)==1 && xcr==1) { // TODO handle RNK(w)!=1
+        if (isArr(w) && xcr==1) {
           if (!TI(w,arrD1)) {
             w = num_squeezeChk(w);
             if (!TI(w,arrD1)) break;
           }
           assert(xr > 1);
-          ux wia = IA(w);
-          ShArr* rsh = m_shArr(xr);
+          ur wr = RNK(w);
+          if (wr == 0) {
+            usz ind = WRAP(o2i64(IGetU(w,0)), xsh[xk], break);
+            decG(w);
+            return select_cells(ind, x, cam, xk, false);
+          }
+          ur rr = xk+wr;
+          ShArr* rsh = m_shArr(rr);
           shcpy(rsh->a, xsh, xk);
-          rsh->a[xk] = wia;
+          shcpy(rsh->a+xk, SH(w), wr);
           Arr* r = customizeShape(select_rows_B(x, shProd(xsh,xk,xr), cam, w));
-          arr_shSetUG(r, xr, rsh);
-          return taga(r);
+          return taga(arr_shSetUG(r, rr, rsh));
         }
         if (isF64(w) && xcr>=1) {
           usz l = xsh[xk];
-          return select_cells(WRAP(o2i64(w), l, thrF("⊏: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
+          return select_cells(WRAP(o2i64(w), l, thrF("𝕨⊏𝕩: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, false);
         }
         break;
       case n_couple: if (RNK(x)==1) {
@@ -770,7 +732,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
       } break;
       case n_pick: if (isF64(w) && xcr==1 && TI(x,arrD1)) {
         usz l = xsh[xk];
-        return select_cells(WRAP(o2i64(w), l, thrF("⊑: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, true);
+        return select_cells(WRAP(o2i64(w), l, thrF("𝕨⊑𝕩: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, cam, xk, true);
       } break;
       case n_shifta: case n_shiftb: if (isAtm(w)) {
         if (IA(x)==0) return x;
@@ -849,7 +811,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w F⎉wcr�
   usz cam0 = 1;
   for (usz i = 0; i < k; i++) {
     usz wl = wsh[i], xl = xsh[i];
-    if (wl != xl) thrF("%c: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", chr, w, x, k);
+    if (wl != xl) thrF("𝕨%c𝕩: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", chr, w, x, k);
     cam0*= wsh[i];
   }
   usz ext = shProd(zsh, k, zk);
@@ -859,7 +821,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w F⎉wcr�
   
   if (isFun(f)) {
     if (wk==xk) {
-      u8 rtid = v(f)->flags-1;
+      u8 rtid = RTID(f);
       if (rtid==n_rtack) { decG(w); return x; }
       if (rtid==n_ltack) { decG(x); return w; }
       if (rtid==n_feq || rtid==n_fne) {
@@ -880,7 +842,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w F⎉wcr�
       return c2(f, w, x);
     }
   } else if (!isMd(f)) {
-    dec(xkM? w : x);
+    decG(xkM? w : x);
     return const_cells(xkM? x : w, zk, zsh, inc(f), chr);
   }
   generic:;

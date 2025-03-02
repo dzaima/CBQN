@@ -24,6 +24,11 @@ static NOINLINE void generic_grade(B x, usz ia, B r, i32* rp, void (*fn)(BI32p*,
   vfor (usz i = 0; i < ia; i++) rp[i] = tmp[i].v;
   TFREE(tmp);
 }
+static bool q_nan(B x) {
+  assert(isNum(x));
+  double f = o2fG(x);
+  return f!=f;
+}
 
 #define GRADE_UD(U,D) U
 #include "grade.h"

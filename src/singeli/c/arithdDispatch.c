@@ -308,7 +308,7 @@ extern void (*const orAAu_bit_bit_bit)(void*,void*,void*,u64); // used in bits.c
 
 DyTableAA* dyTableAAFor(B f) {
   assert(isFun(f));
-  switch(v(f)->flags-1) { default: return NULL;
+  switch(RTID(f)) { default: return NULL;
     case n_add:   return &addDyTableAA;
     case n_sub:   return &subDyTableAA;
     case n_mul:   return &mulDyTableAA;
@@ -321,7 +321,7 @@ DyTableAA* dyTableAAFor(B f) {
 
 DyTableSA* dyTableSAFor(B f, bool atomChar) {
   assert(isFun(f));
-  switch(v(f)->flags-1) { default: return NULL;
+  switch(RTID(f)) { default: return NULL;
     case n_add:   return atomChar? &addDyTableCA : &addDyTableNA;
     case n_sub:   return atomChar? &subDyTableCA : &subDyTableNA;
     case n_mul:   return atomChar? NULL : &mulDyTableNA;
@@ -332,7 +332,7 @@ DyTableSA* dyTableSAFor(B f, bool atomChar) {
 }
 DyTableSA* dyTableASFor(B f, bool atomChar) {
   assert(isFun(f));
-  switch(v(f)->flags-1) { default: return NULL;
+  switch(RTID(f)) { default: return NULL;
     case n_add:   return atomChar? &addDyTableCA : &addDyTableNA;
     case n_sub:   return atomChar? &subDyTableAC : &subDyTableAN;
     case n_mul:   return atomChar? NULL : &mulDyTableNA;

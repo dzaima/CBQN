@@ -8,9 +8,9 @@
 /*    sfns.c*/A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") A(transp,"⍉") \
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
 /*   sysfn.c*/M(iPureKeep,"•internal.PureKeep") \
-/* everything before the definition of •Type is defined to be pure, and everything after is not */ \
+/* everything before the definition of •Type is defined to be pure, and everything after is not */ M(type,"•Type") \
+/*   sysfn.c*/M(decp,"•Decompose") M(repr,"•Repr") M(parseFloat,"•ParseFloat") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") \
 /*   sysfn.c*/A(invalidFn, "(invalid fn)") A(grLen,"•GroupLen") D(grOrd,"•GroupOrd") A(compObj, "•CompObj") A(fill,"•FillFn") M(sys,"•getsys") M(primInd,"•PrimInd") M(glyph,"•Glyph") \
-/*   sysfn.c*/M(type,"•Type") M(decp,"•Decompose") M(repr,"•Repr") M(parseFloat,"•ParseFloat") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") \
 /*   sysfn.c*/A(sh,"•SH") M(fromUtf8,"•FromUTF8") M(toUtf8,"•ToUTF8") M(currentError,"•CurrentError") D(cmp,"•Cmp") A(hash,"•Hash") M(unixTime,"•UnixTime")\
 /*   sysfn.c*/M(monoTime,"•MonoTime") M(delay,"•Delay") M(makeRand,"•MakeRand") M(exit,"•Exit") M(getLine,"•GetLine") \
 /*   sysfn.c*/D(nGet,"•ns.Get") D(nHas,"•ns.Has") M(nKeys,"•ns.Keys") \
@@ -21,7 +21,7 @@
 /*internal.c*/M(itype,"•internal.Type") M(elType,"•internal.ElType") M(refc,"•internal.Refc") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
 /*internal.c*/M(heapDump,"•internal.HeapDump") M(internalGC,"•internal.GC") M(heapStats,"•internal.HeapStats") A(iObjFlags,"•internal.ObjFlags") \
 /*internal.c*/D(eequal,"•internal.EEqual") M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") \
-/*internal.c*/A(internalTemp,"•internal.Temp") M(iHasFill,"•internal.HasFill") M(iKeep,"•internal.Keep") \
+/*internal.c*/A(internalTemp,"•internal.Temp") M(iHasFill,"•internal.HasFill") M(iKeep,"•internal.Keep") D(iProperties,"•internal.Properties") \
 /*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare") \
 /*  arithd.c*/D(hypot,"•math.Hypot") D(comb,"•math.Comb") D(gcd,"•math.GCD") D(lcm,"•math.LCM") D(atan2,"•math.Atan2") D(atan2ix,"•math.Atan2⁼") D(atan2iw,"•math.Atan2˜⁼") \
 /*  arithm.c*/M(sin,"•math.Sin") M(cos,"•math.Cos") M(tan,"•math.Tan") M(asin,"•math.Asin") M(acos,"•math.Acos") M(atan,"•math.Atan") \
@@ -55,13 +55,6 @@ enum PrimNumbers {
 };
 extern GLOBAL FC1 rt_invFnRegFn, rt_invFnSwapFn;
 
-
-#ifdef RT_WRAP
-#define Q_BI(X, T) ({ B x_ = (X); isFun(x_) && v(x_)->flags-1 == n_##T; })
-#else
-#define Q_BI(X, T) ((X).u == bi_##T.u)
-#endif
-
 enum PrimFns { pf_none,
   #define F(N,X) pf_##N,
   FOR_PFN(F,F,F)
@@ -81,23 +74,16 @@ static const i32 firstImpurePFN = pf_type;
 static const i32 firstImpurePM1 = pm1_timed;
 static const i32 firstImpurePM2 = pm2_while;
 
-static inline bool isImpureBuiltin(B x) {
-  if (isFun(x)) return !v(x)->extra || v(x)->extra>=firstImpurePFN;
-  if (isMd1(x)) return !v(x)->extra || v(x)->extra>=firstImpurePM1;
-  if (isMd2(x)) return !v(x)->extra || v(x)->extra>=firstImpurePM2;
-  return false;
-}
-
 // these assume x is a function
-static inline bool isPervasiveDy (B x) { return (u8)(v(x)->flags-1) <= n_ge; }
-static inline bool isPervasiveMon(B x) { return (u8)(v(x)->flags-1) <= n_stile; }
+static inline bool isPervasiveDy (B x) { return (u8)RTID(x) <= n_ge; }
+static inline bool isPervasiveMon(B x) { return (u8)RTID(x) <= n_stile; }
 
 static bool isPervasiveDyExt(B x) {
   assert(isFun(x));
   if (isPervasiveDy(x)) return true;
   if (TY(x)==t_md1D) {
     Md1D* d = c(Md1D, x);
-    if (d->m1->flags-1 == n_swap && isFun(d->f)) return isPervasiveDy(d->f);
+    if (PRTID(d->m1) == n_swap && isFun(d->f)) return isPervasiveDy(d->f);
   }
   return false;
 }
@@ -107,7 +93,7 @@ static bool toConstant(B x, B* out) { // doesn't consume x; if possible, writes 
   if (TY(x) == t_md1D) {
     Md1D* d = c(Md1D,x);
     Md1* m1 = d->m1;
-    if (PTY(m1)==t_md1BI && m1->flags-1 == n_const) { *out = inc(d->f); return true; }
+    if (PTY(m1)==t_md1BI && PRTID(m1) == n_const) { *out = inc(d->f); return true; }
   }
   return false;
 }

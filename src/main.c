@@ -232,7 +232,7 @@ static NOINLINE i64 readInt(char** p) {
       if (i<=i0) break; // in case the above code fails to progress forward, at least don't get in an infinite loop
     }
     end:
-    dec(charObj);
+    decG(charObj);
     popCatch();
   }
   B allNsFields(void);
@@ -365,7 +365,7 @@ static NOINLINE i64 readInt(char** p) {
       if (failedCmd) goto not_cmd;
     }
     
-    dec(inpB);
+    decG(inpB);
     popCatch();
   }
   void complete_replxx(const char* inp, replxx_completions* res, int* dist, void* data) {
@@ -991,7 +991,7 @@ int main(int argc, char* argv[]) {
             case 'o': { repl_init(); REQARG(o);
               B r = gsc_exec_inplace(utf8Decode0(argv[i++]), "(-o)", emptySVec());
               if (isAtm(r) || RNK(r)!=1) thrM("(-o): Value to print must be a string");
-              printsB(r); dec(r);
+              printsB(r); decG(r);
               printf("\n");
               break;
             }

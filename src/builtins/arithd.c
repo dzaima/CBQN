@@ -141,7 +141,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
   #define GC2f(SYMB, NAME, EXPR, DECOR, INT_SA, INT_AS, INT_AA, FLT_SAI, ANY_AS) B NAME##_c2_arr(B t, B w, B x) { \
     if (isArr(w)|isArr(x)) { B r;                                 \
       if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                  \
-        if (!eqShPart(SH(w), SH(x), RNK(w))) thrF(SYMB ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+        if (!eqShPart(SH(w), SH(x), RNK(w))) thrF("𝕨" SYMB "𝕩: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
         usz ia = IA(x);                                           \
         u8 we = TI(w,elType);                                     \
         u8 xe = TI(x,elType);                                     \
@@ -168,7 +168,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
       }                                                           \
       P2(NAME)                                                    \
     }                                                             \
-    thrM(SYMB ": Unexpected argument types");                     \
+    thrM("𝕨" SYMB "𝕩: Unexpected argument types");                \
   }
   GC2f("÷", div  , w.f/(x.f+0),
     , /*INT_SA*/
@@ -284,7 +284,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     #define AR_I_AA(CHR, NAME, EXPR, BIT, EXTRA) NOINLINE B NAME##_AA(B t, B w, B x) { \
       ur wr=RNK(w); usz* xsh=SH(x);                              \
       ur xr=RNK(x); usz* wsh=SH(w); ur mr=wr<xr?wr:xr;           \
-      if (!eqShPart(wsh, xsh, mr)) thrF(CHR ": Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
+      if (!eqShPart(wsh, xsh, mr)) thrF("𝕨"CHR "𝕩: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
       if (wr!=xr) {                                              \
         if (TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0) return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
         else goto bad;                                           \
@@ -334,7 +334,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
         i32* xp = i32any_ptr(x);
         for (usz i = 0; i < wia; i++) {
           rp[i] = (u32)((i32)wp[i] - (i32)xp[i]);
-          if (rp[i]>CHR_MAX) thrM("-: Invalid character"); // safe - see add
+          if (rp[i]>CHR_MAX) thrM("𝕨-𝕩: Invalid character"); // safe - see add
         }
         goto dec_ret;
       }
@@ -369,7 +369,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
         u32* rp; r = m_c32arrc(&rp, x);
         for (usz i = 0; i < xia; i++) {
           rp[i] = (u32)(xp[i]+(i32)wv);
-          if (rp[i]>CHR_MAX) thrM("+: Invalid character"); // safe to only check this as wv already must be below CHR_MAX, which is less than U32_MAX/2
+          if (rp[i]>CHR_MAX) thrM("𝕨+𝕩: Invalid character"); // safe to only check this as wv already must be below CHR_MAX, which is less than U32_MAX/2
         }
         goto dec_ret;
       }
@@ -407,15 +407,15 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
 #define AR_I_SCALAR(CHR, NAME, EXPR, MORE) B NAME##_c2(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(EXPR); \
   MORE; AR_I_TO_ARR(NAME)                      \
-  thrM(CHR ": Unexpected argument types");     \
+  thrM("𝕨"CHR "𝕩: Unexpected argument types"); \
 }
 
 AR_I_SCALAR("+", add, w.f+x.f, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cG(w)+o2i64(x)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
-  if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cG(x)+o2i64(w)); if(r>CHR_MAX)thrM("+: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cG(w)+o2i64(x)); if(r>CHR_MAX)thrM("𝕨+𝕩: Invalid character"); return m_c32((u32)r); }
+  if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cG(x)+o2i64(w)); if(r>CHR_MAX)thrM("𝕨+𝕩: Invalid character"); return m_c32((u32)r); }
 });
 AR_I_SCALAR("-", sub, w.f-x.f, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cG(w)-o2i64(x)); if(r>CHR_MAX)thrM("-: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cG(w)-o2i64(x)); if(r>CHR_MAX)thrM("𝕨-𝕩: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
 })
 AR_I_SCALAR("×", mul, w.f*x.f, {})
@@ -431,7 +431,7 @@ B not_c2(B t, B w, B x) {
 #define AR_F_SCALAR(CHR, NAME, EXPR) B NAME##_c2(B t, B w, B x) { \
   if (isF64(w) & isF64(x)) return m_f64(EXPR); \
   AR_F_TO_ARR(NAME)                            \
-  thrM(CHR ": Unexpected argument types");     \
+  thrM("𝕨"CHR "𝕩: Unexpected argument types"); \
 }
 AR_F_SCALAR("÷", div  ,       w.f/(x.f+0))
 AR_F_SCALAR("⋆", pow  , pow(w.f+0, x.f))
@@ -478,7 +478,7 @@ static f64 bqn_atan2iw(f64 x, f64 w) { return w / (tan(x)+0); }
 #define MATH(n,N,I) B n##_c2(B t, B w, B x) {          \
   if (isNum(w) && isNum(x)) return m_f64(I(x.f, w.f)); \
   P2(n)                                                \
-  thrM("•math." N ": Unexpected argument types");      \
+  thrM("𝕨 •math." N " 𝕩: Unexpected argument types");  \
 }
 MATH(atan2,"Atan2",bqn_atan2)
 MATH(atan2ix,"Atan2⁼",bqn_atan2ix)
@@ -510,19 +510,19 @@ static u64 lcm_u64(u64 a, u64 b) {
 }
 B gcd_c2(B t, B w, B x) {
   if (isNum(w) && isNum(x)) {
-    if (!q_u64(w) || !q_u64(x)) thrM("•math.GCD: Inputs other than natural numbers not yet supported");
+    if (!q_u64(w) || !q_u64(x)) thrM("𝕨 •math.GCD 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(gcd_u64(o2u64G(w), o2u64G(x)));
   }
   P2(gcd)
-  thrM("•math.GCD: Unexpected argument types");
+  thrM("𝕨 •math.GCD 𝕩: Unexpected argument types");
 }
 B lcm_c2(B t, B w, B x) {
   if (isNum(w) && isNum(x)) {
-    if (!q_u64(w) || !q_u64(x)) thrM("•math.LCM: Inputs other than natural numbers not yet supported");
+    if (!q_u64(w) || !q_u64(x)) thrM("𝕨 •math.LCM 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(lcm_u64(o2u64G(w), o2u64G(x)));
   }
-  P2(gcd)
-  thrM("•math.GCD: Unexpected argument types");
+  P2(lcm)
+  thrM("𝕨 •math.LCM 𝕩: Unexpected argument types");
 }
 
 #undef P2
@@ -530,4 +530,5 @@ B lcm_c2(B t, B w, B x) {
 void arithd_init() {
   c(BFn, bi_atan2)->iw = atan2iw_c2;
   c(BFn, bi_atan2)->ix = atan2ix_c2;
+  c(BFn, bi_pow)->ix = log_c2;
 }

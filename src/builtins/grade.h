@@ -97,9 +97,27 @@ extern void (*const si_scan_min_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
     if (e==n) {break;}  k=e;                                  \
   }
 #define WRITE_SPARSE(T) WRITE_SPARSE_##T
-extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
-#define SINGELI_COUNT_OR(T) \
-  if (1==sizeof(T)) avx2_count_i8(c0o, (i8*)xp, n, -128); else
+extern i8 (*const simd_count_i8)(u16*, u16*, void*, u64, i8);
+#define COUNTING_SORT_i8 \
+  usz C=1<<8;                                          \
+  TALLOC(u16, c0, C+(n>>15)+1);                        \
+  u16 *c0o=c0+C/2; u16 *ov=c0+C;                       \
+  for (usz j=0; j<C; j++) c0[j]=0;                     \
+  simd_count_i8(c0o, ov, xp, n, -128);                 \
+  if (n/COUNT_THRESHOLD <= C) { /* Scan-based */       \
+    i8 j=GRADE_UD(-C/2,C/2-1);                         \
+    usz ij; while ((ij=c0o[j])==0) GRADE_UD(j++,j--);  \
+    WRITE_SPARSE(i8)                                   \
+    TFREE(c0)                                          \
+  } else { /* Branchy, and ov may have entries */      \
+    TALLOC(usz, cw, C);                                \
+    NOUNROLL for (usz i=0; i<C; i++) cw[i]=c0[i];      \
+    u16 oe=-1;                                         \
+    for (usz i=0; ov[i]!=oe; i++) cw[ov[i]]+= 1<<15;   \
+    TFREE(c0)                                          \
+    FOR(j,C) for (usz c=cw[j]; c--; ) *rp++ = j-C/2;   \
+    TFREE(cw)                                          \
+  }
 #else
 #define COUNT_THRESHOLD 16
 #define WRITE_SPARSE(T) \
@@ -107,14 +125,14 @@ extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
   usz js = j;                                            \
   while (ij<n) { rp[ij]GRADE_UD(++,--); ij+=c0o[GRADE_UD(++j,--j)]; } \
   for (usz i=0; i<n; i++) js=rp[i]+=js;
-#define SINGELI_COUNT_OR(T)
+#define COUNTING_SORT_i8 COUNTING_SORT(i8)
 #endif
 
 #define COUNTING_SORT(T) \
   usz C=1<<(8*sizeof(T));                              \
   TALLOC(usz, c0, C); usz *c0o=c0+C/2;                 \
   for (usz j=0; j<C; j++) c0[j]=0;                     \
-  SINGELI_COUNT_OR(T) for (usz i=0; i<n; i++) c0o[xp[i]]++; \
+  for (usz i=0; i<n; i++) c0o[xp[i]]++;                \
   if (n/(COUNT_THRESHOLD*sizeof(T)) <= C) { /* Scan-based */ \
     T j=GRADE_UD(-C/2,C/2-1);                          \
     usz ij; while ((ij=c0o[j])==0) GRADE_UD(j++,j--);  \
@@ -186,9 +204,9 @@ extern i8 (*const avx2_count_i8)(usz*, i8*, u64, i8);
 
 #define SORT_C1 CAT(GRADE_UD(and,or),c1)
 B SORT_C1(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM(GRADE_UD("∧","∨")": Argument cannot have rank 0");
+  if (isAtm(x) || RNK(x)==0) thrM(GRADE_UD("∧","∨")"𝕩: 𝕩 cannot have rank 0");
   usz n = *SH(x);
-  if (n <= 1) return x;
+  if (n <= 1 || FL_HAS(x,GRADE_UD(fl_asc,fl_dsc))) return x;
   if (RNK(x)!=1) return IA(x)<=1? x : bqn_merge(SORT_C1(t, toCells(x)), 0);
   u8 xe = TI(x,elType);
   B r;
@@ -211,7 +229,7 @@ B SORT_C1(B t, B x) {
     } else if (n < 256) {
       RADIX_SORT_i8(u8, SORT);
     } else {
-      COUNTING_SORT(i8);
+      COUNTING_SORT_i8;
     }
   } else if (xe==el_i16) {
     i16* xp = i16any_ptr(x);
@@ -247,7 +265,7 @@ B SORT_C1(B t, B x) {
 #undef SORT_C1
 #undef INSERTION_SORT
 #undef COUNTING_SORT
-#undef SINGELI_COUNT_OR
+#undef COUNTING_SORT_i8
 #if SINGELI_AVX2
 #undef WRITE_SPARSE_i8
 #undef WRITE_SPARSE_i16
@@ -260,7 +278,7 @@ extern B grade_bool(B x, usz ia, bool up); // slash.c
 
 #define GRADE_CHR GRADE_UD("⍋","⍒")
 B GRADE_CAT(c1)(B t, B x) {
-  if (isAtm(x) || RNK(x)==0) thrM(GRADE_CHR": Argument cannot be a unit");
+  if (isAtm(x) || RNK(x)==0) thrM(GRADE_CHR"𝕩: 𝕩 cannot be a unit");
   if (RNK(x)>1) x = toCells(x);
   usz ia = IA(x);
   B r;
@@ -274,7 +292,7 @@ B GRADE_CAT(c1)(B t, B x) {
   
   u8 xe = TI(x,elType);
   if (xe==el_bit) return grade_bool(x, ia, GRADE_UD(1,0));
-  if (ia>I32_MAX) thrM(GRADE_CHR": Argument too large");
+  if (ia>I32_MAX) thrM(GRADE_CHR"𝕩: 𝕩 too large");
   i32* rp; r = m_i32arrv(&rp, ia);
   if (xe==el_i8 && ia>8) {
     i8* xp = i8any_ptr(x); usz n=ia;
@@ -299,7 +317,7 @@ B GRADE_CAT(c1)(B t, B x) {
     u64 range = max - (i64)min + 1;
     if (range/2 < ia) {
       // First try to invert it as a permutation
-      if (range==ia && sum==(u32)(i32)((i64)ia*(min+max)/2)) {
+      if (range == ia && sum == (u32)(ia * (min+(i64)max)/2)) {
         for (usz i = 0; i < ia; i++) rp[i]=ia;
         for (usz i = 0; i < ia; i++) { i32 v=xp[i]; GRADE_UD(rp[v-min],rp[max-v])=i; }
         bool done=1; for (usz i = 0; i < ia; i++) done &= rp[i]!=ia;
@@ -394,21 +412,25 @@ static u64 CAT(bit_boundary,GRADE_UD(up,dn))(u64* x, u64 n) {
 }
 
 #define LE_C2 CAT(GRADE_UD(le,ge),c2)
-extern B LE_C2(B,B,B);
-extern B select_c2(B t, B w, B x);
-extern B mul_c2(B, B, B);
+extern B lt_c2(B,B,B);
+extern B le_c2(B,B,B);
+extern B gt_c2(B,B,B);
+extern B ge_c2(B,B,B);
+extern B ne_c2(B,B,B);
+extern B select_c2(B,B,B);
+extern B mul_c2(B,B,B);
 
 B GRADE_CAT(c2)(B t, B w, B x) {
-  if (isAtm(w) || RNK(w)==0) thrM(GRADE_CHR": 𝕨 must have rank≥1");
+  if (isAtm(w) || RNK(w)==0) thrM("𝕨"GRADE_CHR"𝕩: 𝕨 must have rank≥1");
   if (isAtm(x)) x = m_unit(x);
   ur wr = RNK(w);
-  ur xr = RNK(x);
   
   if (wr > 1) {
-    if (wr > xr+1) thrM(GRADE_CHR": =𝕨 cannot be greater than =𝕩");
+    ur xr = RNK(x);
+    if (wr > xr+1) thrM("𝕨"GRADE_CHR"𝕩: =𝕨 cannot be greater than =𝕩");
     i32 nxr = xr-wr+1;
-    x = toKCells(x, nxr); xr = nxr;
-    w = toCells(w);       xr = 1;
+    x = toKCells(x, nxr);
+    w = toCells(w);
   }
   
   u8 we = TI(w,elType); usz wia = IA(w);
@@ -417,13 +439,18 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   B r; Arr* ra;
   
   if (wia==0 | xia==0) {
-    ra = allZeroes(xia);
+    ra = allZeroesFl(xia);
     goto copysh_done;
   }
   if (wia==1) {
     B c = IGet(w, 0);
     if (LIKELY(we<el_B & xe<el_B)) {
       decG(w);
+      if (we==el_f64 && elNum(xe) && q_nan(c)) return GRADE_UD(
+        C2(ne, incG(x), x),
+        i64EachDec(1, x)
+      );
+      if (GRADE_UD(1,0) && xe==el_f64) return bit_negate(C2(lt, x, c)); // handle NaNs in x properly
       return LE_C2(m_f64(0), c, x);
     } else {
       SLOW2("𝕨"GRADE_CHR"𝕩", w, x); // Could narrow for mixed types
@@ -439,11 +466,11 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     }
     goto done;
   }
-  if (wia>I32_MAX-10) thrM(GRADE_CHR": 𝕨 too big");
+  if (wia>I32_MAX-10) thrM("𝕨"GRADE_CHR"𝕩: 𝕨 too big");
   
   u8 fl = GRADE_UD(fl_asc,fl_dsc);
   if (CHECK_VALID && !FL_HAS(w,fl)) {
-    if (!CAT(isSorted,GRADE_UD(Up,Down))(w)) thrM(GRADE_CHR": 𝕨 must be sorted"GRADE_UD(," in descending order"));
+    if (!CAT(isSorted,GRADE_UD(Up,Down))(w)) thrM("𝕨"GRADE_CHR"𝕩: 𝕨 must be sorted"GRADE_UD(," in descending order"));
     FL_SET(w, fl);
   }
 
@@ -475,6 +502,8 @@ B GRADE_CAT(c2)(B t, B w, B x) {
           }
           return r;
         }
+        if (we==el_f64 && q_nan(IGetU(w,GRADE_UD(wia-1,0)))) goto gen;
+        
         #if SINGELI
         #define WIDEN(E, X) switch (E) { default:UD; case el_i16:X=toI16Any(X);break; case el_i32:X=toI32Any(X);break; case el_f64:X=toF64Any(X);break; }
         if (xe > we) {
@@ -505,12 +534,12 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         w=toI32Any(w); x=toI32Any(x);
         #endif
       } else {
-        ra = GRADE_UD(reshape_one(xia, m_f64(wia)), allZeroes(xia));
+        ra = GRADE_UD(reshape_one(xia, m_f64(wia)), allZeroesFl(xia));
         goto copysh_done;
       }
     } else { // w is character
       if (elNum(xe)) {
-        ra = GRADE_UD(allZeroes(xia), reshape_one(xia, m_f64(wia)));
+        ra = GRADE_UD(allZeroesFl(xia), reshape_one(xia, m_f64(wia)));
         goto copysh_done;
       }
       
@@ -536,9 +565,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     }
     #endif
   } else {
-    #if !SINGELI
     gen:;
-    #endif
     i32* rp; r = m_i32arrc(&rp, x);
     SLOW2("𝕨"GRADE_CHR"𝕩", w, x);
     SGetU(w) SGetU(x)

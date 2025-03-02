@@ -4,7 +4,7 @@
 #endif
 
 #if defined(JIT_ENABLED)? JIT_ENABLED : ( \
-  (defined(__x86_64) || defined(__amd64__)) \
+  defined(__x86_64__) \
   && (__APPLE__ || __MACH__ || __linux__ || __FreeBSD__ || __unix || __unix__) \
   && (defined(__linux__)? defined(MAP_FIXED_NOREPLACE) : 1) \
   && defined(MAP_32BIT) && MM!=0 \
@@ -282,8 +282,8 @@ typedef struct WrappedObj {
 #define V_POS(X) ((u32)((X).u))
 #define V_DEPTH(X) ((u16)((X).u>>32))
 
-static u32 v_bad17_read  = (TAG_TAG<<1) | 1;
-static u32 v_bad18_write = (TAG_TAG<<2) | 3;
+static const u32 v_bad17_read  = (TAG_TAG<<1) | 1;
+static const u32 v_bad18_write = (TAG_TAG<<2) | 3;
 SHOULD_INLINE bool v_checkBadRead(B x)  { return (x.u >> 47) == v_bad17_read; }
 SHOULD_INLINE bool v_checkBadWrite(B x) { return (x.u >> 46) == v_bad18_write; }
 NOINLINE NORETURN void v_tagError(B x, bool write);

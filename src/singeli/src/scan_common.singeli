@@ -1,9 +1,8 @@
 # Used by scan.singeli and bins.singeli
 
+def has_sel8 = hasarch{'SSSE3'} or hasarch{'AARCH64'}
 def sel8{v:V, t} = sel{[16]u8, v, make{re_el{i8,V}, t}}
 def sel8{v:V, t if w256{V} and istup{t} and length{t}==16} = sel8{v, merge{t,t}}
-
-def shuf{T, v, n if istup{n}} = shuf{T, v, base{4,n}}
 
 local def rev{t} = { def l=length{t}; def j=l-1; select{j-t, j-range{l}} }
 local def rev{up,t} = if (up) t else rev{t}
@@ -19,18 +18,19 @@ def spread{a:[_]T, ...up} = {
 }
 
 # Set all elements with the last element of the input
-def toLast{n:VT, up if hasarch{'X86_64'} and w128{VT}} = {
+def broadcast_last{n:VT, up if has_simd and w128{VT}} = {
   def l{v, w} = l{zip{up,v}, 2*w}
-  def l{v, w if hasarch{'SSSE3'}} = sel8{v, up*(16-w/8)+iota{16}%(w/8)}
+  def l{v, w if has_sel8} = sel8{v, up*(16-w/8)+iota{16}%(w/8)}
   def l{v, w==32} = shuf{[4]i32, v, 4**(up*3)}
-  def l{v, w==64} = shuf{[4]i32, v, (2*up) + tup{0,1,0,1}}
+  def l{v, w==64} = shuf{[2]i64, v, 2** up   }
   l{n, elwidth{VT}}
 }
-def toLast{n:VT, up if hasarch{'AVX2'} and w256{VT}} = {
+def broadcast_last{n:VT, up if hasarch{'AVX2'} and w256{VT}} = {
   if (elwidth{VT}<=32) sel{[8]i32, spread{n,up}, [8]i32**(up*7)}
   else shuf{[4]u64, n, 4**(up*3)}
 }
-def toLast{n:VT} = toLast{n, 1}
+def broadcast_last{n:[k]_, up if hasarch{'AARCH64'}} = broadcast_sel{n, if (up) k-1 else 0}
+def broadcast_last{n:VT} = broadcast_last{n, 1}
 
 # Make prefix scan from op and shifter by applying the operation
 # at increasing power-of-two shifts
@@ -49,13 +49,13 @@ def make_scan_idem{T, op, up} = {
     def w=width{T}; def c = k/w
     def merger{a,b} = if (up) merge{a,b} else merge{b,a}
     def id = make{V, merger{c**get_id{op,T}, (width{V}/w-c)**0}}
-    (if (up) shl else shr){[16]u8, v, k/8} | id
+    (if (up) vec_shift_right_128 else vec_shift_left_128){v, c} | id
   }
-  def shb{v, k if hasarch{'SSSE3'}} = sel8{v, shift{k/8,16}}
+  def shb{v, k if has_sel8} = sel8{v, shift{k/8,16}}
   def shb{v, k if k>=32} = shuf{[4]u32, v, shift{k/32,4}}
   def shb{v, k if k==128 and hasarch{'AVX2'}} = {
     # After lanewise scan, broadcast end of lane 0 to entire lane 1
-    sel{[8]i32, spread{v,up}, make{[8]i32, rev{up,3*(3<iota{8})}}}
+    shuf{[8]i32, spread{v,up}, rev{up,3*(3<iota{8})}}
   }
   prefix_byshift{op, shb}
 }
@@ -68,3 +68,17 @@ def make_scan_idem{(f64), op, up} = {
   sc
 }
 def make_scan_idem{T, op} = make_scan_idem{T, op, 1}
+
+def scan_assoc_id0{op} = {
+  def shl0{v:[_]T, k} = vec_shift_right_128{v, k/width{T}} # Lanewise
+  def shl0{v:V=[_]T, k==128 if hasarch{'AVX2'}} = {
+    # Broadcast end of lane 0 to entire lane 1
+    if (width{T} < 64) {
+      l:= V~~make{[8]i32,0,0,0,-1,0,0,0,0} & spread{v}
+      sel{[8]i32, l, make{[8]i32, 3*(3<iota{8})}}
+    } else {
+      sel{[4]i64, v & V~~make{[4]i64,0,-1,0,0}, 1<iota{4}}
+    }
+  }
+  prefix_byshift{op, shl0}
+}

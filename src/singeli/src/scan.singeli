@@ -6,6 +6,10 @@ include './mask'
 include './f64'
 include './spaced'
 include './scan_common'
+if_inline (hasarch{'AARCH64'}) {
+  def __shl{a:V=[_]T, b:U if not isvec{U}} = a << V**cast_i{T,b}
+  def __shr{a:V=[_]T, b:U if not isvec{U}} = a << V**cast_i{T,-b}
+}
 
 # Initialized scan, generic implementation
 fn scan_scal{T, op}(x:*T, r:*T, len:u64, m:T) : void = {
@@ -16,18 +20,18 @@ def scan_loop{init, x:*T, r:*T, len:(u64), scan, scan_last} = {
   def step = arch_defvw/width{T}
   def V = [step]T
   p:= V**init
-  xv:= *V ~~ x
-  rv:= *V ~~ r
+  xv:= *V~~x
+  rv:= *V~~r
   e:= len/step
   @for (xv, rv over e) rv = scan{xv,p}
   q:= len & (step-1)
-  if (q!=0) homMaskStoreF{rv+e, maskOf{V, q}, scan_last{load{xv,e}, p}}
+  if (q!=0) store_blended_hom{rv+e, mask_of_first{V, q}, scan_last{load{xv,e}, p}}
 }
 def get_scan_last{op, pre} = {
   def last{v, p} = op{pre{v}, p}
   def scan{v, p} = {
     n:= last{v, p}
-    p = toLast{n}
+    p = broadcast_last{n}
     n
   }
   tup{scan, last}
@@ -35,7 +39,7 @@ def get_scan_last{op, pre} = {
 
 # Associative scan ?` if a?b?a = a?b = b?a, used for ⌊⌈
 def scan_idem = scan_scal
-fn scan_idem{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
+fn scan_idem{T, op if has_simd}(x:*T, r:*T, len:u64, init:T) : void = {
   def {scan, last} = get_scan_last{op, make_scan_idem{T, op}}
   def cmp = match (op) { {(min)} => (>); {(max)} => (<) }
   def step = arch_defvw/width{T}
@@ -50,7 +54,7 @@ fn scan_idem{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
   @for (ik to ek) { i := ik * k
     def ii = iota{k}
     xvi := each{load{xv + i, .}, ii}
-    if (not homAny{cmp{p, tree_fold{op, xvi}}}) {
+    if (not any_hom{cmp{p, tree_fold{op, xvi}}}) {
       each{store{rv+i, ., p}, ii}
     } else @unroll (rv in rv+i over j to k) {
       rv = scan{select{xvi,j}, p}
@@ -58,7 +62,7 @@ fn scan_idem{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
   }
   @for (xv, rv over _ from ek*k to e) rv = scan{xv,p}
   q:= len & (step-1)
-  if (q!=0) homMaskStoreF{rv+e, maskOf{V, q}, last{load{xv,e}, p}}
+  if (q!=0) store_blended_hom{rv+e, mask_of_first{V, q}, last{load{xv,e}, p}}
 }
 
 export{'si_scan_min_init_i8',  scan_idem{i8 , min}}; export{'si_scan_max_init_i8',  scan_idem{i8 , max}}
@@ -74,32 +78,49 @@ export{'si_scan_min_i16', scan_idem_id{i16, min}}; export{'si_scan_max_i16', sca
 export{'si_scan_min_i32', scan_idem_id{i32, min}}; export{'si_scan_max_i32', scan_idem_id{i32, max}}
 
 # Assumes identity is 0
-def scan_assoc{op} = {
-  def shl0{v, k} = shl{[16]u8, v, k/8} # Lanewise
-  def shl0{v:V, k==128 if hasarch{'AVX2'}} = {
-    # Broadcast end of lane 0 to entire lane 1
-    l:= V~~make{[8]i32,0,0,0,-1,0,0,0,0} & spread{v}
-    sel{[8]i32, l, make{[8]i32, 3*(3<iota{8})}}
-  }
-  prefix_byshift{op, shl0}
-}
-def scan_plus = scan_assoc{+}
+def scan_plus = scan_assoc_id0{+}
 
 # Associative scan
 def scan_assoc_0 = scan_scal
-fn scan_assoc_0{T, op if hasarch{'X86_64'}}(x:*T, r:*T, len:u64, init:T) : void = {
-  # Prefix op on entire AVX register
+fn scan_assoc_0{T, op if has_simd}(x:*T, r:*T, len:u64, init:T) : void = {
+  # Prefix op on entire SIMD register
   scan_loop{init, x, r, len, ...get_scan_last{op, scan_plus}}
 }
 export{'si_scan_pluswrap_u8',  scan_assoc_0{u8 , +}}
 export{'si_scan_pluswrap_u16', scan_assoc_0{u16, +}}
 export{'si_scan_pluswrap_u32', scan_assoc_0{u32, +}}
 
+def rotate_right{x:[l]_} = shuf{x, (iota{l}-1)%l}
+
+def blend_first{x:V=[l]_, y:V} = blend{x, y, 0 < iota{l}}
+def shift_first{c:V=[l]_, p:V} = {
+  if (l==2) zip{c, p, 0}
+  else blend_first{c, rotate_right{p}}
+}
+
 # xor scan
-fn scan_neq{}(p:u64, x:*u64, r:*u64, nw:u64) : void = {
+def vec_prefix_byshift{op, sh} = {
+  def pre{v:V, k} = if (k < elwidth{V}) pre{op{v, sh{v,k}}, 2*k} else v
+  {v:T} => pre{v, 1}
+}
+def scan_word_ne = prefix_byshift{^, <<}
+def scan_words_ne = vec_prefix_byshift{^, <<}
+
+fn scan_neq{}(c:u64, x:*u64, r:*u64, nw:u64) : void = {
   @for (x, r over nw) {
-    r = p ^ prefix_byshift{^, <<}{x}
-    p = -(r>>63) # repeat sign bit
+    r = c ^ scan_word_ne{x}
+    c = -(r>>63) # repeat sign bit
+  }
+}
+fn scan_neq{if has_simd}(c0:u64, x:*u64, r:*u64, nw:u64) : void = {
+  def vl = arch_defvw / 64
+  def V = [vl]u64
+  c := V**c0
+  @for_masked{vl} (x in tup{V, x}, r in tup{V, r} over nw) {
+    s:= scan_words_ne{x}
+    p:= scan_assoc_id0{^}{-(s>>63)} ^ c
+    r = s ^ shift_first{c, p}
+    c = broadcast_last{p}
   }
 }
 fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
@@ -107,7 +128,7 @@ fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64
   m := V**mark
   def xor64{a, i, carry} = { # carry is 64-bit broadcasted current total
     p := clmul{a, m, i}
-    t := shr{[16]u8, p, 8}
+    t := vec_shift_left_128{p, 1}
     s := p ^ carry
     carry = s ^ t
     s
@@ -120,7 +141,7 @@ fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64
     rv = zip{...(@collect (j to 2) xor64{xv, j, c}), 0}
   }
   if ((words & 1) == 1) {
-    storeLow{*u64~~(rv+e), 64, clmul{loadLow{xv+e, 64}, m, 0} ^ c}
+    store{*u64~~(rv+e), clmul{load{V, *u64~~(xv+e), 1}, m, 0} ^ c, 1}
   }
 }
 fn scan_neq{if hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
@@ -137,14 +158,14 @@ fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u
   def exor64 = clmul{., sse{1<<64 - 2}, 0}
   @for (xv in *V~~x, rv in *V~~r over i to cdiv{nw,vcount{V}}) {
     x8 := xor8{xv}
-    hb := sse{topMask{[64]u8~~x8}}
+    hb := sse{top_to_int{[64]u8~~x8}}
     xh := exor64{hb}  # Exclusive xor of high bits (xh ^ hb for inclusive)
     xc := xh ^ carry
-    v  := x8 ^ V~~maskToHom{[64]u8, [64]u1~~extract{xc,0}}
-    carry = (xc ^ hb) ^ shuf{[4]u32, xh, 4b3232}
+    v  := x8 ^ V~~mask_to_hom{[64]u8, [64]u1~~extract{xc,0}}
+    carry = (xc ^ hb) ^ shuf{u64, xh, 1,1}
     rem:= nw - 8*i
     if (rem < 8) {
-      maskStore{*V~~r+i, [8]u1~~(~(u8~~0xff<<rem)), v}
+      store_masked_hom{*V~~r + i, [8]u1~~(~(u8~~0xff<<rem)), v}
       return{}
     }
     rv = v
@@ -169,19 +190,19 @@ fn bcs{T if hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
   
   def ii32 = iota{32}; def bit{k}=bit{k,ii32}; def tail{k}=tail{k,ii32}
   def sums{n} = (if (n==0) tup{0} else { def s=sums{n-1}; merge{s,s+1} })
-  def widen{v:T} = mzip128{shuf{[4]u64, v, 4b3120}, T**0}
+  def widen{v:T} = mzip128{shuf{[4]u64, v, 0,2,1,3}, T**0}
   
   def sumlanes{x:(u32)} = {
     b:= [8]u32**x >> make{[8]u32, 4*tail{1, iota{8}}}
-    s:= sel8{[32]u8~~b, ii32>>3 + bit{2}}
+    s:= shuf{16, [32]u8~~b, ii32>>3 + bit{2}}
     p:= s & make{[32]u8, (1<<(1+tail{2})) - 1}  # Prefixes
-    d:= sel{[16]u8, make{[32]u8, merge{sums{4},sums{4}}}, [32]i8~~p}
-    d+= sel8{d, bit{2}*(1+bit{3}>>2)-1}
-    d + sel8{d, bit{3}-1}
+    d:= shuf{[16]u8, make{[32]u8, merge{sums{4},sums{4}}}, [32]i8~~p}
+    d+= shuf{16, d, bit{2}*(1+bit{3}>>2)-1}
+    d + shuf{16, d, bit{3}-1}
   }
   def step{x:(u32), i, store1} = {
     d:= sumlanes{x}
-    if (w==8) d+= [32]u8~~shuf{[4]u64, [8]i32~~sel8{d, bit{3}<<4-1}, 4b1100}
+    if (w==8) d+= [32]u8~~shuf{[4]u64, [8]i32~~sel8{d, bit{3}<<4-1}, 0,0,1,1}
     j:= (w/8)*i
     def out{v, k} = each{out, widen{v}, 2*k+iota{2}}
     def out{v0:([vl]T), k} = {
@@ -206,7 +227,7 @@ fn bcs{T if hasarch{'AVX2'}}(x:*u64, r:*T, l:u64) : void = {
       if (jv+vl <= l) {
         store{p, j, v}
       } else {
-        if (jv < l) homMaskStoreF{rv+j, maskOf{V, l - jv}, v}
+        if (jv < l) store_blended_hom{rv+j, mask_of_first{V, l - jv}, v}
         return{}
       }
     }
@@ -248,7 +269,7 @@ def maxsafeint{T==f64} = 1<<53
 fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {
   i:u64 = 0
   if (hasarch{'AVX2'}) simd_plus_scan_part{x, c, r, len, i}
-  @forUnroll{1,1} (js from i to len) {
+  @for_unroll_block{1,1} (js from i to len) {
     def vs = eachx{load, x, js}
     each{{j, v} => {
       def {b,n} = addChk{c, promote{R, v}}
@@ -287,18 +308,18 @@ def simd_plus_scan_part{x:*X, c:R, r:*R, len:(u64), i:(u64)} = {
     def cx0 = tup{load{*[bulk]X~~(x+i)}}
     def cx = if(wd) widenFull{WE,cx0} else cx0
     if (~wd) { # within-vector overflow check; widening gives range space for this to not happen
-      if (rare{homAny{tree_fold{|, each{{c:T} => absu{c} >= (ty_u{T}**maxFastE), cx}}}}) goto{'end'}
+      if (rare{any_hom{...each{{c:T} => absu{c} >= (ty_u{T}**maxFastE), cx}}}) goto{'end'}
     }
     
     def s0 = each{scan_plus, cx}
     
     def s1{v0} = tup{v0}
-    def s1{v0,v1} = tup{v0,v1+toLast{v0}}
+    def s1{v0,v1} = tup{v0,v1+broadcast_last{v0}}
     
     def cr = eachx{+, widenFull{R, s1{...s0}}, cv}
-    cv = toLast{select{cr, -1}}
+    cv = broadcast_last{select{cr, -1}}
     
-    assert{type{cv} == oneType{cr}}
+    assert{type{cv} == one_type{cr}}
     assert{vcount{type{cv}} * length{cr} == bulk}
     
     each{{c:T, j} => store{*T~~(r+i), j, c}, cr, iota{length{cr}}}
@@ -321,6 +342,33 @@ export{'si_scan_plus_i32_f64', plus_scanG{i32, f64}}
 
 
 # Row-wise boolean scan
+# Create masks of the given type with spacing l>=64
+def loose_mask_gen{(u64), l} = {
+  q:usz = 0   # distance to next row boundary
+  {} => {
+    b:= q<64  # whether there's a boundary
+    p:= q%64  # its position
+    q-= 64 - (l &- b)
+    promote{u64, b} << p
+  }
+}
+def loose_mask_gen{V=[vl]T, l} = { # Slow, for ≠` only
+  def get = loose_mask_gen{T, l}
+  {} => make{V, @collect (vl) get{}}
+}
+def has_vecshift = hasarch{'AVX2'} or hasarch{'AARCH64'}
+def loose_mask_gen{V=[vl](u64), l if has_vecshift} = {
+  q := -make{V, 64*iota{vl}}  # distance to next row boundary
+  def q_mod{} = { q+= V**l & -(q>>63) }
+  def q_mod{if hasarch{'SSE4.1'}} = { q = blend_top{q,q+V**l, q} }
+  o:u64 = width{V}; while (o>l) { o-=l; q_mod{} }
+  {} => {
+    m:= V**1 << q; if (not hasarch{'AVX2'}) m&= q < V**64
+    q-= V**o; q_mod{}
+    m
+  }
+}
+
 def loop_with_unaligned_mask{x, r, nw, l, step} = {
   {m, d} := unaligned_spaced_mask_mod{l}
   c:u64 = 0  # carry (initial value never matters)
@@ -332,28 +380,67 @@ def loop_with_unaligned_mask{x, r, nw, l, step} = {
     m = m>>d | m<<(l-d)
   }
 }
-def avx2_loop_with_unaligned_mask{xp, rp, nw, l, scan_words, apply_carry} = {
+def vec_loop_with_unaligned_mask{xp, rp, nw, l, scan_words, apply_carry} = {
+  def vl = arch_defvw / 64
+  def V = [vl]u64
   {ms, d} := unaligned_spaced_mask_mod{l}
-  def V = [4]u64
   d4:usz = width{V} % l
-  m:= make{V, scan{{a,_} => a>>d | a<<(l-d), tup{ms, ...iota{3}}}}
+  m:= make{V, scan{{a,_} => a>>d | a<<(l-d), tup{ms, ...iota{vl-1}}}}
   c:= V**0
-  @maskedLoop{4} (x in tup{V, xp},
-                  r in tup{V, rp} over promote{u64,nw}) {
+  @for_masked{vl} (x in tup{V, xp}, r in tup{V, rp} over promote{u64,nw}) {
     s := scan_words{x, m}
-    pc:= c; c = shuf{V, -(s>>63), 4b2103}
-    r  = apply_carry{s, blend{V, c, pc, 2b0001}, (m-V**1)&~m}
+    # Each result word can be modified based on top bit of previous
+    t := -(s>>63)
+    pc:= c; c = rotate_right{t}
+    b := (if (vl==2) zip{pc, t, 0} else blend_first{pc, c})
+    # Carry applies to bits below any mask bit
+    r  = apply_carry{s, b, (m-V**1)&~m}
     m  = m>>d4 | m<<(l-d4)
   }
+}
+def vec_loop_with_loose_mask{xp, rp, nw, l, id, scan_words, propagate, fix_carry, apply_carry} = {
+  assert{l >= 64}
+  def vl = arch_defvw / 64
+  def V = [vl]u64
+  def get_m = loose_mask_gen{V, l}
+  c := V**id  # carry, 0 or 1
+  @for_masked{vl} (x in tup{V, xp}, r in tup{V, rp} over nw) {
+    # Get mask; <=1 bit per word
+    m:= get_m{}
+    # Within-word scan and carry info
+    ml:= m - V**1
+    {s, k}:= scan_words{x, m, ml}
+    # Propagate carries and adjust result
+    p:= propagate{k, c}
+    t:= shift_first{c, p}
+    r = apply_carry{s, -fix_carry{t}, ml}
+    c = broadcast_last{p}
+  }
+}
+def vec_loop_with_loose_mask{...a={xp, rp, nw, l, id, scan_words}, apply_carry} = {
+  def passthrough{k, c} = {
+    def bl{b,a} = b ^ ((b^a) & -(b>>63))
+    def bl{b:B,a if hasarch{'AARCH64'}} = blend_bit{b,a, ty_s{b} < 0}
+    def bl{b,a if hasarch{'SSE4.1'}} = blend_top{b,a, b}
+    bl{make_scan_idem{f64, bl}{k}, c}  # Can't be -1 now
+  }
+  vec_loop_with_loose_mask{...a, passthrough, {k}=>k, apply_carry}
 }
 
 fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
   def qand = not id
   assert{l > 0}
   nw := cdiv{nl, 64}
+  def scan_mask{x:T, m:T} = {
+    if (qand) { p:= (x &~ m) >> 1; (x - p) ^ p }
+    else      { p:= (x |  m) >> 1; (p - x) ^ p }
+  }
   def res_m1{x,c,m} = { # result word with carry c, popc{m}<=1
     if (qand) x &~ ((x+c) &  (x+m))
     else      x | ((-x-c) &~ (x-m))
+  }
+  def apply_carry{s, c, f} = {
+    if (qand) s & (~f | c) else s | (f & c)
   }
   if (l < 64) {
     if ((l & (l-1)) == 0) {
@@ -363,25 +450,12 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
         }
       } else {
         m:u64 = aligned_spaced_mask{l}
-        t := m << (l-1)
-        @for (r in dst, x in src over nw) {
-          r = (if (qand) x &~ ((t&x) ^ ((x&~t) + m))
-               else      x | ~((t&~x) ^ ((x|t) - m)))
-        }
+        @for (r in dst, x in src over nw) r = scan_mask{x, m}
       }
       # could use for l>=8; not much faster and takes up space
       # def rowwise{T} = @for (r in *T~~dst, x in *T~~src over (64/width{T})*nw) r = x &~ (x+1)
-    } else if (hasarch{'AVX2'}) {
-      def scan_words{x, m:V} = {
-        mb:= m | V**1
-        p:= if (qand) (x &~ m) >> 1 else ~(x | m) >> 1
-        a:= if (qand) p + (mb & x)  else p + (mb &~ x)
-            if (qand) p ^ a         else ~(p ^ a)
-      }
-      def apply_carry{s, c, f} = {
-            if (qand) s & (~f | c) else s | (f & c)
-      }
-      avx2_loop_with_unaligned_mask{src, dst, nw, l, scan_words, apply_carry}
+    } else if (has_simd) {
+      vec_loop_with_unaligned_mask{src, dst, nw, l, scan_mask, apply_carry}
     } else {
       loop_with_unaligned_mask{src, dst, nw, l, {x, c, m} => {
         s:= (if (qand) (x &~ m) >> 1 else ~(x | m) >> 1   )
@@ -390,15 +464,24 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
             a >> 63} # new c
       }}
     }
-  } else if (l < 160) {
-    q:usz = 0   # distance to next row boundary
-    c:u64 = id  # carry
-    @for (r in dst, x in src over nw) {
-      b:= q<64  # whether there's a boundary
-      p:= q%64  # its position
-      q-= 64 - (l &- b)
-      r = res_m1{x, c, promote{u64, b} << p}
-      c = r >> 63
+  } else if ((hasarch{'SSE4.1'} or hasarch{'AARCH64'}) and l < (if (hasarch{'AVX2'}) 256 else 160)) {
+    if (hasarch{'SSE4.1'}) {
+      def scan_words{x:V, m:V, _} = {
+        s:= (if (qand) x &~ ((x+V**1) &  (x+m))
+             else      x |  ((-x)     &~ (x-m)))
+        p:= (if (qand) x&~m == ~V**0
+             else      x| m ==  V**0)
+        k:= s>>63 | p  # Carry of 0 or 1, but -1 to propagate previous
+        tup{s, k}
+      }
+      vec_loop_with_loose_mask{src, dst, nw, l, id, scan_words, apply_carry}
+    } else {
+      def get_m = loose_mask_gen{u64, l}
+      c:u64 = id  # carry
+      @for (r in dst, x in src over nw) {
+        r = res_m1{x, c, get_m{}}
+        c = r >> 63
+      }
     }
   } else {
     i :usz = 0  # row bit index
@@ -431,29 +514,22 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
 }
 
 fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
-  def scan_word = prefix_byshift{^, <<}
+  def scan_word  = scan_word_ne
+  def scan_words = scan_words_ne
+  def apply_carry{s, c, f} = s ^ (f & c)
   assert{l > 0}
   nw := cdiv{nl, 64}
   if (l < 64) {
+    def apply_mask{s, m} = {
+      b:= s<<1 & m  # last bit of previous row
+      s ^ (b<<l - b)
+    }
     if ((l & (l-1)) == 0) {
       m:u64 = aligned_spaced_mask{l}
-      @for (r, x over nw) {
-        s:= scan_word{x}
-        b:= s<<1 & m  # last bit of previous row
-        r = s ^ (b<<l - b)
-      }
-    } else if (hasarch{'AVX2'}) {
-      def scan_words{x, m} = {
-        def vec_prefix_byshift{op, sh} = {
-          def pre{v:V, k} = if (k < elwidth{V}) pre{op{v, sh{v,k}}, 2*k} else v
-          {v:T} => pre{v, 1}
-        }
-        s:= vec_prefix_byshift{^, <<}{x}
-        b:= s<<1 & m  # last bit of previous row
-        s ^ (b<<l - b)
-      }
-      def apply_carry{s, c, f} = s ^ (f & c)
-      avx2_loop_with_unaligned_mask{x, r, nw, l, scan_words, apply_carry}
+      @for (r, x over nw) r = apply_mask{scan_word{x}, m}
+    } else if (has_simd) {
+      def scan_words{x, m} = apply_mask{scan_words{x}, m}
+      vec_loop_with_unaligned_mask{x, r, nw, l, scan_words, apply_carry}
     } else {
       loop_with_unaligned_mask{x, r, nw, l, {x, c, m} => {
         s:= scan_word{x}
@@ -462,6 +538,22 @@ fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
         s ^ ((c & f) | (b<<l - b))
       }}
     }
+  } else if (has_simd and l < (if (hasarch{'AVX2'}) 320 else 192)) {
+    def scan_words{x:V, m:V, ml:V} = {
+      s:= scan_words{x}
+      s^= -(s<<1 & m)
+      k:= s>>63 | (V**(1<<63) &~ ml)  # Top bit 1 to stop, so 0 is identity
+      tup{s, k}
+    }
+    def propagate{k:V=[vl]_, c:V} = {
+      def bl{b,a} = b ^ (a &~ -(b>>63))
+      def bl{b,a if hasarch{'AVX2'}} = blend_top{a^b,b, b}
+                k = bl{k, vec_shift_right_128{k, 1}}
+      if (vl>2) k = bl{k, shuf{V, blend{V**0, k, 0,1,0,1}, 0,0,1,1}}
+                    bl{k, c}
+    }
+    def fix_carry{t:V} = t & V**1
+    vec_loop_with_loose_mask{x, r, nw, l, 0, scan_words, propagate, fix_carry, apply_carry}
   } else {
     i :usz = 0  # row bit index
     iw:usz = 0  # starting word
@@ -480,36 +572,44 @@ fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
 }
 
 fn scan_rows_left(x:*u64, r:*u64, nl:usz, l:usz) : void = {
-  def scan_word = prefix_byshift{^, <<}
   assert{l > 0}
   nw := cdiv{nl, 64}
+  def apply_carry{s, c, f} = s | (f & c)
   if (l < 64) {
+    def apply_mask{x, m} = { b:= x & m; b<<l - b }
     if ((l & (l-1)) == 0) {
       m:u64 = aligned_spaced_mask{l}
-      @for (r, x over nw) { b:= x & m; r = b<<l - b }
-    } else if (hasarch{'AVX2'}) {
-      def scan_words{x, m} = { b:= x&m; b<<l - b }
-      def apply_carry{s, c, f} = s | (f & c)
-      avx2_loop_with_unaligned_mask{x, r, nw, l, scan_words, apply_carry}
+      @for (r, x over nw) r = apply_mask{x, m}
+    } else if (has_simd) {
+      vec_loop_with_unaligned_mask{x, r, nw, l, apply_mask, apply_carry}
     } else {
       loop_with_unaligned_mask{x, r, nw, l, {x, c, m} => {
         f:= (m-1)&~m  # bits before first full row
-        b:= x & m
-        (c & f) | (b<<l - b)
+        (c & f) | apply_mask{x, m}
       }}
     }
+  } else if (hasarch{'AVX2'} and l < 176) {
+    def scan_words{x:V, m:V, _} = {
+      s:= -(x & m)
+      tup{s, s>>63 | (m == V**0)}
+    }
+    vec_loop_with_loose_mask{x, r, nw, l, 0, scan_words, apply_carry}
   } else {
-    i :usz = 0  # row bit index
-    wn:usz = 0  # starting word of next row
-    c:u64 = 0   # carry
+    assert{l >= 64}
+    k:= l/64 - 1 # at least k full aligned words in a row
+    i :usz = 0   # row bit index
+    wn:usz = 0   # starting word of next row
+    c:u64 = 0    # carry
     we:= nl/64; while (wn < we) {
       iw:= wn
       m := u64~~1 << (i%64)
       xw:= -(load{x, iw} & m)
-      store{r, iw, (c & (m-1)) | xw}
+      r0:= (c & (m-1)) | xw
       c = -(xw>>63)
       i+= l; wn = i/64
-      @for (r in r over _ from iw+1 to wn) r = c
+      store{r, wn-1, c}
+      store{r, iw, r0}
+      @for (r in r+iw+1 over k) r = c
     }
     if (i%64 != 0) store{r, wn, c}
   }

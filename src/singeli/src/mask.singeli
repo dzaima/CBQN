@@ -1,115 +1,120 @@
-local def maskInit1{w} = {
+local def bit_mask_init{w} = {
   apply{merge, each{{x} => {
     merge{(w/8-1)**255, (1<<x)-1, (w/8)**0}
   }, iota{8}}}
 }
-mask256_1:*u8 = maskInit1{256}; def maskOfBit{T,n if width{T}==256} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
-mask128_1:*u8 = maskInit1{128}; def maskOfBit{T,n if width{T}==128} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
+mask256_1:*u8 = bit_mask_init{256}; def mask_of_first_bits{T,n if width{T}==256} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
+mask128_1:*u8 = bit_mask_init{128}; def mask_of_first_bits{T,n if width{T}==128} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
 
 mask256:*i64 = merge{4 ** -1,  4 ** 0}
-local def maskOfImpl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth{T}/8))}
+local def mask_of_impl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth{T}/8))}
 
 # get homogeneous mask of first n items; 0 ≤ n ≤ vcount{T}
-def maskOf{T,n if w256{T}} = maskOfImpl{T, n, 256}
-def maskOf{T,n if w128{T}} = maskOfImpl{T, n, 128}
-def maskOf{T,n if  w64{T}} = maskOfImpl{T, n,  64}
+def mask_of_first{T,n if w256{T}} = mask_of_impl{T, n, 256}
+def mask_of_first{T,n if w128{T}} = mask_of_impl{T, n, 128}
+def mask_of_first{T,n if  w64{T}} = mask_of_impl{T, n,  64}
 
-def anyne{x:T, y:T, M if M{0}==0 and isvec{T}} = ~homAll{x==y}
-def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  homAny{M{x!=y}}
-def anyne{x:T, y:T, M if M{0}==0 and anyInt{x}} = x!=y
-def anyne{x:T, y:T, M if M{0}==1 and anyInt{x}} = M{x^y} != 0
-def anyneBit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
+def anyne{x:T, y:T, M if M{0}==0 and isvec{T}} = ~all_hom{x==y}
+def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  any_hom{M, x!=y}
+def anyne{x:T, y:T, M if M{0}==0 and any_int{x}} = x!=y
+def anyne{x:T, y:T, M if M{0}==1 and any_int{x}} = M{x^y} != 0
+def anyne_bit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
 
-def anynePositive{x:T, y:T, M if M{0}==0} = anyne{x, y, M}
-def anynePositive{x:T, y:T, M if M{0}==1 and isvec{T}} = {
-  def {n,m} = homMaskX{x==y}
+def anyne_positive{x:V=[_]_, y:V, M if M{0}==0} = anyne{x, y, M}
+def anyne_positive{x:V=[_]_, y:V, M if M{0}==1} = {
+  def {n,m} = hom_to_int_ext{x==y}
   def E = tern{type{m}==u64, u64, u32}
   (promote{E,~m} << (width{E}-M{'count'}*n)) != 0
 }
 
-def maskNone{x} = x
-def maskNone{x, 'all bits zeroes'} = andAllZero{x, x}
-def maskAfter{n} = {
-  def mask{x:X, 'all bits zeroes'} = andAllZero{x, X~~maskOfBit{X,n}}
-  def mask{X, 'to sign bits'} = maskOf{X,n}
-  def mask{X, 'to homogeneous bits'} = maskOf{X,n}
+def mask_none{x} = x
+def mask_none{x, 'all bits zeroes'} = ~any_bit{x}
+
+def mask_first{n} = {
+  def mask{x:X, 'all bits zeroes'} = and_bit_none{x, X~~mask_of_first_bits{X,n}}
+  def mask{X, 'to sign bits'} = mask_of_first{X,n}
+  def mask{X, 'to homogeneous bits'} = mask_of_first{X,n}
   def mask{'count'} = n
   def mask{{x}} = tup{mask{x}}
-  def mask{x:X if isvec{X}} = x & (X~~maskOf{X,n})
-  def mask{x:X if anyInt{x}} = x & ((1<<n) - 1)
+  def mask{x:X if isvec{X}} = x & (X~~mask_of_first{X,n})
+  def mask{x:X if any_int{x}} = x & ((1<<n) - 1)
   def mask{0} = 1
 }
 
 
 
-def loadLowBatch{V=[_]T, ptr:*T, w, n} = loadLow{*V ~~ (ptr + n*(w/width{T})), w}
-
 # store the i-th batch of k elements to ptr, narrowing elements if needed; masked by M
-def storeBatch{ptr:*E0, i, x:[k]E1, M} = {
+def store_narrow{ptr:*E0, i, x:[k]E1, M} = {
   def rpos = ptr + i*k
   def TF = re_el{E0, [k]E1}
   xu:= narrow{E0, x}
   
-  if (M{0}) homMaskStoreF{*TF~~rpos, M{TF, 'to homogeneous bits'}, undefPromote{TF, xu}}
-  else storeLow{rpos, k*width{E0}, xu}
+  if (M{0}) store_blended_hom{rpos, M{TF, 'to homogeneous bits'}, undef_promote{TF, xu}}
+  else store{rpos, xu, k}
 }
 
 # (sign/zero)-extend the i-th batch of k elements at ptr to [k]E1
-def loadBatch{ptr:*E0, i, [k]E1} = {
+def load_widen{ptr:*E0, i, [k]E1} = {
   def rpos = ptr + i*k
   def TF = re_el{E0, [k]E1}
-  widen{[k]E1, loadLow{*TF~~rpos, k*width{E0}}}
+  widen{[k]E1, load{TF, rpos, k}}
 }
 
-def loadBatch {ptr:*E, {...ns}, T    } = each{loadBatch {ptr, ., T   }, ns}
-def storeBatch{ptr:*E, {...ns}, xs, M} = each{storeBatch{ptr, ., ., M}, ns, xs}
+def load_widen  {ptr:*E, {...ns}, T    } = each{load_widen  {ptr, ., T   }, ns}
+def store_narrow{ptr:*E, {...ns}, xs, M} = each{store_narrow{ptr, ., ., M}, ns, xs}
 
-# TODO also similar homAny & use those more
-def homAll{(maskNone), ...xs} = homAll{...xs}
-def homAll{M, x:T if kgen{M}} = ~homAny{M{~x}} # TODO better
+local def anyall{is_all}{inv} = { def extend _{me} = {
+  def me{M if kgen{M}, ...vs} = me{...vs, ...(if (M{0}) tup{M{'count'}} else tup{})}
+  def me{v:[k]E, vl if any_num{vl} and not same{vl,k}} = {
+    if (is_all) ~inv{}{mask_first{vl}{~v}}
+    else me{mask_first{vl}{v}}
+  }
+}}
+extend (extend_each{anyall{1}, tup{{}=>any_hom, {}=>any_top}}){all_hom, all_top}
+extend (extend_each{anyall{0}, tup{{}=>all_hom, {}=>all_top}}){any_hom, any_top}
 
 # "harmless" pointer cast that'll only cast void*
-def hCast{T,p} = assert{0, 'expected pointer with element',T,'or void but got ',p}
-def hCast{T,p:*T} = p
-def hCast{T,p:(*void)} = *T~~p
+local def cast_h{T,p} = assert{0, 'expected pointer with element',T,'or void but got ',p}
+local def cast_h{T,p:*T} = p
+local def cast_h{T,p:(*void)} = *T~~p
 
-def mlExec{i, iter, vars0, bulk, M} = {
+local def ml_exec{i, iter, vars0, bulk, M} = {
   def vproc{p:*E} = p
   def vproc{'m'} = tptr{{_}=>M, '!'}
   
-  def vproc{{T,p:*E}} = tptr{{i} => loadBatch{p, i, T}, {i,x} => storeBatch{p, i, x, M}}
-  def vproc{{'b',  p:*E}} = tptr{{i} => b_getBatch{bulk, hCast{u64,p}, i}, '!'}
-  def vproc{{'b',T,p:*E}} = tptr{{i} => loadBatchBit{T, hCast{u64,p}, i}, '!'}
-  def vproc{{'g',  p:*E}} = tptr{{i} => ({x} => storeBatch{p, i, x, M}), '!'}
+  def vproc{{T,p:*E}} = tptr{{i} => load_widen{p, i, T}, {i,x} => store_narrow{p, i, x, M}}
+  def vproc{{'b',  p:*E}} = tptr{{i} => load_bits{bulk, cast_h{u64,p}, i}, '!'}
+  def vproc{{'b',T,p:*E}} = tptr{{i} => load_expand_bits{T, cast_h{u64,p}, i}, '!'}
+  def vproc{{'g',  p:*E}} = tptr{{i} => ({x} => store_narrow{p, i, x, M}), '!'}
   def vproc{{'g',T,p:*E}} = tptr{{i} => {
-    def dv{} = loadBatch{p, i, T}
-    def dv{x} = storeBatch{p, i, x, M}
+    def dv{} = load_widen{p, i, T}
+    def dv{x} = store_narrow{p, i, x, M}
   }, '!'}
   
   iter{i, each{vproc, vars0}}
 }
 
 # i0 - initial batch index; not used as begin because it's in a different scale compared to end
-def maskedLoop{bulk, i0}{vars,begin==0,end,iter} = {
+def for_masked{bulk, i0}{vars,begin==0,end,iter} = {
   l:u64 = end
   
   m:u64 = l / bulk
-  @for (i from i0 to m) mlExec{i, iter, vars, bulk, maskNone}
+  @for (i from i0 to m) ml_exec{i, iter, vars, bulk, mask_none}
   
   left:= l & (bulk-1)
-  if (left!=0) mlExec{m, iter, vars, bulk, maskAfter{left}}
+  if (left!=0) ml_exec{m, iter, vars, bulk, mask_first{left}}
 }
-def maskedLoop{bulk} = maskedLoop{bulk,0}
+def for_masked{bulk} = for_masked{bulk,0}
 
 
-def maskedLoopPositive{bulk}{vars,begin==0,end:L,iter} = {
+def for_masked_pos{bulk}{vars,begin==0,end:L,iter} = {
   assert{end > 0}
   i:L = 0
   while(i < (end-1)/bulk) {
-    mlExec{i, iter, vars, bulk, maskNone}
+    ml_exec{i, iter, vars, bulk, mask_none}
     ++i
   }
-  mlExec{i, iter, vars, bulk, maskAfter{end - i*bulk}}
+  ml_exec{i, iter, vars, bulk, mask_first{end - i*bulk}}
 }
 
 
@@ -122,35 +127,35 @@ def maskedLoopPositive{bulk}{vars,begin==0,end:L,iter} = {
 #    begin must be 0
 #    end is scalar element count
 #    index given is a tuple of batch indexes to process
-def muLoop{bulk, unr, fromunr}{vars,begin==0,end,iter} = {
+def for_mu{bulk, unr, fromunr}{vars,begin==0,end,iter} = {
   l:u64 = end
   
   m:u64 = l / bulk
   if (unr==1) {
-    @for (i from 0 to m) mlExec{tup{i}, iter, vars, bulk, maskNone}
+    @for (i from 0 to m) ml_exec{tup{i}, iter, vars, bulk, mask_none}
     
     left:= l & (bulk-1)
-    if (left!=0) mlExec{tup{m}, iter, vars, bulk, maskAfter{left}}
+    if (left!=0) ml_exec{tup{m}, iter, vars, bulk, mask_first{left}}
   } else {
     if (m > 0) {
       i:u64 = 0
       if (unr <= m) {
         while ((i+unr) <= m) {
           def is = each{{j}=>i+j, iota{unr}}
-          mlExec{each{{j}=>i+j, iota{unr}}, iter, vars, bulk, maskNone}
+          ml_exec{each{{j}=>i+j, iota{unr}}, iter, vars, bulk, mask_none}
           i+= unr
         }
         fromunr{}
       }
       if (unr==2) {
-        if (i!=m) mlExec{tup{i}, iter, vars, bulk, maskNone}
+        if (i!=m) ml_exec{tup{i}, iter, vars, bulk, mask_none}
       } else {
-        @for(j from i to m) mlExec{tup{j}, iter, vars, bulk, maskNone}
+        @for(j from i to m) ml_exec{tup{j}, iter, vars, bulk, mask_none}
       }
     }
     
     left:= l & (bulk-1)
-    if (left!=0) mlExec{tup{m}, iter, vars, bulk, maskAfter{left}}
+    if (left!=0) ml_exec{tup{m}, iter, vars, bulk, mask_first{left}}
   }
 }
-def muLoop{bulk, unr} = muLoop{bulk, unr, {}=>0}
+def for_mu{bulk, unr} = for_mu{bulk, unr, {}=>0}

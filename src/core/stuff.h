@@ -189,8 +189,10 @@ B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 
 Arr* allZeroes(usz ia); // ia⥊0 with undefined shape; always produces new array
 Arr* allOnes(usz ia); // ia⥊1 with undefined shape; always produces new array
+Arr* allZeroesFl(usz ia); // allZeroes but marked as fl_asc|fl_dsc
+Arr* allOnesFl(usz ia); // allOnes but marked as fl_asc|fl_dsc
 
-Arr* reshape_one(usz nia, B x); // nia⥊<x with undefined shape; consumes x
+Arr* reshape_one(usz nia, B x); // nia⥊<x with undefined shape, with fl_asc, fl_dsc, and fl_squoze set; consumes x
 B i64EachDec(i64 v, B x); // v¨ x; consumes x
 
 B bit_negate(B x); // consumes; always produces new array
@@ -219,16 +221,18 @@ static usz uszMul(usz a, usz b) {
   return a;
 }
 
+static u8 selfElType_i32(i32 i) {
+  return i==(i8)i? (i==(i&1)? el_bit : el_i8) : (i==(i16)i? el_i16 : el_i32);
+}
+static u8 selfElType_c32(u32 c) {
+  return LIKELY(c<=255)? el_c8 : c<=65535? el_c16 : el_c32;
+}
 static u8 selfElType(B x) { // guaranteed to fit fill
   if (isF64(x)) {
     if (!q_i32(x)) return el_f64;
-    i32 i = o2iG(x);
-    return i==(i8)i? (i==(i&1)? el_bit : el_i8) : (i==(i16)i? el_i16 : el_i32);
+    return selfElType_i32(o2iG(x));
   }
-  if (isC32(x)) {
-    u32 c = o2cG(x);
-    return LIKELY(c<=255)? el_c8 : c<=65535? el_c16 : el_c32;
-  }
+  if (isC32(x)) return selfElType_c32(o2cG(x));
   return el_B;
 }
 static bool elChr(u8 x) { return x>=el_c8 && x<=el_c32; }
@@ -284,7 +288,6 @@ B def_fn_is(B t,      B x);
 B def_fn_im(B t,      B x);  B def_m1_im(Md1D* d,      B x);  B def_m2_im(Md2D* d,      B x);
 B def_fn_iw(B t, B w, B x);  B def_m1_iw(Md1D* d, B w, B x);  B def_m2_iw(Md2D* d, B w, B x);
 B def_fn_ix(B t, B w, B x);  B def_m1_ix(Md1D* d, B w, B x);  B def_m2_ix(Md2D* d, B w, B x);
-B def_decompose(B x);
 
 void noop_visit(Value* x);
 #if HEAP_VERIFY
@@ -412,8 +415,9 @@ FORCE_INLINE void preAlloc(usz sz, u8 type) {
   #endif
 }
 #if VERIFY_TAIL
-void tailVerifyAlloc(void* ptr, u64 origSz, i64 logAlloc, u8 type);
+void tailVerifyAlloc(void* ptr, u64 origSz, ux logAlloc, u8 type);
 void tailVerifyFree(void* ptr);
+void tailVerifySetMinTallocSize(void* ptr, u64 bytes);
 void tailVerifyReinit(void* ptr, u64 s, u64 e);
 #define FINISH_OVERALLOC(P, S, E) tailVerifyReinit(P, S, E)
 NOINLINE void reinit_portion(Arr* a, usz s, usz e);

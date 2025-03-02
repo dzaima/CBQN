@@ -1,18 +1,22 @@
 // Transpose and Reorder Axes (⍉)
 
 // Transpose
-// One length-2 axis: dedicated code
-//   Boolean: pdep or emulation for height 2; pext for width 2
-//     SHOULD use a generic implementation if BMI2 not present
-// SHOULD optimize other short lengths with pdep/pext and shuffles
 // Boolean 𝕩: convert to integer
+//   pdep or emulation for height 2; pext for width 2
+//     SHOULD switch to shuffles and modular permutation
 //   SHOULD have bit matrix transpose kernel
 // CPU sizes: native or SIMD code
 //   Large SIMD kernels used when they fit, overlapping for odd sizes
-//     i8: 16×16; i16: 16×8; i32: 8×8; f64: 4×4
-//   COULD use half-width or smaller kernels to improve odd sizes
-//   Scalar transpose or loop used for overhang of 1
-//   SHOULD add NEON
+//     SSE, NEON i8:  8×8 ; i16:  8×8; i32: 4×4; f64: scalar
+//     AVX2      i8: 16×16; i16: 16×8; i32: 8×8; f64: 4×4
+//     COULD use half-width or smaller kernels to improve odd sizes
+//     Scalar transpose or loop used for overhang of 1
+//   Partial kernels for at least half-kernel height/width
+//     Short width: over-read, then skip some writes
+//     Short height, i8 AVX2 only: overlap input rows and output words
+//   Smaller heights and widths: dedicated kernels
+//     Zipping, unzipping, shuffling for powers of 2
+//     Modular permutation for odd numbers, possibly times 2
 
 // Reorder Axes
 // If 𝕨 indicates the identity permutation, return 𝕩
@@ -40,7 +44,7 @@
 #include "../builtins.h"
 #include "../utils/calls.h"
 
-#ifdef __BMI2__
+#if __BMI2__ && __x86_64__
   #if !SLOW_PDEP
     #define FAST_PDEP 1
   #endif
@@ -121,7 +125,7 @@ Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊�
   
   Arr *r;
   u8 xlw = elwBitLog(re);
-  usz n = shProd(SH(w), 0, k); (void)n;
+  MAYBE_UNUSED usz n = shProd(SH(w), 0, k);
   usz wcsz = shProd(SH(w), k, RNK(w));
   usz xcsz = shProd(SH(x), k, RNK(x));
   usz ia = IA(w)+IA(x);
@@ -198,7 +202,7 @@ static Arr* transpose_noshape(B* px, usz ia, usz w, usz h) {
       Arr* x1o = TI(x,slice)(incG(x),w,w);
       interleave_bits(rp, bitany_ptr(x), bitanyv_ptr(x1o), ia);
       mm_free((Value*)x1o);
-    #ifdef __BMI2__
+    #if __BMI2__ && __x86_64__
     } else if (w==2) {
       u64* xp = bitany_ptr(x);
       u64* r0; r=m_bitarrp(&r0, ia);
@@ -265,26 +269,26 @@ static void shSet(Arr* ra, ur rr, ShArr* sh) {
 B transp_c2(B t, B w, B x) {
   usz wia=1;
   if (isArr(w)) {
-    if (RNK(w)>1) thrM("⍉: 𝕨 must have rank at most 1");
+    if (RNK(w)>1) thrM("𝕨⍉𝕩: 𝕨 must have rank at most 1");
     wia = IA(w);
     if (wia==0) { decG(w); return isArr(x)? x : m_unit(x); }
   }
   ur xr;
-  if (isAtm(x) || (xr=RNK(x))<wia) thrM("⍉: Length of 𝕨 must be at most rank of 𝕩");
+  if (isAtm(x) || (xr=RNK(x))<wia) thrM("𝕨⍉𝕩: Length of 𝕨 must be at most rank of 𝕩");
 
   // Axis permutation
   TALLOC(u8, alloc, xr*(sizeof(ur) + 3*sizeof(usz)) + sizeof(usz)); // ur* p, usz* rsh, usz* st, usz* ri
   ur* p = (ur*)alloc;
   if (isAtm(w)) {
     usz a=o2s(w);
-    if (a>=xr) thrF("⍉: Axis %s does not exist (%i≡=𝕩)", a, xr);
+    if (a>=xr) thrF("𝕨⍉𝕩: Axis %s does not exist (%i≡=𝕩)", a, xr);
     if (a==xr-1) { TFREE(alloc); return C1(transp, x); }
     p[0] = a;
   } else {
     SGetU(w)
     for (usz i=0; i<wia; i++) {
       usz a=o2s(GetU(w, i));
-      if (a>=xr) thrF("⍉: Axis %s does not exist (%i≡=𝕩)", a, xr);
+      if (a>=xr) thrF("𝕨⍉𝕩: Axis %s does not exist (%i≡=𝕩)", a, xr);
       p[i] = a;
     }
     decG(w);
@@ -310,7 +314,7 @@ B transp_c2(B t, B w, B x) {
 
   // Fill in remaining axes and check for missing ones
   ur rr = xr-dup;
-  if (max >= rr) thrF("⍉: Skipped result axis");
+  if (max >= rr) thrF("𝕨⍉𝕩: Skipped result axis");
   if (wia<xr) for (usz j=0, i=wia; j<rr; j++) if (rsh[j]==no_sh) {
     p[i] = j;
     rsh[j] = xsh[i];
@@ -457,7 +461,7 @@ B transp_c2(B t, B w, B x) {
 
 
 B transp_im(B t, B x) {
-  if (isAtm(x)) thrM("⍉⁼: 𝕩 must not be an atom");
+  if (isAtm(x)) thrM("⍉⁼𝕩: 𝕩 must not be an atom");
   ur xr = RNK(x);
   if (xr<=1) return x;
   
@@ -489,23 +493,23 @@ B transp_uc1(B t, B o, B x) {
 // Consumes w; return bi_N if w contained duplicates
 static B invert_transp_w(B w, ur xr) {
   if (isAtm(w)) {
-    if (xr<1) thrM("⍉⁼: Length of 𝕨 must be at most rank of 𝕩");
+    if (xr<1) thrM("𝕨⍉⁼𝕩: Length of 𝕨 must be at most rank of 𝕩");
     usz a=o2s(w);
-    if (a>=xr) thrF("⍉⁼: Axis %s does not exist (%i≡=𝕩)", a, xr);
+    if (a>=xr) thrF("𝕨⍉⁼𝕩: Axis %s does not exist (%i≡=𝕩)", a, xr);
     i32* wp; w = m_i32arrv(&wp, a);
     PLAINLOOP for (usz i=0; i<a; i++) wp[i] = i+1;
   } else {
-    if (RNK(w)>1) thrM("⍉⁼: 𝕨 must have rank at most 1");
+    if (RNK(w)>1) thrM("𝕨⍉⁼𝕩: 𝕨 must have rank at most 1");
     usz wia = IA(w);
     if (wia==0) return w;
-    if (xr<wia) thrM("⍉⁼: Length of 𝕨 must be at most rank of 𝕩");
+    if (xr<wia) thrM("𝕨⍉⁼𝕩: Length of 𝕨 must be at most rank of 𝕩");
     SGetU(w)
     TALLOC(ur, p, xr);
     for (usz i=0; i<xr; i++) p[i]=xr;
     usz max = 0;
     for (usz i=0; i<wia; i++) {
       usz a=o2s(GetU(w, i));
-      if (a>=xr) thrF("⍉⁼: Axis %s does not exist (%i≡=𝕩)", a, xr);
+      if (a>=xr) thrF("𝕨⍉⁼𝕩: Axis %s does not exist (%i≡=𝕩)", a, xr);
       if (p[a]!=xr) { TFREE(p); decG(w); return bi_N; } // Handled by caller
       max = a>max? a : max;
       p[a] = i;
@@ -520,9 +524,9 @@ static B invert_transp_w(B w, ur xr) {
 }
 
 B transp_ix(B t, B w, B x) {
-  if (isAtm(x)) thrM("⍉⁼: 𝕩 must not be an atom");
+  if (isAtm(x)) thrM("𝕨⍉⁼𝕩: 𝕩 must not be an atom");
   w = invert_transp_w(w, RNK(x));
-  if (q_N(w)) thrM("⍉⁼: Duplicate axes");
+  if (q_N(w)) thrM("𝕨⍉⁼𝕩: Duplicate axes");
   return C2(transp, w, x);
 }
 

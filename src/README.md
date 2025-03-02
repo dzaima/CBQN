@@ -3,7 +3,7 @@
 ## clangd
 
 Run `build/build clangd` to generate a `compile_commands.json` file which clangd will use to resolve the flags CBQN expects. Other `build/build` flags will also be respected, e.g. `build/build replxx singeli native clangd` will result in clangd assuming the `SINGELI` and `USE_REPLXX` macros are defined, and will resolve generated Singeli sources to ones `build/build replxx singeli native` generates (along with everything else the configurations change).  
-(depending on the LSP in use, you may need to restart the LSP/clangd/editor after a modified `compile_commands.json`)
+(you may need to restart clangd or your editor after a modified `compile_commands.json`)
 
 ## Conventions
 
@@ -12,7 +12,7 @@ Functions starting with `q_` are queries/predicates, and return a boolean.
 Functions ending with `R` are either supposed to be called rarely, or the caller expects that a part of it happens rarely.  
 Functions ending with `N` are non-inlined versions of another function.  
 Functions ending with `F` are infrequently needed fallback parts of a function.  
-Functions ending with `P` (or sometimes containing `p` or `P`) take a pointer argument (as opposed to a (NaN-boxed) `B`).  
+Functions ending with `P` (or sometimes containing `p` or `P` or `v` or `V`) take a pointer argument (as opposed to a (NaN-boxed) `B`).  
 Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
 Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))  
 Functions ending with `G` can only be called with some guarantee (e.g. argument is heap-allocated, or fits in some type, etc).  

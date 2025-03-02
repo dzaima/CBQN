@@ -81,7 +81,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
       if (n==el_B && o==el_f64) { // hack to make toHArr calling f64arr_get not cry about possible sNaN floats
         usz ia = m->val->ia;
         f64* p = f64arr_ptr(taga(m->val));
-        for (usz i = 0; i < ia; i++) if (!isF64(b(p[i]))) p[i] = 1.2217638442043777e161; // 0x6161616161616161
+        for (usz i = 0; i < ia; i++) if (!isF64(r_fB(p[i]))) p[i] = 1.2217638442043777e161; // 0x6161616161616161
       }
     #endif
     Arr* t = cpyFns[n](taga(m->val));
@@ -95,7 +95,7 @@ NOINLINE B vec_addF(B w, B x) {
   MAKE_MUT_INIT(r, wia+1, el_or(TI(w,elType), selfElType(x))); MUTG_INIT(r);
   mut_copyG(r, 0, w, 0, wia);
   mut_setG(r, wia, x);
-  dec(w);
+  decG(w);
   return mut_fv(r);
 }
 NOINLINE B vec_addN(B w, B x) {
@@ -225,7 +225,7 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
 #if SINGELI_SIMD
   #define DEF_COPY(T, BODY) DEF0(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l)
 #else
-  #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { u8 xt=TY(x); (void)xt; BODY }
+  #define DEF_COPY(T, BODY)  DEF(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { MAYBE_UNUSED u8 xt=TY(x); BODY }
 #endif
 #define BIT_COPY(T) for (usz i = 0; i < l; i++) rp[i] = bitp_get(xp, xs+i); return;
 #define PTR_COPY(X, R) vfor (usz i = 0; i < l; i++) ((R*)rp)[i] = ((X*)xp)[i+xs]; return;
@@ -557,7 +557,7 @@ static B m_getU_B  (void* a, usz ms) { return         ((B*) a)[ms]; }
 
 void apd_fail_apd(ApdMut* m, B x) { }
 NOINLINE char* apd_ty_base(u32 ty) {
-  return ty==1? ">" : ty==2? "[…]" : ty==U'˘'? "˘" : ty==U'⎉'? "⎉" : "??";
+  return ty==1? ">𝕩" : ty==2? "[…]" : ty==U'˘'? "𝔽˘" : ty==U'⎉'? "𝔽⎉𝕘" : "??";
 }
 Arr* apd_sh_err(ApdMut* m, u32 ty) {
   B msg = make_fmt("%U: Incompatible %S shapes (encountered shapes %2H and %H)", apd_ty_base(ty), ty>2? "result" : "element", m->cr, m->csh, m->failEl);
@@ -568,7 +568,7 @@ Arr* apd_sh_err(ApdMut* m, u32 ty) {
 }
 Arr* apd_rnk_err(ApdMut* m, u32 ty) {
   ur er = RNK(m->failEl); // if it were atom, rank couldn't overflow
-  dec(m->failEl);
+  decG(m->failEl);
   thrF("%U: Result rank too large (%i ≡ =𝕩, %s ≡ =%U)", apd_ty_base(ty), m->rr0, er, ty==1? "⊑𝕩" : "𝔽v");
 }
 NOINLINE void apd_sh_fail(ApdMut* m, B x, u8 mode) {
@@ -603,7 +603,7 @@ ApdFn* const apd_tot_fns[];  ApdFn* const apd_sh0_fns[];  ApdFn* const apd_sh1_f
 #define APD_INC_POS(EB) 
 #define APD_MK0(E, FEB, EB, TY, TARR, CIA, T0, CS) \
   NOINLINE void apd_##TY##_##E(ApdMut* m, B x) { T0 \
-    usz cia=CIA; CS; u8 xe=TI(x,elType); (void)xe;  \
+    usz cia=CIA; CS; MAYBE_UNUSED u8 xe=TI(x,elType); \
     if (RARE(!(TARR))) APD_WIDEN(TY, x);            \
     APD_OR_FILL(FEB, x);                            \
     usz p0 = APD_POS(EB);  APD_POS(EB) = p0+cia;    \

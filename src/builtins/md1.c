@@ -42,10 +42,10 @@ B each_c1(Md1D* d, B x) { B f = d->f;
   
   if (isAtm(x)) r = m_hunit(c1(f, x));
   else if (isFun(f)) {
-    u8 rtid = v(f)->flags-1;
+    u8 rtid = RTID(f);
     if (rtid==n_ltack || rtid==n_rtack) {
-      if (EACH_FILLS) decG(xf);
-      return EACH_FILLS || TI(x,arrD1) || IA(x)==0? x : any_squeeze(withFill(x, bi_noFill));
+      if (EACH_FILLS) dec(xf);
+      return TI(x,arrD1) || IA(x)==0? x : any_squeeze(EACH_FILLS? x : withFill(x, bi_noFill));
     }
     r = eachm_fn(f, x, c(Fun,f)->c1);
   } else {
@@ -70,7 +70,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   ur wr = RNK(w); usz wia = IA(w);
   ur xr = RNK(x); usz xia = IA(x);
   ur rr = wr+xr;  usz ria = uszMul(wia, xia);
-  if (rr<xr) thrF("⌜: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
+  if (rr<xr) thrF("𝕨𝔽⌜𝕩: Result rank too large (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   
   B r;
   usz* rsh;
@@ -83,11 +83,11 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     Arr* ra = mut_fp(rm);
     rsh = arr_shAlloc(ra, rr);
     r = taga(ra);
-  } else if (v(f)->flags-1 == n_ltack) {
+  } else if (RTID(f) == n_ltack) {
     Arr* wd = arr_shVec(TI(w,slice)(incG(w), 0, wia));
     r = C2(slash, m_i32(xia), taga(wd));
     goto arith_finish;
-  } else if (v(f)->flags-1 == n_rtack) {
+  } else if (RTID(f) == n_rtack) {
     r = C2(shape, m_f64(ria), incG(x));
     goto arith_finish;
   } else if (TI(w,arrD1) && isPervasiveDyExt(f)) {
@@ -154,7 +154,7 @@ B swap_c2(Md1D* d, B w, B x) { return c2(d->f,     x , w); }
 
 B timed_c2(Md1D* d, B w, B x) { B f = d->f;
   i64 am = o2i64(w);
-  if (am<=0) thrM("•_timed: 𝕨 must be an integer greater than 1");
+  if (am<=0) thrM("𝕨 𝔽•_timed 𝕩: 𝕨 must be an integer greater than 0");
   incBy(x, am-1);
   FC1 fc1 = c1fn(f);
   u64 sns = nsTime();
@@ -169,7 +169,7 @@ B timed_c1(Md1D* d, B x) { B f = d->f;
   return m_f64((ens-sns)*1e-9);
 }
 
-static void print_md1BI(FILE* f, B x) { fprintf(f, "%s", pm1_repr(c(Md1,x)->extra)); }
+static void print_md1BI(FILE* f, B x) { fprintf(f, "%s", pm1_repr(NID(c(BMd1,x)))); }
 static B md1BI_im(Md1D* d,      B x) { return ((BMd1*)d->m1)->im(d,    x); }
 static B md1BI_iw(Md1D* d, B w, B x) { return ((BMd1*)d->m1)->iw(d, w, x); }
 static B md1BI_ix(Md1D* d, B w, B x) { return ((BMd1*)d->m1)->ix(d, w, x); }

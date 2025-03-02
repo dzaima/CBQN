@@ -26,9 +26,9 @@ ALLOC_FN void* mm_alloc(u64 sz, u8 type) {
   NOGC_CHECK("allocating during noalloc");
   preAlloc(sz, type);
   #if VERIFY_TAIL
-    i64 logAlloc = LOG2(sz + VERIFY_TAIL);
+    ux logAlloc = LOG2(sz + VERIFY_TAIL);
   #else
-    i64 logAlloc = LOG2(sz);
+    ux logAlloc = LOG2(sz);
   #endif
   void* res = mm_allocL(logAlloc, type);
   #if VERIFY_TAIL && !ALLOC_IMPL_MMX

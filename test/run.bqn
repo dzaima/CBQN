@@ -39,6 +39,11 @@ o ← {
   heapverify ⇐ ∨´i=6
   debug      ⇐ ∨´i=7
   noCatch    ⇐ ∨´i=8
+  
+  pr ← 32‿0‿0 {𝕩∾(≠𝕩)↓𝕨} {⟨P⇐Properties⟩: 3↑@P@; ⟨⟩} •internal
+  usz ⇐ 0⊑pr
+  properFills ⇐ 1⊑pr
+  eachFills   ⇐ 2⊑pr
   noerr∨↩ heapverify
   update∧↩ ¬heapverify
   files ⇐ (i=≠named)/args
@@ -92,7 +97,18 @@ Run ← { 𝕊 testname:
         ∨´m
       }
       
-      {ln⇐i-1 ⋄ fast⇐¬Flag"%SLOW" ⋄ debug⇐¬Flag"%NDEBUG" ⋄ heapverify⇐¬Flag"%NHEAPVERIFY" ⋄ str⇐str}
+      {
+        enabled ⇐ ¬ (¬o.slow) ∧ Flag "%SLOW"
+        enabled∧↩ ¬ o.debug ∧ Flag "%!DEBUG"
+        enabled∧↩ ¬ o.heapverify ∧ Flag "%!HEAPVERIFY"
+        enabled∧↩ {0‿0: 1; 1‿0: o.properFills; 0‿1: ¬o.properFills} Flag¨ "%PROPER_FILLS"‿"%!PROPER_FILLS"
+        enabled∧↩ {0‿0: 1; 1‿0: o.eachFills  ; 0‿1: ¬o.eachFills  } Flag¨ "%EACH_FILLS"‿"%!EACH_FILLS"
+        enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%USZ64"
+        enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%EACHFILLS"
+        
+        ln ⇐ i-1
+        str ⇐ str # at end to let Flag have updated it
+      }
   }
   tests ← SearchRefine @⊸≢¨⊸/ ∾⟜<⟜(Process∘Next)•_while_{𝕊: i≠≠lns} ⟨⟩
   {𝕊: •Out "Narrowed down to test "∾Pos (⊑tests).ln}⍟⊢ (o.search≢@)∧1=≠tests
@@ -135,9 +151,7 @@ Run ← { 𝕊 testname:
     Eval ← {⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨"arg0",1⟩⟩ •BQN 𝕩}
     EvalS ← •BQN⎊{𝕊: Bad "Bad comparison value" ⋄ "(bad)"}
     toRun ← tests
-    toRun {{𝕩.fast      }∘⊑¨⊸/𝕩}⍟(¬o.slow)↩
-    toRun {{𝕩.debug     }∘⊑¨⊸/𝕩}⍟o.debug↩
-    toRun {{𝕩.heapverify}∘⊑¨⊸/𝕩}⍟o.heapverify↩
+    toRun {{𝕩.enabled}∘⊑¨⊸/𝕩}↩
     skipped+↩ (≠tests)-≠toRun
     results ← {
       "eval"‿str: {

@@ -29,33 +29,31 @@ The SIMD operations listed aren't guaranteed to be supported on all targets, nor
 
 - `reinterpret` is available as `~~`
 <!-- -->
-- `exportN{f, 'name1', 'name2', ...}` - export single function under many names
-- `exportT{'name', fs}` - export list of functions as the specified name
+- `export_tab{'name', fs}` - export list of functions as the specified name
 - `iota{knum}` - tuple `tup{0,1,...,knum-1}`
 - `broadcast{knum,v}` (`knum**v`) - tuple with `knum` items, all `v`
 - `tern{c, t, f}` - ternary - if `c`, return `t`, else `f`
 - `eachx{F, ...args}` - `each` but broadcasting non-tuples
 - `undef{T}` - return register of type `T` with undefined value; maps over a tuple of types
 - `undef{T, n}` - a tuple of `n` different undefined registers
-- `oneVal{xs}` - assert that `xs` is a tuple of equivalent (as per `==`) items, and return the first
-- `oneType{xs}` - `oneVal` but over the types of the items
+- `one_val{xs}` - assert that `xs` is a tuple of equivalent (as per `same`) items, and return the first
+- `one_type{xs}` - `oneVal` but over the types of the items
+- `all_same{xs}` - whether all values of `xs` are the same
 
 ## Loops & branches
 
 - `@for` - generate body once, with indices `s,s+1,...,e-2,e-1`
-- `@forNZ` - `@for`, but assumed to run at least once
-- `@for_backwards` - `@for`, but indices go backwards `e-1,e-2,...,s+1,s`
-- `@forUnroll{exp, unr}` - generate a main loop body that takes a tuple of `unr` indices to process. Handle the tail via processing one index at a time; if `exp==1`, that's done via `unr` generated bodies, otherwise it's a loop
+- `@for_nz` - `@for`, but assumed to run at least once
+- `@for_unroll_block{exp, unr}` - generate a main loop body that takes a tuple of `unr` indices to process. Handle the tail via processing one index at a time; if `exp==1`, that's done via `unr` generated bodies, otherwise it's a loop
 - `@unroll(n)` - generate body `n` times
-- `@collect(n)` - generate body `n` times, and collect the results as a tuple
 <!-- -->
-- `makeBranch{Ts, G=={...x:Ts}=>{}} == {...x:Ts}=>{}` - make a code segment that takes arguments of types `Ts`, and can be jumped to by invoking the result of the `makeBranch`
-- `makeOptBranch{enable, Ts, G}` - `makeBranch` but only generated & invokable when `enable==1`
+- `make_branch{Ts, G=={...x:Ts}=>{}} == {...x:Ts}=>{}` - make a code segment that takes arguments of types `Ts`, and can be jumped to by invoking the result of the `make_branch`
+- `make_opt_ranch{enable, Ts, G}` - `make_branch` but only generated & invokable when `enable==1`
 
 ## Scalar operations
 
 - `popc{x:EI} : uint` - population count
-- `popcRand{x:EI} : uint` - population count; under valgrind, return a random value in the set of possible ones if the input is partly undefined
+- `popc_rand{x:EI} : uint` - population count; under valgrind, return a random value in the set of possible ones if the input is partly undefined
 - `ctz{x:EI} : uint` - count trailing zeroes; if `x==0`, the result is undefined
 - `clz{x:EI} : uint` - count leading zeroes; if `x==0`, the result is undefined
 - `clzc{x:EI} : uint` - `width{EI}-clz{x}`; if `x==0`, the result is undefined
@@ -131,7 +129,7 @@ Some may also support one scalar argument or arguments with different widths.
 - `shr{U, a:V, n}` - shift vector elements within blocks of `U`
 - `unord{a:VF, b:VF} : mt{VI}` - `(a==NaN) | (b==NaN)`
 <!-- -->
-- `andAllZero{a:VI, b:VI} : u1` - whether `a&b` is all zeroes
+- `and_bit_none{a:VI, b:VI} : u1` - `~any_bit{a & b}`
 
 ## Structural operations
 
@@ -142,7 +140,7 @@ Some may also support one scalar argument or arguments with different widths.
 - `insert{a:V, i, b:eltype{V}} : V` - a copy of `a` with the `i`-th element replaced with `b`
 - `half{a:V, n} : count_half{V}` - extract either the low (`n==0`) or high (`n==1`) half of `a`
 - `pair{a:V, b:V} : count_dbl{V}` - make a vector from halves
-- `undefPromote{V2, a:V} : V` - promote `a` to a wider type, leaving the upper part undefined
+- `undef_promote{V2, a:V} : V` - promote `a` to a wider type, leaving the upper part undefined
 - `vshl{a:V, b:V, n} : V` - `vshl{[0,1,2,3], [4,5,6,7], 1}` → `[1,2,3,4]`
 - `sel{VI1, a:V, b:VI2} : V2` - shuffle `a` by indices `b` in `VI1`-long lanes; arch-specific behavior on out-of-bounds values
 
@@ -161,17 +159,20 @@ Some of them define variants which operate within 128-bit lanes, via a `128` pos
 
 Homogeneous definitions (i.e. ones with `hom` in their name) assume that each element in the mask type has all its bits equal.
 
-- `homAll{a:VI} : u1` - whether all elements are set
-- `homAny{a:VI} : u1` - whether any element is set
-- `topAny{a:VI} : u1` - whether all elements have their top bit set
-- `topAll{a:VI} : u1` - whether any element has its top bit set
-- `homBlend{f:V, t:V, m:mt{V}} : V` - blend by `m`, setting to `f` where `0` and `t` where `1`
-- `topBlend{f:V, t:V, m:V} : V` - blend by top bit of `m`
-- `homMask{a:VI} : uint` - integer mask of whether each element is set (assumes each element has all its bits equal)
-- `homMask{...vs} : uint` - merged mask of `each{homMask,vs}`
-- `topMask{a:VI} : uint` - integer mask of the top bit of each element
-- `homMaskX{a:VI} : tup{knum, uint}` - integer mask where each element is represented by `knum` bits (possibly more efficient to calculate than `homMask`)
-- `ctzX{tup{knum, uint}}` - count trailing zeroes from a result of `homMaskX`
+- `all_hom{a:VI} : u1` - whether all elements are set
+- `any_hom{a:VI} : u1` - whether any element is set
+- `any_top{a:VI} : u1` - whether all elements have their top bit set
+- `all_top{a:VI} : u1` - whether any element has its top bit set
+- `any_bit{a:VI} : u1` - whether any bit in any element is set
+- `all_bit{a:VI} : u1` - whether all bits in all elements is set
+- `blend_hom{f:V, t:V, m:mt{V}} : V` - blend by `m`, setting to `f` where `0` and `t` where `1`
+- `blend_top{f:V, t:V, m:V} : V` - blend by top bit of `m`
+- `blend_bit{f:V, t:V, m:M} : V` - bitwise blend
+- `hom_to_int{a:VI} : uint` - integer mask of whether each element is set (assumes each element has all its bits equal)
+- `hom_to_int{...vs} : uint` - merged mask of `each{hom_to_int,vs}`
+- `top_to_int{a:VI} : uint` - integer mask of the top bit of each element
+- `hom_to_int_ext{a:VI} : tup{knum, uint}` - integer mask where each element is represented by `knum` bits (possibly more efficient to calculate than `hom_to_int`)
+- `ctz_ext{tup{knum, uint}}` - count trailing zeroes from a result of `hom_to_int_ext`
 
 ## Load/store
 
@@ -181,14 +182,14 @@ For unaligned scalar loads & stores, `loadu` & `storeu` should be used.
 
 - `loadu{p:*E} : E` - load scalar from unaligned memory
 - `storeu{p:*E, a:E} : void` - store scalar to unaligned memory
-- `load{p:*V} : V` - load full vector
-- `store{p:*V, a:V} : void` - store full vector
-- `loadLow{p:*V, w} : V` - load to low `w` bits
-- `storeLow{p:*E, w, a:[n]E}` - store low `w` bits
-- `homMaskStore{p:*V, m:mt{V}, a:V}` - conditionally store elements based on mask; won't touch masked-off elements
-- `topMaskStore{p:*V, m:V, a:V}` - conditionally store elements based on top bit of `m`; won't touch masked-off elements
-- `homMaskStoreF` - `homMaskStore` but may touch masked-off elements and thus be supported on more types
-- `topMaskStoreF` - `topMaskStore` but may touch masked-off elements and thus be supported on more types
+- `load{[k]E, p:*E} : [k]E` - load full vector
+- `store{p:*E, a:[k]E} : void` - store full vector
+- `load{[k]E, p:*E, vl} : [k]E` - load first `vl` elements of vector (memory of upper ones won't be touched, and their values are unspecified)
+- `store{p:*E, a:[k]E, vl} : void` - store first `vl` elements (upper ones won't be touched)
+- `store_masked_hom{p:*E, m:mt{V}, a:V=[_]E}` - conditionally store elements based on mask; won't touch masked-off elements; `p` may also be `p:*V`
+- `store_masked_top{p:*E, m:V, a:V=[_]E}` - conditionally store elements based on top bit of `m`; won't touch masked-off elements; `p` may also be `p:*V`
+- `store_blended_hom` - `store_masked_hom` but may touch masked-off elements and thus be supported on more types
+- `store_blended_top` - `store_masked_top` but may touch masked-off elements and thus be supported on more types
 
 <!-- useless x86 defs for vector-width-aligned load/store: loada storea -->
 
@@ -231,17 +232,12 @@ For float conversions, the used rounding mode is unspecified.
 - `addp` - add pairwise
 - `addpw` - add pairwise, widening
 - `addpwa` - add pairwise, widening; accumulate
-- `addwLo` - widening add
-- `subwLo` - widening subtract
-- `mulwLo`, `mulwHi`, `mulw` - widening multiply
+- `addw`, `subw`, `mulw` - widening add/subtract/multiply
 - `andnz` - element-wise (a&b)!=0? ~0 : 0
 <!-- -->
-- `bitAll` - are all bits 1s
-- `bitAny` - is any bit a 1
-- `bitBlend` - blend by bits
 - `clz` - count leading zeroes
 - `cls` - count leading sign bits
-- `copyLane`
+- `copy_lane`
 - `mla` - multiply-add
 - `mls` - multiply-subtract
 - `ornot` - a|~b
@@ -253,53 +249,53 @@ For float conversions, the used rounding mode is unspecified.
 - `trn1`, `trn2` - 2×2 transposes from pairs of elements across the two arguments
 
 <!--
-  widenUpper{x:V}, widen{x:V}
+  widen_upper{x:V}
   narrowPair, narrowUpper
 -->
 ## mask.singeli
 
-- `maskOf{TU, n}` - get a mask of type `TU` whose first `n` elements are all `1`s, and the remaining are `0`s. `0≤n≤vcount{TU}`
-- `maskNone` - a mask generator that matches all items
-- `maskAfter{n}` - a mask generator that patches the first `n` items
-- `loadBatch{p:*E, n, V}` - load the `n`-th batch of `vcount{V}` elements from `*E`; if `E` isn't `eltype{V}`, the result is sign- or zero-extended.
-- `storeBatch{p:*E, n, x:V, M}` - store equivalent of the `loadBatch`; if `E` isn't `eltype{V}`, `x` is narrowed via `narrow{}`
+- `mask_of_first{TU, n}` - get a mask of type `TU` whose first `n` elements are all `1`s, and the remaining are `0`s. `0≤n≤vcount{TU}`
+- `mask_none` - a mask generator that matches all items
+- `mask_first{n}` - a mask generator that enables the first `n` items
+- `load_widen{p:*E, n, [k]W}` - load the `n`-th batch of `k` elements from `p`; if `W` isn't `E`, the result is sign- or zero-extended.
+- `store_narrow{p:*E, n, x:[k]N, M}` - store equivalent of the `load_widen`; if `E` isn't `N`, `x` is narrowed via `narrow{}`
 
-To test whether a mask object `M` is `maskNone` or `maskAfter`, `M{0}` can be used - `maskNone{0}` is `0`, but `maskAfter{n}{0}` is `1`.
+To test whether a mask object `M` is `mask_none` or `mask_first`, `M{0}` can be used - `mask_none{0}` is `0`, but `mask_first{n}{0}` is `1`.
 
 ### Loops
 
-- `@maskedLoop{bulk}` - loop that generates its body twice, once with a `maskNone` mask, and once with a `maskAfter{n}` one to handle the tail.
+- `@for_masked{bulk}` - loop that generates its body twice, once with a `mask_none` mask, and once with a `mask_first{n}` one to handle the tail.
 
-- `@muLoop{bulk, unr}` - masked & unrolled loop - generates its body three times (or two if `unr==1`) - once for unrolled main loop, once for the unrolling leftover, and once for the masked end.
+- `@for_mu{bulk, unr}` - masked & unrolled loop - generates its body three times (or two if `unr==1`) - once for unrolled main loop, once for the unrolling leftover, and once for the masked end.
   Unrolling is handled by passing a tuple of indices to process as the index variable (the tail generated bodies get a tuple of the one index)
 
-- `@muLoop{bulk, unr, fromunr}` - `fromunr` is additionally ran after exiting the unrolled loop (such that you can have separate accumulators for the unrolled bit, and convert them to single-vector acccumulators for the tail).
+- `@for_mu{bulk, unr, fromunr}` - `fromunr` is additionally ran after exiting the unrolled loop (such that you can have separate accumulators for the unrolled bit, and convert them to single-vector acccumulators for the tail).
 
 
 Tuples can be used in the iterated variable list for various things:
 ```
 p:*T - regular pointer
-tup{VT,p:*T} - loadBatch/storeBatch vector data
-tup{'b',p:P} - b_getBatch (bits.singeli)
-tup{'b',VT,p:P} - loadBatchBit (bits.singeli)
-tup{'g',VT,p:*T} - gives a generator, used as g{} to loadBatch and g{newValue} to storeBatch
+tup{VT,p:*T} - load_widen/store_narrow vector data
+tup{'b',p:P} - load_bits (bits.singeli)
+tup{'b',VT,p:P} - load_expand_bits (bits.singeli)
+tup{'g',VT,p:*T} - gives a generator, used as g{} to load_widen and g{newValue} to store_narrow
 tup{'g',p:*T} - the above, but without load support
-'m' - get the mask object - either maskNone or some maskAfter{n}
+'m' - get the mask object - either mask_none or some mask_first{n}
 ```
 
 Stores via those will implicitly do a masked store when required.
 
 Loads will load past the end, so `M in 'm'` must be used to mask off elements if they're used for something other than the above stores.
 
-For `muLoop`, `M in 'm'` still gives a single generator, but it's only ever `maskAfter{n}` when there's only one index.
+For `for_mu`, `M in 'm'` still gives a single generator, but it's only ever `mask_first{n}` when there's only one index.
 
 Example usage for a loop that adds `u16` and bit boolean elements to a `u32` accumulator, early-exiting on overflow:
 ```
-fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @maskedLoop
+fn acc_u32_u16_bit_u1(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @for_masked
   def bulk = 8
   def VT = [8]u32
   
-  @maskedLoop{bulk}(
+  @for_masked{bulk}(
     r in tup{VT, r},
     x in tup{VT, x},
     b in tup{'b', VT, bits},
@@ -308,17 +304,18 @@ fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @maskedLoop
   ) {
     # x, r, and b now have type VT
     r1:= r + x - b # subtracting b because it's all 1s for a one
-    if (homAny{M{r1 < r}}) return{0} # detect overflow
+    if (any_hom{M{r1 < r}}) return{0} # detect overflow
     r = r1 # will be mask-stored if needed
   }
   1
 }
+export {'acc_u32_u16_bit_u1', acc_u32_u16_bit_u1}
 
-fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @muLoop, 2x unrolled
+fn acc_u32_u16_bit_u2(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @for_mu, 2x unrolled
   def bulk = 8
   def VT = [8]u32
   
-  @muLoop{bulk,2}(
+  @for_mu{bulk,2}(
     r in tup{'g', VT, r},
     x in tup{VT, x},
     b in tup{'b', VT, bits},
@@ -327,28 +324,17 @@ fn acc_u32_u16_bit(r:*u32, x:*u16, bits:*u64, len:u64) : u1 = { # @muLoop, 2x un
   ) {
     def r0 = r{}
     def r1 = each{-, each{+,r0,x}, b}
-    if (homAny{M{tree_fold{|, each{<,r1,r0}}}}) return{0}
+    if (any_hom{M{tree_fold{|, each{<,r1,r0}}}}) return{0}
     r{r1}
   }
   1
 }
+export {'acc_u32_u16_bit_u2', acc_u32_u16_bit_u2}
 ```
 
 <!--
 
 bitops.singeli
-  b_get
-  b_getBatch
-  b_getBatchLo
-  b_set
-  b_setBatch
-  loadBatchBit
-  loadu
-  loaduBit
-  loaduBitRaw
-  loaduBitTrunc
-  ones
-  spreadBits
 bmi2.singeli
   pdep
   pext
