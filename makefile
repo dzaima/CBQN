@@ -37,6 +37,8 @@ emcc-o3:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_build_opts="emcc"
 shared-o3:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1
+shared-o3n:
+	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1 i_build_opts="native"
 shared-c:
 	@"${MAKE}" to-bqn-build REPLXX=0 i_SHARED=1 i_build_opts=c
 static-lib:
