@@ -31,7 +31,7 @@ def get_scan_last{op, pre} = {
   def last{v, p} = op{pre{v}, p}
   def scan{v, p} = {
     n:= last{v, p}
-    p = toLast{n}
+    p = broadcast_last{n}
     n
   }
   tup{scan, last}
@@ -91,8 +91,7 @@ export{'si_scan_pluswrap_u16', scan_assoc_0{u16, +}}
 export{'si_scan_pluswrap_u32', scan_assoc_0{u32, +}}
 
 def rotate_right{x:[l]_} = shuf{x, (iota{l}-1)%l}
-def broadcast_last{x:[l]_} = shuf{x, l**(l-1)}
-def broadcast_last{x:[l]_ if hasarch{'AARCH64'}} = broadcast_sel{x, l-1}
+
 def blend_first{x:V=[l]_, y:V} = blend{x, y, 0 < iota{l}}
 def shift_first{c:V=[l]_, p:V} = {
   if (l==2) zip{c, p, 0}
@@ -315,10 +314,10 @@ def simd_plus_scan_part{x:*X, c:R, r:*R, len:(u64), i:(u64)} = {
     def s0 = each{scan_plus, cx}
     
     def s1{v0} = tup{v0}
-    def s1{v0,v1} = tup{v0,v1+toLast{v0}}
+    def s1{v0,v1} = tup{v0,v1+broadcast_last{v0}}
     
     def cr = eachx{+, widenFull{R, s1{...s0}}, cv}
-    cv = toLast{select{cr, -1}}
+    cv = broadcast_last{select{cr, -1}}
     
     assert{type{cv} == one_type{cr}}
     assert{vcount{type{cv}} * length{cr} == bulk}

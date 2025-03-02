@@ -34,7 +34,7 @@ fn max_scan{T, up}(x:*T, len:u64) : void = {
     p := V**0
     @for_dir{up} (v in *V~~x over len/vl) {
       v = op{pre{v}, p}
-      p = toLast{v, up}
+      p = broadcast_last{v, up}
     }
   } else {
     m:T=0; @for_dir{up} (x over len) { if (x > m) m = x; x = m }
