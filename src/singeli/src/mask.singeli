@@ -96,7 +96,7 @@ local def ml_exec{i, iter, vars0, bulk, M} = {
 
 # i0 - initial batch index; not used as begin because it's in a different scale compared to end
 def for_masked{bulk, i0}{vars,begin==0,end,iter} = {
-  l:u64 = end
+  l:u64 = promote{u64, end}
   
   m:u64 = l / bulk
   @for (i from i0 to m) ml_exec{i, iter, vars, bulk, mask_none}
@@ -128,7 +128,7 @@ def for_masked_pos{bulk}{vars,begin==0,end:L,iter} = {
 #    end is scalar element count
 #    index given is a tuple of batch indexes to process
 def for_mu{bulk, unr, fromunr}{vars,begin==0,end,iter} = {
-  l:u64 = end
+  l:u64 = promote{u64, end}
   
   m:u64 = l / bulk
   if (unr==1) {

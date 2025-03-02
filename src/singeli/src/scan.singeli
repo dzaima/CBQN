@@ -358,10 +358,11 @@ def loose_mask_gen{V=[vl]T, l} = { # Slow, for ≠` only
 }
 def has_vecshift = hasarch{'AVX2'} or hasarch{'AARCH64'}
 def loose_mask_gen{V=[vl](u64), l if has_vecshift} = {
+  l64 := promote{u64, l}
   q := -make{V, 64*iota{vl}}  # distance to next row boundary
-  def q_mod{} = { q+= V**l & -(q>>63) }
-  def q_mod{if hasarch{'SSE4.1'}} = { q = blend_top{q,q+V**l, q} }
-  o:u64 = width{V}; while (o>l) { o-=l; q_mod{} }
+  def q_mod{} = { q+= V**l64 & -(q>>63) }
+  def q_mod{if hasarch{'SSE4.1'}} = { q = blend_top{q,q+V**l64, q} }
+  o:u64 = width{V}; while (o>l64) { o-=l64; q_mod{} }
   {} => {
     m:= V**1 << q; if (not hasarch{'AVX2'}) m&= q < V**64
     q-= V**o; q_mod{}
