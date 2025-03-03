@@ -181,18 +181,19 @@ fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) 
           c = q
         }
       }
-    } else if (same{op, +} and T<=i32 and has_simd) {
+    } else if (same{op, +} and T<=i32 and has_simd and (has_shuf or l>=vl)) {
       def vl = arch_defvw/wT; def V = [vl]T
       @for_masked{vl} (x in tup{V, x+l}, r in tup{V, r+l}, p in tup{V, r} over ia-l) {
         r = op_chk{p, x}
       }
     } else {
-      @for (r, x, p in r-l over _ from l to ia) r = op{p, x}
+      @for (r, x, p in r-l over _ from l to ia) r = op_chk{p, x}
     }
   }
   1
 }
 def scan_stride_assoc{op, T} = scan_stride_assoc{op, T, void, {..._}=>{}}
+def check_add_over{w:T, x:T, r:T} = { if ((w^r) & (x^r) < 0) return{0} }
 def check_add_over{w:V=[_]E, x:V, r:V} = {
   o:= (if (not hasarch{'X86_64'} or width{E}<=16) any_hom{subs{r,w} != x}
        else any_top{(w^r) & (x^r)})
