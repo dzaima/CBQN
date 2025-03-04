@@ -1,22 +1,31 @@
 // Scan (`)
 // Empty 𝕩, and length 1 if no 𝕨: return 𝕩
-// Generic operand:
+// Generic argument:
 //   Constant: copy
 //   ⊢ identity, ⊣ reshape 𝕨 or first cell
-// Boolean operand, rank 1:
+// Boolean argument, stride 1:
 //   + AVX2 expansion (SHOULD have better generic, add SSE, NEON)
 //   ∨⌈ ∧×⌊ search+copy, then memset (COULD vectorize search)
 //   ≠ SWAR/SIMD shifts, CLMUL, VPCLMUL (SHOULD add NEON polynomial mul)
 //   < SWAR
 //   =≤≥>- in terms of ≠<∨∧+ with adjustments
-// Arithmetic operand, rank 1:
+// Numeric argument, stride 1:
 //   ⌈⌊ Scalar, SIMD in log(vector width) steps
 //     Check in 6-vector blocks to quickly write result if constant
 //   + Overflow-checked scalar or AVX2
 //   Ad-hoc boolean-valued handling for ≠∨
-// SHOULD extend rank 1 special cases to cell bound 1
-// Higher-rank arithmetic, non-tiny cells: apply operand cell-wise
-//   SHOULD have dedicated high-rank scan optimizations
+// Higher-rank arithmetic:
+//   Boolean ≠∨∧ and synonyms: SWAR; ⌊⌈+: SIMD with shuffle/permute
+//     Stride <word/vector: power-of-two (times stride) shifts
+//       COULD vectorize small-stride boolean scans
+//       ≠, divisor of 64: CLMUL
+//     Stride 1 to 2 words: result in register instead of re-reading
+//     Read and write at same alignment unless stride is large
+//     Large-stride cases auto-vectorize (except + overflow check)
+//     Overflow check for +, widen and retry on failure
+//   =` as ≠`⌾¬
+//   SHOULD optimize high-rank dyadic scan for recognized operands
+//   Other arithmetic, non-tiny cells: apply operand cell-wise
 
 // Scan with rank (`˘ or `⎉k)
 // SHOULD optimize dyadic scan with rank
