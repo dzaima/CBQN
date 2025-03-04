@@ -291,7 +291,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       }
       if (rtid==n_add) {
         if (xe==el_bit) { x = toI8Any(x); xe=el_i8; }
-        restart:
+        restart:;
         B r; void* rp = m_tyarrc(&r, elWidth(xe), x, el2t(xe));
         void* xp = tyany_ptr(x);
         bool done = si_scan_stride_add[xe-el_i8](xp, rp, ia, csz);
