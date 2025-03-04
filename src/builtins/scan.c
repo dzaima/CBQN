@@ -290,17 +290,17 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
         decG(x); return r;
       }
       if (rtid==n_add) {
-        if (xe==el_bit) { x = toI8Any(x); xe=el_i8; }
+        if (xe==el_bit) { x = taga(cpyI8Arr(x)); xe=el_i8; }
         restart:;
         B r; void* rp = m_tyarrc(&r, elWidth(xe), x, el2t(xe));
         void* xp = tyany_ptr(x);
         bool done = si_scan_stride_add[xe-el_i8](xp, rp, ia, csz);
         if (!done) {
           decG(r);
-          switch (++xe) {
-            case el_i16: x = toI16Any(x); break;
-            case el_i32: x = toI32Any(x); break;
-            case el_f64: x = toF64Any(x); break;
+          switch (++xe) { default: UD;
+            case el_i16: x = taga(cpyI16Arr(x)); break;
+            case el_i32: x = taga(cpyI32Arr(x)); break;
+            case el_f64: x = taga(cpyF64Arr(x)); break;
           }
           goto restart;
         }
