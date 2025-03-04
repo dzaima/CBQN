@@ -243,10 +243,9 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
 
 extern B scan_arith(B f, B w, B x, usz* xsh); // from cells.c
 B scan_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("𝔽`𝕩: 𝕩 cannot have rank 0");
-  ur xr = RNK(x);
-  usz ia = IA(x);
-  if (*SH(x)<=1 || ia==0) return x;
+  if (isAtm(x)) { unit: thrM("𝔽`𝕩: 𝕩 cannot have rank 0"); }
+  usz ia = IA(x); if (ia <= 1) { if (ia==1 && RNK(x)==0) goto unit; return x; }
+  usz n = *SH(x); if (n  <= 1) return x;
   if (RARE(!isFun(f))) {
     if (isMd(f)) thrM("Calling a modifier");
     B xf = getFillR(x);
@@ -267,8 +266,9 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       return C2(shape, s, taga(r));
     }
     if (xe > el_f64) goto base;
-    if (xr != 1) { usz csz = arr_csz(x); if (csz != 1) {
+    if (ia != n) { // csz != 1
       #if SINGELI
+      usz csz = arr_csz(x);
       i8 t = -1; bool neg = 0;
       if (xe==el_bit) switch (rtid) {
         CASE_N_OR:                   t=0; break;
@@ -308,7 +308,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       }
       #endif
       goto base;
-    }}
+    }
     
     if (xe==el_bit) switch (rtid) { default: goto base;
       case n_add: return scan_add_bool(x, ia); // +
@@ -340,7 +340,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     if (rtid==n_or) { x=num_squeezeChk(x); xe=TI(x,elType); if (xe==el_bit) return scan_or(x, ia); }
   }
   base:;
-  if (xr>1 && ia >= 6 * (u64)*SH(x) && isPervasiveDy(f)) return scan_arith(f, m_f64(0), x, SH(x));
+  if (ia!=n && ia >= 6 * (u64)n && isPervasiveDy(f)) return scan_arith(f, m_f64(0), x, SH(x));
   SLOW2("𝕎` 𝕩", f, x);
   B xf = getFillR(x);
   
@@ -348,7 +348,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   SGet(x)
   FC2 fc2 = c2fn(f);
   
-  if (xr==1) {
+  if (ia == n) {
     r.a[0] = Get(x,0);
     for (usz i=1; i<ia; i++) r.a[i] = fc2(f, inc(r.a[i-1]), Get(x,i));
   } else {
@@ -379,7 +379,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     if (rtid==n_rtack) { dec(w); return x; }
     if (rtid==n_ltack) return C2(shape, C1(fne, x), w);
     if (!(elNum(xe) && xe<=el_f64)) goto base;
-    if (xr!=1 && arr_csz(x)!=1) goto base;
+    if (xr!=1 && *SH(x)!=ia) goto base;
     if (!isF64(w)) goto base;
     
     if (rtid==n_floor) return scan2_min_num(w, x, xe, ia); // ⌊
