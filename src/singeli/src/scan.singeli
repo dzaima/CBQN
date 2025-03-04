@@ -137,8 +137,8 @@ fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) 
       }
     }
     if (not (same{op,+} and V==[4]f64)) {
-      def max_k = lb{vl/2}
-      if (max_k<3 or l<4) small{max_k} else small{max_k-1}
+      def max_k = lb{vl/2} # Divide by two from assuming l≥2
+      if (max_k<3 or l<4) small{max_k} else small{max_k-1} # l=2 and l=3 are the only cases needing the full max_k iterations; max_k<3 limits specialization to where it's significant
     } else { # Non-associative!
       c:= V**0
       if (l==2) {
@@ -160,6 +160,7 @@ fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) 
     def op_chk{M, p, x} = { r:= op{p, x}; check_over{M, p, x, r}; r }
     @for (r, x over l) r = x
     if (has_shuf and l<256/(wT/8)) {
+      # Make sure to load the previous row data at the same alignment to not hit bad store-to-load forwarding
       def [il]IE = I
       q:= l%vl; fq:= cast_i{IE, q*f}
       def rot = shuf{IE, ., (iota{I} - I**fq) & I**(il-1)}
@@ -736,7 +737,7 @@ export{'si_scan_rows_ltack', scan_rows_left}
 # Strided boolean scans
 fn scan_stride_bool_assoc{op}(x:*u64, r:*u64, nl:usz, l:usz) : void = {
   assert{l > 1}
-  def {flip,opf} = if (same{op, &}) tup{~,|} else tup{{x}=>x,op}
+  def {flip,opf} = if (same{op, &}) tup{~,|} else tup{{x}=>x,op} # such that identity of opf is 0
   nw:= cdiv{nl, 64}
   if (l <= 64) {
     if (same{op, ^} and hasarch{'PCLMUL'} and (l & (l-1)) == 0) {
