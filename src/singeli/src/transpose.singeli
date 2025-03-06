@@ -97,7 +97,7 @@ def kernel_part_h{part_h}{src:*T==i8, dst:*T, kw==16, kh==16, w, h} = {
   @unroll (j to 2) {
     def is = 2*iota{2} + j
     d := dst + j*off
-    def store_q{v, i} = { store{*u64~~d, 0, extract{v,i}}; d += h }
+    def store_q{v, i} = { storeu{*u64~~d, extract{v,i}}; d += h }
     each{{r} => each{store_q{[4]u64~~r,.}, is}, rvs}
   }
 }
