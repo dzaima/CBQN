@@ -1,3 +1,4 @@
+show{'debug.singeli in use'}
 include 'debug/printf' # printf & lprintf
 
 def assert{x:(u1)} = { if (not x) emit{void, '__builtin_trap'} }
