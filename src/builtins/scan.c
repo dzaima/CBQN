@@ -1,22 +1,31 @@
 // Scan (`)
 // Empty 𝕩, and length 1 if no 𝕨: return 𝕩
-// Generic operand:
+// Generic argument:
 //   Constant: copy
 //   ⊢ identity, ⊣ reshape 𝕨 or first cell
-// Boolean operand, rank 1:
+// Boolean argument, stride 1:
 //   + AVX2 expansion (SHOULD have better generic, add SSE, NEON)
 //   ∨⌈ ∧×⌊ search+copy, then memset (COULD vectorize search)
 //   ≠ SWAR/SIMD shifts, CLMUL, VPCLMUL (SHOULD add NEON polynomial mul)
 //   < SWAR
 //   =≤≥>- in terms of ≠<∨∧+ with adjustments
-// Arithmetic operand, rank 1:
+// Numeric argument, stride 1:
 //   ⌈⌊ Scalar, SIMD in log(vector width) steps
 //     Check in 6-vector blocks to quickly write result if constant
 //   + Overflow-checked scalar or AVX2
 //   Ad-hoc boolean-valued handling for ≠∨
-// SHOULD extend rank 1 special cases to cell bound 1
-// Higher-rank arithmetic, non-tiny cells: apply operand cell-wise
-//   SHOULD have dedicated high-rank scan optimizations
+// Higher-rank arithmetic:
+//   Boolean ≠∨∧ and synonyms: SWAR; ⌊⌈+: SIMD with shuffle/permute
+//     Stride <word/vector: power-of-two (times stride) shifts
+//       COULD vectorize small-stride boolean scans
+//       ≠, divisor of 64: CLMUL
+//     Stride 1 to 2 words: result in register instead of re-reading
+//     Read and write at same alignment unless stride is large
+//     Large-stride cases auto-vectorize (except + overflow check)
+//     Overflow check for +, widen and retry on failure
+//   =` as ≠`⌾¬
+//   SHOULD optimize high-rank dyadic scan for recognized operands
+//   Other arithmetic, non-tiny cells: apply operand cell-wise
 
 // Scan with rank (`˘ or `⎉k)
 // SHOULD optimize dyadic scan with rank
@@ -70,7 +79,7 @@ B mul_c2(B, B, B);
 
 B scan_ne(B x, u64 p, u64 ia) { // consumes x
   u64* xp = bitany_ptr(x);
-  u64* rp; B r=m_bitarrv(&rp,ia);
+  u64* rp; B r=m_bitarrc(&rp,x);
 #if SINGELI
   si_scan_ne(p, xp, rp, BIT_N(ia));
   #if USE_VALGRIND
@@ -97,14 +106,14 @@ B scan_eq(B x, u64 ia) { // consumes x
 
 static B scan_or(B x, u64 ia) { // consumes x
   u64* xp = bitany_ptr(x);
-  u64* rp; B r=m_bitarrv(&rp,ia);
+  u64* rp; B r=m_bitarrc(&rp,x);
   usz n=BIT_N(ia); u64 xi; usz i=0;
   while (i<n) if ((xi= vg_rand(xp[i]))!=0) { rp[i] = -(xi&-xi)  ; i++; while(i<n) rp[i++] = ~0LL; break; } else rp[i++]=0;
   decG(x); return FL_SET(r, fl_asc|fl_squoze);
 }
 static B scan_and(B x, u64 ia) { // consumes x
   u64* xp = bitany_ptr(x);
-  u64* rp; B r=m_bitarrv(&rp,ia);
+  u64* rp; B r=m_bitarrc(&rp,x);
   usz n=BIT_N(ia); u64 xi; usz i=0;
   while (i<n) if ((xi=~vg_rand(xp[i]))!=0) { rp[i] =  (xi&-xi)-1; i++; while(i<n) rp[i++] =  0  ; break; } else rp[i++]=~0LL;
   decG(x); return FL_SET(r, fl_dsc|fl_squoze);
@@ -130,7 +139,7 @@ B scan_add_bool(B x, u64 ia) { // consumes x
     decG(ones);
     r = mut_fv(r0);
   } else {
-    void* rp = m_tyarrv(&r, elWidth(re), ia, el2t(re));
+    void* rp = m_tyarrc(&r, elWidth(re), x, el2t(re));
     #define SUM_BITWISE(T) { T c=0; for (usz i=0; i<ia; i++) { c+= bitp_get(xp,i); ((T*)rp)[i]=c; } }
     #if SINGELI
       #define SUM(W,T) si_bcs##W(xp, rp, ia);
@@ -156,7 +165,7 @@ B scan_add_bool(B x, u64 ia) { // consumes x
   #define MINMAX_SCAN(T,NAME,C,I) T c=I; for (usz i=0; i<ia; i++) { if (xp[i] C c)c=xp[i]; rp[i]=c; }
 #endif
 #define MM_CASE(T,N,C,I) \
-  case el_##T : { T* xp=T##any_ptr(x); T* rp; r=m_##T##arrv(&rp, ia); MINMAX_SCAN(T,N,C,I); break; }
+  case el_##T : { T* xp=T##any_ptr(x); T* rp; r=m_##T##arrc(&rp, x); MINMAX_SCAN(T,N,C,I); break; }
 #define MINMAX(NAME,C,INIT,BIT,ORD) \
   B r; switch (xe) { default:UD;           \
     case el_bit: return scan_##BIT(x, ia); \
@@ -174,7 +183,7 @@ B scan_max_num(B x, u8 xe, u64 ia) { MINMAX(max,>,MIN,or ,asc) }
 #define MM2_ICASE(T,N,C,I) \
   case el_##T : { \
     if (wv!=(T)wv) { if (wv C 0) { r=C2(shape,m_f64(ia),w); break; } else wv=I; } \
-    T* xp=T##any_ptr(x); T* rp; r=m_##T##arrv(&rp, ia); MINMAX_SCAN(T,N,C,wv); \
+    T* xp=T##any_ptr(x); T* rp; r=m_##T##arrc(&rp, x); MINMAX_SCAN(T,N,C,wv); \
   break; }
 #define MINMAX2(NAME,C,INIT,BIT,BI,ORD) \
   i32 wv=0; if (q_i32(w)) { wv=o2fG(w); } else { x=taga(cpyF64Arr(x)); xe=el_f64; } \
@@ -195,7 +204,7 @@ SHOULD_INLINE B scan2_max_num(B w, B x, u8 xe, usz ia) { MINMAX2(max,>,MIN,or ,0
 
 static B scan_lt(B x, u64 p, usz ia) {
   u64* xp = bitany_ptr(x);
-  u64* rp; B r=m_bitarrv(&rp,ia); usz n=BIT_N(ia);
+  u64* rp; B r=m_bitarrc(&rp,x); usz n=BIT_N(ia);
   u64 m = 0x5555555555555555;
   for (usz i=0; i<n; i++) {
     u64 x = xp[i];
@@ -208,7 +217,7 @@ static B scan_lt(B x, u64 p, usz ia) {
 
 static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
   assert(xe!=el_bit && elNum(xe));
-  B r; void* rp = m_tyarrv(&r, xe==el_f64? sizeof(f64) : sizeof(i32), ia, xe==el_f64? t_f64arr : t_i32arr);
+  B r; void* rp = m_tyarrc(&r, xe==el_f64? sizeof(f64) : sizeof(i32), x, xe==el_f64? t_f64arr : t_i32arr);
   #if SINGELI
     switch(xe) { default:UD;
       case el_i8:  { if (!q_fi32(r0) || si_scan_plus_i8_i32 (i8any_ptr(x),  r0, rp, ia)!=ia) goto cs_i8_f64;  decG(x); return r; }
@@ -217,8 +226,8 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
       case el_f64: { f64* xp=f64any_ptr(x); f64 c=r0; for (usz i=0; i<ia; i++) { c+= xp[i];  ((f64*)rp)[i]=c; } decG(x); return r; }
     }
     cs_i8_f64: { x=taga(cpyI16Arr(x)); goto cs_i16_f64; }
-    cs_i16_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); si_scan_plus_i16_f64(i16any_ptr(x), r0, rp, ia); decG(x); return r; }
-    cs_i32_f64: { decG(r); f64* rp; r = m_f64arrv(&rp, ia); si_scan_plus_i32_f64(i32any_ptr(x), r0, rp, ia); decG(x); return r; }
+    cs_i16_f64: { decG(r); f64* rp; r = m_f64arrc(&rp, x); si_scan_plus_i16_f64(i16any_ptr(x), r0, rp, ia); decG(x); return r; }
+    cs_i32_f64: { decG(r); f64* rp; r = m_f64arrc(&rp, x); si_scan_plus_i32_f64(i32any_ptr(x), r0, rp, ia); decG(x); return r; }
   #else
     if (xe==el_i8  && q_fi32(r0)) { i8*  xp=i8any_ptr (x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
     if (xe==el_i16 && q_fi32(r0)) { i16* xp=i16any_ptr(x); i32 c=r0; for (usz i=0; i<ia; i++) { if (addOn(c,xp[i])) goto base; ((i32*)rp)[i]=c; } decG(x); return r; }
@@ -226,7 +235,7 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
     if (xe==el_f64) {   res_float:; f64* xp=f64any_ptr(x); f64 c=r0; for (usz i=0; i<ia; i++) { c+= xp[i];                     ((f64*)rp)[i]=c; } decG(x); return r; }
     base:;
     decG(r);
-    f64* rp2; r = m_f64arrv(&rp2, ia); rp = rp2;
+    f64* rp2; r = m_f64arrc(&rp2, x); rp = rp2;
     x = toF64Any(x);
     goto res_float;
   #endif
@@ -234,10 +243,9 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
 
 extern B scan_arith(B f, B w, B x, usz* xsh); // from cells.c
 B scan_c1(Md1D* d, B x) { B f = d->f;
-  if (isAtm(x) || RNK(x)==0) thrM("𝔽`𝕩: 𝕩 cannot have rank 0");
-  ur xr = RNK(x);
-  usz ia = IA(x);
-  if (*SH(x)<=1 || ia==0) return x;
+  if (isAtm(x)) { unit: thrM("𝔽`𝕩: 𝕩 cannot have rank 0"); }
+  usz ia = IA(x); if (ia <= 1) { if (ia==1 && RNK(x)==0) goto unit; return x; }
+  usz n = *SH(x); if (n  <= 1) return x;
   if (RARE(!isFun(f))) {
     if (isMd(f)) thrM("Calling a modifier");
     B xf = getFillR(x);
@@ -257,7 +265,50 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       Arr* r = TI(x,slice)(x, 0, csz);
       return C2(shape, s, taga(r));
     }
-    if (!(xr==1 && xe<=el_f64)) goto base;
+    if (xe > el_f64) goto base;
+    if (ia != n) { // csz != 1
+      #if SINGELI
+      usz csz = arr_csz(x);
+      i8 t = -1; bool neg = 0;
+      if (xe==el_bit) switch (rtid) {
+        CASE_N_OR:                   t=0; break;
+        CASE_N_AND:                  t=1; break;
+        case n_eq: neg=1; case n_ne: t=2; break;
+      }
+      if (t != -1) {
+        if (neg) x = bit_negate(x);
+        u64* rp; B r=m_bitarrc(&rp,x);
+        si_scan_bool_stride[t](bitany_ptr(x), rp, ia, csz);
+        if (neg) r = bit_negate(r);
+        decG(x); return r;
+      }
+      if (rtid==n_floor | rtid==n_ceil) {
+        // boolean was handled as CASE_N_AND
+        B r; void* rp = m_tyarrc(&r, elWidth(xe), x, el2t(xe));
+        void* xp = tyany_ptr(x);
+        si_scan_stride_minmax[4*(rtid==n_ceil) + xe-el_i8](xp, rp, ia, csz);
+        decG(x); return r;
+      }
+      if (rtid==n_add) {
+        if (xe==el_bit) { x = taga(cpyI8Arr(x)); xe=el_i8; }
+        restart:;
+        B r; void* rp = m_tyarrc(&r, elWidth(xe), x, el2t(xe));
+        void* xp = tyany_ptr(x);
+        bool done = si_scan_stride_add[xe-el_i8](xp, rp, ia, csz);
+        if (!done) {
+          decG(r);
+          switch (++xe) { default: UD;
+            case el_i16: x = taga(cpyI16Arr(x)); break;
+            case el_i32: x = taga(cpyI32Arr(x)); break;
+            case el_f64: x = taga(cpyF64Arr(x)); break;
+          }
+          goto restart;
+        }
+        decG(x); return r;
+      }
+      #endif
+      goto base;
+    }
     
     if (xe==el_bit) switch (rtid) { default: goto base;
       case n_add: return scan_add_bool(x, ia); // +
@@ -278,7 +329,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (!elInt(xe)) goto base;
       f64 x0 = o2fG(IGetU(x,0));
       if (!q_fbit(x0)) goto base;
-      u64* rp; B r = m_bitarrv(&rp, ia);
+      u64* rp; B r = m_bitarrc(&rp, x);
       bool c = x0;
       rp[0] = c;
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); for (usz i=1; i<ia; i++) { c = c!=xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
@@ -289,7 +340,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
     if (rtid==n_or) { x=num_squeezeChk(x); xe=TI(x,elType); if (xe==el_bit) return scan_or(x, ia); }
   }
   base:;
-  if (xr>1 && ia >= 6 * (u64)*SH(x) && isPervasiveDy(f)) return scan_arith(f, m_f64(0), x, SH(x));
+  if (ia!=n && ia >= 6 * (u64)n && isPervasiveDy(f)) return scan_arith(f, m_f64(0), x, SH(x));
   SLOW2("𝕎` 𝕩", f, x);
   B xf = getFillR(x);
   
@@ -297,7 +348,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   SGet(x)
   FC2 fc2 = c2fn(f);
   
-  if (xr==1) {
+  if (ia == n) {
     r.a[0] = Get(x,0);
     for (usz i=1; i<ia; i++) r.a[i] = fc2(f, inc(r.a[i-1]), Get(x,i));
   } else {
@@ -327,7 +378,8 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
     u8 rtid = RTID(f);
     if (rtid==n_rtack) { dec(w); return x; }
     if (rtid==n_ltack) return C2(shape, C1(fne, x), w);
-    if (!(xr==1 && elNum(xe) && xe<=el_f64)) goto base;
+    if (!(elNum(xe) && xe<=el_f64)) goto base;
+    if (xr!=1 && *SH(x)!=ia) goto base;
     if (!isF64(w)) goto base;
     
     if (rtid==n_floor) return scan2_min_num(w, x, xe, ia); // ⌊
@@ -350,7 +402,7 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
       if (xe==el_bit) return scan_ne(x, -(u64)(wBit? o2bG(w) : 1&~*bitany_ptr(x)), ia);
       if (!wBit || !elInt(xe)) goto base;
       bool c = o2bG(w);
-      u64* rp; B r = m_bitarrv(&rp, ia);
+      u64* rp; B r = m_bitarrc(&rp, x);
       if (xe==el_i8 ) { i8*  xp=i8any_ptr (x); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
       if (xe==el_i16) { i16* xp=i16any_ptr(x); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
       if (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i=0; i<ia; i++) { c^= xp[i]; bitp_set(rp,i,c); } decG(x); return r; }

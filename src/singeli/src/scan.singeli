@@ -98,6 +98,118 @@ def shift_first{c:V=[l]_, p:V} = {
   else blend_first{c, rotate_right{p}}
 }
 
+
+# Strided scans
+fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) : Ret = {
+  def minvalue{(f64)} = -1/0; def maxvalue{(f64)} = 1/0
+  def id = match (op) {
+    {(min)} => maxvalue; {(max)} => minvalue
+    {(+)} => ({_}=>0)
+  }
+  x:= *T~~xv; r:= *T~~rv
+  # Architecture determination
+  # Use largest vector width with a full-width shuffle
+  def has_shuf = hasarch{'SSSE3'} or hasarch{'AARCH64'}
+  def I = if (hasarch{'AVX2'} and T>=i32) [8]i32 else [16]i8
+  def [il]IE = I; def selI = shuf{IE, ...}
+  def wT = width{T}
+  def f = wT/width{IE}
+  def vl = width{I}/wT
+  def V = [vl]T
+  if (has_shuf and l < vl) {
+    # Small stride: power-of-two shifts
+    def small{k} = {
+      iv:= iota{I}; j:= I**cast_i{IE,l*f}
+      spr:= I**il - j + iv
+      def inds = @collect (k) {
+        v:= iv - (j &~ I~~(iv<j))
+        spr = selI{spr, v}
+        js:= j; j+= j
+        if (not same{op, +}) selI{., v}
+        else if (same{IE,i8}) selI{., iv - js}
+        else { m:= V~~(iv >= js); {x} => selI{x, v} & m }
+      }
+      c:= V**id{T}
+      @for_masked{vl} (x in tup{V, x}, r in tup{V, r}, M in 'm' over ia) {
+        xs:= fold{{v, i} => op{i{v}, v}, x, inds}
+        r = c = op{shuf{IE, c, spr}, xs}
+        check_over{M, x, r} # For +, infers other argument as r-x
+      }
+    }
+    if (not (same{op,+} and V==[4]f64)) {
+      def max_k = lb{vl/2} # Divide by two from assuming l≥2
+      if (max_k<3 or l<4) small{max_k} else small{max_k-1} # l=2 and l=3 are the only cases needing the full max_k iterations; max_k<3 limits specialization to where it's significant
+    } else { # Non-associative!
+      c:= V**0
+      if (l==2) {
+        @for_masked{vl} (x in tup{V, x}, r in tup{V, r} over ia) {
+          a:= c + shuf{x, 0,1,0,1}
+          c = a + shuf{x, 2,3,2,3}
+          r = blend{a, c, 0,0,1,1}
+        }
+      } else {
+        assert{l==3}
+        @for_masked{vl} (x in tup{V, x}, r in tup{V, r} over ia) {
+          a:= shuf{c, 1,1,2,3} + blend{x, V**0, 0,1,1,1}
+          r = c = x + shuf{a, 1,2,3,0}
+        }
+      }
+    }
+  } else {
+    # Large stride: single shift, with saved register or memory
+    def op_chk{M, p, x} = { r:= op{p, x}; check_over{M, p, x, r}; r }
+    @for (r, x over l) r = x
+    if (has_shuf and l<256/(wT/8)) {
+      # Make sure to load the previous row data at the same alignment to not hit bad store-to-load forwarding
+      def [il]IE = I
+      q:= l%vl; fq:= cast_i{IE, q*f}
+      def rot = shuf{IE, ., (iota{I} - I**fq) & I**(il-1)}
+      bv:= iota{I} >= I**fq; def bl = blend_hom{..., bv}
+      c:= V**id{T}
+      o:= l - q
+      if (l == 2*vl) { o = vl; bv = ~bv }
+      if (o == vl) {
+        p:= load{*V~~x}; store{*V~~r, 0, p}
+        @for_masked{vl} (x in tup{V, x+o}, r in tup{V, r+o}, M in 'm' over ia-o) {
+          p = rot{p}
+          r = op_chk{M, bl{c, p}, x}
+          c = p; p = r
+        }
+      } else {
+        @for_masked{vl} (x in tup{V, x+o}, r in tup{V, r+o}, p in tup{V, r}, M in 'm' over ia-o) {
+          q:= rot{p}
+          r = op_chk{M, bl{c, q}, x}
+          c = q
+        }
+      }
+    } else if (same{op, +} and T<=i32 and has_simd and (has_shuf or l>=vl)) {
+      def vl = arch_defvw/wT; def V = [vl]T
+      @for_masked{vl} (x in tup{V, x+l}, r in tup{V, r+l}, p in tup{V, r}, M in 'm' over ia-l) {
+        r = op_chk{M, p, x}
+      }
+    } else {
+      @for (r, x, p in r-l over _ from l to ia) r = op_chk{0, p, x}
+    }
+  }
+  1
+}
+def scan_stride_assoc{op, T} = scan_stride_assoc{op, T, void, {..._}=>{}}
+def check_add_over{_, w:T, x:T, r:T} = { if ((w^r) & (x^r) < 0) return{0} }
+def check_add_over{M, w:V=[_]E, x:V, r:V} = {
+  o:= (if (not hasarch{'X86_64'} or width{E}<=16) any_hom{M, subs{r,w} != x}
+       else any_top{M, (w^r) & (x^r)})
+  if (o) return{0}
+}
+def check_add_over{M, x, r} = check_add_over{M, r-x, x, r}
+export_tab{'si_scan_stride_minmax',
+  flat_table{scan_stride_assoc, tup{min,max}, tup{i8,i16,i32,f64}}
+}
+export_tab{'si_scan_stride_add', tup{
+  ...each{scan_stride_assoc{+, ., u1, check_add_over}, tup{i8,i16,i32}},
+  scan_stride_assoc{+, f64, u1, {..._}=>{}}
+}}
+
+
 # xor scan
 def vec_prefix_byshift{op, sh} = {
   def pre{v:V, k} = if (k < elwidth{V}) pre{op{v, sh{v,k}}, 2*k} else v
@@ -106,13 +218,13 @@ def vec_prefix_byshift{op, sh} = {
 def scan_word_ne = prefix_byshift{^, <<}
 def scan_words_ne = vec_prefix_byshift{^, <<}
 
-fn scan_neq{}(c:u64, x:*u64, r:*u64, nw:u64) : void = {
+fn scan_neq{}(c:u64, x:*u64, r:*u64, nw:usz) : void = {
   @for (x, r over nw) {
     r = c ^ scan_word_ne{x}
     c = -(r>>63) # repeat sign bit
   }
 }
-fn scan_neq{if has_simd}(c0:u64, x:*u64, r:*u64, nw:u64) : void = {
+fn scan_neq{if has_simd}(c0:u64, x:*u64, r:*u64, nw:usz) : void = {
   def vl = arch_defvw / 64
   def V = [vl]u64
   c := V**c0
@@ -123,7 +235,7 @@ fn scan_neq{if has_simd}(c0:u64, x:*u64, r:*u64, nw:u64) : void = {
     c = broadcast_last{p}
   }
 }
-fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64, mark:u64) : void = {
+fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:usz, mark:u64) : void = {
   def V = [2]u64
   m := V**mark
   def xor64{a, i, carry} = { # carry is 64-bit broadcasted current total
@@ -144,10 +256,10 @@ fn clmul_scan_ne_any{if hasarch{'PCLMUL'}}(x:*void, r:*void, init:u64, words:u64
     store{*u64~~(rv+e), clmul{load{V, *u64~~(xv+e), 1}, m, 0} ^ c, 1}
   }
 }
-fn scan_neq{if hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
+fn scan_neq{if hasarch{'PCLMUL'}}(init:u64, x:*u64, r:*u64, nw:usz) : void = {
   clmul_scan_ne_any{}(*void~~x, *void~~r, init, nw, -(u64~~1))
 }
-fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u64, nw:u64) : void = {
+fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u64, nw:usz) : void = {
   def V = [8]u64
   def sse{a} = make{[2]u64, a, 0}
   carry := sse{init}
@@ -358,10 +470,11 @@ def loose_mask_gen{V=[vl]T, l} = { # Slow, for ≠` only
 }
 def has_vecshift = hasarch{'AVX2'} or hasarch{'AARCH64'}
 def loose_mask_gen{V=[vl](u64), l if has_vecshift} = {
+  l64 := promote{u64, l}
   q := -make{V, 64*iota{vl}}  # distance to next row boundary
-  def q_mod{} = { q+= V**l & -(q>>63) }
-  def q_mod{if hasarch{'SSE4.1'}} = { q = blend_top{q,q+V**l, q} }
-  o:u64 = width{V}; while (o>l) { o-=l; q_mod{} }
+  def q_mod{} = { q+= V**l64 & -(q>>63) }
+  def q_mod{if hasarch{'SSE4.1'}} = { q = blend_top{q,q+V**l64, q} }
+  o:u64 = width{V}; while (o>l64) { o-=l64; q_mod{} }
   {} => {
     m:= V**1 << q; if (not hasarch{'AVX2'}) m&= q < V**64
     q-= V**o; q_mod{}
@@ -560,7 +673,7 @@ fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
     c:u64 = 0   # carry
     while (1) {
       i+= l; ii := iw; iw = cdiv{i, 64}
-      scan_neq{}(c, x+ii, r+ii, promote{u64,iw-ii})
+      scan_neq{}(c, x+ii, r+ii, iw-ii)
       if (i == nl) return{}
       s:= load{r, iw-1}
       q := i%64
@@ -619,3 +732,49 @@ export{'si_scan_rows_and',   scan_rows_andor{0}}
 export{'si_scan_rows_or',    scan_rows_andor{1}}
 export{'si_scan_rows_ne',    scan_rows_neq}
 export{'si_scan_rows_ltack', scan_rows_left}
+
+
+# Strided boolean scans
+fn scan_stride_bool_assoc{op}(x:*u64, r:*u64, nl:usz, l:usz) : void = {
+  assert{l > 1}
+  def {flip,opf} = if (same{op, &}) tup{~,|} else tup{{x}=>x,op} # such that identity of opf is 0
+  nw:= cdiv{nl, 64}
+  if (l <= 64) {
+    if (same{op, ^} and hasarch{'PCLMUL'} and (l & (l-1)) == 0) {
+      clmul_scan_ne_any{}(*void~~x, *void~~r, 0, nw, aligned_spaced_mask{l})
+      return{}
+    }
+    c:u64 = 0  # carry l bits, no matter the alignment
+    @for (r, x over nw) {
+      c = opf{flip{x}, c >> (64-l)}
+      s:= l; while (s < 64) { c = opf{c, c<<s}; s += s }
+      r = flip{c}
+    }
+  } else if (l < 128) {
+    q:= l%64
+    c:= flip{u64~~0}
+    p:= load{x,0}
+    store{r,0, p}
+    @for (r, x over _ from 1 to nw) {
+      r = op{x, c>>(64-q) | p<<q}
+      c = p; p = r
+    }
+  } else {
+    fw:= cdiv{l, 64}  # words in first cell
+    @for (r, x over fw) r = x
+    if (l%64 == 0) {
+      @for (r, x, p in r-fw over _ from fw to nw) r = op{x, p}
+    } else {
+      q:= l%64
+      c:= flip{u64~~0}
+      @for (r, x, p in r-(fw-1) over _ from fw-1 to nw) {
+        r = op{x, c>>(64-q) | p<<q}
+        c = p
+      }
+    }
+  }
+}
+export_tab{
+  'si_scan_bool_stride', 
+  each{scan_stride_bool_assoc, tup{|, &, ^}}
+}
