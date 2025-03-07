@@ -144,33 +144,37 @@ static NOINLINE NORETURN void select_properError(B w, B x) {
   fatal("select_properError");
 }
 
+static NOINLINE B select_list_cell(usz wi, B x) { // guarantees returning new array
+  assert(isArr(x));
+  B xf = getFillR(x);
+  B xv = IGet(x, wi);
+  B rb;
+  if (isNum(xf) || isC32(xf)) {
+    rb = m_unit(xv);
+  } else if (noFill(xf)) {
+    rb = m_hunit(xv);
+  } else {
+    Arr* r = m_fillarrp(1);
+    arr_shAtm(r);
+    fillarrv_ptr(r)[0] = xv;
+    fillarr_setFill(r, xf);
+    NOGC_E;
+    rb = taga(r);
+  }
+  decG(x);
+  return rb;
+}
+
+#define WRAP_SELECT_ONE(VAL, LEN, FMT, ARG) WRAP(VAL, LEN, thrF("𝕨⊏𝕩: Indexing out-of-bounds (" FMT "∊𝕨, %s≡≠𝕩)", ARG, LEN))
+
 B select_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("𝕨⊏𝕩: 𝕩 cannot be an atom");
   ur xr = RNK(x);
   if (xr==0) thrM("𝕨⊏𝕩: 𝕩 cannot be a unit");
   if (isAtm(w)) {
-    watom:;
-    usz xn = *SH(x);
-    usz wi = WRAP(o2i64(w), xn, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, xn));
-    if (xr==1) {
-      B xf = getFillR(x);
-      B xv = IGet(x, wi);
-      B rb;
-      if (isNum(xf) || isC32(xf)) {
-        rb = m_unit(xv);
-      } else if (noFill(xf)) {
-        rb = m_hunit(xv);
-      } else {
-        Arr* r = m_fillarrp(1);
-        arr_shAtm(r);
-        fillarrv_ptr(r)[0] = xv;
-        fillarr_setFill(r, xf);
-        NOGC_E;
-        rb = taga(r);
-      }
-      decG(x);
-      return rb;
-    }
+    atomw:;
+    usz wi = WRAP_SELECT_ONE(o2i64(w), *SH(x), "%R", w);
+    if (xr==1) return select_list_cell(wi, x);
     usz csz = arr_csz(x);
     Arr* r = TI(x,slice)(incG(x), wi*csz, csz);
     usz* sh = arr_shAlloc(r, xr-1);
@@ -182,29 +186,55 @@ B select_c2(B t, B w, B x) {
   usz wia = IA(w);
   Arr* r;
   ur wr = RNK(w);
-  if (wr==0) {
+  i32 rr = xr+wr-1;
+  if (wia <= 1) {
+    if (wia == 0) {
+      emptyRes:
+      if (0 == *SH(x) && wr==1) {
+        decG(w);
+        return x;
+      }
+      r = emptyArr(x, rr);
+      if (rr<=1) goto dec_ret;
+      goto setsh;
+    }
     B w0 = IGetU(w, 0);
     if (isAtm(w0)) {
+      inc(w0);
       decG(w);
-      w = inc(w0);
-      goto watom;
-    }
-  }
-  i32 rr = xr+wr-1;
-  if (wia==0) {
-    emptyRes:
-    if (0 == *SH(x) && wr==1) {
+      w = w0;
+      if (wr == 0) goto atomw;
+      assert(rr >= 1);
+      usz wi = WRAP_SELECT_ONE(o2i64(w), *SH(x), "%R", w);
+      B r;
+      usz* sh;
+      if (xr == 1) {
+        r = select_list_cell(wi, x);
+        sh = arr_shAlloc(a(r), rr);
+      } else {
+        usz csz = arr_csz(x);
+        Arr* ra = TI(x,slice)(incG(x), wi*csz, csz);
+        sh = arr_shAlloc(ra, rr);
+        if (sh) shcpy(sh+wr, SH(x)+1, xr-1);
+        r = taga(ra);
+        decG(x);
+      }
+      if (sh) PLAINLOOP for (ux i = 0; i < wr; i++) sh[i] = 1;
+      return r;
+    } else if (isArr(w0) && wr<=1) {
+      inc(w0);
       decG(w);
-      return x;
+      if (elNum(TI(w0,elType))) return C2(select, w0, x);
+      w0 = num_squeeze(w0);
+      if (elNum(TI(w0,elType))) return C2(select, w0, x);
+      w = m_vec1(w0);
     }
-    r = emptyArr(x, rr);
-    if (rr<=1) goto dec_ret;
-    goto setsh;
+    goto base;
   }
   
   B xf = getFillR(x);
   usz xn = *SH(x);
-  if (xn==0) goto base;
+  if (xn==0) goto def_xf_base;
   usz csz = arr_csz(x);
   u8 xl = cellWidthLog(x);
   usz ria = wia * csz;
@@ -220,7 +250,7 @@ B select_c2(B t, B w, B x) {
     
   #else
     #define CASE(S, E)  case S: for (usz i=i0; i<i1; i++) ((E*)rp)[i] = ((E*)xp+off)[ip[i]]; break
-    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP(wp[i], xn, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))]; break
+    #define CASEW(S, E) case S: for (usz i=0; i<wia; i++) ((E*)rp)[i] = ((E*)xp)[WRAP_SELECT_ONE(wp[i], xn, "%i", wp[i])]; break
     #define CPUSEL(W, NEXT) /*assumes 3≤xl≤6*/ \
       if (sizeof(W) >= 4) {                           \
         switch(xl) { default:UD; CASEW(3,u8); CASEW(4,u16); CASEW(5,u32); CASEW(6,u64); } \
@@ -298,8 +328,8 @@ B select_c2(B t, B w, B x) {
     if (xl!=6) goto generic_l;                        \
     M_HARR(ra, wia); B* xp = arr_bptr(x);             \
     SLOWIF(xp==NULL) SLOW2("𝕨⊏𝕩", w, x);              \
-    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP(wp[i], xia, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn))])); } \
-    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP(wp[i], xia, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%i∊𝕨, %s≡≠𝕩)", wp[i], xn)) )); } \
+    if (xp!=NULL) { for (usz i=0; i<wia; i++) HARR_ADD(ra, i, inc(xp[WRAP_SELECT_ONE(wp[i], xia, "%i", wp[i])])); } \
+    else { SGet(x); for (usz i=0; i<wia; i++) HARR_ADD(ra, i, Get(x, WRAP_SELECT_ONE(wp[i], xia, "%i", wp[i]) )); } \
     r = a(withFill(HARR_FV(ra), xf)); goto setsh;     \
   }
   
@@ -340,14 +370,15 @@ B select_c2(B t, B w, B x) {
       w = num_squeezeChk(w);
       we = TI(w,elType);
       if (elNum(we)) goto retry;
-      goto base;
+      goto def_xf_base;
     }
   }
   #undef CASE
   #undef CASEW
   
-  base:;
+  def_xf_base:;
   dec(xf);
+  base:;
   return c2rt(select, w, x);
   
   generic_l: {
@@ -915,7 +946,7 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   if (in == 0) return taga(emptyArr(x, 1));
   if (in == 1) {
     B w = IGetU(inds,0); if (!isF64(w)) goto generic;
-    B r = select_cells_single(WRAP(o2i64(w), csz, thrF("𝕨⊏𝕩: Indexing out-of-bounds (%R∊𝕨, %s≡≠𝕩)", w, csz)), x, cam, csz, 1, false);
+    B r = select_cells_single(WRAP_SELECT_ONE(o2i64(w), csz, "%R", w), x, cam, csz, 1, false);
     decG(x); decG(inds); return r;
   }
   u8 ie = TI(inds,elType);

@@ -153,15 +153,19 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"𝕨⊏𝕩: Indexing out-of-bounds (¯4∊𝕨, 3≡≠𝕩)" % %USE evar ⋄ (-1‿4‿2‿0‿10‿5‿6) ⊏_evar 1‿0‿1
 !"𝕨⊏𝕩: Indexing out-of-bounds (4000∊𝕨, 1001≡≠𝕩)" %  %USE evar ⋄ ( 1000×1‿4‿2‿0‿10‿5‿6) ⊏_evar 1001⥊1‿0‿1
 !"𝕨⊏𝕩: Indexing out-of-bounds (¯4000∊𝕨, 1001≡≠𝕩)" % %USE evar ⋄ (¯1000×1‿4‿2‿0‿10‿5‿6) ⊏_evar 1001⥊1‿0‿1
+!"𝕨⊏𝕩: Indexing out-of-bounds (3∊𝕨, 2≡≠𝕩)" % %USE evar ⋄ (⌽↕4) ⋈⊸⊏_evar "ab"
+!"Expected integer, got namespace" % %USE eqerr ⋄ ⟨{⇐}, <{⇐}⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such arrays" % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ ⟨⋈⋈{⇐}, <<<4, ⋈⋈⋈4, 1.5‿{⋈}⟩ ⊏_evar _eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"𝕨⊏𝕩: Compound 𝕨 must have rank at most 1" % %USE eqerr ⋄ ⟨≍⋈↕5⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"Expected integer, got namespace" % %USE eqerr ⋄ ⟨≍⋈{⇐}, ⋈{⇐}⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
+%USE eqvar ⋄ (⌽↕4) ⋈⊸⊏_eqvar "abcdefgh" %% "dcba"
+(<↕3) ⊏ "hello" %% "hel"
+(<<4) ⊏ "hello" %% <'o'
 %USE tvar ⋄ !∘≡¨⟜⊏ ∾ {⥊𝕨 ⊏⎊(•CurrentError∘⊢) _tvar 𝕩}´¨ ⟨⟨0‿1, ⋈0⟩ ⋄ ⟨0‿1, "?"⟩ ⋄ ⟨0‿1, ≍0‿1⟩⟩
 a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ 𝕨⊏⎊"e"𝕩}⟨1‿2,3‿4⟩ ⋄ ! 0‿1 ≡ a
 %USE eqvar ⋄ {1‿¯1 {r←𝕨⊏𝕩 ⋄ ! 𝕩 ≥○•internal.ElType r ⋄ r}_eqvar 𝕩}¨ ⟨↕2, ↕4, "hello", ⟨"ab", "cd", "ef"⟩, ↕⋈4⟩
-!"𝕨⊏𝕩: 𝕩 cannot be a unit" % 0⊏<"a"
-!"𝕨⊏𝕩: 𝕩 cannot be a unit" % 0⊏<5
-!"𝕨⊏𝕩: 𝕩 cannot be an atom" % 0⊏5
-!"𝕨⊏𝕩: 𝕩 cannot be a unit" % ⟨⟩⊏<"a"
-!"𝕨⊏𝕩: 𝕩 cannot be a unit" % ⟨⟩⊏<5
-!"𝕨⊏𝕩: 𝕩 cannot be an atom" % ⟨⟩⊏5
+!"𝕨⊏𝕩: 𝕩 cannot be a unit" % %USE eqerr ⋄ ⟨0, ⟨⟩⟩ ⊏_eqerr ⟨<"a", <5, <{⇐}⟩
+!"𝕨⊏𝕩: 𝕩 cannot be an atom" % %USE eqerr ⋄ ⟨0, ⟨⟩⟩ ⊏_eqerr ⟨5, {⇐}⟩
 !"Expected integer, got 1.5" % ⟨1.5⟩ ⊏ "ab"‿"cd"
 !"𝕨⊏𝕩: Indexing out-of-bounds (10∊𝕨, 2≡≠𝕩)" % ⟨10⟩ ⊏ "ab"‿"cd"
 {𝕩 ! ↕∘≠⊸⊏⊸≡ 20‿𝕩•rand.Range 2}¨ (↕70)∾⥊(64×1‿2‿3‿4‿5)+⌜¯1‿0‿1‿30‿60
