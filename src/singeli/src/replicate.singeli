@@ -321,6 +321,23 @@ fn rep_const_bool{}(wv:usz, x:*u64, r:*u64, rlen:usz) : void = {
       rep_const_bool{}(wf, x, t, tlen)
       rep_const_bool{}(wq, t, r, rlen)
     }
+  } else if (not hasarch{'AVX2'} and wv >= 64) {
+    # Identical to the non-Singeli case for large wv
+    # but we assume n==0 and drop the loop
+    assert{wv < 128}
+    i:usz = 0
+    ri:usz = 0; j:usz = 0  # Bit index in r; ri/64
+    c:u64 = 0
+    while (j < nw-1) { # e<=j+2 below, so e-1<nw
+      v := -(1 & load{x, i/64}>>(i%64)); ++i
+      r0:= c ^ ((v^c) << (ri%64))
+      c = v
+      ri+= wv; e:= ri/64
+      store{r, e-1, c}
+      store{r, j, r0}
+      j = e
+    }
+    if (ri%64 != 0) store{r, j, c}
   } else {
     rep_const_bool_odd{wv, x, r, nw}
   }
