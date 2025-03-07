@@ -45,6 +45,7 @@
 //       COULD use pdep or similar to avoid overhead on small results
 //     Otherwise, factor into power of 2 times odd
 //       COULD fuse 2×odd, since 2/odd/ has a larger intermediate
+//   𝕨≤256, AVX2: Modular permutation with shift-based masks
 // Other typed 𝕩 uses +`, or lots of Singeli
 //   Fixed shuffles, factorization, partial shuffles, self-overlapping
 // Otherwise, cell-by-cell copying
@@ -779,7 +780,10 @@ B slash_c2(B t, B w, B x) {
     if (xl == 0) {
       u64* xp = bitany_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s);
-      #if SINGELI
+      #if SINGELI_AVX2
+      if (wv <= 256) si_constrep_bool(wv, xp, rp, s);
+      else
+      #elif SINGELI
       if (wv <= 64) si_constrep_bool(wv, xp, rp, s);
       else
       #endif
