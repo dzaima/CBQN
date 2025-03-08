@@ -489,10 +489,8 @@ def modperm_dat{T, k} = {
   def w = width{T}
   def i = iota{lb{w}}
   def bits = ~(1 & (k*iota{w} >> merge{0, replicate{1<<i, i}}))
-  match (T) {
-    {[_]E} => make{T, each{base{2,.}, split{width{E}, bits}}}
-    {_}    => T~~base{2, bits}
-  }
+  def E = match (T) { {[_]E} => E; {_} => T }
+  each{{x} => E~~base{2,x}, split{width{E}, bits}}
 }
 # Permutation step evaluators
 # shift takes a top-half mask; others take both-halves
@@ -584,24 +582,24 @@ def proc_mod_dat{swap_data:W} = {
   tup{partperm, get_mod_permuter}
 }
 
-def rep_const_bool_odd{k, x, r, nw} = {
-  def avx2 = hasarch{'AVX2'}
-  def W = if (has_simd) [if (avx2) 4 else 2]u64 else u64
+def MP = if (has_simd) [if (hasarch{'AVX2'}) 4 else 2]u64 else u64
+swtab:*u64 = join{each{modperm_dat{MP, .}, 1+2*iota{32}}}
 
+def rep_const_bool_odd{k, x, r, nw} = {
+  def W = MP
   def {output, check_done, flush} = get_boolvec_writer{W, r, nw}
   xp := *W~~x
   def getter{perm}{} = { check_done{}; xv := load{xp}; ++xp; perm{xv} }
 
   # Modular permutation: small-k cases may use a limited permutation
   # on bytes or 32-bit ints; general case uses the whole thing
-  swtab:*W = each{modperm_dat{W, .}, 1+2*iota{32}}
-  swap_data := load{swtab, (k%64)>>1}
+  swap_data := load{*W~~swtab, (k%64)>>1}
   def {partperm, get_full_permute} = proc_mod_dat{swap_data}
 
   def sp_max = if (any_sel) 8 else 4
   if (k < sp_max) {
     rep_const_bool_small_odd{W, sp_max, k, getter{partperm}, output}
-  } else if (not avx2 or k < 64) {
+  } else if (not hasarch{'AVX2'} or k < 64) {
     def get_swap_x = getter{get_full_permute{}}
     rep_const_bool_odd_mask4{W, k, get_swap_x, output, cdiv{nw, vcount{W}}}
   } else {
