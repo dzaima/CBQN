@@ -45,6 +45,7 @@
 //       COULD use pdep or similar to avoid overhead on small results
 //     Otherwise, factor into power of 2 times odd
 //       COULD fuse 2×odd, since 2/odd/ has a larger intermediate
+//   𝕨≤256, AVX2: Modular permutation with shift-based masks
 // Other typed 𝕩 uses +`, or lots of Singeli
 //   Fixed shuffles, factorization, partial shuffles, self-overlapping
 // Otherwise, cell-by-cell copying
@@ -779,12 +780,29 @@ B slash_c2(B t, B w, B x) {
     if (xl == 0) {
       u64* xp = bitany_ptr(x);
       u64* rp; r = m_bitarrv(&rp, s);
-      #if SINGELI
-      if (wv <= 64) si_constrep_bool(wv, xp, rp, s);
-      else
+      #if SINGELI_AVX2
+      if (wv <= 256) si_constrep_bool(wv, xp, rp, s);
+      #elif SINGELI
+      if (wv <= 128) si_constrep_bool(wv, xp, rp, s);
+      #else
+      if (wv <= 64) { BOOL_REP_XOR_SCAN(wv) }
       #endif
-      if (wv <= 256) { BOOL_REP_XOR_SCAN(wv) }
-      else           { BOOL_REP_OVER(wv, xlen) }
+      else {
+        // Like BOOL_REP_OVER but predictable
+        u64 ri=0, c=0; usz j=0;
+        usz n=wv/64-1;
+        for (usz i = 0; i < xlen; i++) {
+          u64 v = -(1 & xp[i/64]>>(i%64));
+          u64 r0 = c ^ ((v^c) << (ri%64));
+          c = v;
+          ri += wv; usz e = ri/64;
+          rp[e-1] = v; // This allows the loop to be constant-length
+          rp[j] = r0;
+          for (usz k=0; k<n; k++) rp[j+1+k] = v;
+          j = e;
+        }
+        if (ri%64) rp[j] = c;
+      }
       goto atmW_maybesh;
     } else {
       u8 xk = xl-3;
