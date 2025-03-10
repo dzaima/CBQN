@@ -556,7 +556,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
           if (!isFun(f)) break;
           u8 frtid = RTID(f);
           if (frtid==n_rtack) return x;
-          if (1 == shProd(xsh, k+1, xr)) {
+          if (cr==1 || cam*m == IA(x)) {
             if (TI(x,elType)==el_bit && (isPervasiveDyExt(f)||frtid==n_ltack)) {
               B r = scan_rows_bit(frtid, x, m); if (!q_N(r)) return r;
             }
