@@ -102,6 +102,21 @@ B select_cells_base(B inds, B x0, ux csz, ux cam) { // consumes inds,x0; Used by
   return taga(APD_SH_GET(r, '\0'));
 }
 
+static B scan_cells_stride1(B f, B x, usz m) {
+  // m is cell size == scan axis length
+  B xf = getFillR(x);
+  HArr_p r = m_harr0c(x);
+  SGet(x)
+  FC2 fc2 = c2fn(f);
+  for (usz i=0, ia=IA(x); i<ia; ) {
+    usz e = i + m;
+    r.a[i] = Get(x, i); i++;
+    for (; i<e; i++) r.a[i] = fc2(f, inc(r.a[i-1]), Get(x, i));
+  }
+  decG(x);
+  return withFill(r.b, xf);
+}
+
 B scan_arith(B f, B w, B x, usz* xsh) { // Used by scan.c
   bool has_w = w.u != m_f64(0).u;
   assert(isArr(x) && (!has_w || isArr(w)));
@@ -537,12 +552,15 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
           if (cr==0) break;
           usz m = xsh[k];
           if (m<=1 || IA(x)==0) return x;
-          if (!isFun(fd->f)) break;
-          u8 frtid = RTID(fd->f);
+          B f = fd->f;
+          if (!isFun(f)) break;
+          u8 frtid = RTID(f);
           if (frtid==n_rtack) return x;
-          if (TI(x,elType)==el_bit && (isPervasiveDyExt(fd->f)||frtid==n_ltack)
-              && 1==shProd(xsh, k+1, xr)) {
-            B r = scan_rows_bit(frtid, x, m); if (!q_N(r)) return r;
+          if (1 == shProd(xsh, k+1, xr)) {
+            if (TI(x,elType)==el_bit && (isPervasiveDyExt(f)||frtid==n_ltack)) {
+              B r = scan_rows_bit(frtid, x, m); if (!q_N(r)) return r;
+            }
+            if (m <= 6) return scan_cells_stride1(f, x, m);
           }
           break;
         }
