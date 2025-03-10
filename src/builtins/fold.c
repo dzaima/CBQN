@@ -390,17 +390,18 @@ static B insert_scal(B f, FC2 fc2, B x, bool has_w, B fxw, usz xia, ur rr) {
   usz* rsh = arr_shAlloc((Arr*)r.c, rr);
   if (rr>1) shcpy(rsh, SH(x)+1, rr);
   usz xi = xia - csz;
-  SGet(x)
+  
   B rf;
   if (has_w) {
     rf = getFillR(fxw);
-    SGet(fxw) // (⊢˝𝕩)𝔽𝕨 so errors have been caught
-    for (usz i=0; i<csz; i++) r.a[i] = Get(fxw, i);
+    COPY_TO(r.a, el_B, 0, fxw, 0, csz); // (⊢˝𝕩)𝔽𝕨 so errors have been caught
     decG(fxw);
   } else {
     rf = getFillR(x);
-    for (usz i=0; i<csz; i++) r.a[i] = Get(x, xi+i);
+    COPY_TO(r.a, el_B, 0, x, xi, csz);
   }
+  
+  SGet(x)
   while (xi) {
     xi -= csz;
     for (usz i=0; i<csz; i++) r.a[i] = fc2(f, Get(x, xi+i), r.a[i]);
