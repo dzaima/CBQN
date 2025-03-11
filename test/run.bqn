@@ -64,7 +64,7 @@ searchRefine ← {
 
 exitCode ← 0
 Run ← { 𝕊 testname:
-  lns ← •FLines fullfile ← "cases"•file.At filename ← testname∾".bqn"
+  lns ← •FLines fullfile ← "cases"•file.At filename ← ".bqn" ∾˜⍟(⊣≢-∘≠⊸↑) testname
   defk‿defv ← ⟨"IS_HEAPVERIFY"⟩‿⟨"heapverify←"∾•Repr o.heapverify⟩
   i ← 0
   Pos ← {∾⟨filename, ":", •Repr 1+𝕩⟩}
