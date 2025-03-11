@@ -946,7 +946,10 @@ B select_ucw(B t, B o, B w, B x) {
   B rep;
   if (isArr(o) && RNK(x)>0) {
     i64 buf[2];
-    if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xia || buf[1]>=xia)) thrF("𝔽⌾(a⊸⊏)𝕩: Indexing out-of-bounds (%l∊a, %H≡≢𝕩)", buf[1]>=xia?buf[1]:buf[0], x);
+    if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xia || buf[1]>=xia)) {
+      C2(select, w, x);
+      fatal("select_ucw expected to error");
+    }
     rep = incG(o);
   } else {
     rep = c1(o, C2(select, incG(w), incG(x)));
