@@ -383,6 +383,19 @@ static B m1c1(B t, B f, B x) { // consumes x
 }
 extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
+static bool fillNumeric(B x) {
+  if (x.u==0) return true;
+  if (isAtm(x)) return false;
+  u8 xe = TI(x,elType);
+  usz ia = IA(x);
+  if (xe!=el_B) return ia==0 || elNum(xe);
+  if (!fillNumeric(getFillN(x))) return false;
+  if (ia==0) return true;
+  SGetU(x)
+  for (usz i=0; i<ia; i++) if (!fillNumeric(GetU(x,i))) return false;
+  return true;
+}
+
 // Do arithmetic 𝔽˝ with short rows like 𝔽¨˝ to cut per-row overhead
 static B insert_scal(B f, FC2 fc2, B x, bool has_w, B fxw, usz xia, ur rr) {
   usz csz = arr_csz(x);
@@ -391,13 +404,15 @@ static B insert_scal(B f, FC2 fc2, B x, bool has_w, B fxw, usz xia, ur rr) {
   if (rr>1) shcpy(rsh, SH(x)+1, rr);
   usz xi = xia - csz;
   
+  B xf = getFillN(x);
   B rf;
   if (has_w) {
+    // fxw is (⊢˝𝕩)𝔽𝕨 so shape errors have been caught
     rf = getFillR(fxw);
-    COPY_TO(r.a, el_B, 0, fxw, 0, csz); // (⊢˝𝕩)𝔽𝕨 so errors have been caught
+    COPY_TO(r.a, el_B, 0, fxw, 0, csz);
     decG(fxw);
   } else {
-    rf = getFillR(x);
+    rf = inc(xf);
     COPY_TO(r.a, el_B, 0, x, xi, csz);
   }
   
@@ -405,6 +420,26 @@ static B insert_scal(B f, FC2 fc2, B x, bool has_w, B fxw, usz xia, ur rr) {
   while (xi) {
     xi -= csz;
     for (usz i=0; i<csz; i++) r.a[i] = fc2(f, Get(x, xi+i), r.a[i]);
+  }
+
+  // Fill might oscillate between 0 and ' ' or error if either argument
+  // has characters in its fill
+  if (!noFill(rf) && !(fillNumeric(rf) && (!has_w || fillNumeric(xf)))) {
+    usz n = *SH(x);
+    assert(n > 2);
+    #if SEMANTIC_CATCH
+    if (CATCH) {
+      freeThrown();
+      rf = bi_noFill;
+    } else {
+      if (!has_w) rf = fc2(f, inc(xf), rf);
+      if (n%2 == !has_w) rf = fc2(f, inc(xf), rf);
+      else fc2(f, inc(xf), inc(rf)); // could error, -˜˝"abc"
+      popCatch();
+    }
+    #else
+    if (n%2 == 0) { dec(rf); rf = bi_noFill; }
+    #endif
   }
   decG(x);
   return withFill(r.b, rf);
