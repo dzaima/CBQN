@@ -230,6 +230,7 @@ def try_first_hom{x:[_]_} = {
     ok = 1
     val = ctz_ext{ex}
   }
+  tup{val, ok}
 }
 
 def load{V=[k]E, ptr:*E   } = load{*V~~ptr, 0}
