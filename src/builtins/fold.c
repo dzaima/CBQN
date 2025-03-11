@@ -383,6 +383,68 @@ static B m1c1(B t, B f, B x) { // consumes x
 }
 extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
+static bool fillNumeric(B x) {
+  if (x.u==0) return true;
+  if (isAtm(x)) return false;
+  u8 xe = TI(x,elType);
+  usz ia = IA(x);
+  if (xe!=el_B) return ia==0 || elNum(xe);
+  if (!fillNumeric(getFillN(x))) return false;
+  if (ia==0) return true;
+  SGetU(x)
+  for (usz i=0; i<ia; i++) if (!fillNumeric(GetU(x,i))) return false;
+  return true;
+}
+
+// Do arithmetic 𝔽˝ with short rows like 𝔽¨˝ to cut per-row overhead
+static B insert_scal(B f, FC2 fc2, B x, bool has_w, B fxw, usz xia, ur rr) {
+  usz csz = arr_csz(x);
+  HArr_p r = m_harr0p(csz);
+  usz* rsh = arr_shAlloc((Arr*)r.c, rr);
+  if (rr>1) shcpy(rsh, SH(x)+1, rr);
+  usz xi = xia - csz;
+  
+  B xf = getFillN(x);
+  B rf;
+  if (has_w) {
+    // fxw is (⊢˝𝕩)𝔽𝕨 so shape errors have been caught
+    rf = getFillR(fxw);
+    COPY_TO(r.a, el_B, 0, fxw, 0, csz);
+    decG(fxw);
+  } else {
+    rf = inc(xf);
+    COPY_TO(r.a, el_B, 0, x, xi, csz);
+  }
+  
+  SGet(x)
+  while (xi) {
+    xi -= csz;
+    for (usz i=0; i<csz; i++) r.a[i] = fc2(f, Get(x, xi+i), r.a[i]);
+  }
+
+  // Fill might oscillate between 0 and ' ' or error if either argument
+  // has characters in its fill
+  if (!noFill(rf) && !(fillNumeric(rf) && (!has_w || fillNumeric(xf)))) {
+    usz n = *SH(x);
+    assert(n > 2);
+    #if SEMANTIC_CATCH
+    if (CATCH) {
+      freeThrown();
+      rf = bi_noFill;
+    } else {
+      if (!has_w) rf = fc2(f, inc(xf), rf);
+      if (n%2 == !has_w) rf = fc2(f, inc(xf), rf);
+      else fc2(f, inc(xf), inc(rf)); // could error, -˜˝"abc"
+      popCatch();
+    }
+    #else
+    if (n%2 == 0) { dec(rf); rf = bi_noFill; }
+    #endif
+  }
+  decG(x);
+  return withFill(r.b, rf);
+}
+
 B insert_c1(Md1D* d, B x) { B f = d->f;
   ur xr;
   if (isAtm(x) || (xr=RNK(x))==0) thrM("𝔽˝𝕩: 𝕩 must have rank at least 1");
@@ -410,7 +472,8 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
   if (isPervasiveDyExt(f)) {
     if (xr==1) return m_unit(fold_c1(d, x));
-    if (len==IA(x)) {
+    usz xia = IA(x);
+    if (len==xia) {
       B r = m_vec1(fold_c1(d, C1(shape, x)));
       ur rr = xr - 1;
       if (rr > 1) {
@@ -419,6 +482,9 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
         arr_shReplace(a(r), rr, rsh);
       }
       return r;
+    }
+    if (len>2 && xia<6*(u64)len) {
+      return insert_scal(f, c2fn(f), x, 0, m_f64(0), xia, xr-1);
     }
   }
   if (RTID(f) != RTID_NONE) {
@@ -448,26 +514,34 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   usz len = *SH(x);
   if (len==0) { decG(x); return w; }
   if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
-  if (isPervasiveDyExt(f) && len==IA(x)) {
-    // 1-element arrays are always conformable
-    // final rank is higher of w, cell rank of x
+  if (isPervasiveDyExt(f)) {
+    usz xia = IA(x);
     ur rr = xr - 1;
-    if (isArr(w)) {
-      if (IA(w) != 1) goto skip;
-      ur wr = RNK(w); if (wr>rr) rr = wr;
-      w = TO_GET(w, 0);
-    }
-    if (xr > 1) x = C1(shape, x);
-    B r = m_unit(fold_c2(d, w, x));
-    if (rr > 0) {
-      if (rr == 1) arr_shVec(a(r));
-      else {
-        ShArr* rsh = m_shArr(rr);
-        PLAINLOOP for (ur i=0; i<rr; i++) rsh->a[i] = 1;
-        arr_shReplace(a(r), rr, rsh);
+    if (len==xia) {
+      // 1-element arrays are always conformable
+      // final rank is higher of w, cell rank of x
+      if (isArr(w)) {
+        if (IA(w) != 1) goto skip;
+        ur wr = RNK(w); if (wr>rr) rr = wr;
+        w = TO_GET(w, 0);
       }
+      if (xr > 1) x = C1(shape, x);
+      B r = m_unit(fold_c2(d, w, x));
+      if (rr > 0) {
+        if (rr == 1) arr_shVec(a(r));
+        else {
+          ShArr* rsh = m_shArr(rr);
+          PLAINLOOP for (ur i=0; i<rr; i++) rsh->a[i] = 1;
+          arr_shReplace(a(r), rr, rsh);
+        }
+      }
+      return r;
     }
-    return r;
+    if (len>2 && xia<6*(u64)len && !(isArr(w) && RNK(w)>rr)) {
+      FC2 fc2 = c2fn(f);
+      w = fc2(f, C2(select, m_f64(-1), incG(x)), w);
+      return insert_scal(f, fc2, x, 1, w, xia, rr);
+    }
     skip:;
   }
   if (RTID(f) != RTID_NONE) {
