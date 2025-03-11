@@ -287,15 +287,12 @@ static B wm2_decompose(B x) { return wrap_decompose(x, c(WMd2,x)->v); }
 static B m1BI_d(B t, B f     ) { return m_md1D(c(Md1,t), f   ); }
 static B m2BI_d(B t, B f, B g) { return m_md2D(c(Md2,t), f, g); }
 void rtWrap_init(void) {
-  TIi(t_funWrap,visit) = wfn_visit; TIi(t_funWrap,decompose) = wfn_decompose; TIi(t_funWrap,identity) = wfn_identity;
-  TIi(t_md1Wrap,visit) = wm1_visit; TIi(t_md1Wrap,decompose) = wm1_decompose; TIi(t_md1Wrap,m1_d) = m1BI_d;
-  TIi(t_md2Wrap,visit) = wm2_visit; TIi(t_md2Wrap,decompose) = wm2_decompose; TIi(t_md2Wrap,m2_d) = m2BI_d;
-  TIi(t_funWrap,fn_uc1) = wfn_uc1;
-  TIi(t_funWrap,fn_ucw) = wfn_ucw;
-  TIi(t_md1Wrap,m1_uc1) = wm1_uc1;
-  TIi(t_md1Wrap,m1_ucw) = wm1_ucw;
-  TIi(t_md2Wrap,m2_uc1) = wm2_uc1;
-  TIi(t_md2Wrap,m2_ucw) = wm2_ucw;
+  TIi(t_funWrap,visit) = wfn_visit; TIi(t_funWrap,decompose) = wfn_decompose; TIi(t_funWrap,byRef) = true; TIi(t_funWrap,identity) = wfn_identity;
+  TIi(t_md1Wrap,visit) = wm1_visit; TIi(t_md1Wrap,decompose) = wm1_decompose; TIi(t_md1Wrap,byRef) = true; TIi(t_md1Wrap,m1_d) = m1BI_d;
+  TIi(t_md2Wrap,visit) = wm2_visit; TIi(t_md2Wrap,decompose) = wm2_decompose; TIi(t_md2Wrap,byRef) = true; TIi(t_md2Wrap,m2_d) = m2BI_d;
+  TIi(t_funWrap,fn_uc1) = wfn_uc1; TIi(t_funWrap,fn_ucw) = wfn_ucw;
+  TIi(t_md1Wrap,m1_uc1) = wm1_uc1; TIi(t_md1Wrap,m1_ucw) = wm1_ucw;
+  TIi(t_md2Wrap,m2_uc1) = wm2_uc1; TIi(t_md2Wrap,m2_ucw) = wm2_ucw;
 }
 #else
 void rtWrap_init(void) { }
