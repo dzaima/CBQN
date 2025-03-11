@@ -287,6 +287,7 @@ B internalTemp_c1(B t, B x) {
   #if TEST_RANGE
     i64 buf[2];
     bool b = getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x));
+    decG(x);
     f64* rp;
     B r = m_f64arrv(&rp, 3);
     rp[0] = buf[0];
