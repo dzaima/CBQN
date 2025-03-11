@@ -756,7 +756,7 @@ def rep_const_bool_odd_loose_mask{V=[vl==4](u64), k, get_modperm_x, output if ha
   # Distance from end to previous row boundary (-k <= q < 0)
   q := -make{V, 64*(1+iota{vl})}
   def q_mod{} = { d:=q+V**k; q = blend_top{q,d, d} }
-  o:u64 = width{V}; while (o>k) { o-=k; q_mod{} }
+  o:usz = width{V}; while (o>k) { o-=k; q_mod{} }
 
   km:= k%64
   i:usz = 0; iv:usz = 0 # Words and vectors completed
