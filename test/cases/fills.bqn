@@ -1,4 +1,5 @@
 %DEF fill Fill←•internal.HasFill◶'e'‿{⊑1↑0⥊𝕩}
+%DEF eqall EqAll ← {!∘≡⟜(⊑𝕩)¨ 𝕩 ⋄ ⊑𝕩}
 
 %USE fill ⋄ F←⌊  ⋄ ⟨0,1,{⇐},+,@,'𝕩'⟩ Fill∘F⌜ ⟨⟨⟩, ↕0‿0, ↕0, 0‿2⥊↕0, "", 2‿0⥊""⟩ %!HEAPVERIFY  %%  2‿4/[⟨'e',0‿0,0,0,'e','e'⟩,⟨'e','e','e','e','e','e'⟩]
 %USE fill ⋄ F←+  ⋄ ⟨0,1,{⇐},+,@,'𝕩'⟩ Fill∘F⌜ ⟨⟨⟩, ↕0‿0, ↕0, 0‿2⥊↕0, "", 2‿0⥊""⟩ %!HEAPVERIFY  %%  6‿6⥊⟨'e',0‿0,0,0,' ',' ','e',0‿0,0,0,' ',' ','e','e','e','e','e','e','e','e','e','e','e','e','e',"  ",' ',' ','e','e','e',"  ",' ',' ','e','e'⟩
@@ -33,6 +34,13 @@
 {3↑      -˝𝕩‿2⥊<<'a'}¨ 5‿6 %!HEAPVERIFY %% <¨¨ ⟨"aa ", 3⥊0⟩
 {3↑ (2⥊2)-˝𝕩‿2⥊<<'x'}¨ 5‿6 %!HEAPVERIFY %% <¨¨ ⟨"vv ", 2‿2‿0⟩
 {3↑  "ee"-˝𝕩‿2⥊<<'a'}¨ 5‿6 %!HEAPVERIFY %% <¨¨ ⟨¯4‿¯4‿0, "ee "⟩
+
+%DEF sqfill SqFill ← {•internal.Squeeze "Ah"•internal.Variation 𝕩}
+%USE fill ⋄ %USE eqall ⋄ %USE sqfill ⋄ F←•internal.Keep∘⊢ ⋄ {EqAll Fill¨ ⟨SqFill ⟨𝕩⟩, F¨<𝕩, @F¨<𝕩, @F¨⋈𝕩⟩}¨ ⟨"abc", 4, 'a', {⇐}⟩
+%USE fill ⋄ %USE eqall ⋄ %USE sqfill ⋄ F←•internal.Keep∘⊢ ⋄ {EqAll Fill¨ ⟨SqFill ⥊𝕩,  F¨ 𝕩, @F¨ 𝕩       ⟩}¨ ⟨"abc", 4, 'a', {⇐}⟩
+
+2↑     'a'⊸+¨ 1 %% "b "
+2↑ {⇐} 'a'⊸+¨ 1 %% "b "
 
 # TODO:
 # ⟨↑‿3⥊↕10 ⋄ ↑‿3⥊<¨↕10 ⋄ ↑‿3⥊<˘↕10⟩

@@ -40,7 +40,7 @@ B each_c1(Md1D* d, B x) { B f = d->f;
   B r, xf;
   if (EACH_FILLS) xf = getFillR(x);
   
-  if (isAtm(x)) r = m_hunit(c1(f, x));
+  if (isAtm(x)) r = squeezed_unit(c1(f, x));
   else if (isFun(f)) {
     u8 rtid = RTID(f);
     if (rtid==n_ltack || rtid==n_rtack) {
@@ -134,7 +134,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
 }
 
 static B eachd(B f, B w, B x) {
-  if (isAtm(w) & isAtm(x)) return m_hunit(c2(f, w, x));
+  if (isAtm(w) & isAtm(x)) return squeezed_unit(c2(f, w, x));
   return eachd_fn(f, w, x, c2fn(f));
 }
 
