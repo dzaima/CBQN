@@ -307,27 +307,34 @@ def acc{unr, init:T} = {
     else               a1 = F{a1}
   }
 }
-def isI64{x:T=[_](f64) if hasarch{'AARCH64'}} = x == cvt{f64, cvt{i64, x}}
-def isI64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x==floor{x}) & (abs{x}<=T**(1<<53))
 
-def maskBlend{b:T, x:T, M} = x
-def maskBlend{b:T, x:T, M if M{0}} = blend_hom{b, x, M{T, 'to homogeneous bits'}}
+# following RangeFn's specification in calls.h, whether it's necessary to return 0 or otherwise accumulating & converting to i64 may produce incorrect results
+def bad_float_i64{x:T=[_](f64)} = {
+  a:= abs{x}
+  s:= T**(1<<53)
+  min{s,a} != s-(s-a) # (a<=s) & (a == s-(s-a))
+}
+def bad_float_i64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x!=floor{x}) | (abs{x}>T**(1<<53))
+def bad_float_i64{x:T=[_](f64) if hasarch{'AARCH64'}} = x != cvt{f64, cvt{i64, x}}
+
+def mask_blend{b:T, x:T, M} = x
+def mask_blend{b:T, x:T, M if M{0}} = blend_hom{b, x, M{T, 'to homogeneous bits'}}
 
 fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   assert{n>0}
   x:= *E~~x0
   min1:E = *x
   max1:E = *x
-  if (has_simd and (not E==f64 or hasarch{'AARCH64'} or hasarch{'SSE4.1'})) {
+  if (has_simd) {
     def bulk = arch_defvw/width{E}
     def VT = [bulk]E
     def unr = tern{E==f64 and hasarch{'X86_64'}, 1, 2}
-    def minA = acc{2, VT**min1}
-    def maxA = acc{2, VT**min1}
+    def minA = acc{unr, VT**min1}
+    def maxA = acc{unr, VT**min1}
     @for_mu{bulk, unr, {} => { minA{'tr',min}; maxA{'tr',max} }}(cx in tup{VT,x}, M in 'm' over is to n) {
-      if (E==f64 and any_hom{M, ...each{{c} => ~isI64{c}, cx}}) return{0}
-      minA{'upd', is, {a} => eachx{maskBlend, a, each{min, a, cx}, M}} # blend
-      maxA{'upd', is, {a} => eachx{maskBlend, a, each{max, a, cx}, M}} # blend
+      if (E==f64 and any_hom{M, ...each{bad_float_i64, cx}}) return{0}
+      minA{'upd', is, {a} => eachx{mask_blend, a, each{min, a, cx}, M}} # blend
+      maxA{'upd', is, {a} => eachx{mask_blend, a, each{max, a, cx}, M}} # blend
     }
     min1 = vfold{min, minA{'get'}}
     max1 = vfold{max, maxA{'get'}}
