@@ -34,7 +34,7 @@ typedef struct { EqFn fn; u8 data; } EqFnObj;
 #define EQFN_GET(W_ELT, X_ELT) ({ u8 eqfn_i_ = EQFN_INDEX(W_ELT, X_ELT); (EqFnObj){.fn=eqFns[eqfn_i_], .data=eqFnData[eqfn_i_]}; })
 #define EQFN_CALL(FN, W, X, L) (FN).fn(W, X, L, (FN).data) // check if L elements starting at a and b match; assumes L≥1
 
-typedef bool (*RangeFn)(void* xp, i64* res, u64 len); // writes min,max in res, assumes len≥1; returns 0 and leaves res undefined if either any (floor(x)≠x or abs>2⋆53), or (x≠(i64)x)
+typedef bool (*RangeFn)(void* xp, i64* res, u64 len); // assumes len≥1; if x has non-integers or values with absolute value >2⋆53, will return 0 or report min<-2⋆53 or max>2⋆53; else, writes min,max in res and returns 1
 extern INIT_GLOBAL RangeFn getRange_fns[el_f64+1]; // limited to ≤el_f64
 
 typedef void (*BitSelFn)(void*,u64*,u64,u64,u64);
