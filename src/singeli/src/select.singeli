@@ -183,7 +183,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
 
 
 
-fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = { # TODO don't require SIMD?
+fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
   w:= *TI ~~ w0
   x:= *TD ~~ x0
   r:= *TD ~~ r0
