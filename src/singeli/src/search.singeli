@@ -312,7 +312,7 @@ def acc{unr, init:T} = {
 def bad_float_i64{x:T=[_](f64)} = {
   a:= abs{x}
   s:= T**(1<<53)
-  min{s,a} != s-(s-a) # (a<=s) & (a == s-(s-a))
+  min{s,a} != s-(s-a) # ~ ((a<=s) & (a == s-(s-a)))
 }
 def bad_float_i64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x!=floor{x}) | (abs{x}>T**(1<<53))
 def bad_float_i64{x:T=[_](f64) if hasarch{'AARCH64'}} = x != cvt{f64, cvt{i64, x}}
