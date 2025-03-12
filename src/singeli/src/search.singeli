@@ -300,9 +300,9 @@ def acc{unr, init:T} = {
   a0v := init
   def a0 = tup{a0v}
   def a1 = @collect(unr) { reg:=init }
-  def op{S=='get'} = a0v
-  def op{S=='tr', F} = { a0v = tree_fold{F, a1} }
-  def op{S=='upd', is, F} = {
+  def op{'get'} = a0v
+  def op{'tr', F} = { a0v = tree_fold{F, a1} }
+  def op{'upd', is, F} = {
     if (length{is}==1) a0 = F{a0}
     else               a1 = F{a1}
   }
