@@ -1,0 +1,103 @@
+include './base'
+include './vecfold'
+
+if_inline (hasarch{'SSE2'}) {
+  def fold_addw{v:V} = vfold{+, fold{+, mzip128{v, V**0}}}
+}
+
+def vec_merge_shift_right{a:V=[n]_, b:V, s if hasarch{'SSE2'} and not hasarch{'SSSE3'}} = {
+  vec_shift_left{a, n-s} | vec_shift_right{b, s}
+}
+def vec_merge_shift_right{a:V, b:V, 1 if width{V}>128} = {
+  def nl = width{V}/128  # number of lanes
+  p:= vec_select{128, tup{a,b}, nl-1+iota{nl}}
+  vec_merge_shift_right_128{p, b, 1}
+}
+
+def __add{a:(usz), b:(u1)} = a + promote{usz,b}
+def __lt{a:V=[_]_, b if knum{b}} = a < V**b
+def __eq{a:V=[_]_, b if knum{b}} = a == V**b
+
+def group_statistics{T} = {
+  def store{p:(*u8), 0, b:(u1)} = store{p, 0, promote{u8, b}}
+
+  def widen_sum = width{T} <= 8
+  def sum_vec = if (widen_sum) fold_addw else vfold{+, .}
+
+  def var{op, get} = {
+    # Identity, type
+    def id = match (op) { {(max)} => -1; {(&)} => 1; {_} => 0 }
+    def S  = match (op) { {(max)} => T; {(+)} => usz; {_} => u1 }
+
+    # Scalar accumulator
+    def updater{v,op}{...a} = { v = op{v, get{...a}} }
+    def scal{val} = {
+      v:S = val
+      tup{v, updater{v, op}}
+    }
+    def scal{} = scal{id}
+
+    # Vector accumulator
+    def vec{l} = {
+      def V = match (S) { {(T)} => [l]T; {_} => [l]ty_u{T} }
+      v := V**(if (id==1) maxvalue{ty_u{T}} else id)
+      def u = updater{v, if (same{op,+}) (-) else op}
+      def {flush, get} = if (S!=usz) {
+        def get = match (op) {
+          {(&)} => all_hom
+          {(|)} => any_hom
+          {(max)} => vfold{max, .}
+        }
+        tup{{}=>{}, {} => get{v}}
+      } else {
+        f:usz = 0
+        def flush{} = { f += cast_i{usz, sum_vec{v}}; v = V**0 }
+        tup{flush, {} => f}
+      }
+      tup{u, flush, get}
+    }
+    tup{if (S==u1) u8 else S, scal, vec}
+  }
+  def {types, init_scal, init_vec} = each{tup,
+    var{|,   {_,w} => w <  -1}, # bad
+    var{+,   {_,w} => w == -1}, # neg
+    var{&,   {p,w} => p <= w }, # sort
+    var{+,   {p,w} => p != w }, # change
+    var{max, {_,w} => w      }  # max
+  }
+  def run{g, ...par} = g{...par}
+  def runvars{gens, ...par} = each{run{., ...par}, gens}
+
+  fn group_statistics(w0:*void, xn:usz, outs:each{__pnt,types}) : void = {
+    def {start, init} = if (not has_simd) tup{0, tup{}} else {
+      def vl = arch_defvw/width{T}; def V = [vl]T
+      def {accum, flush, get} = flip{runvars{init_vec, vl}}
+      e:= xn / vl
+      i:usz = 0
+      prev:V = V**(-1)
+      while (i < e) {
+        def lmax = 1 << (width{T}-1 - (not widen_sum)*lb{vl})
+        l:= min{usz~~lmax, e-i}
+        @for (w in *V~~w0 + i over l) {
+          runvars{accum, vec_merge_shift_right{prev, w, 1}, w}
+          prev = w
+        }
+        i+= l
+        runvars{flush}
+      }
+      tup{e*vl, tup{runvars{get}}}
+    }
+    def {vals, accum} = flip{each{run, init_scal, ...init}}
+    prev:T = -1
+    if (start > 0) prev = load{*T~~w0, start-1}
+    @for (w in *T~~w0 over _ from start to xn) {
+      runvars{accum, prev,w}
+      prev = w
+    }
+    each{store{.,0,.}, outs, vals}
+  }
+}
+
+export{'si_group_statistics_i8',  group_statistics{i8}}
+export{'si_group_statistics_i16', group_statistics{i16}}
+export{'si_group_statistics_i32', group_statistics{i32}}

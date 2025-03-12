@@ -264,7 +264,10 @@ if_inline (hasarch{'X86_64'}) {
 } else {
   def {
     __adds,__subs,__sqrt,vec_broadcast,vec_make,
-    vec_shift_left_128,vec_shift_right_128,vec_merge_shift_right,
+    vec_shift_left,vec_shift_left_128,
+    vec_shift_right,vec_shift_right_128,
+    vec_merge_shift_left,vec_merge_shift_left_128,
+    vec_merge_shift_right,vec_merge_shift_right_128,
     vec_shuffle16_lo
   }
 }
