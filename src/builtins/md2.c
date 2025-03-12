@@ -56,6 +56,10 @@ B catch_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B catch_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 #endif
 
+static NOINLINE NORETURN void repeat_bad_num() {
+  thrM("⍟: 𝔾 contained non-integer or integer was out of range");
+}
+
 extern GLOBAL B rt_undo;
 void repeat_bounds(i64* bound, B g) { // doesn't consume
   #define UPD_BOUNDS(B,I) ({ i64 i_ = (I); if (i_<bound[0]) bound[0] = i_; if (i_>bound[1]) bound[1] = i_; })
@@ -65,7 +69,7 @@ void repeat_bounds(i64* bound, B g) { // doesn't consume
     u8 ge = TI(g,elType);
     if (elNum(ge)) {
       i64 bres[2];
-      if (!getRange_fns[ge](tyany_ptr(g), bres, ia)) thrM("⍟: 𝔾 contained non-integer (or integer was out of range)");
+      if (!getRange_fns[ge](tyany_ptr(g), bres, ia)) repeat_bad_num();
       if (bres[0]<bound[0]) bound[0] = bres[0];
       if (bres[1]>bound[1]) bound[1] = bres[1];
     } else {
@@ -73,7 +77,7 @@ void repeat_bounds(i64* bound, B g) { // doesn't consume
       for (usz i = 0; i < ia; i++) repeat_bounds(bound, GetU(g, i));
     }
   } else if (isNum(g)) {
-    if (!q_i64(g)) thrM("⍟: 𝔾 contained non-integer (or integer was out of range)");
+    if (!q_i64(g)) repeat_bad_num();
     i64 c = o2i64G(g);
     if (c<bound[0]) bound[0] = c;
     if (c>bound[1]) bound[1] = c;
@@ -104,7 +108,8 @@ NOINLINE B repeat_replaceR(B g, B* q) {
   }                                                \
   i64 bound[2] = {0,0};                            \
   repeat_bounds(bound, g);                         \
-  i64 min=(u64)-bound[0]; i64 max=(u64)bound[1];   \
+  i64 min=-(u64)bound[0]; i64 max=bound[1];        \
+  if ((min|max) >> 48 != 0) repeat_bad_num();      \
   TALLOC(B, all, min+max+1);                       \
   B* q = all+min;                                  \
   q[0] = inc(x);                                   \

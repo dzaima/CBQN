@@ -462,10 +462,11 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 !"⍟: 𝔾 contained non-number" % 1⊸+⍟⟨1,∘,3⟩ 0
 !"Expected integer, got 1.5" % 1⊸+⍟1.5 0
 !"Integer out of range: 1e20" % 1⊸+⍟1e20 0
-!"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1.5⟩
-!"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1e20⟩
-!"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨9, 1.5⟩
-!"⍟: 𝔾 contained non-integer (or integer was out of range)" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1.5, 9⟩
+!"⍟: 𝔾 contained non-integer or integer was out of range" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1.5⟩
+!"⍟: 𝔾 contained non-integer or integer was out of range" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1e20⟩
+!"⍟: 𝔾 contained non-integer or integer was out of range" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨9, 1.5⟩
+!"⍟: 𝔾 contained non-integer or integer was out of range" % %USE evar ⋄ {1⊸+⍟𝕩 0}_evar ⟨1.5, 9⟩
+!"⍟: 𝔾 contained non-integer or integer was out of range" % %USE eqerr ⋄ {1⊸+⍟𝕩‿𝕩 2}_eqerr -⊸∾ ⟨2⋆63, 2⋆60⟩
 
 # ◶
 !"𝔽◶𝕘𝕩: 𝕘 must have rank 1 when index is a number" % 1◶[1‿2,3‿4] 3
