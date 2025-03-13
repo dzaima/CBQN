@@ -23,6 +23,11 @@
 #include "../utils/calls.h"
 #include "../utils/mut.h"
 
+#if SINGELI
+  #define SINGELI_FILE group
+  #include "../utils/includeSingeli.h"
+#endif
+
 extern B ud_c1(B, B);
 extern B ne_c2(B, B, B);
 extern B slash_c1(B, B);
@@ -57,17 +62,26 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
   bool bad = false, sort = true;
   usz neg = 0, change = 0;
   void *wp0 = tyany_ptr(w);
+  #if SINGELI
+    #define ACCUM(T) \
+      u8 bad_t, sort_t;                             \
+      si_group_statistics_##T(wp0, xn, &bad_t, &neg, &sort_t, &change, &max); \
+      bad = bad_t; sort = sort_t;
+  #else
+    #define ACCUM(T) \
+      T prev = -1;                                  \
+      for (usz i = 0; i < xn; i++) {                \
+        T n = ((T*)wp0)[i];                         \
+        if (n>max) max = n;                         \
+        bad |= n < -1;                              \
+        neg += n == -1;                             \
+        sort &= prev <= n;                          \
+        change += prev != n;                        \
+        prev = n;                                   \
+      }
+  #endif
   #define CASE(T) case el_##T: { \
-    T max = -1, prev = -1;                          \
-    for (usz i = 0; i < xn; i++) {                  \
-      T n = ((T*)wp0)[i];                           \
-      if (n>max) max = n;                           \
-      bad |= n < -1;                                \
-      neg += n == -1;                               \
-      sort &= prev <= n;                            \
-      change += prev != n;                          \
-      prev = n;                                     \
-    }                                               \
+    T max = -1; ACCUM(T)                            \
     if (wia>xn) { ria=((T*)wp0)[xn]; bad|=ria<-1; } \
     i64 m=(i64)max+1; if (m>ria) ria=m;             \
     break; }
@@ -77,6 +91,7 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     case el_bit: ria = xn? 1+bit_has(wp0,xn,1) : wia? bitp_get(wp0,0) : 0; break;
   }
   #undef CASE
+  #undef ACCUM
   if (bad) thrM("𝕨⊔𝕩: 𝕨 can't contain elements less than ¯1");
   if (ria > (i64)(USZ_MAX)) thrOOM();
   

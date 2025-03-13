@@ -283,7 +283,25 @@ B eequal_c2(B t, B w, B x) {
 #if TEST_RANGE
   #include "../utils/calls.h"
 #endif
+#if TEST_GROUP_STAT
+  extern void (*const si_group_statistics_i8)(void*,usz,uint8_t*,usz*,uint8_t*,usz*,int8_t*);
+  extern void (*const si_group_statistics_i16)(void*,usz,uint8_t*,usz*,uint8_t*,usz*,int16_t*);
+  extern void (*const si_group_statistics_i32)(void*,usz,uint8_t*,usz*,uint8_t*,usz*,int32_t*);
+#endif
 B internalTemp_c1(B t, B x) {
+  #if TEST_GROUP_STAT
+    u8 bad; usz neg; u8 sort; usz change; i32 max;
+    #define CASE(T) \
+      if (TI(x,elType)==el_##T) { T max_t; si_group_statistics_##T(tyany_ptr(x), IA(x), &bad, &neg, &sort, &change, &max_t); max = max_t; } \
+      else
+    CASE(i8) CASE(i16) CASE(i32)
+    thrM("bad eltype");
+    #undef CASE
+    decG(x);
+    f64* rp; B r = m_f64arrv(&rp, 5);
+    rp[0] = bad; rp[1] = neg; rp[2] = sort; rp[3] = change; rp[4] = max;
+    return r;
+  #endif
   #if TEST_RANGE
     i64 buf[2];
     bool b = getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x));
