@@ -15,7 +15,7 @@ _runImport_ ← { runArgs Process _𝕣_ dir runFile: # Process returns {deps‿
   }⎊{𝕊: e↩•CurrentError@} @
   t1 ← •MonoTime@
   {
-    e≢@? ⟨0, e⟩;
+    e≢@? ⟨0, o⊸∾⍟(@≢o) e⟩;
     Good ⟨dir,t0,t1,o,"",deps⟩
   }
 }
