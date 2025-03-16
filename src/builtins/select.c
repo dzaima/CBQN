@@ -908,6 +908,8 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
     }
     goto decG_ret;
   }
+  #else
+    (void) bounds;
   #endif
   
   generic_any:;
