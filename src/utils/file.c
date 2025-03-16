@@ -513,12 +513,14 @@ void cbqn_heapDump(char* name0) {
     return;
   }
   // fwrite(&size, 8, 1, f);
-  u8 t8 = 1;
+  u8 t8 = 2;
   fwrite(&t8, 1, 1, f); // version
   fwrite("CBQN", 1, 5, f);
   
-  writeNum(f, sizeof(ur ), 4);
-  writeNum(f, sizeof(usz), 4);
+  writeNum(f, sizeof(ur),    4);
+  writeNum(f, sizeof(usz),   4);
+  writeNum(f, sizeof(void*), 4);
+  writeNum(f, _Alignof(u64), 4);
   #if WASM
     writeNum(f, (u64)~0ULL, 8);
   #else
