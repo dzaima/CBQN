@@ -549,7 +549,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
 
     #if SINGELI
     u8 k = elwByteLog(we);
-    u8 rl = wia<128 ? 0 : wia<(1<<15) ? 1 : wia<(1<<31) ? 2 : 3;
+    u8 rl = wia<128 ? 0 : wia<(1<<15) ? 1 : wia<(1U<<31) ? 2 : 3;
     void *rp = m_tyarrc(&r, 1<<rl, x, el2t(el_i8+rl));
     si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, rp, rl);
     if (!q_N(mult)) r = mul_c2(m_f64(0), mult, r);
