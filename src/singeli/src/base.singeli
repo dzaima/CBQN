@@ -248,14 +248,7 @@ extend (extend_each{accept_vec_ptr}){
 
 
 if_inline (hasarch{'X86_64'}) {
-  include 'arch/iintrinsic/basic'
-  include 'arch/iintrinsic/select'
-  include './sse2'
-  include './sse'
-  include './avx'
-  include './avx2'
-  include './avx512'
-  def any_bit{x:[_]_} = ~and_bit_none{x, x}
+  include './x86'
 } else if_inline (hasarch{'AARCH64'}) {
   include 'arch/neon_intrin/basic'
   include 'arch/neon_intrin/select'
