@@ -142,7 +142,7 @@ def for_mu{bulk, unr, fromunr}{vars,begin==0,end,iter} = {
       if (unr <= m) {
         while ((i+unr) <= m) {
           def is = each{{j}=>i+j, iota{unr}}
-          ml_exec{each{{j}=>i+j, iota{unr}}, iter, vars, bulk, mask_none}
+          ml_exec{is, iter, vars, bulk, mask_none}
           i+= unr
         }
         fromunr{}
