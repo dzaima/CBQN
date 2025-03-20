@@ -6,3 +6,13 @@ include './avx'
 include './avx2'
 include './avx512'
 def any_bit{x:[_]_} = ~and_bit_none{x, x}
+
+local def has_bw{V} = hasarch{match (width{V}) { {128}=>'SSE2'; {256}=>'AVX2'; {512}=>'AVX512BW' }}
+local def intrin{V, ...rest} = merge{'_mm', if (width{V}==128) '' else fmtnat{width{V}}, '_', ...rest}
+
+def absdiff_sum{8, a:V=[k](u8), b:V if has_bw{V}} = {
+  emit{[k/8]u64, intrin{V, 'sad_epu8'}, a, b}
+}
+def mul_sum{2, a:V=[k](i16), b:V if has_bw{V}} = {
+  emit{[k/2]i32, intrin{V, 'madd_epi16'}, a, b}
+}
