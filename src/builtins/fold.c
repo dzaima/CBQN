@@ -44,11 +44,23 @@
 #include "../utils/mut.h"
 #include "../utils/calls.h"
 
+static const usz sum_small_max = 1<<16;
 #if SINGELI
   extern uint64_t* const si_spaced_masks;
   #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE fold
   #include "../utils/includeSingeli.h"
+#else
+  #define SUM_SMALL(T,W) \
+    static i64 sum_small_##T(void* xv, usz ia) { \
+      W s=0;                                     \
+      for (usz i=0; i<ia; i++) s+=((T*)xv)[i];   \
+      return s;                                  \
+    }
+  SUM_SMALL(i8 ,i32)
+  SUM_SMALL(i16,i32)
+  SUM_SMALL(i32,i64)
+  #undef SUM_SMALL
 #endif
 
 static u64 xor_words(u64* x, u64 l) {
@@ -72,11 +84,7 @@ static i64 bit_diff(u64* x, u64 am) {
 
 // It's safe to sum a block of integers as long as the current total
 // is far enough from +-1ull<<53 (and integer, in dyadic fold).
-static const usz sum_small_max = 1<<16;
 #define DEF_INT_SUM(T,W,M,A) \
-  static i64 sum_small_##T(void* xv, usz ia) {                   \
-    i##A s=0; for (usz i=0; i<ia; i++) s+=((T*)xv)[i]; return s; \
-  }                                                              \
   static f64 sum_##T(void* xv, usz ia, f64 init) {               \
     usz b=1<<(M-W); i64 lim = (1ull<<53) - (1ull<<M);            \
     T* xp = xv;                                                  \

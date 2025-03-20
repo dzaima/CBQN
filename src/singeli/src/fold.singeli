@@ -3,6 +3,7 @@ include './mask'
 if_inline (hasarch{'BMI2'}) include './bmi'
 include './spaced'
 include './scan_common'
+include './vecfold'
 
 def opsh64{op}{v:[_](f64), ...perm} = op{v, shuf{v, ...perm}}
 def mix{op, v:([4]f64) if hasarch{'AVX'}} = { def sh=opsh64{op}; sh{sh{v, 1,0}, 2,3,0,1} }
@@ -514,3 +515,29 @@ export{'si_xor_rows_bit', xor_rows_bit}
 export{'si_or_rows_bit', or_rows_bit}
 export{'si_select_cells_bit_lt64', extract_column_bit_lt64}
 export{'si_select_cells_byte', extract_column}
+
+
+fn sum_small{T}(xv:*void, ia:usz) : i64 = {
+  xv:= *T~~xv
+  def A = if (width{T}<=16) i32 else i64
+  r:A = 0
+  @for (xv over ia) r += promote{A, xv}
+  promote{i64, r}
+}
+
+include './accumulator'
+fn sum_small{T if has_simd}(xv:*void, ia:usz) : i64 = {
+  def A = if (width{T}<=16) i32 else i64
+  xv:= *T~~xv
+  def unr = 4
+  def bulk = arch_defvw / width{T}
+  def V = [bulk]T
+  
+  def acc = sum_accumulator{A, unr, V}
+  @for_mu{bulk,unr,mu_extra{acc}}(x in tup{V,xv}, M in 'm' over ia) {
+    acc{'acc', M, x}
+  }
+  promote{i64, acc{'vec_result', ia}}
+}
+
+each{{w} => export{merge{'sum_small_i', fmtnat{w}}, sum_small{primtype{'i', w}}}, tup{8, 16, 32}}
