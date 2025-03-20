@@ -10,6 +10,9 @@
 #   acc{'vec_result'} - get result of vector accumulates (i.e. 'to_scal' + 'scal_result')
 #   acc{'vec_result', n} - 'vec_result', passing n to 'to_scal'
 
+
+
+# general things
 local def extend finish{me} = {
   def me{'vec_result', ...rest} = {
     me{'to_scal', ...rest}
@@ -17,7 +20,6 @@ local def extend finish{me} = {
   }
 }
 local def int_els{DE, SE} = isint{DE} and isint{SE} and quality{DE}==quality{SE} and DE>=SE
-
 def mu_extra{...args} = {
   def get_all{prop} = each{{c}=>c{prop}, args}
   tup{
@@ -27,6 +29,28 @@ def mu_extra{...args} = {
   }
 }
 
+
+
+# scalar accumulators
+local def scalar_acc_impl{F, T, ident} = {
+  acc:T = ident
+  def me{'acc', v} = {
+    acc = F{acc, v}
+  }
+  def me{'vec_result'} = me{'scal_result'}
+  def me{'scal_result'} = acc
+}
+local def scal_bool{T} = is{T,'!'} or isunsigned{T}
+
+local def add_promote{a:A,b} = a + promote{A, b}
+def assoc_accumulator{F,  '!', T if isprim{T}, ident} = scalar_acc_impl{F, T, ident}
+def count_accumulator{DE, '!', T if scal_bool{T} and isunsigned{DE}} = scalar_acc_impl{add_promote, DE, 0}
+def bool_accumulator {F,  '!', T if scal_bool{T}, ident} = scalar_acc_impl{F, u1, ident}
+def sum_accumulator  {DE, '!', T if isprim{T}} = scalar_acc_impl{add_promote, DE, 0}
+
+
+
+# vector accumulators
 local def mask_ident{A, ident}{M, acc_vec, v:V=[_]_} = {
   if (M{0}==0) A{acc_vec, v}
   else if (is{ident,0}) A{acc_vec, M{v}}
@@ -57,7 +81,7 @@ local def acc_impl{A if kgen{A}, M if kgen{M}, unr if knum{unr}, VT=[k]E, S, ini
   def me{'from_unr'} = {
     acc_vec = tree_fold{M, acc_tup}
   }
-  def me{'to_scal', ...rest} = {
+  def me{'to_scal', ..._} = {
     acc_scal = vfold{M, acc_vec}
   }
   def me{'flush_min'} = 1/0
@@ -71,12 +95,16 @@ def assoc_accumulator{F if kgen{F}, unr if knum{unr}, VT=[_]E, ident} = {
   me
 }
 
-def assoc_accumulator{F==min,   unr, VT=[_]E} = assoc_accumulator{F, unr, VT, if (isfloat{E})  E~~1/0 else maxvalue{E}}
-def assoc_accumulator{F==max,   unr, VT=[_]E} = assoc_accumulator{F, unr, VT, if (isfloat{E}) -E~~1/0 else minvalue{E}}
-def assoc_accumulator{F==__add, unr, VT=[_]E} = assoc_accumulator{F, unr, VT, 0}
+def bool_accumulator{F, unr, VT=[k]SE, ident if isunsigned{SE}} = {
+  def acc = assoc_accumulator{F, unr, VT, ident}
+  def me{...} = acc
+  def me{'scal_result'} = cast_i{u1, acc{'scal_result'}}
+  extend finish{me}
+}
 
 
 
+# aarch64-specific accumulators
 def sum_accumulator{DE, unr, VT=[_]SE if int_els{DE,SE} and DE>SE and hasarch{'AARCH64'}} = {
   def A = if (width{DE}>width{ux}) DE else primtype{quality{DE}, width{ux}}
   def VM = el_m{VT}
@@ -90,12 +118,8 @@ def sum_accumulator{DE, unr, VT=[_]SE if int_els{DE,SE} and DE>SE and hasarch{'A
     def ps = each{if (exact) vfold{+,.} else fold_addw, vs}
     acc_scal+= tree_fold{+, each{promote{A,.}, ps}}
   }
-  def me{'from_unr'} = {
-    into_scal{slice{acc_tup, 1}}
-  }
-  def me{'to_scal', ...rest} = {
-    into_scal{tup{acc_vec}}
-  }
+  def me{'from_unr'} = into_scal{slice{acc_tup, 1}}
+  def me{'to_scal', ..._} = into_scal{tup{acc_vec}}
   def me{'flush_min'} = if (exact) {
     1/0
   } else {
@@ -112,7 +136,7 @@ def sum_accumulator{DE, unr, VT=[_]SE if int_els{DE,SE} and DE>SE and hasarch{'A
 
 
 
-# TODO: AVX-512 could use dpbusd/dpwssd
+# x86_64-specific accumulators; TODO: AVX-512 could use dpbusd/dpwssd
 def sum_accumulator{DE, unr, VT=[k]SE if int_els{DE,SE} and width{SE}==8 and hasarch{'X86_64'}} = {
   def VM = [k/8]u64
   def VU = [k]u8
@@ -167,7 +191,7 @@ def sum_accumulator{DE==i64, unr, VT=[k]SE==i32 if hasarch{'X86_64'}} = { # TODO
     def hd = promote{DE, hs}<<16
     acc+= ld + hd
   }
-  def me{'to_scal', ...rest} = {
+  def me{'to_scal', ..._} = {
     into_scal{}
   }
   def me{'flush_min'} = 65536/(unr*k)
@@ -183,9 +207,7 @@ def sum_accumulator{DE==i64, unr, VT=[k]SE==i32 if hasarch{'X86_64'}} = { # TODO
 }
 
 def assoc_accumulator{F if is{F,min} or is{F,max}, unr if knum{unr}, VT=([16]i8), ident if hasarch{'X86_64'} and not hasarch{'SSE4.1'}} = {
-  def adda{M, a, c:([16]i8)} = {
-    mask_ident{F,ident}{M, a, ty_u{c} ^ [16]u8**128}
-  }
+  def adda{M, a, c:([16]i8)} = mask_ident{F,ident}{M, a, ty_u{c} ^ [16]u8**128}
   def {acc, ..._} = acc_impl{adda, F, unr, [16]u8, u8, (ident%256) ^ 128}
   def me{...} = acc
   def me{'scal_result'} = i8~~(acc{'scal_result'} ^ 128)
@@ -193,3 +215,61 @@ def assoc_accumulator{F if is{F,min} or is{F,max}, unr if knum{unr}, VT=([16]i8)
 }
 
 def sum_accumulator{E, unr, VT=[_]E} = assoc_accumulator{__add, unr, VT, 0}
+
+
+
+def count_accumulator{DE, unr, VT=[k]SE if isunsigned{DE} and int_els{DE,SE}} = {
+  def exact = DE==SE
+  def widen_sum = SE==u8 and DE>u8
+  
+  def {acc, acc_scal, acc_tup, acc_vec} = acc_impl{mask_ident{-,0}, +, unr, VT, DE, 0}
+  def into_scal{vs} = {
+    def curr = if (widen_sum) {
+      def op{v if hasarch{'X86_64'}} = absdiff_sum{8, v, VT**0}
+      def op{v if hasarch{'AARCH64'}} = {
+        assert{unr*k <= 256}
+        addpw{v}
+      }
+      cast_i{DE, vfold{+, tree_fold{+, each{op, vs}}}}
+    } else {
+      promote{DE, tree_fold{+, each{vfold{+,.}, vs}}}
+    }
+    acc_scal+= curr
+  }
+  
+  def me{...} = acc
+  def me{'acc', ...M, v} = acc{'acc', ...M, assert_hom{v}}
+  def me{'from_unr'} = into_scal{slice{acc_tup, 1}}
+  def me{'to_scal', ..._} = into_scal{tup{acc_vec}}
+  def me{'flush_min'} = {
+    if (exact) 1/0
+    else if (widen_sum) maxvalue{SE}
+    else __floor{maxvalue{SE}/(unr*k)}
+  }
+  def me{'flush'} = if (not exact) {
+    into_scal{acc_tup}
+    acc_tup = VT**0
+  }
+  extend finish{me}
+}
+
+# def count_accumulator{DE, unr, VT=[_]SE==u8 if int_els{DE,SE} and DE>SE} = { # takes 2 instrs in core loop on x86; and still needs flushing on NEON
+#   def acc = sum_accumulator{u64, unr, VT}
+#   def me{...} = acc
+#   extend perv1{__neg}
+#   def me{'acc', ...M, v} = acc{'acc', ...M, assert_hom{v}}
+#   def me{'scal_result'} = cast_i{DE, acc{'scal_result'} * 0xfefefefefefefeff}
+#   extend finish{me}
+# }
+
+
+
+# implicit identity values
+local def of_e{[_]E, G} = G{E}
+local def of_e{E if isprim{E}, G} = G{E}
+def assoc_accumulator{F==min,   unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, of_e{T, {E} => if (isfloat{E})  E~~1/0 else maxvalue{E}}}
+def assoc_accumulator{F==max,   unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, of_e{T, {E} => if (isfloat{E}) -E~~1/0 else minvalue{E}}}
+def assoc_accumulator{F==__add, unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, 0}
+
+def any_accumulator{unr, T} = bool_accumulator{|, unr, T, 0}
+def all_accumulator{unr, T} = bool_accumulator{&, unr, T, if (scal_bool{T}) 1 else if (isvec{T}) maxvalue{eltype{T}} else assert{0,'bad T for all_accumulator',T} }
