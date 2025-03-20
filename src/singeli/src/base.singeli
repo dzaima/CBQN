@@ -166,6 +166,8 @@ def arch_defvw = if (hasarch{'AVX2'}) 256 else 128
 def has_simd = hasarch{'X86_64'} or hasarch{'AARCH64'}
 def has_sel = hasarch{'AVX2'} or hasarch{'AARCH64'}
 def fast_BMI2{} = hasarch{'BMI2'} and not SLOW_PDEP
+def assert_hom{{...vs}} = each{assert_hom, vs}
+def assert_hom{x:[_]E if quality{E}=='u'} = x
 
 # test if vector has a specific width & element type
 def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
@@ -218,6 +220,7 @@ def hom_to_int{...vs if length{vs}>1} = {
 }
 def hom_to_int{x if ktup{x}} = hom_to_int{...x}
 def first_hom{x:[_]_} = ctz_ext{hom_to_int_ext{x}}
+def popc_hom{v:(u1)} = promote{ux, v}
 def popc_hom{x:[_]_} = {
   def {n,m} = hom_to_int_ext{x}
   popc{m} / n
