@@ -542,13 +542,14 @@ fn sum_small{T if has_simd}(xv:*void, ia:usz) : i64 = {
 each{{w} => export{merge{'sum_small_i', fmtnat{w}}, sum_small{primtype{'i', w}}}, tup{8, 16, 32}}
 
 
+# Insert
 def assoc_num_reg = 6
-def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
+def insert_assoc_reg{T, op, id:T, x0:(*void), len:(usz), wid:(usz)} = {
   def n = assoc_num_reg
   def vw = arch_defvw{} / width{T}
   def V = [vw]T
   total := len*wid             # Total elements
-  set := len; step := total; numr:u64 = 0
+  set := len; step := total; numr:usz = 0
   if (total > n*vw) {
     set  = n*vw / wid          # Rows in one set of vectors
     assert{set > 0}
@@ -565,7 +566,7 @@ def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
   li  := (rem-1)/vw
   last:= blend_hom{idv, load{*V~~end, li}, mask_of_first{V, rem-li*vw}}
   def id_labels = @collect (n) makelabel{}
-  each{{g} => each{g, iota{n}, rv, id_labels}, tup{
+  each{each{., iota{n}, rv, id_labels}, tup{
     # Read or use last vector
     {i, v, lbl} => {
       if (i<n-1 and i<li) { v = load{*V~~end, i} }
@@ -580,19 +581,15 @@ def insert_assoc_reg{T, op, id:T, x0:(*void), len:(u64), wid:(u64)} = {
     x += step
   }
 
-  def opI{a, b} = I~~op{V~~a, V~~b}
-  ws := wid*(width{T}/8)
-  insert_assoc_finish{opI, I~~idv, each{{v}=>{u:=I~~v},rv}, set, ws}
+  insert_assoc_finish{op, idv, rv, set, wid*(width{T}/8)}
 }
 
-# Shuffle uses byte indices
-def ls = 16; def S = [ls]i8                       # One lane
-def ns = arch_defvw{} / width{i8}; def I = [ns]i8 # One vector
-def has_lanes = ns>ls
-
-def insert_assoc_finish{op, idv:I, rv, set:(u64), ws:(u64)} = {
-  def n = length{rv}
+def insert_assoc_finish{op, idv:V, rv, set, ws} = {
   # In-vector reduction on shape set,wid
+  def n = length{rv}
+  def I = re_el{i8,V}; def [ns]_ = I
+  def ls = 16; def has_lanes = ns > ls
+
   def done = makelabel{}
   if (set > 1) {
     vms := I**(ls-1)
@@ -615,13 +612,13 @@ def insert_assoc_finish{op, idv:I, rv, set:(u64), ws:(u64)} = {
       selind  := (hiota + vo) & vms
       def do_offset{m} = {
         def i = iota{__min{2*(m+1), n-m}}  # Vectors to change
-        {a, b} := select{merge{rv, tup{idv}}, tup{i+m, i+m+1}}
+        {a, b} := select{tup{...rv, idv}, table{+, iota{2}, i+m}}
         if (has_lanes) {
-          h := each{{a,b}=>vec_select{128, tup{a,b}, tup{1,2}}, a,b}
+          h := each{vec_select{128, ., tup{1,2}}, each{tup, a,b}}
           if (o<ls) b = h; else a = h
         }
         def shift_op{r, a,b, i} = {
-          t := sel{S, blend_hom{a, b, selmask}, selind}
+          t := shuf{ls, blend_hom{a, b, selmask}, selind}
           r = (if (i<=m) op{r, t} else t)
           if (i==m) r = blend_hom{t, r, kmask}
         }
@@ -633,15 +630,15 @@ def insert_assoc_finish{op, idv:I, rv, set:(u64), ws:(u64)} = {
       def rec{m, max} = {
         if (km==m) do_offset{m}; else if (m<max) rec{m+1, max}
       }
-      rec{1-has_lanes, cdiv{n,2}}
+      rec{not has_lanes, cdiv{n,2}}
       finish_step{}
     }
     # Down to one vector; reduce to a lane
     def v = select{rv, 0}
     while (1) {
       mk:= mask_of_first{I, k}
-      t := if (has_lanes) blend_hom{v, shuf{[4]i64, v, 2,3,0,1}, mk} else v
-      o := op{v, sel{S, t, (hiota + I**cast_i{i8, k}) & vms}}
+      t := if (has_lanes) blend_hom{v, vec_select{128, v, 1,0}, mk} else v
+      o := op{v, shuf{ls, t, (hiota + I**cast_i{i8, k}) & vms}}
       v = blend_hom{v, o, mk}
       finish_step{}
     }
@@ -650,9 +647,13 @@ def insert_assoc_finish{op, idv:I, rv, set:(u64), ws:(u64)} = {
   rv  # Caller writes
 }
 
-fn write_reg{n}(rp:*I, rv:n**I, bytes:u64) = {
+def write_reg{r0, rv={_:V, ..._}, bytes} = {
+  def I = re_el{i8, V}
+  write_reg_fn{length{rv}, I}(*I~~r0, each{~~{I,.}, rv}, bytes)
+}
+fn write_reg_fn{n,I=[ns](i8)}(rp:*I, rv:n**I, bytes:usz) = {
   lastv := select{rv, 0}
-  i:u64 = 0
+  i:usz = 0
   each{
     {v} => {
       if ((i+1)*ns >= bytes) goto{'last'}
@@ -665,7 +666,7 @@ fn write_reg{n}(rp:*I, rv:n**I, bytes:u64) = {
   store_blended_hom{rp+i, mask_of_first{I, bytes-i*ns}, lastv}
 }
 
-fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:u64, wid:u64) : void = {
+fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   assert{len > 1}
   if (not hasarch{'AVX2'}) {
     r := *T~~r0; x := *T~~x0
@@ -679,9 +680,8 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:u64, wid:u64) : void = {
     def vw = arch_defvw{} / width{T}
     def V = [vw]T
     if (wid <= assoc_num_reg * vw) {
-      def id = if (ksym{id0}) emit{T, '', id0} else T~~id0
-      def rv = insert_assoc_reg{T, op, id, x0, len, wid}
-      write_reg{length{rv}}(*I~~r0, rv, wid*(width{T}/8))
+      def rv = insert_assoc_reg{T, op, T~~id0, x0, len, wid}
+      write_reg{r0, rv, wid*(width{T}/8)}
     } else {
       # Accumulate columns of n registers
       def n = 4; def nvw = n*vw; def i = iota{n}
@@ -689,13 +689,13 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:u64, wid:u64) : void = {
       end := xc + len*wid
       last := xc + wid - nvw
       while (1) {
-        rv := each{bind{load, *V~~xc}, i}
+        rv := each{load{*V~~xc, .}, i}
         x := xc + wid
         while (x < end) {
           rv = each{{v,i} => op{v, load{*V~~x, i}}, rv, i}
           x += wid
         }
-        each{bind{store, *V~~r}, i, rv}
+        each{store{*V~~r, ...}, i, rv}
         xc += nvw; r += nvw
         if (rare{xc > last}) {
           if (xc == last+nvw) return{}
