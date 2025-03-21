@@ -153,7 +153,7 @@ def sum_accumulator{DE, unr, VT=[k]SE if int_els{DE,SE} and width{SE}==8 and has
   def me{'to_scal', ...rest} = {
     acc_scal+= cast_i{DE, match (SE, ...rest) {
       {(u8),..._} => vfold{+, acc_vec}
-      {(i8),   n} => vfold{+, acc_vec} - n*128
+      {(i8),   n} => vfold{+, acc_vec} - cast_i{u64, n}*128
     }}
   }
   extend finish{me}
