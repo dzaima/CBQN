@@ -87,11 +87,11 @@ All of the above will go through build.bqn. If that causes problems, `make o3-ma
 
 ## Limitations
 
-- The current default is to use unsigned 32-bit integers for array lengths, limiting array size to about 2^32 elements. This can be switched to 64-bit via `usz=64`, but will have limited effect as some builtins don't have implementations for indices larger than 32-bit (search functions, `⊔`, `/𝕩`, `/⁼𝕩` & similar). Additionally, some things may fail even before 2^31 and may even crash CBQN.
+- While 64-bit values are used for array sizes (unless configured otherwise), some builtins don't have implementations for input/output arrays with over `2⋆31` elements, and will result in an error or possibly give wrong results. As these cases are difficult to test, crashes or memory corruption are also possible. When implemented they may also perform disproportionately worse.
 
-- Throwing & catching errors will leak memory: the garbage collector has no way to scan for objects on the C stack, and checks for objects with an incorrect reference count (comparing to the expected from other heap objects / GC roots) to estimate that. Error catching is implemented as a `longjmp`, thus making the GC permanently think those are still on the C stack. Between REPL lines, a full GC can run (as then there's a guarantee of no BQN code being mid-execution), but that doesn't apply to any other context.
+- Throwing & catching errors will permanently leak memory; the garbage collector has no way to scan for objects on the C stack, and thus checks for objects with an incorrect reference count (comparing to the expected from other heap objects / GC roots) to infer objects to preserve. Error throwing is implemented via a `longjmp`, thus making the GC permanently think those are still on the C stack. A full GC can run between REPL lines (as then there's a guarantee of no BQN code being mid-execution), but not in any other context.
 
-- Freeing highly nested objects will crash: object freeing is done recursively, and there is nothing preventing arbitrarily-nested objects.
+- Highly nested objects will result in crashes: object freeing is done recursively, and there is nothing preventing arbitrarily-nested objects, resulting in stack overflows.
 
 ## Requirements
 
