@@ -3,15 +3,6 @@ include './vecfold'
 include './mask'
 include './accumulator'
 
-def vec_merge_shift_right{a:V=[n]_, b:V, s if hasarch{'SSE2'} and not hasarch{'SSSE3'}} = {
-  vec_shift_left{a, n-s} | vec_shift_right{b, s}
-}
-def vec_merge_shift_right{a:V, b:V, 1 if width{V}>128} = {
-  def nl = width{V}/128  # number of lanes
-  p:= vec_select{128, tup{a,b}, nl-1+iota{nl}}
-  vec_merge_shift_right_128{p, b, 1}
-}
-
 def __lt{a:V=[_]_, b if knum{b}} = a < V**b
 def __eq{a:V=[_]_, b if knum{b}} = a == V**b
 
@@ -37,14 +28,13 @@ def group_statistics{T} = {
       def unr = 2
       def accs = each{{a,T} => a{unr, if (quality{T}=='u') VU else V}, acc_gen, types}
       
-      prev_v:V = V ** -1
-      @for_mu{bulk, unr, mu_extra{...accs}}(curr_vs in tup{V,w}, M in 'm' over xn) {
-        def prev_vs = shiftright{tup{prev_v}, curr_vs}
-        def prev_es = each{vec_merge_shift_right{..., 1}, prev_vs, curr_vs}
+      prev_v:V = load{V, w-1} | V~~mask_of_first{V, 1}
+      @for_mu{bulk, unr, mu_extra{...accs}}(curr_vs in tup{V,w}, next_vs in tup{V,w+bulk-1}, M in 'm' over xn) {
+        def prev_es = shiftright{tup{prev_v}, next_vs}
         each{{a, F} => {
           a{'acc', M, each{F, prev_es, curr_vs}}
         }, accs, ops}
-        prev_v = select{curr_vs,-1}
+        prev_v = select{next_vs,-1}
       }
       accs
     } else {
