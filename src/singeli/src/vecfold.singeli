@@ -9,9 +9,9 @@ def vfold{F, x:V=[_]T if w128{V} and hasarch{'X86_64'}} = {
   if (EW==8) { v:=extract{[8]i16~~c, 0}; F{cast_i{T, v}, cast_i{T, v>>8}} }
   else extract{c, 0}
 }
-def vfold{(__add), x:V=([16]u8) if hasarch{'X86_64'}} = {
+def vfold{(__add), x:V=[16]E if hasarch{'X86_64'} and width{E}==8} = {
   c:= x + shuf{u64, x, 1,0}
-  cast_i{u8, extract{absdiff_sum{8, c, [16]u8**0}, 0}}
+  cast_i{E, extract{absdiff_sum{8, ty_u{c}, [16]u8**0}, 0}}
 }
 
 
