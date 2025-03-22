@@ -584,7 +584,27 @@ def insert_assoc_reg{T, op, id:T, x0:(*void), len:(usz), wid:(usz)} = {
   insert_assoc_finish{op, idv, rv, set, wid*(width{T}/8)}
 }
 
-def insert_assoc_finish{op, idv:V, rv, set, ws} = {
+def insert_assoc_finish{op, idv:V=[_]T, rv, set, ws} = {
+  # Reduction on shape set,wid using scratch space
+  # Assumes idempotent op{}
+  def n = length{rv}
+  mem := undefined{u8, (n+1)*width{V} / 8}
+  def on_first{l, f} = each{f, iota{l}, slice{rv,0,l}}
+  def store_vec = store{*V~~mem, ., .}
+
+  on_first{n, store_vec}
+  if (set > 1) {
+    nr:= set              # Number of active rows
+    def nv = cdiv{2*n, 3} # Number of vectors to be updated
+    while (nr > 1) {
+      k:= nr / 2; nr-= k
+      def load_hi = load{*V~~(mem + ws*k), .}
+      on_first{nv, {i,a} => store_vec{i, a = op{a, load_hi{i}}}}
+    }
+  }
+  mem  # Caller copies
+}
+def insert_assoc_finish{op, idv:V, rv, set, ws if hasarch{'SSSE3'} or hasarch{'AARCH64'}} = {
   # In-vector reduction on shape set,wid
   def n = length{rv}
   def I = re_el{i8,V}; def [ns]_ = I
@@ -618,7 +638,7 @@ def insert_assoc_finish{op, idv:V, rv, set, ws} = {
           if (o<ls) b = h; else a = h
         }
         def shift_op{r, a,b, i} = {
-          t := shuf{ls, blend_hom{a, b, selmask}, selind}
+          t := shuf{[ls]i8, blend_hom{a, b, selmask}, selind}
           r = (if (i<=m) op{r, t} else t)
           if (i==m) r = blend_hom{t, r, kmask}
         }
@@ -630,15 +650,15 @@ def insert_assoc_finish{op, idv:V, rv, set, ws} = {
       def rec{m, max} = {
         if (km==m) do_offset{m}; else if (m<max) rec{m+1, max}
       }
-      rec{not has_lanes, cdiv{n,2}}
+      rec{0, cdiv{n,2}}
       finish_step{}
     }
-    # Down to one vector; reduce to a lane
+    # Now fits in two lanes
     def v = select{rv, 0}
     while (1) {
       mk:= mask_of_first{I, k}
-      t := if (has_lanes) blend_hom{v, vec_select{128, v, 1,0}, mk} else v
-      o := op{v, shuf{ls, t, (hiota + I**cast_i{i8, k}) & vms}}
+      t := blend_hom{v, if (has_lanes) vec_select{128, v, 1,0} else select{rv,1}, mk}
+      o := op{v, shuf{[ls]i8, t, (hiota + I**cast_i{i8, k}) & vms}}
       v = blend_hom{v, o, mk}
       finish_step{}
     }
@@ -668,7 +688,7 @@ fn write_reg_fn{n,I=[ns](i8)}(rp:*I, rv:n**I, bytes:usz) = {
 
 fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   assert{len > 1}
-  if (not hasarch{'AVX2'}) {
+  if (not has_simd) {
     r := *T~~r0; x := *T~~x0
     s := x  # Source; don't copy first row
     @for (i from 1 to len) {
@@ -680,8 +700,11 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
     def vw = arch_defvw{} / width{T}
     def V = [vw]T
     if (wid <= assoc_num_reg * vw) {
-      def rv = insert_assoc_reg{T, op, T~~id0, x0, len, wid}
-      write_reg{r0, rv, wid*(width{T}/8)}
+      def wb = wid*(width{T}/8)
+      match (insert_assoc_reg{T, op, T~~id0, x0, len, wid}) {
+        {mem:*T} => emit{void, 'memcpy', r0, mem, wb}
+        {{...rv}} => write_reg{r0, rv, wb}
+      }
     } else {
       # Accumulate columns of n registers
       def n = 4; def nvw = n*vw; def i = iota{n}
