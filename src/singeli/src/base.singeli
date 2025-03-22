@@ -121,7 +121,7 @@ def { w64i, w64s, w64u, w64f} = genchks{w64}
 def {w128i,w128s,w128u,w128f} = genchks{w128}
 def {w256i,w256s,w256u,w256f} = genchks{w256}
 
-def trunc{T, x:U if isint{T} and isint{U} and T<=U} = emit{T, '', x}
+def trunc{T, x:U if isint{T} and isint{U} and width{T}<=width{U}} = emit{T, '', x}
 def trunc{T, x if knum{x}} = cast{T, x}
 
 def tern{c, T, F if any_int{c}} = if(c) T else F
