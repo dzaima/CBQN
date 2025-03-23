@@ -84,6 +84,10 @@ def absdiff_sum{8, a:V=[k](u8), b:V if has_bw{V}} = {
 def mul_sum{2, a:V=[k](i16), b:V if has_bw{V}} = {
   emit{[k/2]i32, intrin{V, 'madd_epi16'}, a, b}
 }
+def mul_sum_sat{2, a:V=[k](i8), b:[k](u8) if has_bw{V}} = mul_sum_sat{2, b, a}
+def mul_sum_sat{2, a:V=[k](u8), b:[k](i8) if has_bw{V}} = {
+  emit{[k/2]i16, intrin{V, 'maddubs_epi16'}, a, b}
+}
 
 def x86_low_elts{n, x:V=[k]E} = extract{x86_vec_low{n,E}, x, 0}
 
