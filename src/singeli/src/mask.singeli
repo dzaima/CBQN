@@ -163,7 +163,7 @@ def for_mu{bulk, unr, extra}{vars,begin==0,end,iter} = {
           i+= unr
         }
         if (same{flush_max, 1/0}) {
-          while (i+unr <= m) unr_iter{}
+          do { unr_iter{} } while (i <= m-unr)
         } else {
           def done = makelabel{}
           def unr_end = m-unr + 1
