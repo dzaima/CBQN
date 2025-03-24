@@ -59,7 +59,7 @@ def clz{x:T if nvecu{T} and elwidth{T}<=32} = emit{T, ntyp{'vclz', T}, x}
 def cls{x:T if nveci{T} and elwidth{T}<=32} = ty_u{T}~~emit{ty_s{T}, ntyp{'vcls', T}, x}
 
 def fold_add {a:T=[_]E if nvec{T}} = emit{E, ntyp{'vaddv', T}, a}
-def fold_addw{a:T=[_]E if nveci{T}} = emit{w_d{E}, ntyp{'vaddlv', T}, a}
+def fold_addw{D, a:T=[_]E if nveci{T} and D>E} = cast_i{D, emit{w_d{E}, ntyp{'vaddlv', T}, a}}
 def fold_min {a:T=[_]E if nvec{T} and ~nveci{T,64}} = emit{E, ntyp{'vminv', T}, a}
 def fold_max {a:T=[_]E if nvec{T} and ~nveci{T,64}} = emit{E, ntyp{'vmaxv', T}, a}
 def vfold{(__min), x:T if nvec{T} and ~nveci{T,64}} = fold_min{x}

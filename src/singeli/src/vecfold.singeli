@@ -1,18 +1,28 @@
-# Fold associative/commutative operation across a register
-
-def vfold{F, x:V=[_]T if w128{V} and hasarch{'X86_64'}} = {
-  c:= x
-  def EW = width{T}
-  if (EW<=64) c = F{c, shuf{u64, c, 1,0}}
-  if (EW<=32) c = F{c, shuf{u32, c, 1,0}}
-  if (EW<=16) c = F{c, vec_shuffle16_lo{c, tup{1,0,3,2}}}
-  if (EW==8) { v:=extract{[8]i16~~c, 0}; F{cast_i{T, v}, cast_i{T, v>>8}} }
-  else extract{c, 0}
+if_inline (hasarch{'X86_64'}) {
+  # Fold associative/commutative operation across a register
+  def vfold{F, x:V=[_]T if w128{V}} = {
+    c:= x
+    def EW = width{T}
+    if (EW<=64) c = F{c, shuf{u64, c, 1,0}}
+    if (EW<=32) c = F{c, shuf{u32, c, 1,0}}
+    if (EW<=16) c = F{c, vec_shuffle16_lo{c, tup{1,0,3,2}}}
+    if (EW==8) { v:=extract{[8]i16~~c, 0}; F{cast_i{T, v}, cast_i{T, v>>8}} }
+    else extract{c, 0}
+  }
+  def vfold{(__add), x:V=[16]E if width{E}==8} = {
+    c:= x + shuf{u64, x, 1,0}
+    cast_i{E, extract{absdiff_sum{8, ty_u{c}, [16]u8**0}, 0}}
+  }
+  
+  def vfold{F, x:T if w256{T}} = vfold{F, F{half{x, 0}, half{x, 1}}}
+  
+  
+  
+  # def fold_addw{DE, x:V=[k](i8)  if DE>i8 and DE<=i64} = cast_i{DE, vfold{+, mul_sum_sat{2, x, [k]u8**1}}}
+  def fold_addw{DE, x:V=[k](u8)  if DE> u8} = cast_i{DE, vfold{+, absdiff_sum{8, x, V**0}}}
+  def fold_addw{DE, x:V=[k](i16) if DE>i16} = cast_i{DE, vfold{+, mul_sum{2,     x, V**1}}}
+  def fold_addw{DE, x:V=[k](i8)  if DE> i8} = DE ~~ fold_addw{ty_u{DE}, ty_u{x} ^ [k]u8 **  (1<< 7)} - k*(1<<7)
+  def fold_addw{DE, x:V=[k](u16) if DE>u16} = DE ~~ fold_addw{ty_s{DE}, ty_s{x} ^ [k]i16** -(1<<15)} + k*(1<<15)
+  def fold_addw{DE, x:V=[k](i32) if DE>i32} = DE ~~ fold_addw{ty_u{DE}, ty_u{x} ^ [k]u32**  (1<<31)} - k*(1<<31)
+  def fold_addw{DE, x:V=[k](u32) if DE>u32} = { vfold{+, el_m{blend_units{V**0,x,1,0}} + el_m{x}>>32} }
 }
-def vfold{(__add), x:V=[16]E if hasarch{'X86_64'} and width{E}==8} = {
-  c:= x + shuf{u64, x, 1,0}
-  cast_i{E, extract{absdiff_sum{8, ty_u{c}, [16]u8**0}, 0}}
-}
-
-
-def vfold{F, x:T if w256{T} and hasarch{'X86_64'}} = vfold{F, F{half{x, 0}, half{x, 1}}}
