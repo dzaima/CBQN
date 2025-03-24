@@ -130,7 +130,7 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
   if (R==u1) {
     def bulk = vw/64
     def VT = [bulk]u64
-    @for_masked{bulk}(r in tup{'g',*u64~~r}, cw in tup{VT,*u64~~w}, cx in tup{VT,*u64~~x} over cdiv{len, 64}) r{F{cw,cx}}
+    @for_mu{bulk, 4}(r in tup{'g',*u64~~r}, cw in tup{VT,*u64~~w}, cx in tup{VT,*u64~~x} over cdiv{len, 64}) r{each{F,cw,cx}}
   } else if (same{F,__mul} and W!=u1 and X==u1 and W==R) { # 0‿1‿1‿1‿1‿0‿1‿1×3‿1‿4‿1‿5‿9‿2‿6
     def bulk = vw / width{W}
     def TU = ty_u{R}
