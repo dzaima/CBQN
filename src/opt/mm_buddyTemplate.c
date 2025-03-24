@@ -76,8 +76,8 @@ static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
   if (ptr2u64(mem)+sz > (1ULL<<48)) fatal("mmap returned address range above 2⋆48");
   #if ALLOC_MODE==0
     mem+= ALLOC_PADDING;
-    // ux off = offsetof(TyArr,a);
-    // if (off&31) mem+= 32-(off&31); // align heap such that arr->a is 32-byte-aligned
+    ux off = offsetof(TyArr,a);
+    if (off&31) mem+= 32-(off&31); // align heap such that arr->a is 32-byte-aligned
   #endif
   EmptyValue* c = (void*)mem;
   
