@@ -64,11 +64,11 @@ static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
   #if ALLOC_MODE==0
     reqsz = prepAllocSize(reqsz);
   #endif
+  if (reqsz != (size_t) reqsz) thrOOM(); // otherwise it gets silently truncated in 32-bit builds
   #if NO_MMAP
     u8* mem = calloc(reqsz, 1);
     if (mem_log_enabled) fprintf(stderr, "\n");
   #else
-    if (reqsz != (size_t) reqsz) thrOOM(); // otherwise it gets silently truncated in 32-bit builds
     u8* mem = MMAP(reqsz);
     if (mem_log_enabled) fprintf(stderr, ": %s\n", mem==MAP_FAILED? "failed" : "success");
     if (mem==MAP_FAILED) thrOOM();
