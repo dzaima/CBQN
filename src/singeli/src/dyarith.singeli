@@ -18,10 +18,12 @@ def bqn_or{a, b} = (a+b)-(a*b)
 
 
 # + & -
-def arithChk1{(__add), M, w:T, x:T, r:T} = tup{'any_top', M{(w^r) & (x^r)}}
-def arithChk1{(__sub), M, w:T, x:T, r:T} = tup{'any_top', M{(w^x) & (w^r)}}
-def arithChk1{(__add), M, w:T=[_]E, x:T, r:T if not hasarch{'X86_64'} or width{E}<=16} = tup{'anyne', adds{w,x}, r}
-def arithChk1{(__sub), M, w:T=[_]E, x:T, r:T if not hasarch{'X86_64'} or width{E}<=16} = tup{'anyne', subs{w,x}, r}
+# def arithChk1{(__add), M, w:T, x:T, r:T} = tup{'any_top', M{(w^r) & (x^r)}}
+# def arithChk1{(__sub), M, w:T, x:T, r:T} = tup{'any_top', M{(w^x) & (w^r)}}
+def arithChk1{(__add), M, w:T=[_]E, x:T, r:T} = tup{'anyne', adds{w,x}, r}
+def arithChk1{(__sub), M, w:T=[_]E, x:T, r:T} = tup{'anyne', subs{w,x}, r}
+def arithChk1{(__add), M, w:T, x:T, r:T if hasarch{'X86_64'}} = tup{'any_top', M{ty_s{w>r} ^ x}}
+def arithChk1{(__sub), M, w:T, x:T, r:T if hasarch{'X86_64'}} = tup{'any_top', M{ty_s{x>w} ^ r}}
 
 
 
