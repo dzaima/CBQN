@@ -140,7 +140,7 @@ def sum_accumulator{DE, unr, VT=[_]SE if int_els{DE,SE} and DE>SE and hasarch{'A
 
 
 
-# x86_64-specific accumulators; TODO: AVX-512 could use dpbusd/dpwssd
+# x86_64-specific accumulators; TODO: AVX-512 could use dpbusd/dpwssd, though with the higher latency that should be behind a high unroll amount
 def sum_accumulator{DE, unr, VT=[k]SE if int_els{DE,SE} and width{SE}==8 and hasarch{'X86_64'}} = {
   def VM = [k/8]u64
   def VU = [k]u8
