@@ -12,13 +12,49 @@ include './avx'
 include './avx2'
 include './avx512'
 
+local def fmtwidth{T} = fmtnat{width{T}}
 local def has_bw{V} = hasarch{match (width{V}) { {128}=>'SSE2'; {256}=>'AVX2'; {512}=>'AVX512BW' }}
-local def intrin{V, ...rest} = merge{'_mm', if (width{V}==128) '' else fmtnat{width{V}}, '_', ...rest}
-local def intrin_t{V=[_]E, ...rest} = intrin{V, ...rest, '_', match (E) {
+local def intrin{V, ...rest} = merge{'_mm', if (width{V}==128) '' else fmtwidth{V}, '_', ...rest}
+
+local def scal_q{q, E} = match (E) {
   {(f32)} => 'ps'
   {(f64)} => 'pd'
-  {T} => merge{'ep', quality{T}, fmtnat{width{T}}}
-}}
+  {_} => merge{'ep', q, fmtwidth{E}}
+}
+local def scal{E} = scal_q{quality{E}, E}
+
+local def intrin_t{V=[_]E, ...rest} = intrin{V, ...rest, '_', scal_q{quality{E}, E}}
+local def intrin_i{V=[_]E, ...rest} = intrin{V, ...rest, '_', scal_q{'i', E}}
+
+local def vec_s{V=[_]E} = match (E) { # e.g. ps / pd / si128
+  {(f32)} => 'ps'
+  {(f64)} => 'pd'
+  {_} => merge{'si', fmtwidth{V}}
+}
+local def vec_l{V=[_]E} = merge{match (E) { # e.g. ps128 / pd128 / si128
+  {(f32)} => 'ps'
+  {(f64)} => 'pd'
+  {_} => 'si'
+}, fmtwidth{V}}
+local def vec_x{V=[k]E} = { # e.g. i64x2 / f32x4 / f64x2
+  merge{if (isint{E}) 'i' else 'f', fmtwidth{E}, 'x', fmtnat{k}}
+}
+
+
+
+local def x86_vec_cvt{name, W, D=[_]E, x:X=[_]E} = emit{D, intrin{W, name, vec_l{X}, '_', vec_l{D}}, x}
+def undef_promote{D=[kd]E, x:X=[ks]E if kd>ks} = x86_vec_cvt{'cast', D, D, x}
+def  zero_promote{D=[kd]E, x:X=[ks]E if kd>ks} = x86_vec_cvt{'zext', D, D, x}
+
+def extract{D=[kd]E, x:X=[ks]E, i if kd<ks and int_idx{i, ks/kd}} = match (width{X}, i) {
+  {_, 0} => x86_vec_cvt{'cast', X, D, x}
+  {256, _} => emit{D, intrin{X, 'extract', if (hasarch{'AVX2'} and isint{E}) 'i' else 'f', '128_', vec_s{X}}, x, i}
+  {512, _} => {
+    def Z = if (width{E}<32) re_el{i32, D} else D
+    emit{D, intrin_i{re_el{eltype{Z},X}, 'extract', vec_x{Z}}, x, i}
+  }
+}
+def half{x:[k]E, i} = extract{[k/2]E, x, i}
 
 
 
@@ -37,4 +73,14 @@ def absdiff_sum{8, a:V=[k](u8), b:V if has_bw{V}} = {
 }
 def mul_sum{2, a:V=[k](i16), b:V if has_bw{V}} = {
   emit{[k/2]i32, intrin{V, 'madd_epi16'}, a, b}
+}
+
+def low_elts{n, x:V=[k]E} = extract{[__max{128/width{E},n}]E, x, 0}
+
+def widen{D=[k]DE, x:S=[k0]SE if isint{DE} and quality{DE}==quality{SE} and DE>SE and k<=k0 and hasarch{match (width{D}) {
+  {128} => 'SSE4.1'
+  {256} => 'AVX2'
+  {512} => if (width{DE}<=16) 'AVX512BW' else 'AVX512F'
+}}} = {
+  emit{D, intrin_i{D, 'cvtep', if (isunsigned{SE}) 'u' else 'i', fmtwidth{SE}}, low_elts{k, x}}
 }

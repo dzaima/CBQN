@@ -7,14 +7,6 @@ def packs{a:T,b:T if hasarch{'SSE4.1'} and T==[4]u32} = emit{[ 8]u16, '_mm_packu
 def and_bit_none{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
 
 # conversion
-def widen{T==[8]u16, x:X==[16]u8 if hasarch{'SSE4.1'}} = emit{T, '_mm_cvtepu8_epi16',  x}; def widen{T==[8]i16, x:X if hasarch{'SSE4.1'} and X==[16]i8} = emit{T, '_mm_cvtepi8_epi16',  x}
-def widen{T==[4]u32, x:X==[16]u8 if hasarch{'SSE4.1'}} = emit{T, '_mm_cvtepu8_epi32',  x}; def widen{T==[4]i32, x:X if hasarch{'SSE4.1'} and X==[16]i8} = emit{T, '_mm_cvtepi8_epi32',  x}
-def widen{T==[4]u32, x:X==[8]u16 if hasarch{'SSE4.1'}} = emit{T, '_mm_cvtepu16_epi32', x}; def widen{T==[4]i32, x:X if hasarch{'SSE4.1'} and X==[8]i16} = emit{T, '_mm_cvtepi16_epi32', x}
-def widen{T==[2]u64, x:X==[16]u8 if hasarch{'SSE4.1'}} = emit{T, '_mm_cvtepu8_epi64',  x}; def widen{T==[2]i64, x:X if hasarch{'SSE4.1'} and X==[16]i8} = emit{T, '_mm_cvtepi8_epi64',  x}
-def widen{T==[2]u64, x:X==[8]u16 if hasarch{'SSE4.1'}} = emit{T, '_mm_cvtepu16_epi64', x}; def widen{T==[2]i64, x:X if hasarch{'SSE4.1'} and X==[8]i16} = emit{T, '_mm_cvtepi16_epi64', x}
-def widen{T==[2]u64, x:X==[4]u32 if hasarch{'SSE4.1'}} = emit{T, '_mm_cvtepu32_epi64', x}; def widen{T==[2]i64, x:X if hasarch{'SSE4.1'} and X==[4]i32} = emit{T, '_mm_cvtepi32_epi64', x}
-def widen{T==[2]f64, x:X=[_]E    if hasarch{'SSE4.1'} and w128i{X} and width{E}<32} = widen{T, widen{[4]i32, x}}
-
 def narrow{(i8 ), x:X if hasarch{'SSE4.1'} and w128i{X,32}} = sel{[16]u8, [16]i8~~x, make{[16]i8, 0,4,8,12, 0,0,0,0, 0,0,0,0, 0,0,0,0}}
 def narrow{(i16), x:X if hasarch{'SSE4.1'} and w128i{X,32}} = sel{[16]u8, [8]i16~~x, make{[16]i8, 0,1,4,5, 8,9,12,13, 0,0,0,0, 0,0,0,0}}
 

@@ -25,6 +25,8 @@ def isprim{T} = istype{T} and same{typekind{T}, 'primitive'}
 def isptr {T} = istype{T} and same{typekind{T}, 'pointer'}
 def any_num = match { {x:T}=>isprim{T}; {x} => knum{x} }
 def any_int = match { {x:T}=>isint{T};  {x} => knum{x} and (x>>0) == x }
+def int_idx{_, _} = 0
+def int_idx{k if knum{k}, l} = (k>>0)==k and k>=0 and k<l
 def elwidth{T} = width{eltype{T}}
 
 def reinterpret{T, x:T} = x
@@ -286,6 +288,7 @@ def narrow{T, x:[_]T} = x
 def undef_promote{T, x:T} = x
 def zero_promote{T, x:T} = x
 def cvt{T, x:[_]T} = x
+def extract{V=[k]E, x:V, 0} = x
 
 def broadcast{V=[_]T, v} = vec_broadcast{V, if (knum{v}) v else promote{T,v}}
 def make{V=[_]_, ...xs} = vec_make{V, ...xs}

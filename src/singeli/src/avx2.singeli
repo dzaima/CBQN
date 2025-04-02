@@ -50,13 +50,6 @@ def all_top{x:T if w256i{T,16}} = all_hom{[16]i16~~x  <  [16]i16**0}
 
 
 # conversion
-def widen{T==[16]u16, x:X==[16]u8} = emit{T, '_mm256_cvtepu8_epi16',  x}; def widen{T==[16]i16, x:X==[16]i8} = emit{T, '_mm256_cvtepi8_epi16',  x}
-def widen{T==[ 8]u32, x:X==[16]u8} = emit{T, '_mm256_cvtepu8_epi32',  x}; def widen{T==[ 8]i32, x:X==[16]i8} = emit{T, '_mm256_cvtepi8_epi32',  x}
-def widen{T==[ 8]u32, x:X==[8]u16} = emit{T, '_mm256_cvtepu16_epi32', x}; def widen{T==[ 8]i32, x:X==[8]i16} = emit{T, '_mm256_cvtepi16_epi32', x}
-def widen{T==[ 4]u64, x:X==[16]u8} = emit{T, '_mm256_cvtepu8_epi64',  x}; def widen{T==[ 4]i64, x:X==[16]i8} = emit{T, '_mm256_cvtepi8_epi64',  x}
-def widen{T==[ 4]u64, x:X==[8]u16} = emit{T, '_mm256_cvtepu16_epi64', x}; def widen{T==[ 4]i64, x:X==[8]i16} = emit{T, '_mm256_cvtepi16_epi64', x}
-def widen{T==[ 4]u64, x:X==[4]u32} = emit{T, '_mm256_cvtepu32_epi64', x}; def widen{T==[ 4]i64, x:X==[4]i32} = emit{T, '_mm256_cvtepi32_epi64', x}
-
 def narrow{T, x:X if w256i{X,32} and width{T}==8} = {
   a:= packQ{x, x}
   b:= packQ{a, a}
