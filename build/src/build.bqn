@@ -201,7 +201,7 @@ po ← { # parsed options
     vs ← ∾','Split⟜Lowercase¨ GetOpt 𝕩
     {
       vs≡⟨"all"⟩? allCaches;
-      𝕩 {∾⟨"Error: Invalid target in ",𝕨," list: ",⊑𝕩⟩}_assert_(0=≠) vs (¬∘∊/⊣) allCaches
+      𝕩 {∾⟨"Error: Invalid target in ",𝕨," list: ",⊑𝕩, " (valid options: ", 2↓∾", "⊸∾¨ allCaches, ")"⟩}_assert_(0=≠) vs (¬∘∊/⊣) allCaches
       vs
     }𝕩
   }
