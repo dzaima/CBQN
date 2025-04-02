@@ -1,9 +1,3 @@
-# compact casting for the annoying intrinsic type system
-def v2i{x:V=[_]T if w128{V}} = if(isint{T}) x else [16]u8 ~~ x
-def v2f{x:T if w128{T}} = [4]f32 ~~ x
-def v2d{x:T if w128{T}} = [2]f64 ~~ x
-
-
 # load & store
 def load{V=[_]E, ptr:*E, vl if w128{V} and vl*width{E}==16} = V ~~ emit{[16]u8, '_mm_loadu_si16', ptr}
 def load{V=[_]E, ptr:*E, vl if w128{V} and vl*width{E}==32} = V ~~ emit{[16]u8, '_mm_loadu_si32', ptr}
@@ -12,12 +6,6 @@ def load{V=[_]E, ptr:*E, vl if w128{V} and vl*width{E}==64} = V ~~ emit{[16]u8, 
 def store{ptr:*E, x:V=[_]E, vl if w128{V} and vl*width{E}==16} = emit{void, '_mm_storeu_si16', ptr, v2i{x}}
 def store{ptr:*E, x:V=[_]E, vl if w128{V} and vl*width{E}==32} = emit{void, '_mm_storeu_si32', ptr, v2i{x}}
 def store{ptr:*E, x:V=[_]E, vl if w128{V} and vl*width{E}==64} = emit{void, '_mm_storeu_si64', ptr, v2i{x}}
-
-
-
-# float comparison
-def unord{a:T,b:T==[4]f32} = [4]u32~~emit{[4]f32, '_mm_cmpunord_ps',  a, b}
-def unord{a:T,b:T==[2]f64} = [2]u64~~emit{[2]f64, '_mm_cmpunord_pd',  a, b}
 
 
 

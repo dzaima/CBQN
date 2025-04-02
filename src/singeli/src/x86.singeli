@@ -1,14 +1,36 @@
 include 'arch/iintrinsic/basic'
 include 'arch/iintrinsic/select'
+
+# compact casting for the annoying intrinsic type system
+def v2i{x:T=[_]E} = if(isint{E}) x else re_el{u8, x}
+def v2f{x:T=[_]_} = re_el{f32, x}
+def v2d{x:T=[_]_} = re_el{f64, x}
+
 include './sse2'
 include './sse'
 include './avx'
 include './avx2'
 include './avx512'
-def any_bit{x:[_]_} = ~and_bit_none{x, x}
 
 local def has_bw{V} = hasarch{match (width{V}) { {128}=>'SSE2'; {256}=>'AVX2'; {512}=>'AVX512BW' }}
 local def intrin{V, ...rest} = merge{'_mm', if (width{V}==128) '' else fmtnat{width{V}}, '_', ...rest}
+local def intrin_t{V=[_]E, ...rest} = intrin{V, ...rest, '_', match (E) {
+  {(f32)} => 'ps'
+  {(f64)} => 'pd'
+  {T} => merge{'ep', quality{T}, fmtnat{width{T}}}
+}}
+
+
+
+# float stuff
+local def avx_cmp{a:V, b:V, imm} = ty_u{emit{V, intrin_t{V, 'cmp'}, a, b, imm}}
+def unord{a:V, b:V if w256f{V} and hasarch{'AVX'}} = avx_cmp{a,b,3}
+def unord{a:V, b:V if w128f{V}} = ty_u{emit{V, intrin_t{V, 'cmpunord'}, a, b}}
+
+
+
+# int stuff
+def any_bit{x:[_]_} = ~and_bit_none{x, x}
 
 def absdiff_sum{8, a:V=[k](u8), b:V if has_bw{V}} = {
   emit{[k/8]u64, intrin{V, 'sad_epu8'}, a, b}

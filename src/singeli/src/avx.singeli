@@ -1,19 +1,8 @@
-# compact casting for the annoying intrinsic type system
-def v2i{x:T=[_]E if w256{T}} = if(isint{E}) x else [32]u8 ~~ x
-def v2f{x:T if w256{T}} = [8]f32 ~~ x
-def v2d{x:T if w256{T}} = [4]f64 ~~ x
-
 def undef_promote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_castsi128_si256', v2i{x}}
 def zero_promote{T=[_]E, x:X=[_]E if w128{X} and w256{T}} = T~~emit{[32]u8, '_mm256_zextsi128_si256', v2i{x}}
 
 def load{V=[_]E, ptr:*E, vl if w256{V} and vl*width{E}<=128} = undef_promote{V, load{n_h{V}, ptr, vl}}
 def store{ptr:*E, x:V=[k]E, vl if w256{V} and vl*width{E}<=128} = store{ptr, half{x, 0}, vl}
-
-# float comparison
-local def f32cmpAVX{a,b,n} = [8]u32 ~~ emit{[8]f32, '_mm256_cmp_ps', a, b, n}
-local def f64cmpAVX{a,b,n} = [4]u64 ~~ emit{[4]f64, '_mm256_cmp_pd', a, b, n}
-def unord{a:T, b:T==[8]f32} = f32cmpAVX{a,b,3}
-def unord{a:T, b:T==[4]f64} = f64cmpAVX{a,b,3}
 
 # f32 arith
 def rsqrtE{a:T==[8]f32} = emit{T, '_mm256_rsqrt_ps', a}
