@@ -289,6 +289,7 @@ def undef_promote{T, x:T} = x
 def zero_promote{T, x:T} = x
 def cvt{T, x:[_]T} = x
 def extract{V=[k]E, x:V, 0} = x
+def store_narrow_relaxed{p:*DE, x:[k]E} = store{p, narrow{DE, x}, k}
 
 def broadcast{V=[_]T, v} = vec_broadcast{V, if (knum{v}) v else promote{T,v}}
 def make{V=[_]_, ...xs} = vec_make{V, ...xs}

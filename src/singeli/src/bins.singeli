@@ -283,12 +283,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
       if (r_out) {
         r -= off
         if (prim=='⊐') r = blend_hom{U**cast_i{u8,wn}, r, b}
-        rn := if (T==i8) r
-              else if (T==i16) half{narrow{u8, r}, 0}
-              else extract{re_el{i64, narrow{u8, r}}, 0}
-        rnp := *type{rn}~~(*i8~~rp+j)
-        if (isvec{type{rn}}) store{rnp, 0, rn}
-        else storeu{rnp, rn}
+        store_narrow_relaxed{*u8~~rp+j, r}
       } else {
         def B = ty_u{vl}; out := cast_i{B, hom_to_int{b}}
         store{*B~~rp, cdiv{j,vl}, out>>((-j)%vl)}
