@@ -6,13 +6,9 @@ local {
   def suf{[_]T} = suf{T}
   def pref{w} = merge{'_mm', if (w==128) '' else fmtnat{w}, '_'}
   def pref{V=[_]_} = pref{width{V}}
-  
-  def has512{V=[_]E} = if (width{V}==512) hasarch{'AVX512F'} else hasarch{'AVX512VL'}
-  def has512{V, post} = has512{V} and hasarch{merge{'AVX512', post}}
-  
-  def has512e{V=[_]E if width{E}>=32} = has512{V}
-  def has512e{V=[_]E if width{E}<=16} = has512{V, 'BW'}
-  def has512e{V=[_]E, post} = has512e{V} and has512{V, post}
+  def has512 = x86_has512
+  def has512e = x86_has512e
+  def intrin = x86_intrin
 }
 
 local def re_mask{[l]_, sub} = {
@@ -39,3 +35,7 @@ def mask_to_hom{V=[l]_, x:[l](u1)} = emit{V, merge{pref{V},'movm_',suf{V}}, x}
 def sel{(ty_u{V}), x:V=[_]E, i:I==(ty_u{V}) if (if (width{E}>8) has512e{V} else has512{V, 'VBMI'})} = emit{V, merge{pref{V}, 'permutexvar_', suf{V}}, i, x}
 
 def multishift{a:[k](u64), i:V=[(k*8)](u8) if has512{V, 'VBMI'}} = emit{V, merge{pref{V}, 'multishift_epi64_epi8'}, i, a}
+
+def narrow{DE, x:[k]SE if isint{DE} and quality{DE}==quality{SE} and x86_has512e{[k]SE}} = {
+  emit{x86_vec_low{k,DE}, intrin{[k]SE, 'cvtepi', fmtwidth{SE}, '_epi', fmtwidth{DE}}, x}
+}
