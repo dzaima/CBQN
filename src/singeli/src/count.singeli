@@ -1,11 +1,6 @@
 include './base'
 include './vecfold'
 
-if_inline (hasarch{'SSE2'}) {
-  fn sum_vec{T}(v:T) = vfold{+, fold{+, mzip128{v, T**0}}}
-  def fold_addw{v:T=[_]E if E<=u32} = sum_vec{T}(v)
-}
-
 def inc{ptr:*T, ind, v} = store{ptr, ind, trunc{T,v} + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
 
