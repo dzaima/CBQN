@@ -107,7 +107,7 @@ x86-64 (Linux):
   cpu microarchitecture: Haswell
   replxx: g++ 14.0.1; clang++ 19.1.0
 x86 (Linux):
-  clang 19.1.0; CBQN is known to break on gcc x86 - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58416
+  clang 19.1.0; gcc≤14 results in miscompilation - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58416
   running on the above x86-64 system, compiled with CCFLAGS=-m32
 AArch64 ARMv8-A (within Termux on Android 8):
   using `lf=-landroid-spawn` from `pkg install libandroid-spawn` to get •SH to work

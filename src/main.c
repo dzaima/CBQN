@@ -13,8 +13,8 @@
 #endif
 
 
-#if __GNUC__ && __i386__ && !__clang__
-  #warning "CBQN is known to miscompile on GCC for 32-bit x86 builds; using clang instead is suggested"
+#if __GNUC__ <= 14 && __i386__ && !__clang__
+  #warning "CBQN is known to miscompile on GCC for 32-bit x86 builds; use clang or gcc-15 or newer"
 #endif
 #if USE_REPLXX_IO && !USE_REPLXX
   #error "Cannot use USE_REPLXX_IO without USE_REPLXX"
