@@ -370,10 +370,10 @@ static NOINLINE void checkIndexList(B w, ur xr) {
 }
 
 // calculate index into variable RES; reads xsh, defines i for GET
-#define PICK_IDX(RES, GET, RNK, OOB)         \
-  usz RES = 0;                               \
-  for (usz i=0, rnk_=(RNK); i < rnk_; i++) { \
-    c = c*xsh[i] + WRAP(GET, xsh[i], OOB);   \
+#define PICK_IDX(RES, GET, RNK, OOB)        \
+  usz RES = 0;                              \
+  for (ux i=0, rnk_=(RNK); i < rnk_; i++) { \
+    c = c*xsh[i] + WRAP(GET, xsh[i], OOB);  \
   }
 
 static i64 pick_convFloat(f64 f) {
@@ -844,7 +844,7 @@ B join_c1(B t, B x) {
       for (usz i=0; i<n; i++) {
         ur rd = r1 - ll[i];
         if (rd) {
-          if (rd>1) thrF("∾𝕩: Item ranks along an axis can differ by at most one (contained ranks %i and %i along axis %i)", ll[i], r1, a);
+          if (rd>1) thrF("∾𝕩: Item ranks along an axis can differ by at most one (contained ranks %s and %i along axis %i)", ll[i], r1, a);
           ll[i] = -1;
         } else {
           B c = GetU(x, i*step);
@@ -1298,7 +1298,7 @@ B reverse_c2(B t, B w, B x) {
 }
 
 
-static usz pick_oneIndex(B w, usz xr, usz* xsh) { // throws if guaranteed bad; returns USZ_MAX if not a plain index
+static usz pick_oneIndex(B w, ur xr, usz* xsh) { // throws if guaranteed bad; returns USZ_MAX if not a plain index
   assert(xr!=0);
   if (RARE(isAtm(w) || IA(w)!=xr || RNK(w)!=1)) return USZ_MAX;
   switch(TI(w,elType)) { default: UD;

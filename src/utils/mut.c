@@ -569,7 +569,7 @@ Arr* apd_sh_err(ApdMut* m, u32 ty) {
 Arr* apd_rnk_err(ApdMut* m, u32 ty) {
   ur er = RNK(m->failEl); // if it were atom, rank couldn't overflow
   decG(m->failEl);
-  thrF("%U: Result rank too large (%i ≡ =𝕩, %s ≡ =%U)", apd_ty_base(ty), m->rr0, er, ty==1? "⊑𝕩" : "𝔽v");
+  thrF("%U: Result rank too large (%i ≡ =𝕩, %i ≡ =%U)", apd_ty_base(ty), m->rr0, er, ty==1? "⊑𝕩" : "𝔽v");
 }
 NOINLINE void apd_sh_fail(ApdMut* m, B x, u8 mode) {
   if (mode<=1) m->cr = mode;
