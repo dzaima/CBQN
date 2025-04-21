@@ -679,8 +679,8 @@ static void freed_visit(Value* x) {
   fatal("visiting t_freed\n");
   #endif
 }
-static void empty_free(Value* x) { fatal("FREEING EMPTY\n"); }
-static void builtin_free(Value* x) { fatal("FREEING BUILTIN\n"); }
+static void empty_free(Value* x) { fatal("Attempted to free empty object; double-free, wrong refcount management, or heap corruption!\n"); }
+static void builtin_free(Value* x) { fatal("Attempted to free a builtin object; double-free, wrong refcount management, or heap corruption!\n"); }
 DEF_FREE(def) { }
 static void def_visit(Value* x) { fatal("undefined visit for object\n"); }
 static void def_print(FILE* f, B x) { fprintf(f, "(%d=%s)", v(x)->type, type_repr(v(x)->type)); }
