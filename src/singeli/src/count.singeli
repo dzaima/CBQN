@@ -49,7 +49,7 @@ fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
     if (mt > mx) mx = mt
 
     # Fast cases
-    dt := promote{u64, fold_addw{dc}}
+    dt := fold_addw{u64, dc}
     nc := TU~~(mt - jt)  # Number of counts to perform: last is implicit
     if (dt < b * (vec/2) and (b + dt)*4 < b * promote{u64,nc}) {
       r0 = count_with_runs{x, tab, r}
@@ -103,7 +103,7 @@ def count_by_sum{T, V, U, xv, b, tab, r0, j0, m} = {
     e := each{{j}=>V**j, j}
     @for (xv over b) each{{c,e} => c -= xv == e, c, e}
     def add_sum{c, j} = {
-      s := promote{usz, fold_addw{c}}
+      s := fold_addw{usz, c}
       total -= s; inc{tab, j, s}
     }
     each{add_sum, c, j}

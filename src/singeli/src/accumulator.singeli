@@ -119,7 +119,7 @@ def sum_accumulator{DE, unr, VT=[_]SE if int_els{DE,SE} and DE>SE and hasarch{'A
   
   def me{...} = acc
   def into_scal{vs} = {
-    def ps = each{if (exact) vfold{+,.} else fold_addw, vs}
+    def ps = each{fold_addw{DE,.}, vs}
     acc_scal+= tree_fold{+, each{promote{A,.}, ps}}
   }
   def me{'from_unr'} = into_scal{slice{acc_tup, 1}}
