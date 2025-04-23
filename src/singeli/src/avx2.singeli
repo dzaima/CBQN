@@ -7,15 +7,7 @@ def packQ{a:T,b:T==[ 8]u32} = emit{[16]u16, '_mm256_packus_epi32', a, b}
 def packQQ{a:T,b:T==[4]i64} = vec_shuffle{[4]i32, a, 0,2,1,1} | vec_shuffle{[4]i32, b, 1,1,0,2}
 def packQQ{{a, b}} = packQQ{a, b}
 
-
-# arith
-def mulh {a:T,b:T==[16]i16} = emit{T, '_mm256_mulhi_epi16', a, b}
-def mulh {a:T,b:T==[16]u16} = emit{T, '_mm256_mulhi_epu16', a, b}
-def mul32{a:T,b:T==[ 4]i64} = emit{T, '_mm256_mul_epi32',   a, b} # reads only low 32 bits of arguments
-def mul32{a:T,b:T==[ 4]u64} = emit{T, '_mm256_mul_epu32',   a, b} # reads only low 32 bits of arguments
-
 # structural operations
-
 def sel{L, x:T, i:I if w256{T} and lvec{L,8,32} and w256{I,32}} = vec_shuffle{L, x, i}
 def sel{L, x:T, i:I if w256{T} and lvec{L,16,8} and w256{I, 8}} = vec_shuffle{L, x, i}
 

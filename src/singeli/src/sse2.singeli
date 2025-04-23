@@ -10,9 +10,6 @@ def store{ptr:*E, x:V=[_]E, vl if w128{V} and vl*width{E}==64} = emit{void, '_mm
 
 
 # integer arith
-def mulh{a:T,b:T if [8]i16==T} = emit{T, '_mm_mulhi_epi16', a, b}
-def mulh{a:T,b:T if [8]u16==T} = emit{T, '_mm_mulhi_epu16', a, b}
-def mul32{a:T,b:T if [2]u64==T} = emit{T, '_mm_mul_epu32',   a, b} # reads only low 32 bits of arguments
 def __mul{a:T,b:T if [4]i32==T} = {
   def mu{x, y} = [4]i32 ~~ mul32{[2]u64~~x, [2]u64~~y}
   def sw{n, ...vs} = each{{c} => vec_shuffle{i32, c, n}, vs}

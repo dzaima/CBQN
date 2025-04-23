@@ -14,6 +14,15 @@ local def has512 = x86_has512
 def x86_has512e{V=[_]E if width{E}>=32} = has512{V}
 def x86_has512e{V=[_]E if width{E}<=16} = has512{V, 'BW'}
 def x86_has512e{V=[_]E, post} = x86_has512e{V} and has512{V, post}
+local def hase{V=[_]E} = hase{V, 'SSE2'}
+local def hase{V=[_]E, min_sse} = hase{V, min_sse, if (isint{E}) 'AVX2' else 'AVX'}
+local def hase{V=[_]E, min_sse, min_avx} = hase{V, min_sse, min_avx, {} => x86_has512e{V}}
+local def hase{V=[_]E, min_sse, min_avx, avx512_check} = match (width{V}) {
+  {128} => hasarch{min_sse}
+  {256} => hasarch{min_avx}
+  {512} => avx512_check{}
+  {_} => 0
+}
 
 def fmtwidth{T} = fmtnat{width{T}}
 local def has_bw{V} = hasarch{match (width{V}) { {128}=>'SSE2'; {256}=>'AVX2'; {512}=>'AVX512BW' }}
@@ -77,6 +86,12 @@ def unord{a:V, b:V if w128f{V}} = ty_u{emit{V, intrin_t{V, 'cmpunord'}, a, b}}
 
 # int stuff
 def any_bit{x:[_]_} = ~and_bit_none{x, x}
+
+def mulh{a:V, b:V=[_]E if veci{V,16} and hase{V}} = emit{V, intrin_t{V, 'mulhi'}, a, b}
+
+# multiplies that only read low 32 bits of arguments
+def mul32{a:V, b:V=[_](u64) if hase{V          }} = emit{V, intrin_t{el_s{V}, 'mul'}, a, b}
+def mul32{a:V, b:V=[_](i64) if hase{V, 'SSE4.1'}} = emit{V, intrin_t{el_s{V}, 'mul'}, a, b}
 
 def absdiff_sum{8, a:V=[k](u8), b:V if has_bw{V}} = {
   emit{[k/8]u64, intrin{V, 'sad_epu8'}, a, b}
