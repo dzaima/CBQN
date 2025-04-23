@@ -121,8 +121,8 @@ def table{aa, F, w, G_bit, G_vec} = {
     ...each{{E}=>{
       def E2 = (if (aa and isunsigned{E} and (eqne{F} or E==u32)) {ty_s{E}} else E)
       def bulk = w/width{E2}
-      def unr = if (hasarch{'X86_64'} and width{E2}==16) 2 else max{8/bulk,1}
-      G_vec{[bulk]E2, max{tern{hasarch{'AARCH64'},2,1}, unr}}
+      def unr = if (hasarch{'X86_64'} and width{E2}==16) 2 else __max{8/bulk,1}
+      G_vec{[bulk]E2, __max{tern{hasarch{'AARCH64'},2,1}, unr}}
     }, tup{i8, i16, i32, f64, u8, u16, u32}}
   }
 }

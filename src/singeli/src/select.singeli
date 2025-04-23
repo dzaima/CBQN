@@ -99,8 +99,8 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
     try_nt{2}
   }
   def select_rows_parts = each{select_rows, tup{u8, u16, u32, u64}}
-  def max_nt = fold{max, each{select{.,0}, join{select_rows_parts}}}
-  def max_ni = fold{max, each{select{.,1}, join{select_rows_parts}}}
+  def max_nt = fold{__max, each{select{.,0}, join{select_rows_parts}}}
+  def max_ni = fold{__max, each{select{.,1}, join{select_rows_parts}}}
   def select_rows_tab_h = lb{max_nt}+1
   
   # >{t ← (¯1+⌊16÷𝕩)⌾(¯1⊸⊑) ⌊𝕩÷˜↕16 ⋄ ⟨𝕩, ⌊16÷𝕩, 1+¯1⊑t, t⟩}¨ 2↓↕8
@@ -153,8 +153,8 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
   }, select_rows_parts}}}}
   
   def exportP{T, n, vs} = { a:*T = vs; export{n, a} }
-  exportP{u8, 'select_rows_max_indn',   each{{row} => if (length{row}==0) 0 else one_val{      each{select{.,1}, row}}, select_rows_parts}}
-  exportP{u8, 'select_rows_min_logcsz', each{{row} => if (length{row}==0) 0 else lb{fold{min, each{select{.,0}, row}}}, select_rows_parts}}
+  exportP{u8, 'select_rows_max_indn',   each{{row} => if (length{row}==0) 0 else one_val{       each{select{.,1}, row}}, select_rows_parts}}
+  exportP{u8, 'select_rows_min_logcsz', each{{row} => if (length{row}==0) 0 else lb{fold{__min, each{select{.,0}, row}}}, select_rows_parts}}
   
   def select_rows_better = scan{{p,{v,i}} => if (length{v}==0) p else i, 0, each{tup, select_rows_parts, range{4}}}
   exportP{u8, 'select_rows_better', select_rows_better+1}

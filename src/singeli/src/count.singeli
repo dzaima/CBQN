@@ -44,12 +44,12 @@ fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
     }
     # Now start analysis
     @for (xv, xp in *V~~(x-1) over _ from a to b) {
-      jv = min{jv, xv}; mv = max{mv, xv}
+      jv = __min{jv, xv}; mv = __max{mv, xv}
       dc -= xp != xv
     }
     @for (x over _ from rv to r) { if (x<min_allowed) return{x}; if (x>mx) mx=x }
-    jt := vfold{min, jv}
-    mt := vfold{max, mv}
+    jt := vfold{__min, jv}
+    mt := vfold{__max, mv}
     if (jt < min_allowed) return{jt}
     if (mt > mx) mx = mt
 
@@ -196,7 +196,7 @@ fn count_sorted{T}(r:*u8, ov:*usz, oc:*usz, x:*T, n:usz) : usz = {
       d:usz = block
       d2 := undefined{usz}
       while ((d2=d+d) <= rem and bxi{d2}) d = d2
-      l := min{(rem &~ (block-1)) - d, d}
+      l := __min{(rem &~ (block-1)) - d, d}
       # Target is in [d,d+l); shrink l
       while (l > block) {
         h := (l/2) &~ (block-1)
@@ -209,7 +209,7 @@ fn count_sorted{T}(r:*u8, ov:*usz, oc:*usz, x:*T, n:usz) : usz = {
       i += d; xo += d; xi = load{xo}
     }
     # Count the next block normally
-    rem = min{rem, usz~~block} # TODO get rid of the need of the usz~~ here
+    rem = __min{rem, usz~~block} # TODO get rid of the need of the usz~~ here
     count_adapt_runs{xo, r, rem}
     rxi := load{r, xi}
     if (rxi >= block) {

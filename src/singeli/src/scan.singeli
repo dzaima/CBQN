@@ -41,7 +41,7 @@ def get_scan_last{op, pre} = {
 def scan_idem = scan_scal
 fn scan_idem{T, op if has_simd}(x:*T, r:*T, len:u64, init:T) : void = {
   def {scan, last} = get_scan_last{op, make_scan_idem{T, op}}
-  def cmp = match (op) { {(min)} => (>); {(max)} => (<) }
+  def cmp = match (op) { {(__min)} => (>); {(__max)} => (<) }
   def step = arch_defvw/width{T}
   def V = [step]T
   p:= V**init
@@ -65,17 +65,17 @@ fn scan_idem{T, op if has_simd}(x:*T, r:*T, len:u64, init:T) : void = {
   if (q!=0) store_blended_hom{rv+e, mask_of_first{V, q}, last{load{xv,e}, p}}
 }
 
-export{'si_scan_min_init_i8',  scan_idem{i8 , min}}; export{'si_scan_max_init_i8',  scan_idem{i8 , max}}
-export{'si_scan_min_init_i16', scan_idem{i16, min}}; export{'si_scan_max_init_i16', scan_idem{i16, max}}
-export{'si_scan_min_init_i32', scan_idem{i32, min}}; export{'si_scan_max_init_i32', scan_idem{i32, max}}
-export{'si_scan_min_init_f64', scan_idem{f64, min}}; export{'si_scan_max_init_f64', scan_idem{f64, max}}
+export{'si_scan_min_init_i8',  scan_idem{i8 , __min}}; export{'si_scan_max_init_i8',  scan_idem{i8 , __max}}
+export{'si_scan_min_init_i16', scan_idem{i16, __min}}; export{'si_scan_max_init_i16', scan_idem{i16, __max}}
+export{'si_scan_min_init_i32', scan_idem{i32, __min}}; export{'si_scan_max_init_i32', scan_idem{i32, __max}}
+export{'si_scan_min_init_f64', scan_idem{f64, __min}}; export{'si_scan_max_init_f64', scan_idem{f64, __max}}
 
 fn scan_idem_id{T, op}(x:*T, r:*T, len:u64) : void = {
   scan_idem{T, op}(x, r, len, get_id{op, T})
 }
-export{'si_scan_min_i8',  scan_idem_id{i8 , min}}; export{'si_scan_max_i8',  scan_idem_id{i8 , max}}
-export{'si_scan_min_i16', scan_idem_id{i16, min}}; export{'si_scan_max_i16', scan_idem_id{i16, max}}
-export{'si_scan_min_i32', scan_idem_id{i32, min}}; export{'si_scan_max_i32', scan_idem_id{i32, max}}
+export{'si_scan_min_i8',  scan_idem_id{i8 , __min}}; export{'si_scan_max_i8',  scan_idem_id{i8 , __max}}
+export{'si_scan_min_i16', scan_idem_id{i16, __min}}; export{'si_scan_max_i16', scan_idem_id{i16, __max}}
+export{'si_scan_min_i32', scan_idem_id{i32, __min}}; export{'si_scan_max_i32', scan_idem_id{i32, __max}}
 
 # Assumes identity is 0
 def scan_plus = scan_assoc_id0{+}
@@ -103,7 +103,7 @@ def shift_first{c:V=[l]_, p:V} = {
 fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) : Ret = {
   def minvalue{(f64)} = -1/0; def maxvalue{(f64)} = 1/0
   def id = match (op) {
-    {(min)} => maxvalue; {(max)} => minvalue
+    {(__min)} => maxvalue; {(__max)} => minvalue
     {(+)} => ({_}=>0)
   }
   x:= *T~~xv; r:= *T~~rv
@@ -202,7 +202,7 @@ def check_add_over{M, w:V=[_]E, x:V, r:V} = {
 }
 def check_add_over{M, x, r} = check_add_over{M, r-x, x, r}
 export_tab{'si_scan_stride_minmax',
-  flat_table{scan_stride_assoc, tup{min,max}, tup{i8,i16,i32,f64}}
+  flat_table{scan_stride_assoc, tup{__min,__max}, tup{i8,i16,i32,f64}}
 }
 export_tab{'si_scan_stride_add', tup{
   ...each{scan_stride_assoc{+, ., u1, check_add_over}, tup{i8,i16,i32}},
@@ -394,7 +394,7 @@ fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {
 }
 # Sum as many vector registers as possible; modifies c and i
 def simd_plus_scan_part{x:*X, c:R, r:*R, len:(u64), i:(u64)} = {
-  def b = max{width{R}/2, width{X}}
+  def b = __max{width{R}/2, width{X}}
   def bulk = arch_defvw/b
   
   def wd = (X!=R) & (width{X}<32) # whether to widen the working copy one size

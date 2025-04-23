@@ -54,8 +54,8 @@ fn fold_idem{T==f64, op if has_simd}(x:*T, len:u64) : T = {
   extract{r, 0}
 }
 
-export{'si_fold_min_f64', fold_idem{f64,min}}
-export{'si_fold_max_f64', fold_idem{f64,max}}
+export{'si_fold_min_f64', fold_idem{f64,__min}}
+export{'si_fold_max_f64', fold_idem{f64,__max}}
 
 fn fold_assoc_0{T, op}(x:*T, len:u64) : T = {
   a:T = 0
@@ -236,7 +236,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
 fn extract_column(x0:*void, r0:*void, n:usz, l:usz, el:u8) : usz = {
   n <<= el
   def vl = arch_defvw / 8
-  def thr = min{vl+2, 20}
+  def thr = __min{vl+2, 20}
   if ((not has_simd) or n < vl or l > usz~~thr>>el or l<<el >= thr) return{0}
   nv := n / vl
   if (has_simd and (l & (l-1)) == 0) {

@@ -510,7 +510,7 @@ def swap_elts{x:V=[k]_, el_bytes} = {
     if (el_bytes == 8) vshl{x, x, k/2}
     else V~~reverse_units{2, re_el{ty_u{8*el_bytes}, x}}
   } else if (any_sel or (hasarch{'SSE2'} and el_bytes >= 2)) {
-    def wd = min{el_bytes, 8}
+    def wd = __min{el_bytes, 8}
     def l = el_bytes/wd
     def i = iota{l}
     shuf{ty_u{wd*8}, x, merge{i+l, i}}
@@ -643,7 +643,7 @@ def rep_const_bool_odd_mask4{
   {mc4, s4} := double{double{tup{sm0, s1}}}
   # Submasks pick one mask out of a combination of 4
   def or_adv{m, s} = { m |= advance{m,s} }
-  @for (min{k/4 - 1, n/4}) or_adv{sm0,s4}
+  @for (__min{k/4 - 1, n/4}) or_adv{sm0,s4}
   submasks := scan{advance, tup{sm0, ...3**s1}}
   mask_tail := advance{sm0, s4} &~ sm0
 
@@ -730,7 +730,7 @@ def rep_const_bool_small_odd{W=[wl](u64), max_wv, wv, get_perm_x, output} = {
         b := selx{xv, ind} & make{W, mask}
         r := (b<<k) - b
         def selx_nz{x, i} = { def nz = i != -1; selx{x, i * nz} & W~~make{[4]i32, -nz} }
-        o := (if (ew==8) selx else selx_nz){xo, flat_table{min, oi, 255-256*(0<iota{se})}}
+        o := (if (ew==8) selx else selx_nz){xo, flat_table{__min, oi, 255-256*(0<iota{se})}}
         output{r|o}
       }
       each{step,

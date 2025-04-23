@@ -8,7 +8,7 @@ def __eq{a:V=[_]_, b if knum{b}} = a == V**b
 
 def group_statistics{T} = {
   def usz_accumulator = count_accumulator{usz, ...}
-  def max_accumulator = assoc_accumulator{max, ..., -1}
+  def max_accumulator = assoc_accumulator{__max, ..., -1}
   
   def {types, acc_gen, ops} = each{tup,
     tup{u8,  any_accumulator, {_,w} => w <  -1}, # bad

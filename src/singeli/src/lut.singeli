@@ -1,7 +1,7 @@
 def __shl{(u16)}{a:T, b} = T~~(re_el{u16,a}<<b) # for x86's lack of u8 shift
 def __shr{(u16)}{a:T, b} = T~~(re_el{u16,a}>>b)
 def broadcast{[(n*2)]E, x:[n]E} = pair{x, x}
-def pow2_up{v, least} = max{least, 1<<ceil_log2{v}} # least ⌈ ⌈⌾(2⊸⋆⁼) v
+def pow2_up{v, least} = __max{least, 1<<ceil_log2{v}} # least ⌈ ⌈⌾(2⊸⋆⁼) v
 
 # make a LUT of at least nt elements in tab, to be indexed by [ni_real≥ni]u8
 # E must be unsigned
@@ -177,9 +177,9 @@ def lut_gen{mode, E==u8, nt, ni if hasarch{'AARCH64'} and nt<=16*4 and ni<=16} =
 # TODO E==u8 nt==128 via tbx4(tbl4,d,i-64)
 
 def lut_gen{mode, E, nt, ni if mode=='i' and hasarch{'AVX2'} and (E==u16 or E==u64)} = zip_halves{mode, E, nt, ni}
-# def lut_gen{mode, E, nt, ni if mode=='c' and hasarch{'AVX2'} and E==u16} = widen_inds{mode, E, nt, max{ni,16}, 2}
+# def lut_gen{mode, E, nt, ni if mode=='c' and hasarch{'AVX2'} and E==u16} = widen_inds{mode, E, nt, __max{ni,16}, 2}
 # def lut_gen{mode, E, nt, ni if mode=='c' and hasarch{'AVX2'} and E==u64} = widen_inds{mode, E, nt, ni, 2}
-# def lut_gen{mode, E, nt, ni if mode=='c' and E==u64} = zip_halves{mode, E, nt, ni} # widen_inds{mode, E, nt, max{ni,16}, 2}
+# def lut_gen{mode, E, nt, ni if mode=='c' and E==u64} = zip_halves{mode, E, nt, ni} # widen_inds{mode, E, nt, __max{ni,16}, 2}
 
 def lut_gen{mode, E==u64, nt, ni if nt>16 and hasarch{'AVX2'}} = 0
 

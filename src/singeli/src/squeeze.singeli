@@ -37,9 +37,9 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   # fold with either Max or Bitwise Or, truncating/zero-extending elements to TE
   def fold_total{TE, x:[_]T} = cast_i{TE, vfold{|, x}}
   def fold_total{TE, x:[_]T if hasarch{'AARCH64'}} = {
-    if (width{T}!=64) cast_i{TE, vfold{max, x}}
+    if (width{T}!=64) cast_i{TE, vfold{__max, x}}
     else if (width{TE}==64 and bulk==2) cast_i{TE, half{x,0} | half{x,1}}
-    else vfold{max, narrow{TE, x}}
+    else vfold{__max, narrow{TE, x}}
   }
   
   def mix_pos{x:T=[_]E} = x & (T ** ~E~~1)
@@ -50,19 +50,19 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
     minv:= T**0
     maxv:= T**0
     def me{M, minc, maxc} = {
-      minv = min{minv, M{minc}}
-      maxv = max{maxv, M{maxc}}
+      minv = __min{minv, M{minc}}
+      maxv = __max{maxv, M{maxc}}
     }
     def me{M, vs} = {
-      minc:= zero_promote{T, tree_fold{min, vs}} # could pack pairs in v to low & high halves, but an extra min costs the same or less than an insert
-      maxc:= zero_promote{T, tree_fold{max, vs}}
+      minc:= zero_promote{T, tree_fold{__min, vs}} # could pack pairs in v to low & high halves, but an extra min costs the same or less than an insert
+      maxc:= zero_promote{T, tree_fold{__max, vs}}
       me{M, minc, maxc}
     }
     
     def me{if hasarch{'AARCH64'}} = {
-      mint:= ty_u{vfold{min, minv}}
-      maxt:= ty_u{vfold{max, maxv}} &~ 1
-      cast_i{u32, tern{mint==0, maxt, max{maxt, -mint-1} | 2}}
+      mint:= ty_u{vfold{__min, minv}}
+      maxt:= ty_u{vfold{__max, maxv}} &~ 1
+      cast_i{u32, tern{mint==0, maxt, __max{maxt, -mint-1} | 2}}
     }
     def me{} = fold_total{u32, mix_neg{minv} | mix_pos{maxv}}
     def me{'minmax'} = 1
@@ -101,8 +101,8 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
     def acc = int_acc{XV}
     if (acc{'minmax'}) {
       @for_mu{bulk, 4}(xs in xb, M in 'm' over len) {
-        minc:= tree_fold{min, xs}
-        maxc:= tree_fold{max, xs}
+        minc:= tree_fold{__min, xs}
+        maxc:= tree_fold{__max, xs}
         if (M{0}==0 and any_hom{M, (minc < XV**minvalue{EH}) | (maxc > XV**maxvalue{EH})}) return{0xffff_ffff}
         acc{M, minc, maxc}
       }

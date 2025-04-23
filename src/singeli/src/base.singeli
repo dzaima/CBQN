@@ -52,7 +52,7 @@ def tree_fold{F, x} = {
 def tree_fold{F, {x}} = x
 
 def eachx{F, ...args} = {
-  def l = tree_fold{max, each{{x} => if(istup{x}) length{x} else 0, args}}
+  def l = tree_fold{__max, each{{x} => if(istup{x}) length{x} else 0, args}}
   each{F, ...each{{x} => if (istup{x}) x else l**x, args}}
 }
 
@@ -214,7 +214,7 @@ def ctz_ext{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
 def hom_to_int{...vs if length{vs}>1} = {
   def n = length{vs}
   def [k]_ = one_type{vs}
-  def RT = ty_u{max{8,k*n}}
+  def RT = ty_u{__max{8,k*n}}
   def sl{...a} = promote{RT, hom_to_int{...slice{vs,...a}}}
   def h = n/2
   def lo = sl{0,h}
@@ -301,16 +301,14 @@ def vshl = vec_merge_shift_right
 def floor = __floor
 def ceil = __ceil
 def abs = __abs
-def min = __min
-def max = __max
 def adds = __adds
 def subs = __subs
 
 
 
 # more arith
-def min{a, b if any_num{a} and any_num{b}} = tern{a<b, a, b}
-def max{a, b if any_num{a} and any_num{b}} = tern{a>b, a, b}
+def __min{a, b if any_num{a} and any_num{b}} = tern{a<b, a, b}
+def __max{a, b if any_num{a} and any_num{b}} = tern{a>b, a, b}
 def cdiv{a,b} = (a+b-1)/b # ceiling divide
 def cdiv{a,b if knum{a} and knum{b}} = ceil{a/b}
 def popc{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_popcountll', x}
@@ -417,7 +415,7 @@ def for_blocks{blsz}{vars,begin,end,iter} = {
     iter{tup{i0,i1}, vars}
     if (likely{i1 == end}) goto{el}
     i0 = i1
-    i1 = min{i1+blsz, ux~~end}
+    i1 = __min{i1+blsz, ux~~end}
   }
   setlabel{el}
 }

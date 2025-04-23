@@ -220,7 +220,7 @@ def do_bittab{x0:(*void), n:(u64), tab:(*void), u:(u8), t, mode, r0} = {
         if ((m&(m-1)) != 0) { # More bits than one
           # Filter out values equal to the previous, or first new
           def pind = (iota{k}&15) - 1
-          prev:= make{VI, each{max{0, .}, pind}}
+          prev:= make{VI, each{__max{0, .}, pind}}
           e:= ~hom_to_int{v == VI**TI~~xi}
           e&= base{2,pind<0} | ~hom_to_int{v == sel{[16]i8, v, prev}}
           if (rbit) rv&= e | -m # Don't remove first bit
@@ -301,7 +301,7 @@ export{'simd_index_tab_u8', simd_index_tab_u8{usz}}
 def bad_float_i64{x:T=[_](f64)} = {
   a:= abs{x}
   s:= T**(1<<53)
-  min{s,a} != s-(s-a) # ~ ((a<=s) & (a == s-(s-a)))
+  __min{s,a} != s-(s-a) # ~ ((a<=s) & (a == s-(s-a)))
 }
 def bad_float_i64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x!=floor{x}) | (abs{x}>T**(1<<53))
 def bad_float_i64{x:T=[_](f64) if hasarch{'AARCH64'}} = x != cvt{f64, cvt{i64, x}}
@@ -315,8 +315,8 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
     def bulk = arch_defvw/width{E}
     def VT = [bulk]E
     def unr = tern{E==f64 and hasarch{'X86_64'}, 1, 2}
-    def min_a = assoc_accumulator{min, unr, VT}
-    def max_a = assoc_accumulator{max, unr, VT}
+    def min_a = assoc_accumulator{__min, unr, VT}
+    def max_a = assoc_accumulator{__max, unr, VT}
     @for_mu{bulk, unr, mu_extra{min_a,max_a}}(cx in tup{VT,x}, M in 'm' over is to n) {
       if (E==f64 and any_hom{M, ...each{bad_float_i64, cx}}) return{0}
       min_a{'acc', M, cx}
@@ -328,8 +328,8 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
     min1 = max1 = *x
     @for (x over i to n) {
       if (E==f64 and rare{x != emit{f64, '', emit{i64, '', x}}}) return{0}
-      min1 = min{min1, x}
-      max1 = max{max1, x}
+      min1 = __min{min1, x}
+      max1 = __max{max1, x}
     }
   }
   store{res, 0, cast_i{i64, min1}}
@@ -356,7 +356,7 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
 
   log := clzc{m}
   # Max size
-  msl := max{clzc{(m+m/2)|4}+1, min{ux~~14,clzc{m+n/4}}}
+  msl := __max{clzc{(m+m/2)|4}+1, __min{ux~~14,clzc{m+n/4}}}
   msz := usz~~1 << msl
   # Starting log-size (try_vec_memb requires size>4)
   sl  := msl; if (msl>=14) sl = 12+(msl&1)
@@ -365,7 +365,7 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
   # Filling e slots past the end requires e*(e+1)/2 collisions, so
   # m entries with <2 each can fill <sqrt(4*m)
   def cc_stop = 2*cast_i{u64,m}
-  ext := promote{usz, tern{m<=b, max{m,U~~4}, b + (U~~1 << (log/2 + 1))}}
+  ext := promote{usz, tern{m<=b, __max{m,U~~4}, b + (U~~1 << (log/2 + 1))}}
   maxh := T~~maxvalue{T}
   def aux = prim!='∊'
   def {tabs, sz, sh, div_thresh, hash_resize, hash_free} = hash_alloc{
@@ -576,7 +576,7 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
       if (has_maxh) { ++uniq; unsequester_maxh{inds} }
       ind_rev_lookup{uniq, has_maxh}
       # Propagate to later occurrences
-      @for (r in rp over i to n) r = load{rp, min{i, u32~~r+n}}
+      @for (r in rp over i to n) r = load{rp, __min{i, u32~~r+n}}
     }
 
     {'⊒', inds, link} => {
@@ -614,11 +614,11 @@ def try_vec_memb{T==u32, hash, sz, sh, maxh, has_maxh, swap, rp, fp, n, done
   io := make{V, each{{k} => T~~k<<sh - 1, 1+iota{vl}}}
   id := V**(T~~vl<<sh)
   mv := V**0
-  @for (h in *V~~hash over sz/vl) { mv=max{mv, io-min{h,io}}; io+=id }
-  max_off := vfold{max, mv} >> sh
+  @for (h in *V~~hash over sz/vl) { mv=__max{mv, io-__min{h,io}}; io+=id }
+  max_off := vfold{__max, mv} >> sh
   # sz==1<<sh, so when i>=sz the above overflows
   # And we have to handle maxh specially anyway
-  def mx{i,h} = { max_off = max{max_off, i-h>>sh} }
+  def mx{i,h} = { max_off = __max{max_off, i-h>>sh} }
   i:=cast_i{T,sz}; h:T=i; while ((h=load{hash,i})<maxh) { mx{i,h}; ++i }
   if (has_maxh) mx{i,maxh}
 

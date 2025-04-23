@@ -70,7 +70,7 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
     # Iterate over existing elements in blocks of e<=32
     # Branchlessly skips over h0
     while (i < s) {
-      e := min{s-i, usz~~32}
+      e := __min{s-i, usz~~32}
       b:u32 = 0
       @for_backwards (h in hash+i over e) b = 2*b + promote{u32, h!=h0}
       while (b!=0) {
@@ -78,7 +78,7 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
         h := hash->j
         hash <-{j} h0
         k0 := h>>sh
-        if (ordered) { k = max{k0, k+1} }  # k0 can't be less than k
+        if (ordered) { k = __max{k0, k+1} }  # k0 can't be less than k
         else { k = k0; while (hash->k!=h0) ++k }
         cc += cast_i{ux, k-k0}
         hash <-{k} h

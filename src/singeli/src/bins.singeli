@@ -27,7 +27,7 @@ def dup_half{vec,half} = shuf{[4]u64, vec, 2*half+tup{0,1,0,1}}
 include './scan_common'
 fn max_scan{T, up}(x:*T, len:u64) : void = {
   if (hasarch{'X86_64'}) {
-    def op = max
+    def op = __max
     def pre = make_scan_idem{T, op, up}
     def vl = (if (hasarch{'AVX2'}) 256 else 128)/width{T}
     def V = [vl]T
@@ -250,7 +250,7 @@ def bin_search_vec{prim, T, w:*T, wn, x:*T, xn, rp, maxwn if hasarch{'AVX2'}} = 
   bits := each{{j} => U**(lowbits << j), iota{lstep}}
   # Unroll sizes up to a full lane, handling extra lanes conditionally
   # in the largest one
-  @unroll (klog from 2 to min{maxstep,lstep}+1) {
+  @unroll (klog from 2 to __min{maxstep,lstep}+1) {
     def last = klog==lstep
     def this = if (not last) log==klog else log>=klog
     if (this) @for_vec_overlap{vl} (j to xn) {

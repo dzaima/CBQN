@@ -142,7 +142,7 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
       sr{each{&, cw, cx}}
     }
   } else {
-    def bulk = vw / max{max{width{W}, width{X}}, width{R}}
+    def bulk = vw / __max{__max{width{W}, width{X}}, width{R}}
     def overflow = tern{mode==1, {i}=>return{i}, tern{mode==2, {i}=>return{1}, 0}}
     def TY = [bulk]R
     
@@ -174,7 +174,7 @@ def arithAA{mode, F, W, X, R} = {
 fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
   # show{F, swap, mode, W, X, R}
   assert{len>0}
-  def bulk = vw / max{width{W}, width{R}}
+  def bulk = vw / __max{width{W}, width{R}}
   def TY = [bulk]R
   def overflow = tern{mode==1, {i}=>return{1}, {i}=>return{i}}
   

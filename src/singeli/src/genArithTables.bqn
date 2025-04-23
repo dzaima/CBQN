@@ -228,12 +228,12 @@ Make ← {𝕊ns:
     sa⇐⟨⟩ ⋄ overflowEq⇐1
   }
   Make {
-    commutative⇐1 ⋄ repr⇐"⌊" ⋄ cbqn⇐"floor" ⋄ si⇐"min" ⋄ id⇐"min"
+    commutative⇐1 ⋄ repr⇐"⌊" ⋄ cbqn⇐"floor" ⋄ si⇐"__min" ⋄ id⇐"min"
     aa_a ⇐ bitand∾u_numDiag ⋄ aa_b ⇐ ⟨⟩
     sa⇐⟨"iiiu"⟩ ⋄ overflowEq⇐0
   }
   Make {
-    commutative⇐1 ⋄ repr⇐"⌈" ⋄ cbqn⇐"ceil" ⋄ si⇐"max" ⋄ id⇐"max"
+    commutative⇐1 ⋄ repr⇐"⌈" ⋄ cbqn⇐"ceil" ⋄ si⇐"__max" ⋄ id⇐"max"
     aa_a ⇐ bitor∾u_numDiag ⋄ aa_b ⇐ ⟨⟩
     sa⇐⟨"iiiu"⟩ ⋄ overflowEq⇐0
   }

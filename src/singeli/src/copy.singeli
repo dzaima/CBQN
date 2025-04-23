@@ -17,7 +17,7 @@ fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
   def vw = arch_defvw
   assert{l!=0}
   
-  def bulk = vw/max{width{X}, width{R}}
+  def bulk = vw/__max{width{X}, width{R}}
   xp:= *tern{X==u1, u64, X} ~~ x
   rp:= *tern{R==u1, u64, R} ~~ r
   def XV = [bulk]X
@@ -45,7 +45,7 @@ fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
     def XU = ty_u{XV}
     def op{x} = (XU~~x) == XU~~XV**1
     
-    def unr = if (hasarch{'X86_64'} and width{X}==16) 2 else max{8/bulk, 1}
+    def unr = if (hasarch{'X86_64'} and width{X}==16) 2 else __max{8/bulk, 1}
     def bulk2 = bulk*unr
     xi:ux = 0
     @for_nz (i to cdiv{l,bulk2}) {

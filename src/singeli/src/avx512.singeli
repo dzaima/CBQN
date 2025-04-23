@@ -12,7 +12,7 @@ local {
 }
 
 local def re_mask{[l]_, sub} = {
-  def w = max{32,l}
+  def w = __max{32,l}
   sub{fmtnat{l}, fmtnat{w}, ty_u{w}}
 }
 def reinterpret{M=[l==width{T}](u1), a:T} = {

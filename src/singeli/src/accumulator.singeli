@@ -24,7 +24,7 @@ def mu_extra{...args} = {
   def get_all{prop} = each{{c}=>c{prop}, args}
   tup{
     {} => get_all{'from_unr'},
-    fold{min, get_all{'flush_min'}},
+    fold{__min, get_all{'flush_min'}},
     {} => get_all{'flush'},
   }
 }
@@ -128,7 +128,7 @@ def sum_accumulator{DE, unr, VT=[_]SE if int_els{DE,SE} and DE>SE and hasarch{'A
     1/0
   } else {
     def p{G} = __floor{G{ME} / G{SE} / 2} # divided by 2 because addpwa adds two elements per iter
-    if (issigned{SE}) min{p{maxvalue}, p{minvalue}} else p{maxvalue}
+    if (issigned{SE}) __min{p{maxvalue}, p{minvalue}} else p{maxvalue}
   }
   def me{'flush'} = if (not exact) {
     into_scal{acc_tup}
@@ -210,7 +210,7 @@ def sum_accumulator{DE==i64, unr, VT=[k]SE==i32 if hasarch{'X86_64'}} = { # TODO
   extend finish{me}
 }
 
-def assoc_accumulator{F if is{F,min} or is{F,max}, unr if knum{unr}, VT=([16]i8), ident if hasarch{'X86_64'} and not hasarch{'SSE4.1'}} = {
+def assoc_accumulator{F if is{F,__min} or is{F,__max}, unr if knum{unr}, VT=([16]i8), ident if hasarch{'X86_64'} and not hasarch{'SSE4.1'}} = {
   def adda{M, a, c:([16]i8)} = mask_ident{F,ident}{M, a, ty_u{c} ^ [16]u8**128}
   def {acc, ..._} = acc_impl{adda, F, unr, [16]u8, u8, (ident%256) ^ 128}
   def me{...} = acc
@@ -271,8 +271,8 @@ def count_accumulator{DE, unr, VT=[k]SE if isunsigned{DE} and int_els{DE,SE}} = 
 # implicit identity values
 local def of_e{[_]E, G} = G{E}
 local def of_e{E if isprim{E}, G} = G{E}
-def assoc_accumulator{F==min,   unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, of_e{T, {E} => if (isfloat{E})  E~~1/0 else maxvalue{E}}}
-def assoc_accumulator{F==max,   unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, of_e{T, {E} => if (isfloat{E}) -E~~1/0 else minvalue{E}}}
+def assoc_accumulator{F==__min, unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, of_e{T, {E} => if (isfloat{E})  E~~1/0 else maxvalue{E}}}
+def assoc_accumulator{F==__max, unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, of_e{T, {E} => if (isfloat{E}) -E~~1/0 else minvalue{E}}}
 def assoc_accumulator{F==__add, unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, 0}
 
 def any_accumulator{unr, T} = bool_accumulator{|, unr, T, 0}
