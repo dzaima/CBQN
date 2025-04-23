@@ -4,7 +4,7 @@ include './f64'
 include './bitops'
 include './mask'
 
-def rootty{T if isprim{T}} = T
+def rootty{T if primt{T}} = T
 def rootty{[_]T} = T
 
 def is_s{X} = issigned{rootty{X}}

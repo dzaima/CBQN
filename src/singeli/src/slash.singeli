@@ -268,14 +268,14 @@ export{'si_2slash16', slash{1, i16}}; export{'si_thresh_2slash16', u64~~thresh{1
 export{'si_2slash32', slash{1, i32}}; export{'si_thresh_2slash32', u64~~thresh{1, i32}}
 export{'si_2slash64', slash{1, i64}}; export{'si_thresh_2slash64', u64~~thresh{1, i64}}
 
-def scalwidth{T} = if (isvec{T}) elwidth{T} else width{T}
+def scalwidth{T} = if (vect{T}) elwidth{T} else width{T}
 
 # pext, or boolean compress
 def pext_width{}  = if (hasarch{'AVX2'}) 4 else 1
 def thresh_bool{} = if (hasarch{'AVX2'}) 128 else 16
 def pext_popc{x:T, m:T} = {
   def w = scalwidth{T}
-  def scal{v} = if (isvec{T}) T**v else v
+  def scal{v} = if (vect{T}) T**v else v
   def lowbits{w,k} = base{1<<k, cdiv{w,k}**1}
   # At each step, x and z are split into groups of length k
   # - z tells how many bits in the group are NOT used
@@ -290,7 +290,7 @@ def pext_popc{x:T, m:T} = {
       z0 := z & low
       zm := z>>1 & low
       tup{ x - (x>>1 & z0), zm + z0 }
-    } else if (hasarch{'AVX2'} and isvec{T} and k >= 32) {
+    } else if (hasarch{'AVX2'} and vect{T} and k >= 32) {
       # We have variable shifts at these sizes
       lh := scal{low_s*(1<<h - 1)}
       zl := z & lh
@@ -324,12 +324,12 @@ def pext_popc{x:T, m:T} = {
     pe := fold{|, x&s0, each{gr, g*slice{iota{k/g},1}}}
     tup{pe, o>>(k-g)}
   }
-  def build{k==32 if hasarch{'AVX2'} and isvec{T}} = {
+  def build{k==32 if hasarch{'AVX2'} and vect{T}} = {
     def S = re_el{ty_u{k}, T}
     def c{T,vs} = each{{v}=>T~~v, vs}
     c{T, multi_shift{...c{S, build{8}}, 8, k, {s}=>S**s}}
   }
-  def build{k if not isvec{T} and k > 8} = {
+  def build{k if not vect{T} and k > 8} = {
     multi_shift{...build{8}, 8, k, {s}=>s}
   }
   # Final result

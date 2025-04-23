@@ -15,10 +15,9 @@ def extend_each{G, ...args}{...fs} = each{{f, ...args} => (if (length{args}>0) G
 
 def isunsigned{T} = isint{T} and not issigned{T}
 
-def isvec {T} = ktyp{T} and same{typekind{T}, 'vector'} # TODO rename these to better reflect that they apply to types
-def isprim{T} = ktyp{T} and same{typekind{T}, 'primitive'}
-def isptr {T} = ktyp{T} and same{typekind{T}, 'pointer'}
-def any_num = match { {x:T}=>isprim{T}; {x} => knum{x} }
+def vect {T} = ktyp{T} and same{typekind{T}, 'vector'}
+def primt{T} = ktyp{T} and same{typekind{T}, 'primitive'}
+def any_num = match { {x:T}=>primt{T}; {x} => knum{x} }
 def any_int = match { {x:T}=>isint{T};  {x} => knum{x} and (x>>0) == x }
 def int_idx{_, _} = 0
 def int_idx{k if knum{k}, l} = (k>>0)==k and k>=0 and k<l
@@ -28,8 +27,8 @@ def reinterpret{T, x:T} = x
 def export_tab{name, fs} = { v:*one_type{fs} = fs; export{name, v} }
 
 oper &~ andnot infix none 35
-def andnot{a, b:T if any_int{a} and isprim{T}} = a & ~b
-def andnot{a:T, b if isprim{T} and knum{b}} = a & ~T~~b
+def andnot{a, b:T if any_int{a} and primt{T}} = a & ~b
+def andnot{a:T, b if primt{T} and knum{b}} = a & ~T~~b
 
 oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
 
@@ -52,8 +51,8 @@ def eachx{F, ...args} = {
 }
 
 
-def load {...args if match (...args) { {ptr:*E, idx      if not isvec{E}}=>0; {..._}=>1 } } = assert{0, 'bad load', ...args}
-def store{...args if match (...args) { {ptr:*E, idx, val if not isvec{E}}=>0; {..._}=>1 } } = assert{0, 'bad store', ...args}
+def load {...args if match (...args) { {ptr:*E, idx      if not vect{E}}=>0; {..._}=>1 } } = assert{0, 'bad load', ...args}
+def store{...args if match (...args) { {ptr:*E, idx, val if not vect{E}}=>0; {..._}=>1 } } = assert{0, 'bad store', ...args}
 def load{p:*_} = load{p, 0}
 # def store{p:*_, v} = store{p, 0, v}
 def loadu {p:*T      if isunsigned{T}} = emit{T,    merge{'loadu_u', fmtnat{width{T}}}, p}
@@ -93,7 +92,7 @@ def all_same{{}} = 1
 def try_same_type{_, default} = default
 def try_same_type{{h:T, ...t} if all{hastype{.,T}, t}, _} = T
 
-def broadcast{T, v if isprim{T}} = v
+def broadcast{T, v if primt{T}} = v
 def broadcast{n, v if knum{n}} = each{{_}=>v, range{n}}
 
 # type stats
@@ -103,11 +102,11 @@ def minvalue{T if issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T if issigned{T}} = (1<<(width{T}-1))-1
 
 # vector width/type checks
-def w64 {T} = isvec{T} and width{T}==64;  def w64 {T,w} = w64{T}  and elwidth{T}==w
-def w128{T} = isvec{T} and width{T}==128; def w128{T,w} = w128{T} and elwidth{T}==w
-def w256{T} = isvec{T} and width{T}==256; def w256{T,w} = w256{T} and elwidth{T}==w
-def w512{T} = isvec{T} and width{T}==512; def w512{T,w} = w512{T} and elwidth{T}==w
-def veca{T} = isvec{T};                   def veca{T,w} =isvec{T} and elwidth{T}==w
+def w64 {T} = vect{T} and width{T}==64;  def w64 {T,w} = w64{T}  and elwidth{T}==w
+def w128{T} = vect{T} and width{T}==128; def w128{T,w} = w128{T} and elwidth{T}==w
+def w256{T} = vect{T} and width{T}==256; def w256{T,w} = w256{T} and elwidth{T}==w
+def w512{T} = vect{T} and width{T}==512; def w512{T,w} = w512{T} and elwidth{T}==w
+def veca{T} = vect{T};                   def veca{T,w} = vect{T} and elwidth{T}==w
 
 # width+type checks
 def genchk{B, F} = match {
@@ -139,7 +138,7 @@ def re_el{E, x:V} = re_el{E,V} ~~ x
 
 local def change_qual{q} = {
   def f{w if knum{w}} = primtype{q, w}
-  def f{T if isprim{T}} = primtype{q, width{T}}
+  def f{T if primt{T}} = primtype{q, width{T}}
   def f{V=[_]T} = re_el{f{T}, V}
   def f{x:T} = f{T}~~x
 }
@@ -147,9 +146,9 @@ def ty_u = change_qual{'u'}
 def ty_s = change_qual{'i'}
 def ty_f = change_qual{'f'}
 
-def w_n{T, w if isprim{T}} = primtype{quality{T}, w}
-def w_d{T if isprim{T}} = to_w{T, width{T}*2} # double/halve primitive type width
-def w_h{T if isprim{T}} = to_w{T, width{T}/2}
+def w_n{T, w if primt{T}} = primtype{quality{T}, w}
+def w_d{T if primt{T}} = to_w{T, width{T}*2} # double/halve primitive type width
+def w_h{T if primt{T}} = to_w{T, width{T}/2}
 
 def n_d{[k]T} = [k*2]T # double/halve vector count
 def n_h{[k]T} = [k/2]T

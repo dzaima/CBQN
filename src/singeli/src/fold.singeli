@@ -202,8 +202,8 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
     # Shuffle to undo interleaving of add_res
     def __shr{x:(V), sh if hasarch{'X86_64'}} = V~~(H~~x >> sh)
     def __shl{x:(V), sh if hasarch{'X86_64'}} = V~~(H~~x << sh)
-    def __shr{x:(V), sh:T if hasarch{'AARCH64'} and not isvec{T}} = x << V**cast_i{u8,-sh}
-    def __shl{x:(V), sh:T if hasarch{'AARCH64'} and not isvec{T}} = x << V**cast_i{u8, sh}
+    def __shr{x:(V), sh:T if hasarch{'AARCH64'} and not vect{T}} = x << V**cast_i{u8,-sh}
+    def __shl{x:(V), sh:T if hasarch{'AARCH64'} and not vect{T}} = x << V**cast_i{u8, sh}
     def uz_lane = {
       l  := V**(u8~~1<<el - 1)
       h  := V**(16 - u8~~16>>p2)

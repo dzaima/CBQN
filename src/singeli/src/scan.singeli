@@ -7,8 +7,8 @@ include './f64'
 include './spaced'
 include './scan_common'
 if_inline (hasarch{'AARCH64'}) {
-  def __shl{a:V=[_]T, b:U if not isvec{U}} = a << V**cast_i{T,b}
-  def __shr{a:V=[_]T, b:U if not isvec{U}} = a << V**cast_i{T,-b}
+  def __shl{a:V=[_]T, b:U if not vect{U}} = a << V**cast_i{T,b}
+  def __shr{a:V=[_]T, b:U if not vect{U}} = a << V**cast_i{T,-b}
 }
 
 # Initialized scan, generic implementation

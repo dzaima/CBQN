@@ -36,7 +36,7 @@ def broadcast_last{n:VT} = broadcast_last{n, 1}
 # at increasing power-of-two shifts
 def prefix_byshift{op, sh} = {
   def pre{v:V, k} = if (k < width{V}) pre{op{v, sh{v,k}}, 2*k} else v
-  {v:T} => pre{v, if (isvec{T}) elwidth{T} else 1}
+  {v:T} => pre{v, if (vect{T}) elwidth{T} else 1}
 }
 
 def get_id{op,T} = (match (op) { {(__min)}=>maxvalue; {(__max)}=>minvalue }){T}

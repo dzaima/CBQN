@@ -1,4 +1,4 @@
-def nvec{T} = isvec{T} and (width{T}==64 or width{T}==128)
+def nvec{T} = vect{T} and (width{T}==64 or width{T}==128)
 def nvec{T,w} = nvec{T} and elwidth{T}==w
 def {nveci,nvecs,nvecu,nvecf} = genchks{nvec}
 

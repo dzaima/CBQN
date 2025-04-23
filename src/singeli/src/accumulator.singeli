@@ -43,10 +43,10 @@ local def scalar_acc_impl{F, T, ident} = {
 local def scal_bool{T} = is{T,'!'} or isunsigned{T}
 
 local def add_promote{a:A,b} = a + promote{A, b}
-def assoc_accumulator{F,  '!', T if isprim{T}, ident} = scalar_acc_impl{F, T, ident}
+def assoc_accumulator{F,  '!', T if primt{T}, ident} = scalar_acc_impl{F, T, ident}
 def count_accumulator{DE, '!', T if scal_bool{T} and isunsigned{DE}} = scalar_acc_impl{add_promote, DE, 0}
 def bool_accumulator {F,  '!', T if scal_bool{T}, ident} = scalar_acc_impl{F, u1, ident}
-def sum_accumulator  {DE, '!', T if isprim{T}} = scalar_acc_impl{add_promote, DE, 0}
+def sum_accumulator  {DE, '!', T if primt{T}} = scalar_acc_impl{add_promote, DE, 0}
 
 
 
@@ -69,7 +69,7 @@ local def acc_impl{A if kgen{A}, M if kgen{M}, unr if knum{unr}, VT=[k]E, vinit0
       {_:[_]_} => acc_vec = A{mask_none, acc_vec, v}
       {{v0:_}} => acc_vec = A{mask_none, acc_vec, v0}
       {{..._}} => each{{a,c} => a = A{mask_none, a,c}, acc_tup, v}
-      {_:T if isprim{T}} => acc_scal = A{mask_none, acc_scal, v}
+      {_:T if primt{T}} => acc_scal = A{mask_none, acc_scal, v}
     }
   }
   def me{'acc', M if kgen{M}, v} = {
@@ -114,7 +114,7 @@ def sum_accumulator{DE, unr, VT=[_]SE if int_els{DE,SE} and DE>SE and hasarch{'A
   def VM = el_m{VT}
   def [_]ME = VM
   def exact = DE == ME
-  def addpwa{a:(A), x:E if isprim{E}} = a + promote{A,x}
+  def addpwa{a:(A), x:E if primt{E}} = a + promote{A,x}
   def {acc, acc_scal, acc_tup, acc_vec} = acc_impl{mask_ident{addpwa,0}, +, unr, VM, A, 0}
   
   def me{...} = acc
@@ -270,7 +270,7 @@ def count_accumulator{DE, unr, VT=[k]SE if isunsigned{DE} and int_els{DE,SE}} = 
 
 # implicit identity values
 local def of_e{[_]E, G} = G{E}
-local def of_e{E if isprim{E}, G} = G{E}
+local def of_e{E if primt{E}, G} = G{E}
 def assoc_accumulator{F==__min, unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, of_e{T, {E} => if (isfloat{E})  E~~1/0 else maxvalue{E}}}
 def assoc_accumulator{F==__max, unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, of_e{T, {E} => if (isfloat{E}) -E~~1/0 else minvalue{E}}}
 def assoc_accumulator{F==__add, unr, T if ktyp{T}} = assoc_accumulator{F, unr, T, 0}

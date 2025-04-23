@@ -14,8 +14,8 @@ def mask_of_first{T,n if w256{T}} = mask_of_impl{T, n, 256}
 def mask_of_first{T,n if w128{T}} = mask_of_impl{T, n, 128}
 def mask_of_first{T,n if  w64{T}} = mask_of_impl{T, n,  64}
 
-def anyne{x:T, y:T, M if M{0}==0 and isvec{T}} = ~all_hom{x==y}
-def anyne{x:T, y:T, M if M{0}==1 and isvec{T}} =  any_hom{M, x!=y}
+def anyne{x:T, y:T, M if M{0}==0 and vect{T}} = ~all_hom{x==y}
+def anyne{x:T, y:T, M if M{0}==1 and vect{T}} =  any_hom{M, x!=y}
 def anyne{x:T, y:T, M if M{0}==0 and any_int{x}} = x!=y
 def anyne{x:T, y:T, M if M{0}==1 and any_int{x}} = M{x^y} != 0
 def anyne_bit{x:T, y:T, M} = ~M{x^y, 'all bits zeroes'}
@@ -36,7 +36,7 @@ def mask_first{n} = {
   def mask{X, 'to homogeneous bits'} = mask_of_first{X,n}
   def mask{'count'} = n
   def mask{{x}} = tup{mask{x}}
-  def mask{x:X if isvec{X}} = x & (X~~mask_of_first{X,n})
+  def mask{x:X if vect{X}} = x & (X~~mask_of_first{X,n})
   def mask{x:X if any_int{x}} = x & ((1<<n) - 1)
   def mask{0} = 1
 }
