@@ -20,8 +20,8 @@ def bqn_or{a, b} = (a+b)-(a*b)
 # + & -
 # def arithChk1{(__add), M, w:T, x:T, r:T} = tup{'any_top', M{(w^r) & (x^r)}}
 # def arithChk1{(__sub), M, w:T, x:T, r:T} = tup{'any_top', M{(w^x) & (w^r)}}
-def arithChk1{(__add), M, w:T=[_]E, x:T, r:T} = tup{'anyne', adds{w,x}, r}
-def arithChk1{(__sub), M, w:T=[_]E, x:T, r:T} = tup{'anyne', subs{w,x}, r}
+def arithChk1{(__add), M, w:T=[_]E, x:T, r:T} = tup{'anyne', __adds{w,x}, r}
+def arithChk1{(__sub), M, w:T=[_]E, x:T, r:T} = tup{'anyne', __subs{w,x}, r}
 def arithChk1{(__add), M, w:T, x:T, r:T if hasarch{'X86_64'} and width{T}<=256} = tup{'any_top', M{ty_s{w>r} ^ x}}
 def arithChk1{(__sub), M, w:T, x:T, r:T if hasarch{'X86_64'} and width{T}<=256} = tup{'any_top', M{ty_s{x>w} ^ r}}
 
@@ -55,7 +55,7 @@ def arithChk2{F==__mul, M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
   max:= re_el{f32, (ty_u{T})**0x4efffffe}
   def cf32{x:X} = emit{re_el{f32,X}, tern{T==[8]i32, '_mm256_cvtepi32_ps', '_mm_cvtepi32_ps'}, x}
   f32mul:= cf32{w} * cf32{x}
-  tup{w*x, tup{'any_hom', M{abs{f32mul} >= max}}}
+  tup{w*x, tup{'any_hom', M{__abs{f32mul} >= max}}}
   # TODO fallback to the below if the above fails
   # TODO don't do this, but instead shuffle one half, do math, unshuffle that half
   # def wp = mzip128{w, T**0}

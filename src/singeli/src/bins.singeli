@@ -374,7 +374,7 @@ fn saturate{F,T,...up}(dst:*void, src:*void, n:u64) : void = {
   def a = minvalue{T}
   def b = maxvalue{T}
   @for (d in *T~~dst, xf in *F~~src over n) {
-    x := if (F==f64) (if (select{up,0}) floor else ceil){xf} else xf
+    x := if (F==f64) (if (select{up,0}) __floor else __ceil){xf} else xf
     d = cast_i{T, x}
     if (not x<b) d = b
     if (x<a) d = a

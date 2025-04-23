@@ -507,7 +507,7 @@ def modperm_shuf_step{x:V=[_]T, l, m if l%8==0} = {
 # Reverse each pair of elements
 def swap_elts{x:V=[k]_, el_bytes} = {
   if (hasarch{'AARCH64'}) {
-    if (el_bytes == 8) vshl{x, x, k/2}
+    if (el_bytes == 8) vec_merge_shift_right{x, x, k/2}
     else V~~reverse_units{2, re_el{ty_u{8*el_bytes}, x}}
   } else if (any_sel or (hasarch{'SSE2'} and el_bytes >= 2)) {
     def wd = __min{el_bytes, 8}
@@ -664,7 +664,7 @@ def rep_const_bool_odd_mask4{
     x:M = get_modperm_x{}
     def vrot1 = ifvec{{x} => {
       if (w256{M}) shuf{x, 3,0,1,2}
-      else if (any_sel) vshl{x, x, vcount{type{x}}-1}
+      else if (any_sel) vec_merge_shift_right{x, x, vcount{type{x}}-1}
       else shuf{x, 1,0}
     }}
     xo := x<<k | vrot1{x>>(64-k)}

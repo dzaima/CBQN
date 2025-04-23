@@ -196,7 +196,7 @@ fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) 
 def scan_stride_assoc{op, T} = scan_stride_assoc{op, T, void, {..._}=>{}}
 def check_add_over{_, w:T, x:T, r:T} = { if ((w^r) & (x^r) < 0) return{0} }
 def check_add_over{M, w:V=[_]E, x:V, r:V} = {
-  o:= (if (not hasarch{'X86_64'} or width{E}<=16) any_hom{M, subs{r,w} != x}
+  o:= (if (not hasarch{'X86_64'} or width{E}<=16) any_hom{M, __subs{r,w} != x}
        else any_top{M, (w^r) & (x^r)})
   if (o) return{0}
 }
@@ -373,7 +373,7 @@ def widenFull{E, xs} = {
   }, xs}}
 }
 
-def floor{x if knum{x}} = x - (x%1)
+def __floor{x if knum{x}} = x - (x%1)
 def maxabsval{T if issigned{T}} = -minvalue{T}
 def maxsafeint{T if issigned{T}} = maxvalue{T}
 def maxsafeint{T==f64} = 1<<53
@@ -409,9 +409,9 @@ def simd_plus_scan_part{x:*X, c:R, r:*R, len:(u64), i:(u64)} = {
   
   cv:= [arch_defvw/width{R}]R ** c
   
-  if (R==f64 and c != floor{c}) goto{'end'}
+  if (R==f64 and c != __floor{c}) goto{'end'}
   while (1) {
-    if (R==f64) { if (rare{abs{extract{cv,0}} >= maxFastA}) goto{'end'} }
+    if (R==f64) { if (rare{__abs{extract{cv,0}} >= maxFastA}) goto{'end'} }
     else        { if (rare{extract{absu{half{cv,0}},0} > maxFastA}) goto{'end'} }
     
     i2:= i+bulk

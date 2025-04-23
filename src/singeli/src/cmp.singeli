@@ -18,11 +18,11 @@ def eqne{op} = same{op,__eq} or same{op,__ne}
 
 def pathAS{dst, len, T, op, x if issigned{T}} = {
   def R{f if eqne{op}} = {
-    if (rare{floor{f}!=f}) fillbits{dst, len, op{0,1}, x} # also includes check for NaN/sNaN
+    if (rare{__floor{f}!=f}) fillbits{dst, len, op{0,1}, x} # also includes check for NaN/sNaN
     ftrunc{i64,f}
   }
-  def R{f if same{op,__lt} or same{op,__ge}} = ftrunc{i64,ceil{f}}
-  def R{f if same{op,__gt} or same{op,__le}} = ftrunc{i64,floor{f}}
+  def R{f if same{op,__lt} or same{op,__ge}} = ftrunc{i64,__ceil{f}}
+  def R{f if same{op,__gt} or same{op,__le}} = ftrunc{i64,__floor{f}}
   
   xf:f64 = interp_f64{x}
   xi64:i64 = R{xf}

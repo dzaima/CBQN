@@ -32,7 +32,7 @@ def andnot{a:T, b if primt{T} and knum{b}} = a & ~T~~b
 
 oper &- ({v:T,m:(u1)} => v & -promote{T,m}) infix left 35
 
-oper // ({a,b}=>floor{a/b}) infix left 40
+oper // ({a,b}=>__floor{a/b}) infix left 40
 
 def ptr_add{E, ptr:P, am} = { ptr = P~~(am + *E~~ptr) }
 
@@ -92,7 +92,6 @@ def all_same{{}} = 1
 def try_same_type{_, default} = default
 def try_same_type{{h:T, ...t} if all{hastype{.,T}, t}, _} = T
 
-def broadcast{T, v if primt{T}} = v
 def broadcast{n, v if knum{n}} = each{{_}=>v, range{n}}
 
 # type stats
@@ -289,18 +288,12 @@ def cvt{T, x:[_]T} = x
 def extract{V=[k]E, x:V, 0} = x
 def store_narrow_relaxed{p:*DE, x:[k]E} = store{p, narrow{DE, x}, k}
 
+def broadcast{T, v if primt{T}} = v
 def broadcast{V=[_]T, v} = vec_broadcast{V, if (knum{v}) v else promote{T,v}}
 def make{V=[_]_, ...xs} = vec_make{V, ...xs}
-def iota{V=[k]_} = make{V, ...iota{k}}
-def absu{a:[_]_} = ty_u{abs{a}}
+def iota{V=[k]_} = make{V, ...range{k}}
+def absu{a:[_]_} = ty_u{__abs{a}}
 def shuf = vec_shuffle
-def vshl = vec_merge_shift_right
-
-def floor = __floor
-def ceil = __ceil
-def abs = __abs
-def adds = __adds
-def subs = __subs
 
 
 
@@ -308,7 +301,7 @@ def subs = __subs
 def __min{a, b if any_num{a} and any_num{b}} = tern{a<b, a, b}
 def __max{a, b if any_num{a} and any_num{b}} = tern{a>b, a, b}
 def cdiv{a,b} = (a+b-1)/b # ceiling divide
-def cdiv{a,b if knum{a} and knum{b}} = ceil{a/b}
+def cdiv{a,b if knum{a} and knum{b}} = __ceil{a/b}
 def popc{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_popcountll', x}
 def popc{x:T if isint{T} and width{T}<=32} = emit{ux, '__builtin_popcount', x}
 def ctz{x:T if isint{T} and width{T}==64} = emit{ux, '__builtin_ctzll', x}

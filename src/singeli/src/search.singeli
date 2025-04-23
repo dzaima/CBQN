@@ -299,11 +299,11 @@ export{'simd_index_tab_u8', simd_index_tab_u8{usz}}
 
 # following RangeFn's specification in calls.h, whether it's necessary to return 0 or otherwise accumulating & converting to i64 may produce incorrect results
 def bad_float_i64{x:T=[_](f64)} = {
-  a:= abs{x}
+  a:= __abs{x}
   s:= T**(1<<53)
   __min{s,a} != s-(s-a) # ~ ((a<=s) & (a == s-(s-a)))
 }
-def bad_float_i64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x!=floor{x}) | (abs{x}>T**(1<<53))
+def bad_float_i64{x:T=[_](f64) if hasarch{'SSE4.1'}} = (x!=__floor{x}) | (__abs{x}>T**(1<<53))
 def bad_float_i64{x:T=[_](f64) if hasarch{'AARCH64'}} = x != cvt{f64, cvt{i64, x}}
 
 fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
