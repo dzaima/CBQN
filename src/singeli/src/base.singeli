@@ -106,6 +106,8 @@ def maxvalue{T if issigned{T}} = (1<<(width{T}-1))-1
 def w64 {T} = isvec{T} and width{T}==64;  def w64 {T,w} = w64{T}  and elwidth{T}==w
 def w128{T} = isvec{T} and width{T}==128; def w128{T,w} = w128{T} and elwidth{T}==w
 def w256{T} = isvec{T} and width{T}==256; def w256{T,w} = w256{T} and elwidth{T}==w
+def w512{T} = isvec{T} and width{T}==512; def w512{T,w} = w512{T} and elwidth{T}==w
+def veca{T} = isvec{T};                   def veca{T,w} =isvec{T} and elwidth{T}==w
 
 # width+type checks
 def genchk{B, F} = match {
@@ -117,6 +119,8 @@ def genchks{B} = each{genchk{B,.}, tup{isint, issigned, isunsigned, isfloat}}
 def { w64i, w64s, w64u, w64f} = genchks{w64}
 def {w128i,w128s,w128u,w128f} = genchks{w128}
 def {w256i,w256s,w256u,w256f} = genchks{w256}
+def {w512i,w512s,w512u,w512f} = genchks{w512}
+def { veci, vecs, vecu, vecf} = genchks{veca}
 
 def trunc{T, x:U if isint{T} and isint{U} and width{T}<=width{U}} = emit{T, '', x}
 def trunc{T, x if knum{x}} = cast{T, x}
