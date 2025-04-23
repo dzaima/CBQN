@@ -7,7 +7,7 @@ def dat_types = tup{...ind_types, u64}
 
 # Indices and Replicate using plus- or max-scan
 def scan_core{upd, set, scan, rp:*T, wp:W, s:(usz)} = {
-  def getw{j} = if (isptr{W}) cast_i{usz,load{wp,j}} else wp
+  def getw{j} = match (W) { {*_} => cast_i{usz,load{wp,j}}; {_} => wp }
   b:usz = 1<<10
   k:usz = 0; j:usz = 0; ij:=getw{j}
   while (1) {
