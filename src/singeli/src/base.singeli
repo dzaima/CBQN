@@ -13,16 +13,11 @@ oper ~~ reinterpret infix right 55
 oper ** broadcast infix right 55
 def extend_each{G, ...args}{...fs} = each{{f, ...args} => (if (length{args}>0) G{...args} else G){f}, fs, ...args}
 
-def isreg   = kreg
-def isconst = kcon
-def istype  = ktyp
-def istup   = ktup
-
 def isunsigned{T} = isint{T} and not issigned{T}
 
-def isvec {T} = istype{T} and same{typekind{T}, 'vector'} # TODO rename these to better reflect that they apply to types
-def isprim{T} = istype{T} and same{typekind{T}, 'primitive'}
-def isptr {T} = istype{T} and same{typekind{T}, 'pointer'}
+def isvec {T} = ktyp{T} and same{typekind{T}, 'vector'} # TODO rename these to better reflect that they apply to types
+def isprim{T} = ktyp{T} and same{typekind{T}, 'primitive'}
+def isptr {T} = ktyp{T} and same{typekind{T}, 'pointer'}
 def any_num = match { {x:T}=>isprim{T}; {x} => knum{x} }
 def any_int = match { {x:T}=>isint{T};  {x} => knum{x} and (x>>0) == x }
 def int_idx{_, _} = 0
@@ -52,8 +47,8 @@ def tree_fold{F, x} = {
 def tree_fold{F, {x}} = x
 
 def eachx{F, ...args} = {
-  def l = tree_fold{__max, each{{x} => if(istup{x}) length{x} else 0, args}}
-  each{F, ...each{{x} => if (istup{x}) x else l**x, args}}
+  def l = tree_fold{__max, each{{x} => if(ktup{x}) length{x} else 0, args}}
+  each{F, ...each{{x} => if (ktup{x}) x else l**x, args}}
 }
 
 
@@ -431,7 +426,7 @@ def make_branch{Ts, F} = {
 }
 def make_opt_branch{enable, Ts, F} = if (enable) make_branch{Ts, F} else 'not defined'
 
-def undef{T, n if istype{T}} = @collect(n) undef{T}
-def undef{Ts if istup{Ts}} = each{undef, Ts}
+def undef{T, n if ktyp{T}} = @collect(n) undef{T}
+def undef{Ts if ktup{Ts}} = each{undef, Ts}
 def undef{x:T} = undef{T}
-def undef{T if istype{T}} = { reg:=undefined{T} }
+def undef{T if ktyp{T}} = { reg:=undefined{T} }

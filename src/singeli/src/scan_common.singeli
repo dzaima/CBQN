@@ -2,7 +2,7 @@
 
 def has_sel8 = hasarch{'SSSE3'} or hasarch{'AARCH64'}
 def sel8{v:V, t} = sel{[16]u8, v, make{re_el{i8,V}, t}}
-def sel8{v:V, t if w256{V} and istup{t} and length{t}==16} = sel8{v, merge{t,t}}
+def sel8{v:V, t if w256{V} and ktup{t} and length{t}==16} = sel8{v, merge{t,t}}
 
 local def rev{t} = { def l=length{t}; def j=l-1; select{j-t, j-range{l}} }
 local def rev{up,t} = if (up) t else rev{t}

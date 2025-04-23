@@ -39,7 +39,7 @@ def arg{c,T} = if (c) *T else if (T==i32) T else tup{} # type of x
 # Modifies the input variable r
 # Assumes iter{} will increment r, by at most write_len
 def for_special_buffered{r:*T, write_len}{vars,begin,sum,iter} = {
-  assert{isreg{r}}; assert{begin==0}
+  assert{kreg{r}}; assert{begin==0}
   def tw = width{T}
   def ov = write_len-1
   def bufn = 2*(ov+1)
@@ -90,7 +90,7 @@ def getter{c, V=[k]T, x} = {
     {} => { v:=load{*V~~x, i}; ++i; v }
   } else {
     i := iota{V}
-    if (isreg{x}) i += V**cast_i{T,x}
+    if (kreg{x}) i += V**cast_i{T,x}
     ii := V**k
     {} => { v:=i; i+=ii; v }
   }
@@ -373,7 +373,7 @@ fn compress_bool(w:*u64, x:*u64, r:*u64, n:u64) : void = {
     }
     ro = ro2%64
   }
-  def extract{t, i if istup{t}} = select{t,i}
+  def extract{t, i if ktup{t}} = select{t,i}
   def v = pext_width{}
   if (v > 1) {
     def V = [v]u64
