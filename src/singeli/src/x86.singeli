@@ -58,6 +58,7 @@ include './sse'
 include './avx'
 include './avx2'
 include './avx512'
+include './bmi'
 
 
 

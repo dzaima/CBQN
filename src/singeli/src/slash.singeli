@@ -1,8 +1,5 @@
 include './base'
-if_inline (hasarch{'X86_64'}) {
-  if_inline (hasarch{'PCLMUL'}) include './clmul'
-  if_inline (hasarch{'BMI2'}) include './bmi'
-}
+if_inline (hasarch{'PCLMUL'}) include './clmul'
 include './mask'
 
 def popc_rand{x:T if isint{T} and width{T}==64} = emit{u8, 'rand_popc64', x} # under valgrind, return a random result in the range of possible ones
