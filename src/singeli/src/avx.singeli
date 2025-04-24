@@ -1,6 +1,3 @@
-def load{V=[_]E, ptr:*E, vl if w256{V} and vl*width{E}<=128} = undef_promote{V, load{n_h{V}, ptr, vl}}
-def store{ptr:*E, x:V=[k]E, vl if w256{V} and vl*width{E}<=128} = store{ptr, half{x, 0}, vl}
-
 # f32 arith
 def rsqrtE{a:T==[8]f32} = emit{T, '_mm256_rsqrt_ps', a}
 def   rcpE{a:T==[8]f32} = emit{T, '_mm256_rcp_ps', a}
