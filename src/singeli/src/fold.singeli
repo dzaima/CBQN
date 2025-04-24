@@ -239,7 +239,7 @@ fn extract_column(x0:*void, r0:*void, n:usz, l:usz, el:u8) : usz = {
   def thr = __min{vl+2, 20}
   if ((not has_simd) or n < vl or l > usz~~thr>>el or l<<el >= thr) return{0}
   nv := n / vl
-  if (has_simd and (l & (l-1)) == 0) {
+  if (has_simd and is_pow2{l}) {
     def try_unzip{T, k} = if (k < thr and l == k) {
       extract_column_pow2{T, x0, r0, nv, k}
       goto{'ret'}
@@ -319,8 +319,8 @@ def fold_rows_bit_lt64{
       # Emulate pext with 1, 2, or 3 multiply/mask steps.
       # To move size-a groups spaced at distance b together,
       # the multiplier has up to b/a bits spaced by b-a.
-      dm:= cast_i{usz, popc{el}}      # minimum output bits per word
-      dm-= promote{usz, l&(l-1) == 0} # for divisors of 64, e0 effectively overflows; subtract 1 to correct
+      dm:= cast_i{usz, popc{el}}    # minimum output bits per word
+      dm-= promote{usz, is_pow2{l}} # for divisors of 64, e0 effectively overflows; subtract 1 to correct
       def loop{...par} = {
         et:= e0 << clz{e0}
         @for (xo in xp over nw) {

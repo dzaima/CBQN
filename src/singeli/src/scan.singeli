@@ -556,7 +556,7 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
     if (qand) s & (~f | c) else s | (f & c)
   }
   if (l < 64) {
-    if ((l & (l-1)) == 0) {
+    if (is_pow2{l}) {
       if (l == 2) {
         @for (r in dst, x in src over nw) {
           r = (if (qand) x & (x<<1 | 64w2b01) else x | (x<<1 & 64w2b10))
@@ -637,7 +637,7 @@ fn scan_rows_neq(x:*u64, r:*u64, nl:usz, l:usz) : void = {
       b:= s<<1 & m  # last bit of previous row
       s ^ (b<<l - b)
     }
-    if ((l & (l-1)) == 0) {
+    if (is_pow2{l}) {
       m:u64 = aligned_spaced_mask{l}
       @for (r, x over nw) r = apply_mask{scan_word{x}, m}
     } else if (has_simd) {
@@ -690,7 +690,7 @@ fn scan_rows_left(x:*u64, r:*u64, nl:usz, l:usz) : void = {
   def apply_carry{s, c, f} = s | (f & c)
   if (l < 64) {
     def apply_mask{x, m} = { b:= x & m; b<<l - b }
-    if ((l & (l-1)) == 0) {
+    if (is_pow2{l}) {
       m:u64 = aligned_spaced_mask{l}
       @for (r, x over nw) r = apply_mask{x, m}
     } else if (has_simd) {
@@ -740,7 +740,7 @@ fn scan_stride_bool_assoc{op}(x:*u64, r:*u64, nl:usz, l:usz) : void = {
   def {flip,opf} = if (same{op, &}) tup{~,|} else tup{{x}=>x,op} # such that identity of opf is 0
   nw:= cdiv{nl, 64}
   if (l <= 64) {
-    if (same{op, ^} and hasarch{'PCLMUL'} and (l & (l-1)) == 0) {
+    if (same{op, ^} and hasarch{'PCLMUL'} and is_pow2{l}) {
       clmul_scan_ne_any{}(*void~~x, *void~~r, 0, nw, aligned_spaced_mask{l})
       return{}
     }

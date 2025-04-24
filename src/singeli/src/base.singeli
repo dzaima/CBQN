@@ -21,6 +21,7 @@ def any_num = match { {x:T}=>primt{T}; {x} => knum{x} }
 def any_int = match { {x:T}=>isint{T};  {x} => knum{x} and (x>>0) == x }
 def int_idx{_, _} = 0
 def int_idx{k if knum{k}, l} = (k>>0)==k and k>=0 and k<l
+def is_pow2{i if any_int{i}} = (i & (i-1)) == 0
 def elwidth{T} = width{eltype{T}}
 
 def reinterpret{T, x:T} = x

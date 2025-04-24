@@ -2,7 +2,7 @@ def spaced_mask_of{l} = emit{u64, 'get_spaced_mask', l} # see slash.singeli
 
 def aligned_spaced_mask{l} = {
   assert{l <= 64}
-  assert{l&(l-1) == 0}
+  assert{is_pow2{l}}
   spaced_mask_of{l}
 }
 
