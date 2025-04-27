@@ -54,7 +54,7 @@ _runImport_ ← { runArgs Process _𝕣_ dir runFile: # Process returns {deps‿
     Process ← { 𝕊 res:
       deps ⇐ src<⊸∾ SimplifyPath¨ res.deplog
       o ⇐ ∾ ∾⟜(@+10)¨ res.show
-      e ⇐ {⟨⟩: @; ⋈⁼𝕩} res.errout
+      e ⇐ {⟨⟩: {res.out≡@? "Didn't get output from Singeli for "∾src; @}; ⋈⁼𝕩} res.errout
     }
     argsFinal Process _runImport_ dir singeliDir •file.At "singeli"
   ;
