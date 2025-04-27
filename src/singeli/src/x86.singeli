@@ -53,8 +53,7 @@ local def vec_x{V=[k]E} = { # e.g. i64x2 / f32x4 / f64x2
   merge{if (isint{E}) 'i' else 'f', fmtwidth{E}, 'x', fmtnat{k}}
 }
 
-include './sse2'
-include './sse_rest'
+include './sse'
 include './avx'
 include './avx2'
 include './avx512'

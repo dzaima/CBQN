@@ -69,3 +69,18 @@ def narrow{T==u32, x:([2]u64)} = [4]u32~~nar{i32, x}
 
 def narrow{T, x:X if w128f{X,64} and T<i32} = narrow{T, narrow{i32, x}}
 def narrow{T==i32, x:([2]f64)} = emit{[4]i32, '_mm_cvtpd_epi32', x}
+
+
+
+# SSSE3
+def sel{L=[_]E, x:T, i:I if hasarch{'SSSE3'} and lvec{L,16,8} and w128{T} and w128i{I, 8}} = vec_select{E, x, i}
+
+# SSE4.1
+# conversion
+def narrow{(i8 ), x:X if hasarch{'SSE4.1'} and w128i{X,32}} = sel{[16]u8, [16]i8~~x, make{[16]i8, 0,4,8,12, 0,0,0,0, 0,0,0,0, 0,0,0,0}}
+def narrow{(i16), x:X if hasarch{'SSE4.1'} and w128i{X,32}} = sel{[16]u8, [8]i16~~x, make{[16]i8, 0,1,4,5, 8,9,12,13, 0,0,0,0, 0,0,0,0}}
+
+# mask stuff
+def and_bit_none{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
+def blend_top{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128i{T} and w128i{M,32}} = T ~~ blend_top{v2f{f}, v2f{t}, m}
+def blend_top{f:T, t:T, m:M if hasarch{'SSE4.1'} and w128i{T} and w128i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, m}
