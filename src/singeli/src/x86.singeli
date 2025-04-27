@@ -92,6 +92,10 @@ local def avx_cmp{a:V, b:V, imm} = ty_u{emit{V, intrin_t{V, 'cmp'}, a, b, imm}}
 def unord{a:V, b:V if w256f{V} and hasarch{'AVX'}} = avx_cmp{a,b,3}
 def unord{a:V, b:V if w128f{V}} = ty_u{emit{V, intrin_t{V, 'cmpunord'}, a, b}}
 
+def cvt{RE, x:V=[k]E if isfloat{RE} and vecs{V,32} and hase{V}} = {
+  def RV = [k]RE
+  emit{RV, intrin_t{RV, 'cvtepi32'}, x}
+}
 
 
 # int stuff
