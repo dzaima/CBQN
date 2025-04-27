@@ -101,25 +101,24 @@ def maxvalue{T if isunsigned{T}} = (1<<width{T})-1
 def minvalue{T if issigned{T}} = - (1<<(width{T}-1))
 def maxvalue{T if issigned{T}} = (1<<(width{T}-1))-1
 
-# vector width/type checks
-def w64 {T} = vect{T} and width{T}==64;  def w64 {T,w} = w64{T}  and elwidth{T}==w
-def w128{T} = vect{T} and width{T}==128; def w128{T,w} = w128{T} and elwidth{T}==w
-def w256{T} = vect{T} and width{T}==256; def w256{T,w} = w256{T} and elwidth{T}==w
-def w512{T} = vect{T} and width{T}==512; def w512{T,w} = w512{T} and elwidth{T}==w
-def veca{T} = vect{T};                   def veca{T,w} = vect{T} and elwidth{T}==w
-
-# width+type checks
-def genchk{B, F} = match {
-  {V=[_]T   } => B{V} and F{T}
-  {V=[_]T, w} => B{V} and F{T} and width{T}==w
+# vector type checks (all disallow u1 element)
+def genchk{W, F} = match {
+  {V=[_]T   } => W{V} and F{T}
+  {V=[_]T, w} => W{V} and F{T} and width{T}==w
   {..._} => 0
 }
-def genchks{B} = each{genchk{B,.}, tup{isint, issigned, isunsigned, isfloat}}
-def { w64i, w64s, w64u, w64f} = genchks{w64}
-def {w128i,w128s,w128u,w128f} = genchks{w128}
-def {w256i,w256s,w256u,w256f} = genchks{w256}
-def {w512i,w512s,w512u,w512f} = genchks{w512}
-def { veci, vecs, vecu, vecf} = genchks{veca}
+def genchks{W} = each{genchk{W,.}, tup{
+  {E} =>                   E!=u1, # vece / no postfix
+  {E} => isint{E}      and E!=u1, # veci
+  issigned,                       # vecs
+  {E} => isunsigned{E} and E!=u1, # vecu
+  isfloat,                        # vecf
+}}
+def { w64,  w64i, w64s, w64u, w64f} = genchks{{V} => width{V} == 64}
+def {w128, w128i,w128s,w128u,w128f} = genchks{{V} => width{V} == 128}
+def {w256, w256i,w256s,w256u,w256f} = genchks{{V} => width{V} == 256}
+def {w512, w512i,w512s,w512u,w512f} = genchks{{V} => width{V} == 512}
+def {vece, veci, vecs, vecu, vecf}  = genchks{{_} => 1}
 
 def trunc{T, x:U if isint{T} and isint{U} and width{T}<=width{U}} = emit{T, '', x}
 def trunc{T, x if knum{x}} = cast{T, x}

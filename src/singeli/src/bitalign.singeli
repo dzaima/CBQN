@@ -7,7 +7,7 @@ def shuf_impl{rw, ...iw, data} = assert{0, 'shuffling failed', ...data{'info'}}
 
 def type0{vs} = type{select{vs,0}}
 # new_shuf{v0:[k]E, v1:[k]E, ..., indices} : [length{indices}]E; -1 for zero, -2 for arbitrary
-def new_shuf{...vs0 if vect{try_same_type{vs0,'!'}}, {...is}} = { # : [length{is}]E
+def new_shuf{...vs0 if vece{try_same_type{vs0,'!'}}, {...is}} = { # : [length{is}]E
   def vs = each{ty_u, vs0}
   def vn = length{vs}
   def S = type0{vs}
@@ -39,9 +39,9 @@ def new_shuf{...vs0 if vect{try_same_type{vs0,'!'}}, {...is}} = { # : [length{is
   
   re_el{E, shuf_impl{width{E}*ni, ...vn**width{S}, data}}
 }
-def new_shuf{w if ktyp{w} or knum{w}, ...vs if vect{try_same_type{vs,'!'}} and (not vect{w} or width{w} == width{type0{vs}}), {...is}} = {
+def new_shuf{w if ktyp{w} or knum{w}, ...vs if vece{try_same_type{vs,'!'}} and (not vece{w} or width{w} == width{type0{vs}}), {...is}} = {
   def S = type0{vs}
-  def D = if (vect{w}) w else re_el{if (primt{w}) w else ty_u{w}, S}
+  def D = if (vece{w}) w else re_el{if (primt{w}) w else ty_u{w}, S}
   S~~new_shuf{...each{~~{D,.}, vs}, is}
 }
 
