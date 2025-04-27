@@ -120,10 +120,10 @@ local def packs_impl{check}{a:V=[k]E, b:V if veci{V} and check{V} and (width{E}=
 def packs128{...} = packs_impl{{_}=>1}
 def packs{...} = packs_impl{{V}=>width{V}==128}
 
-def widen{D=[k]DE, x:S=[k0]SE if isint{DE} and quality{DE}==quality{SE} and DE>SE and k<=k0 and hasarch{match (width{D}) {
-  {128} => 'SSE4.1'
-  {256} => 'AVX2'
+def widen{D=[k]DE, x:S=[k0]SE if isint{DE} and quality{DE}==quality{SE} and DE>SE and k<=k0 and (match (width{D}) {
+  {128} => hasarch{'SSE4.1'}
+  {256} => hasarch{'AVX2'}
   {512} => x86_has512e{re_el{DE,S}}
-}}} = {
+})} = {
   emit{D, intrin_i{D, 'cvtep', if (isunsigned{SE}) 'u' else 'i', fmtwidth{SE}}, x86_low_elts{k, x}}
 }
