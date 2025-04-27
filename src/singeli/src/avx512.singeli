@@ -1,15 +1,9 @@
 local {
-  def suf{T} = {
-    if (isfloat{T}) (if (width{T}==32) 'ps' else 'pd')
-    else merge{'epi', fmtnat{width{T}}}
-  }
-  def suf{[_]T} = suf{T}
-  def pref{w} = merge{'_mm', if (w==128) '' else fmtnat{w}, '_'}
-  def pref{V=[_]_} = pref{width{V}}
   def has512 = x86_has512
   def has512e = x86_has512e
   def intrin = x86_intrin
   def intrin_t = x86_intrin_t
+  def intrin_i = x86_intrin_i
   def mt{k} = merge{'mask', fmtnat{__max{k,8}}}
   def mr{s} = merge{s, '_mask'}
 }
@@ -26,18 +20,18 @@ def reinterpret{T, a:M=[l==width{T}](u1)} = {
 }
 
 def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
-  emit{void, merge{pref{V}, 'mask_storeu_', suf{V}}, p, m, v}
+  emit{void, intrin_i{V, 'mask_storeu'}, p, m, v}
 }
 
-def top_to_mask{x:V=[k]_} = emit{[k]u1, merge{pref{V},'mov',suf{V},'_mask'}, x}
+def top_to_mask{x:V=[k]E if E!=u1 and veci{V}} = emit{[k]u1, mr{intrin{V,'mov',x86_scali{E}}}, x}
 def top_to_int{x:V=[k]_ if 512==width{V}} = ty_u{k}~~top_to_mask{x}
 def hom_to_int{x:V=[_]_ if 512==width{V}} = top_to_int{x}
 
-def mask_to_hom{V=[l]_, x:[l](u1)} = emit{V, merge{pref{V},'movm_',suf{V}}, x}
+def mask_to_hom{V=[l]_, x:[l](u1)} = emit{V, intrin_i{V,'movm'}, x}
 
-def sel{(ty_u{V}), x:V=[_]E, i:I==(ty_u{V}) if (if (width{E}>8) has512e{V} else has512{V, 'VBMI'})} = emit{V, merge{pref{V}, 'permutexvar_', suf{V}}, i, x}
+def sel{(ty_u{V}), x:V=[_]E, i:I==(ty_u{V}) if (if (width{E}>8) has512e{V} else has512{V, 'VBMI'})} = emit{V, intrin_i{V, 'permutexvar'}, i, x}
 
-def multishift{a:[k](u64), i:V=[(k*8)](u8) if has512{V, 'VBMI'}} = emit{V, merge{pref{V}, 'multishift_epi64_epi8'}, i, a}
+def multishift{a:[k](u64), i:V=[(k*8)](u8) if has512{V, 'VBMI'}} = emit{V, intrin_i{V, 'multishift_epi64'}, i, a}
 
 def narrow{DE, x:[k]SE if isint{DE} and quality{DE}==quality{SE} and x86_has512e{[k]SE}} = {
   emit{x86_vec_low{k,DE}, intrin{[k]SE, 'cvtepi', fmtwidth{SE}, '_epi', fmtwidth{DE}}, x}
