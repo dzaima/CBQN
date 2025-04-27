@@ -213,8 +213,8 @@ For float conversions, the used rounding mode is unspecified.
 - `mul32{a:VI, b:VI} : VI` - multiply, reading only low 32 bits
 - `blend{L, a:V, b:V, m}` - blend `L`-sized blocks via the immediate
 - `shuf{L, x:V, n} : V` - shuffle by immediate in `L`-sized lanes
-- `packQ` - pack 128-bit lanes (`packs`/`packus`) for 16-bit & 32-bit elements
-- `packQQ` - `packQ` but also defined for 64-bit elements, assuming the high halves are zeroes
+- `packs128` - saturating pack 128-bit lanes (`packs`/`packus`) for 16-bit & 32-bit elements
+- `packQQ` - `packs128` but also defined for 64-bit elements, assuming the high halves are zeroes
 - `packs` - 128-bit `packs`/`packus`
 - `shuf16Hi`, `shuf16Lo` - 16-bit shuffles with immediate
 - `shufHalves`

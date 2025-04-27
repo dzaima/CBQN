@@ -39,11 +39,11 @@ def arithChk2{F==__mul, M, w:T=[_](i8), x:T if hasarch{'X86_64'}} = {
   def rp = each{__mul, wp, xp}
   if (M{0}) { # masked check
     def bad = each{{v} => ty_s{(v<<8)>>8 != v}, rp}
-    tup{packQ{rp}, tup{'any_hom', M{packQ{bad}}}}
+    tup{packs128{rp}, tup{'any_hom', M{packs128{bad}}}}
   } else { # unmasked check; can do check in a simpler way
     def bad = each{{v} => ty_s{v ^ (v>>15)}, rp}
     def RU = re_el{u16,T}
-    tup{packQ{rp}, tup{'and_some', RU~~tree_fold{|, bad}, RU**0xff80}}
+    tup{packs128{rp}, tup{'and_some', RU~~tree_fold{|, bad}, RU**0xff80}}
   }
 }
 def arithChk2{F==__mul, M, w:T=[_](i16), x:T if hasarch{'X86_64'}} = {

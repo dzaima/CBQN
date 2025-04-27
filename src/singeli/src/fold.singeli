@@ -87,7 +87,7 @@ def extract_column_pow2{T, x0, r0, nv, k} = {
         m := make{V, - (iota{vcount{V}}%k == 0)}
         xs = each{&{m, .}, xs} # Mask off high bits
         def D = el_m{V}
-        {a, b} => packQ{D~~a, D~~b}
+        {a, b} => packs128{D~~a, D~~b}
       } else {
         # Two-vector shuffles
         # Could also be used for 1/2-byte with ending gap >= 4 bytes,
@@ -108,7 +108,7 @@ def extract_column_pow2{T, x0, r0, nv, k} = {
         top := D**(1<<15); m := D**(1<<16 - 1)
         (ri & m) | (D~~(ri&top == top) &~ m)
       }
-      r = V~~packQ{...each{proc, split{k/2, xs}}}
+      r = V~~packs128{each{proc, split{k/2, xs}}}
     }
     if (width{V} > 128) { # Lane axis wasn't packed, need to shuffle to bottom
       def tr{E,a, r} = shuf{[1<<a]E, r, tr_iota{shiftright{a-1, iota{a}}}}

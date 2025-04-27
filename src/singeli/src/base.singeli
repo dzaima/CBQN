@@ -278,7 +278,8 @@ local def extend kpair{op} = {
 }
 extend (extend_each{kpair}){pack, zip, zip128, mzip, mzip128, unzip, unzip128}
 
-def packQ{{a, b}} = packQ{a, b}
+def packs{{a, b}} = packs{a, b}
+def packs128{{a, b}} = packs128{a, b}
 def pair{{a, b}} = pair{a, b}
 
 def widen{T, x:T} = x

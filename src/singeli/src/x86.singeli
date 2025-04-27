@@ -114,6 +114,12 @@ def mul_sum_sat{2, a:V=[k](u8), b:[k](i8) if has_bw{V}} = {
   emit{[k/2]i16, intrin{V, 'maddubs_epi16'}, a, b}
 }
 
+local def packs_impl{check}{a:V=[k]E, b:V if veci{V} and check{V} and (width{E}==16 or width{E}==32) and hase{V, if (E==u32) 'SSE4.1' else 'SSE2', 'AVX2', 'AVX512BW'}} = {
+  emit{el_s{V}, intrin_i{V, 'pack', if (isunsigned{E}) 'us' else 's'}, a, b}
+}
+def packs128{...} = packs_impl{{_}=>1}
+def packs{...} = packs_impl{{V}=>width{V}==128}
+
 def widen{D=[k]DE, x:S=[k0]SE if isint{DE} and quality{DE}==quality{SE} and DE>SE and k<=k0 and hasarch{match (width{D}) {
   {128} => 'SSE4.1'
   {256} => 'AVX2'

@@ -3,7 +3,6 @@ def sel{L=[_]E, x:T, i:I if hasarch{'SSSE3'} and lvec{L,16,8} and w128{T} and w1
 
 
 ### SSE4.1 ###
-def packs{a:T,b:T if hasarch{'SSE4.1'} and T==[4]u32} = emit{[ 8]u16, '_mm_packus_epi32', a, b}
 def and_bit_none{x:T, y:T if hasarch{'SSE4.1'} and w128i{T}} = emit{u1, '_mm_testz_si128', x, y}
 
 # conversion
