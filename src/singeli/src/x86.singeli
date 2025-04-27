@@ -37,11 +37,13 @@ local def scal_q{q, E} = match (E) {
   {(f64)} => 'pd'
   {_} => merge{'ep', q, fmtwidth{E}}
 }
+def x86_scali{E} = scal_q{'i', E}
 def x86_scal{E} = scal_q{quality{E}, E}
 
-local def intrin_t{V=[_]E, ...rest} = intrin{V, ...rest, '_', scal_q{quality{E}, E}}
-local def intrin_i{V=[_]E, ...rest} = intrin{V, ...rest, '_', scal_q{'i', E}}
+local def intrin_t{V=[_]E, ...rest} = intrin{V, ...rest, '_', x86_scal{E}}
+local def intrin_i{V=[_]E, ...rest} = intrin{V, ...rest, '_', x86_scali{E}}
 def x86_intrin_t = intrin_t
+def x86_intrin_i = intrin_i
 
 local def vec_s{V=[_]E} = match (E) { # e.g. ps / pd / si128
   {(f32)} => 'ps'
