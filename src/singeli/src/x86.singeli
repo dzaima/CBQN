@@ -54,7 +54,7 @@ local def vec_x{V=[k]E} = { # e.g. i64x2 / f32x4 / f64x2
 }
 
 include './sse2'
-include './sse'
+include './sse_rest'
 include './avx'
 include './avx2'
 include './avx512'
