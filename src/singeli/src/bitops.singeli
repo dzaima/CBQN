@@ -81,6 +81,8 @@ def expand_bits{V=[k]T, a:A if k<=width{T} and quality{T}=='u'} = {
   eq_hom{b, b & V ~~ re_el{A, V}**a} # not just V**a so that if a is read from RAM, it can use the single instruction for broadcasting from RAM; the extra bits don't matter
 }
 
+def expand_bits{D=[k]E, x:X if x86_has512e{D}} = mask_to_hom{D, int_to_mask{[k]u1, x}}
+
 # vector with type V with each element being either all 0s or 1s
 def load_expand_bits{V=[k]T, x:(*u64), n:(ux)} = {
   expand_bits{V, load_bits_lo{k, x, n}}
