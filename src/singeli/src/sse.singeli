@@ -41,9 +41,6 @@ def all_top{x:T=[k]_ if w128i{T}} = top_to_int{x} == (1<<k)-1
 def any_top{x:T if w128i{T, 16}} = any_hom{[8]i16~~x  <  [8]i16**0}
 def all_top{x:T if w128i{T, 16}} = all_hom{[8]i16~~x  <  [8]i16**0}
 
-def x86_shufps_range{is, hi} = in_range{is,0,2, 0,4} and in_range{is,2,4, hi,hi+4}
-def shuf_ind{a:T, b:T=[4]E, {...is} if width{E}==32 and length{is}==4 and x86_shufps_range{is, 4}} = vec_shuffle{[4]f32, tup{a, b}, is&3}
-
 def store_blended_hom{p:*E, m:M=[k]_, v:V=[k]E if w128i{M,width{E}} and w128{V}} = store{p, blend_hom{load{V, p}, v, m}}
 
 def widen{T, x:X if w128i{T} and w128i{X} and w128s{T}==w128s{X} and elwidth{T}>elwidth{X}} = {

@@ -22,10 +22,8 @@ def any_nonC32{M, x:T=[_]_ if hasarch{'X86_64'}} = {
 }
 def any_nonC32{(mask_none), x:[k](u64), y:[k](u64)} = {
   def T32 = [k*2]u32
-  def hi = shuf_ind{T32~~x, T32~~y, match(k) {
-    {2} => tup{1,3,5,7}
-    {4} => tup{1,3,9,11,5,7,13,15} # all odd indices, in the order that vshufps can handle
-  }}
+  def hi = if (hasarch{'X86_64'}) T32~~vec_shuffle{[4]f32, tup{x, y}, 1,3,1,3} # gathers all odd-positioned 32-bit elements from both vectors in whatever order that vshufps can handle
+  else pack{x, y, 1}
   anyne{hi, T32**cast_i{u32, cbqn_c32Tag{}<<16}, mask_none}
 }
 
