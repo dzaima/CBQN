@@ -23,7 +23,7 @@ itab:*u64 = maketab{8,8} # 256 elts, 2KB; shared by many methods
 
 # Recover popcount, for when POPCNT isn't there
 def has_popc = hasarch{'POPCNT'}
-def tab_popc{i:I, w} = (i>>(width{I}-w) + 1) & (1<<w - 1)
+def tab_popc{i:I, w} = tail{w, i>>(width{I}-w) + 1}
 def popc_alt{v, i, w} = if (has_popc) popc{v} else tab_popc{i, w}
 
 # slash{c, T} defines:
@@ -289,7 +289,7 @@ def pext_popc{x:T, m:T} = {
       tup{ x - (x>>1 & z0), zm + z0 }
     } else if (hasarch{'AVX2'} and vect{T} and k >= 32) {
       # We have variable shifts at these sizes
-      lh := scal{low_s*(1<<h - 1)}
+      lh := scal{low_s*tail{h}}
       zl := z & lh
       def S = re_el{ty_u{k}, T}
       tup{T~~(S~~(x&~lh) >> S~~zl) | (x&lh), T~~(S~~z >> h) + zl}
@@ -303,7 +303,7 @@ def pext_popc{x:T, m:T} = {
       # Shift high x group down by low z, then add halves of z
       odd:T = scal{low_s*(1<<k - 1<<h)} # Top half
       ze := z&~odd
-      z1 := ze + scal{low_s*(1<<(k-1) - 1)}  # z-1, as signed k-bit
+      z1 := ze + scal{low_s*tail{k-1}}  # z-1, as signed k-bit
       move := odd &~ (z1<<1)         # Only groups where z>0 move
       tup{
         (x&~move) | shift{1, z1, x&move}>>1,
@@ -314,7 +314,7 @@ def pext_popc{x:T, m:T} = {
   # Compose k/g groups with k/g-1 regular shifts
   def multi_shift{x, z, g, k, sc} = {
     o := z * sc{lowbits{k,g}}  # Offsets by prefix sum
-    def s = 1<<g - 1
+    def s = tail{g}
     def s0 = sc{s}
     def oo{sh} = if (sh==g) z else o>>(sh-g)      # Offset for group
     def gr{sh} = (x & sc{s<<sh}) >> (oo{sh} & s0) # Shifted group
@@ -341,7 +341,7 @@ def pext_popc{x0:V, m0:V if hasarch{'PCLMUL'} and V==[2]u64} = {
   m := m0
   x := x0 & m
   d := ~m << 1           # One bit of the position difference at x
-  c := V**(1<<64-1)
+  c := V**tail{64}
   @unroll (i to lb{scalwidth{V}}) {
     def sh = 1 << i
     def shift_at{v, s} = { v = (v&~s) | (v&s)>>sh }
@@ -400,6 +400,6 @@ export{'si_thresh_compress_bool', u64~~thresh_bool{}}
 # Mask i is the smallest possible mask containing 1 every i bits:
 # there would be a 1 just past the top bit.
 # The number of trailing zeros is 64%i , and the popcount is 64/i .
-def get_spaced_masks{i} = (1<<64 - 1<<(64%i)) / (1<<i - 1)
+def get_spaced_masks{i} = (1<<64 - 1<<(64%i)) / tail{i}
 spaced_masks:*u64 = get_spaced_masks{1 + iota{64}}
 export{'si_spaced_masks', spaced_masks}

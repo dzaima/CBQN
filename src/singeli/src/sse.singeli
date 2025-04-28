@@ -37,7 +37,7 @@ def any_hom{x:T if w128i{T}} = hom_to_int{[16]u8 ~~ x} != 0
 def all_hom{x:T if w128i{T}} = hom_to_int{[16]u8 ~~ x} == 0xffff
 
 def any_top{x:T      if w128i{T}} = top_to_int{x} != 0
-def all_top{x:T=[k]_ if w128i{T}} = top_to_int{x} == (1<<k)-1
+def all_top{x:T=[k]_ if w128i{T}} = top_to_int{x} == tail{k}
 def any_top{x:T if w128i{T, 16}} = any_hom{[8]i16~~x  <  [8]i16**0}
 def all_top{x:T if w128i{T, 16}} = all_hom{[8]i16~~x  <  [8]i16**0}
 

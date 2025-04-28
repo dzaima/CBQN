@@ -148,7 +148,7 @@ def bitalign{{2,8,s}, 8, G if hasarch{'AVX512VBMI'}} = G{s, {a:V=[k](u8)} => {
   def cyc = make{V, cycle{k, range{8}}}
   def b = sel{V, a, cyc + muls{make{V, replicate{8, range{k/8}}}}}
   def c = multishift{re_el{u64,b}, muls{cyc}}
-  c & V**cast_i{u8, tail{s}}
+  c & V**tail{u8,s}
 }}
 
 
@@ -162,7 +162,7 @@ def bitalign{{2,8,s}, 8, G if hasarch{'AARCH64'}} = G{s, {a:V==[16]u8} => {
   
   def r0 = sel{[16]u8, a, shuf1} << shift1
   def r1 = sel{[16]u8, a, shuf2} << shift2
-  (r0 | r1) & V**cast_i{u8, tail{s}}
+  (r0 | r1) & V**tail{u8,s}
 }}
 
 def bitalign{8, {2,8,d}, G if hasarch{'AARCH64'}} = {
@@ -200,7 +200,7 @@ def bitalign{8, {2,8,d}, G if hasarch{'AARCH64'}} = {
   def run{do_blend}{a:V==[16]u8} = {
     def shuf1 = shuf0 + V**1
     def shift1 = shift0 + [16]i8**cast_i{i8,d}
-    def b = a & V**cast_i{u8, tail{d}}
+    def b = a & V**tail{u8,d}
     def r0 = sel{[16]u8, b, shuf0} << shift0
     def r1 = sel{[16]u8, b, shuf1} << shift1
     def r01 = r0 | r1

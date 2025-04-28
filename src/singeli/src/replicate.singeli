@@ -650,7 +650,7 @@ def rep_const_bool_odd_mask4{
   # Carry: shifting and word-crossing is done on the initial permuted x
   # No need to carry across input words since they align with output words
   # First bit of each word in xo below is wrong, but it doesn't matter!
-  mr := scal{u64~~1<<k - 1}  # Mask out carry bit before output
+  mr := scal{tail{u64, k}}  # Mask out carry bit before output
   def sub_carry{a, c} = match (M) {
     {[l](u64)} => {
       ca := if (hasarch{'SSE4.2'} or hasarch{'AARCH64'}) { def S = [l]i64; S~~c > S**0 }

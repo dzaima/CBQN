@@ -1,6 +1,6 @@
 local def bit_mask_init{w} = {
   apply{merge, each{{x} => {
-    merge{(w/8-1)**255, (1<<x)-1, (w/8)**0}
+    merge{(w/8-1)**255, tail{x}, (w/8)**0}
   }, iota{8}}}
 }
 mask256_1:*u8 = bit_mask_init{256}; def mask_of_first_bits{T,n if width{T}==256} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
@@ -37,7 +37,7 @@ def mask_first{n} = {
   def mask{'count'} = n
   def mask{{x}} = tup{mask{x}}
   def mask{x:X if vect{X}} = x & (X~~mask_of_first{X,n})
-  def mask{x:X if any_int{x}} = x & ((1<<n) - 1)
+  def mask{x:X if any_int{x}} = tail{n, x}
   def mask{0} = 1
 }
 

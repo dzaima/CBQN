@@ -264,7 +264,7 @@ fn scan_neq{if hasarch{'AVX512BW', 'VPCLMULQDQ', 'GFNI'}}(init:u64, x:*u64, r:*u
   def sse{a} = make{[2]u64, a, 0}
   carry := sse{init}
   # xor-scan on bytes
-  xmat := V**base{256, 1<<(8-iota{8}) - 1}
+  xmat := V**base{256, tail{8-iota{8}}}
   def xor8 = emit{V, '_mm512_gf2p8affine_epi64_epi8', ., xmat, 0}
   # Exclusive xor-scan on one word
   def exor64 = clmul{., sse{1<<64 - 2}, 0}
@@ -600,7 +600,7 @@ fn scan_rows_andor{id}(src:*u64, dst:*u64, nl:usz, l:usz) : void = {
     i :usz = 0  # row bit index
     wn:usz = 0  # starting word of next row
     c:u64 = id  # carry
-    def word{bit} = bit * ((1<<64) - 1)
+    def word{bit} = bit * tail{64}
     we:= nl/64; while (wn < we) {
       iw:= wn
       r := res_m1{load{src, iw}, c, u64~~1 << (i%64)}

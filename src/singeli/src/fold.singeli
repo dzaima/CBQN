@@ -105,7 +105,7 @@ def extract_column_pow2{T, x0, r0, nv, k} = {
       def f = tree_fold{unzip0{32}, .}
       def proc{hx} = {
         ri := D~~f{hx}
-        top := D**(1<<15); m := D**(1<<16 - 1)
+        top := D**(1<<15); m := D**tail{16}
         (ri & m) | (D~~(ri&top == top) &~ m)
       }
       r = V~~packs128{each{proc, split{k/2, xs}}}
@@ -128,7 +128,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
   e  := p2 + promote{ux,el} # Absorb into element size for most computation
   l8 := cast_i{u8, l}
   li := cast_i{u8, l + 2 * ((l-1) + (l&2))}  # Inverse mod vl
-  elo:= V**(u8~~1<<e - 1)
+  elo:= V**tail{u8, e}
   ie := iota{V} & elo
   kmul := make{H, 2*iota{vl/2}} &~ H~~elo
   def mu16{k} = {
@@ -204,7 +204,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
     def __shr{x:(V), sh:T if hasarch{'AARCH64'} and not vect{T}} = x << V**cast_i{u8,-sh}
     def __shl{x:(V), sh:T if hasarch{'AARCH64'} and not vect{T}} = x << V**cast_i{u8, sh}
     def uz_lane = {
-      l  := V**(u8~~1<<el - 1)
+      l  := V**tail{u8, el}
       h  := V**(16 - u8~~16>>p2)
       dz := (il & l) | (h &~ il)>>(4-e) # low, high->middle
       dz |= (il &~ (l | h))<<p2         # middle->high
@@ -222,7 +222,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
       shuf{[8]u32, ., cr}
     }
     # Run, writing every 1<<p2 steps
-    plo := usz~~1<<p2 - 1
+    plo := tail{usz, p2}
     loop{{r, i, write} => {
       def ra = add_res{r}
       if ((plo &~ i) == 0) write{cross{uz_lane{ra}}}
@@ -274,7 +274,7 @@ def fold_rows_bit_lt64{
       # repeated shift-or-mask
       def step{x, {m, sh}} = { def a=x&m; a|a>>sh }
       def ss = 1<<iota{5}
-      def ms = (1<<64 - 1) / (1 + 1<<ss)
+      def ms = tail{64} / (1 + 1<<ss)
       fold{step, ., each{tup, ms, ss}}
     } 
     run_loop2{{op} => loop_T{u32, {x} => extract{op{x, x>>1}}}}
@@ -351,7 +351,7 @@ def fold_rows_bit_lt64{
         assert{l > 4}
         ld:= l-1; lld:= l*ld
         {mult0, _} := unaligned_spaced_mask_mod{ld}
-        mult0 &= u64~~1<<lld - 1
+        mult0 &= tail{u64, lld}
         {mult1, _} := unaligned_spaced_mask_mod{lld}
         ll:= l*l
         {tk, tkd} := unaligned_spaced_mask_mod{ll}; tk <<= tkd
@@ -359,7 +359,7 @@ def fold_rows_bit_lt64{
         loop{tup{mult0,mult1}, tup{topk}}
       } else {
         {mult, _} := unaligned_spaced_mask_mod{l-1}
-        if (l==8) mult &= 1<<(7*8) - 1
+        if (l==8) mult &= tail{7*8}
         loop{tup{mult}, tup{}}
       }
     }

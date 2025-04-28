@@ -79,11 +79,11 @@ fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
 fn flush_counts(tab:*u16, ov:*u16, n:usz) : usz = {
   def vl = arch_defvw/16
   def V = [vl]u16
-  def bot = 1<<15 - 1
+  def bot = tail{15}
   on:usz = 0
   @for (t in *V~~tab over jv to cdiv{n, vl}) if (rare{any_top{t}}) {
     o := if (hasarch{'X86_64'}) top_to_int{t} else hom_to_int{t > V**bot}
-    if (jv == n/vl) o &= type{o}~~1<<(n%vl) - 1
+    if (jv == n/vl) o &= tail{type{o}, n%vl}
     while (o > 0) {
       jv := jv*vl + cast_i{usz, ctz{o}}
       store{tab, jv, load{tab, jv} & bot}

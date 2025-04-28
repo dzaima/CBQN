@@ -276,7 +276,7 @@ fn simd_member_u8(w0:*void, nw:u64, x0:*void, nx:u64, r0:*void, tab:*void) : voi
   u = fill_bittab(w0, nw, tab, u, -1)
 
   if (u == 0) { # All found!
-    @for (r in *u64~~r0 over cdiv{nx,64}) r = maxvalue{u64}
+    @for (r in *u64~~r0 over cdiv{nx,64}) r = tail{64}
   } else {
     bittab_lookup{x0, nx, r0, tab}
   }

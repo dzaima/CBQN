@@ -26,4 +26,4 @@ def any_hom{x:T if w256i{T} and elwidth{T}>=32} = hom_to_int{[8]u32 ~~ x} != 0
 def all_hom{x:T if w256i{T} and elwidth{T}>=32} = hom_to_int{[8]u32 ~~ x} == 0xff
 
 def any_top{x:T=[_]E if w256i{T} and width{E}>=32} = top_to_int{x} != 0
-def all_top{x:T=[k]E if w256i{T} and width{E}>=32} = top_to_int{x} == (1<<k)-1
+def all_top{x:T=[k]E if w256i{T} and width{E}>=32} = top_to_int{x} == tail{k}

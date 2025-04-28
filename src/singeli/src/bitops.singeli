@@ -51,7 +51,7 @@ def store_bits{sz, x:(*u64), n:(ux), v} = match (sz) {
     am:u64 = 64/sz
     w:u64 = load{x,n/am}
     sh:u64 = (n&(am-1)) * sz
-    w&= ~(u64~~tail{sz} << sh)
+    w&= ~(tail{u64,sz} << sh)
     w|= (vc<<sh)
     store{x, n/am, w}
   }

@@ -97,9 +97,9 @@ def broadcast{n, v if knum{n}} = each{{_}=>v, range{n}}
 
 # type stats
 def minvalue{T if isunsigned{T}} = 0
-def maxvalue{T if isunsigned{T}} = (1<<width{T})-1
+def maxvalue{T if isunsigned{T}} = tail{width{T}}
 def minvalue{T if issigned{T}} = - (1<<(width{T}-1))
-def maxvalue{T if issigned{T}} = (1<<(width{T}-1))-1
+def maxvalue{T if issigned{T}} = tail{width{T}-1}
 
 # vector type checks (all disallow u1 element)
 def genchk{W, F} = match {
@@ -335,6 +335,8 @@ def tail{n} = (1<<n) - 1      # mask of the n least significant bits
 def zlow{n,x} = (x >> n) << n # zero out n least significant bits
 def tail{n,x} = x & tail{n}   # get the n least significant bits
 def bit {k,x} = x &  (1<<k)   # get the k-th bit
+def tail{R,n:N if primt{R} and primt{N}} = { assert{n<width{R}}; ((R~~1)<<n) - 1 }
+def tail{R,n if primt{R} and knum{n}} = R~~((1<<n) - 1)
 
 def bit_lut{bits, idx if length{bits}<64 and all{(bits&1) == bits}} = ((base{2,bits} >> idx) & 1) != 0
 

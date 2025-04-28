@@ -57,7 +57,7 @@ def hash_alloc{logsz, msz, ext, Ts, v0s, has_radix, ordered} = {
   each{memset{., ., sze}, ptrs, v0s}
 
   def hash_resize{cc, m} = {
-    dif := sz*((1<<m)-1) # Number of elements of space to add
+    dif := sz*tail{m} # Number of elements of space to add
     sh -= m; sz <<= m
     set_thresh{}
     cc = 0 # Collision counter

@@ -223,7 +223,7 @@ fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     @for_masked{bulk}(cw0 in tup{VI,w}, sr in tup{'g',r}, M in 'm' over wl) {
       cw:= wrapChk{cw0, xlf, M}
       got:= gather{VD**0, x, cw, M}
-      if (TDE!=TD) got&= VD**((1<<wd)-1)
+      if (TDE!=TD) got&= VD**tail{wd}
       sr{got}
     }
   } else {
