@@ -40,6 +40,8 @@ def mask_first{n} = {
   def mask{x:X if any_int{x}} = tail{n, x}
   def mask{0} = 1
 }
+def mask_scale{M if ~M{0}, sc} = M
+def mask_scale{M if  M{0}, sc} = mask_first{M{'count'}*sc}
 
 
 
