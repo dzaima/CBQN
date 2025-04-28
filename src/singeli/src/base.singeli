@@ -257,6 +257,7 @@ extend (extend_each{accept_vec_ptr}){
   store_masked_hom,store_blended_hom,
   store_masked_top,store_blended_top,
 }
+def x86_has512e{_} = 0
 
 
 

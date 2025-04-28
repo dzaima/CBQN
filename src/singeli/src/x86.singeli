@@ -11,7 +11,6 @@ def x86_has512{V=[_]E} = if (width{V}==512) hasarch{'AVX512F'} else (width{V}==2
 def x86_has512{V, post} = has512{V} and hasarch{merge{'AVX512', post}}
 local def has512 = x86_has512
 
-def x86_has512e{_} = 0
 def x86_has512e{V=[_]E if width{E}>=32} = has512{V}
 def x86_has512e{V=[_]E if width{E}<=16} = has512{V, 'BW'}
 def x86_has512e{V=[_]E, post} = x86_has512e{V} and has512{V, post}
