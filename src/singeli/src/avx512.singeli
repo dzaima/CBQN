@@ -19,9 +19,15 @@ local def mask_int_ty{k} = ty_u{__max{k,8}}
 local def mask_int_op{k, s} = if (hasarch{if (k<=8) 'AVX512DQ' else if (k==16) 'AVX512F' else 'AVX512BW'}) s else ''
 def hom_to_int{x:[k](u1)} = emit{mask_int_ty{k}, mask_int_op{k, merge{'_cvt',mt{k},'_u',fmtnat{__max{k,32}}}}, x}
 def int_to_mask{[k](u1), x:T if isunsigned{T} and width{T}>=k} = emit{[k]u1, mask_int_op{k, merge{'_cvtu',fmtnat{__max{k,32}},'_',mt{k}}}, x}
+def int_to_mask{[k](u1), x if int_idx{x, 1<<k}} = int_to_mask{[k]u1, mask_int_ty{k}~~x}
+def vec_broadcast{[k](u1), v if (int_idx{v,2} or hastype{v,u1})} = int_to_mask{[k]u1, mask_int_ty{k}~~tail{k} &- u1~~v}
 
 def reinterpret{T, a:M=[l](u1) if isint{T} and l==width{T}} = T~~hom_to_int{a}
 def reinterpret{M=[l](u1), a:T if isint{T} and l==width{T}} = int_to_mask{M, a}
+
+local def make_mask{k, vs} = int_to_mask{[k]u1, base{2, vs}}
+def vec_make{[k==length{vs}](u1),  ...vs  if all{int_idx{.,2}, vs}} = make_mask{k, vs}
+def vec_make{[k==length{vs}](u1), {...vs} if all{int_idx{.,2}, vs}} = make_mask{k, vs}
 
 def top_to_mask{x:V=[k]E if E!=u1 and veci{V}} = emit{[k]u1, mr{intrin{V,'mov',x86_scali{E}}}, x}
 def top_to_int{x:V=[_]_ if w512i{V}} = hom_to_int{top_to_mask{x}}
