@@ -14,7 +14,7 @@ if_inline (hasarch{'X86_64'}) {
     cast_i{E, extract{absdiff_sum{8, ty_u{c}, [16]u8**0}, 0}}
   }
   
-  def vfold{F, x:T if w256{T}} = vfold{F, F{half{x, 0}, half{x, 1}}}
+  def vfold{F, x:V if width{V}>=256} = vfold{F, F{half{x, 0}, half{x, 1}}}
   
   
   
