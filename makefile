@@ -50,7 +50,7 @@ static-bin:
 
 # targets that use build/makefile
 for-build: # for running the build system & Singeli
-	@"${MAKE}" -f build/makefile run_incremental_0 i_t=forbuild i_CC=cc REPLXX=0 i_f="-O2 -DFOR_BUILD" i_FFI=0 i_SHARED=0 i_PIE= i_CC_PIE= i_EXPORT=0 i_OUTPUT_DEF=build/obj2/for_build4
+	@"${MAKE}" -f build/makefile run_incremental_0 i_t=forbuild i_CC=cc REPLXX=0 i_f="-O2 -DFOR_BUILD" i_FFI=0 i_SHARED=0 i_PIE= i_CC_PIE= i_EXPORT=0 i_OUTPUT_DEF=build/obj2/for_build5
 for-bootstrap: # for bootstrapping bytecode
 	@"${MAKE}" -f build/makefile run_incremental_0 i_t=for_bootstrap REPLXX=0 i_FFI=0 i_SHARED=0 i_PIE= i_CC_PIE= i_EXPORT=0 i_f='-DNATIVE_COMPILER -DONLY_NATIVE_COMP -DFORMATTER=0 -DNO_RT -DNO_EXPLAIN' i_USE_BC_SUBMODULE=0 BYTECODE_DIR=bytecodeNone
 o3-makeonly:
