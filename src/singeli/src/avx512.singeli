@@ -24,6 +24,7 @@ def vec_shift_left {a:M=[k](u1), am if int_idx{am, k}} = maskop{M, 'shiftri', a,
 def vec_shift_right{a:M=[k](u1), am if int_idx{am, k}} = maskop{M, 'shiftli', a, am}
 local def real_mask{x:[k](u1) if k<8} = emit{[8]u1, '', x} # in general could have arbitrary bits in the top (esp int_to_mask), but most ops should produce zeroes
 
+def blend_hom{f:V=[k]E, t:V, m:[k](u1)} = emit{V, intrin_i{V, 'mask_blend'}, m, f, t}
 
 
 # mask conversions
