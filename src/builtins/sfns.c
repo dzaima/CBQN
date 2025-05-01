@@ -605,7 +605,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
             if (ri!=pri) mut_fillG(rm, pri, xf, ri-pri);
             pri = ri+cellWrite;
           }
-          mut_copyG(rm, ri, x, xi, cellWrite);
+          mut_copyG(rm, ri, x, xi, cellWrite); // TODO could use cf_
           usz cr = cellStart-1;
           if (0 == --lcv[cr]) {
             do {

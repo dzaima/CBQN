@@ -616,30 +616,29 @@ B select_cells_base(B inds, B x0, ux csz, ux cam);
 extern void (*const si_select_cells_bit_lt64)(u64*,u64*,usz,usz,usz); // from fold.c (fold.singeli)
 extern usz (*const si_select_cells_byte)(void*,void*,usz,usz,u8);
 
-B select_cells_single(usz ind, B x, usz cam, usz l, usz csz, bool leaf) { // ⥊ ind {leaf? <∘⊑; ⊏}˘ cam‿l‿csz ⥊ x
-  usz take = leaf? 1 : csz;
+B select_cells_single(usz ind, B x, usz cam, usz l, usz csz) { // ⥊ ind ⊏˘ cam‿l‿csz ⥊ x
   Arr* ra;
-  if (l==1 && take==csz) {
+  if (l==1) {
     ra = cpyWithShape(incG(x));
     arr_shErase(ra, 1);
   } else {
     u8 xe = TI(x,elType);
     u8 ewl= elwBitLog(xe);
-    u8 xl = leaf? ewl : multWidthLog(csz, ewl);
-    usz ria = cam*take;
+    u8 xl = multWidthLog(csz, ewl);
+    usz ria = cam*csz;
     if (xl>=7 || (xl<3 && xl>0)) { // generic case
       MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
       usz jump = l * csz;
-      usz xi = take*ind;
+      usz xi = csz*ind;
       usz ri = 0;
       for (usz i = 0; i < cam; i++) {
-        mut_copyG(rm, ri, x, xi, take);
+        mut_copyG(rm, ri, x, xi, csz);
         xi+= jump;
-        ri+= take;
+        ri+= csz;
       }
       ra = mut_fp(rm);
     } else if (xe==el_B) {
-      assert(take == 1);
+      assert(csz == 1);
       SGet(x)
       HArr_p rp = m_harrUv(ria);
       for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*l+ind);
@@ -948,7 +947,7 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   if (in == 0) return taga(emptyArr(x, 1));
   if (in == 1) {
     B w = IGetU(inds,0); if (!isF64(w)) goto generic;
-    B r = select_cells_single(WRAP_SELECT_ONE(o2i64(w), csz, "%R", w), x, cam, csz, 1, false);
+    B r = select_cells_single(WRAP_SELECT_ONE(o2i64(w), csz, "%R", w), x, cam, csz, 1);
     decG(x); decG(inds); return r;
   }
   u8 ie = TI(inds,elType);
