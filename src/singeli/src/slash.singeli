@@ -59,7 +59,7 @@ def for_special_buffered{r:*T, write_len}{vars,begin,sum,iter} = {
   } else {
     if (has_simd) {
       def bufw = bufn * tw
-      def vc = tern{hasarch{'X86_64'} and bufw==128, 128, arch_defvw} / tw;
+      def vc = tern{hasarch{'X86_64'} and bufw==128, 128, arch_defvw{}} / tw;
       def R = [vc]T
       @unroll ((ov/vc)>>0) if (end-buf>vc) { store{r0, load{R, buf}}; r0+=vc; buf+=vc }
       assert{bufw % width{R} == 0} # to make sure the below doesn't read out-of-bounds on the stack

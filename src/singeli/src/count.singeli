@@ -6,7 +6,7 @@ def inc{ptr, ind} = inc{ptr, ind, 1}
 
 # Write counts (2⋆15)|/⁼x to tab, overflows to ov, and return ⌈´x
 fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
-  def vbits = arch_defvw
+  def vbits = arch_defvw{}
   def vec = vbits/width{T}
   def TU = ty_u{T}
   def V = [vec]T
@@ -77,7 +77,7 @@ fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
 }
 
 fn flush_counts(tab:*u16, ov:*u16, n:usz) : usz = {
-  def vl = arch_defvw/16
+  def vl = arch_defvw{}/16
   def V = [vl]u16
   def bot = tail{15}
   on:usz = 0
@@ -147,7 +147,7 @@ def count_adapt_runs{x0, tab, n} = {
   }
 }
 def mark_run_ends{x:*T, m:(ux)} = {
-  def vec = arch_defvw/width{T}
+  def vec = arch_defvw{}/width{T}
   def V = [vec]T
   @unroll (j to width{ux} / vec) {
     def jv = j*vec
@@ -175,7 +175,7 @@ fn count_i32_i32(tab:*i32, x:*i32, n:usz) : void = count_adapt_runs{x, tab, n}
 # ov is sorted but may not be unique, and oc contains multiples of 128
 # Return the shared length of ov and oc
 fn count_sorted{T}(r:*u8, ov:*usz, oc:*usz, x:*T, n:usz) : usz = {
-  def V = [arch_defvw/width{T}]T
+  def V = [arch_defvw{}/width{T}]T
   def block = 128
   i:usz = 0
   on:usz = 0

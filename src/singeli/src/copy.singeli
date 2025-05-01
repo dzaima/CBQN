@@ -14,7 +14,7 @@ def copyFromBits{V=[bulk]T, loadFn, rp, l:(u64)} = {
 
 
 fn copy{X, R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
-  def vw = arch_defvw
+  def vw = arch_defvw{}
   assert{l!=0}
   
   def bulk = vw/__max{width{X}, width{R}}
@@ -68,7 +68,7 @@ fn copy_ubit{R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
   # if ((xs&7)==0) {
   #   copy{u1, R}(*void~~(x0 + (xs>>3)), r, l, xRaw)
   # } else {
-  def vw = arch_defvw
+  def vw = arch_defvw{}
   def bulk = vw/width{R}
   def RV = [bulk]R
   rp:= *R~~r

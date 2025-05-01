@@ -21,7 +21,7 @@ def group_statistics{T} = {
   fn group_statistics{T}(w:*void, xn:usz, outs:each{__pnt,types}) : void = {
     def w = *T~~w
     def accs = if (has_simd) {
-      def bulk = arch_defvw/width{T}
+      def bulk = arch_defvw{}/width{T}
       def V = [bulk]T
       def VU = ty_u{V}
       

@@ -82,7 +82,7 @@ def fact_inds = slice{iota{fact_size+1},8}
 def fact_tab = makefact{basic_rep, fact_inds}
 factors:*u8 = fact_tab
 
-def sdtype = [arch_defvw/8]i8 # shuf data type
+def sdtype = [arch_defvw{}/8]i8 # shuf data type
 def get_shufs{step, wv, len} = {
   def i = iota{len*step}
   split{step, (i - i%wv)/wv}
@@ -240,7 +240,7 @@ fn rep_const_shuffle_any(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
 
 def rep_const_broadcast{T, kv, loop, wv:(u64), x:*T, r:*T, n:(u64)} = {
   assert{kv > 0}
-  def V = [arch_defvw/width{T}]T
+  def V = [arch_defvw{}/width{T}]T
   @for (x over n) {
     v := V**x
     @loop (j to kv) store{*V~~r, j, v}
@@ -264,7 +264,7 @@ fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
     }
   }
   def wT = width{T}
-  def vn = arch_defvw/wT
+  def vn = arch_defvw{}/wT
   def V = [vn]T
   def max_shuffle = 2*vn
   if (wv <= max_shuffle) {

@@ -22,7 +22,7 @@ fn bitsel_i{VL,T}(r:*void, bits:*u64, e0:u64, e1:u64, len:u64) : void = {
 
 def table{w} = each{bitsel_i{w, .}, tup{u8, u16, u32, u64}}
 
-export_tab{'simd_bitsel', table{arch_defvw}}
+export_tab{'simd_bitsel', table{arch_defvw{}}}
 
 fn blend_arr_scalar{E}(rp:*void, zero:*void, one0:u64, mask:*void, len:u64) : void = {
   if (same{E,'!'}) {
@@ -30,7 +30,7 @@ fn blend_arr_scalar{E}(rp:*void, zero:*void, one0:u64, mask:*void, len:u64) : vo
   } else if (E==u1) {
     emit{void, 'blendArrScalarBits', rp, zero, cast_i{E, one0}, mask, len}
   } else {
-    def bulk = arch_defvw / width{E}
+    def bulk = arch_defvw{} / width{E}
     def VT = [bulk]E
     def one = VT**cast_i{E, one0}
     @for_mu{bulk,mask_unr{bulk}}(r in tup{'g',*E~~rp}, zero in tup{VT,*E~~zero}, mask in tup{'b',VT,mask} over i to len) r{eachx{blend_hom, zero, one, mask}}
@@ -43,7 +43,7 @@ export_tab{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u
   fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
     assert{cam>0}
     assert{(csz>1) & (csz<8)}
-    def bulk = arch_defvw / 8
+    def bulk = arch_defvw{} / 8
     def V = [bulk]u8
     bitalign{tup{2,8,csz}, 8, {s, align} => {
       @for_masked{bulk}(dst in tup{V,*u8~~dst} over cam) {
@@ -59,7 +59,7 @@ export_tab{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u
   fn bitnarrow_8_n(src:*void, dst:*void, csz:ux, cam:ux) : void = {
     assert{cam>0}
     assert{(csz>1) & (csz<8)}
-    def bulk = arch_defvw / 8
+    def bulk = arch_defvw{} / 8
     def V = [bulk]u8
     dstC:= *u8~~dst
     dstE:= *u8~~dst + cdiv{csz*cam, 8}
