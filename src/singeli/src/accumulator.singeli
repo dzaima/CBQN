@@ -228,7 +228,7 @@ def count_accumulator{DE, unr, VT=[k]SE if isunsigned{DE} and int_els{DE,SE}} = 
   def exact = DE==SE
   def widen_sum = SE==u8 and DE>u8
   
-  def {acc, acc_scal, acc_tup, acc_vec} = acc_impl{mask_ident{-,0}, +, unr, VT, DE, 0}
+  def {acc, acc_scal, acc_tup, acc_vec} = acc_impl{mask_ident{add_hom_1,0}, +, unr, VT, DE, 0}
   def into_scal{vs} = {
     def curr = if (widen_sum) {
       def op{v if hasarch{'X86_64'}} = absdiff_sum{8, v, VT**0}
