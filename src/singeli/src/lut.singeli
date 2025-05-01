@@ -36,7 +36,7 @@ local def loader{G} = {
 }
 
 def unzip_load{E, n, TG} = each{merge, unzip_load{E, n/2, TG}, unzip_load{E, n/2, TG{'offset', E, n}}}
-def unzip_load{E, n, TG if width{E}*n <= arch_defvw} = each{tup, unzip{TG{[n]E, 0}, TG{[n]E, 1}}}
+def unzip_load{E, n, TG if width{E}*n <= arch_defvw{}} = each{tup, unzip{TG{[n]E, 0}, TG{[n]E, 1}}}
 
 def widen_tup{(u32), is:([16]u8)} = tup{ # compiler will deduplicate all the repeated calls of this on the same is
   widen{[8]u32, is},

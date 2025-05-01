@@ -17,7 +17,7 @@ fn scan_scal{T, op}(x:*T, r:*T, len:u64, m:T) : void = {
 }
 
 def scan_loop{init, x:*T, r:*T, len:(u64), scan, scan_last} = {
-  def step = arch_defvw/width{T}
+  def step = arch_defvw{}/width{T}
   def V = [step]T
   p:= V**init
   xv:= *V~~x
@@ -42,7 +42,7 @@ def scan_idem = scan_scal
 fn scan_idem{T, op if has_simd}(x:*T, r:*T, len:u64, init:T) : void = {
   def {scan, last} = get_scan_last{op, make_scan_idem{T, op}}
   def cmp = match (op) { {(__min)} => (>); {(__max)} => (<) }
-  def step = arch_defvw/width{T}
+  def step = arch_defvw{}/width{T}
   def V = [step]T
   p:= V**init
   xv:= *V ~~ x
@@ -183,7 +183,7 @@ fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) 
         }
       }
     } else if (same{op, +} and T<=i32 and has_simd and (has_shuf or l>=vl)) {
-      def vl = arch_defvw/wT; def V = [vl]T
+      def vl = arch_defvw{}/wT; def V = [vl]T
       @for_masked{vl} (x in tup{V, x+l}, r in tup{V, r+l}, p in tup{V, r}, M in 'm' over ia-l) {
         r = op_chk{M, p, x}
       }
@@ -225,7 +225,7 @@ fn scan_neq{}(c:u64, x:*u64, r:*u64, nw:usz) : void = {
   }
 }
 fn scan_neq{if has_simd}(c0:u64, x:*u64, r:*u64, nw:usz) : void = {
-  def vl = arch_defvw / 64
+  def vl = arch_defvw{} / 64
   def V = [vl]u64
   c := V**c0
   @for_masked{vl} (x in tup{V, x}, r in tup{V, r} over nw) {
@@ -362,9 +362,9 @@ def addChk{a:T, b:T==f64} = tup{0, a+b}
 def widenFull{E, xs} = {
   merge{...each{{x:X=[k]T} => {
     def tb = width{E} * k
-    if (tb<=arch_defvw) tup{widen{[k]E, x}}
+    if (tb<=arch_defvw{}) tup{widen{[k]E, x}}
     else if (1) {
-      assert{tb == 2*arch_defvw}
+      assert{tb == 2*arch_defvw{}}
       tup{
         widen{[k/2]E, half{x,0}},
         widen{[k/2]E, half{x,1}}
@@ -395,7 +395,7 @@ fn plus_scan{X, R, O}(x:*X, c:R, r:*R, len:u64) : O = {
 # Sum as many vector registers as possible; modifies c and i
 def simd_plus_scan_part{x:*X, c:R, r:*R, len:(u64), i:(u64)} = {
   def b = __max{width{R}/2, width{X}}
-  def bulk = arch_defvw/b
+  def bulk = arch_defvw{}/b
   
   def wd = (X!=R) & (width{X}<32) # whether to widen the working copy one size
   def WE = tern{wd, w_d{X}, X} # working copy element type
@@ -407,7 +407,7 @@ def simd_plus_scan_part{x:*X, c:R, r:*R, len:(u64), i:(u64)} = {
   
   if (R!=f64) { def m = maxFastA + maxFastE*bulk; assert{m<=maxvalue{R}}; assert{-m>=minvalue{R}} }
   
-  cv:= [arch_defvw/width{R}]R ** c
+  cv:= [arch_defvw{}/width{R}]R ** c
   
   if (R==f64 and c != __floor{c}) goto{'end'}
   while (1) {
@@ -494,7 +494,7 @@ def loop_with_unaligned_mask{x, r, nw, l, step} = {
   }
 }
 def vec_loop_with_unaligned_mask{xp, rp, nw, l, scan_words, apply_carry} = {
-  def vl = arch_defvw / 64
+  def vl = arch_defvw{} / 64
   def V = [vl]u64
   {ms, d} := unaligned_spaced_mask_mod{l}
   d4:usz = width{V} % l
@@ -513,7 +513,7 @@ def vec_loop_with_unaligned_mask{xp, rp, nw, l, scan_words, apply_carry} = {
 }
 def vec_loop_with_loose_mask{xp, rp, nw, l, id, scan_words, propagate, fix_carry, apply_carry} = {
   assert{l >= 64}
-  def vl = arch_defvw / 64
+  def vl = arch_defvw{} / 64
   def V = [vl]u64
   def get_m = loose_mask_gen{V, l}
   c := V**id  # carry, 0 or 1

@@ -20,13 +20,13 @@ def find_first{C, M, F, ...v1} = {
 }
 
 def search{E, x, n:(u64), OP} = {
-  def bulk = arch_defvw/width{E}
+  def bulk = arch_defvw{}/width{E}
   def VT = [bulk]E
   def end = make_branch{
     tup{u64, ty_u{VT}},
     {i,c} => return{i*bulk + promote{u64, first_hom{c}}}
   }
-  @for_mu{bulk, tern{arch_defvw>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
+  @for_mu{bulk, tern{arch_defvw{}>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {
     eq:= each{OP, x}
     if (any_hom{M, ...eq}) {
       find_first{
@@ -52,7 +52,7 @@ fn searchNormalizable{}(x:*f64, len:u64) : u64 = {
 
 fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
   def E = f64
-  def bulk = arch_defvw/width{E}
+  def bulk = arch_defvw{}/width{E}
   def VT = [bulk]E
   @for_masked{bulk}(x in tup{VT,x}, sr in tup{'g',r}, M in 'm' over i to len) {
     if (any_hom{M, x!=x}) return{1}
@@ -72,7 +72,7 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
 
 
 # In-register bit table
-def arch_vec{T} = [arch_defvw/width{T}]T
+def arch_vec{T} = [arch_defvw{}/width{T}]T
 def TI = i8     # Table values
 def VI = arch_vec{TI}
 def simd_bittab = hasarch{'SSSE3'} or hasarch{'AARCH64'}
@@ -312,7 +312,7 @@ fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   min1:= undefined{E}
   max1:= undefined{E}
   if (has_simd) {
-    def bulk = arch_defvw/width{E}
+    def bulk = arch_defvw{}/width{E}
     def VT = [bulk]E
     def unr = tern{E==f64 and hasarch{'X86_64'}, 1, 2}
     def min_a = assoc_accumulator{__min, unr, VT}

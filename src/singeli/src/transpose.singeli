@@ -53,12 +53,12 @@ def store1of2{a:*T, v:T2 if 2*width{T} == width{T2}} = match (width{T}) {
 }
 def load_k {VT, src,    l, w} = each{{i}  =>load {*VT~~(src+i*w), 0       }, iota{l}}
 def store_k{VT, dst, x, l, h} = each{{i,v}=>store{*VT~~(dst+i*h), 0, VT~~v}, iota{l}, x}
-def load_k {VT, src,    l, w if width{VT} < arch_defvw} = each{{i}  =>{p:=src+  i*w; load2 {*VT~~p, *VT~~(p+l*w)   }}, iota{l}}
-def store_k{VT, dst, x, l, h if width{VT} < arch_defvw} = each{{i,v}=>{p:=dst+2*i*h; store2{*VT~~p, *VT~~(p+  h), v}}, iota{l}, x}
+def load_k {VT, src,    l, w if width{VT} < arch_defvw{}} = each{{i}  =>{p:=src+  i*w; load2 {*VT~~p, *VT~~(p+l*w)   }}, iota{l}}
+def store_k{VT, dst, x, l, h if width{VT} < arch_defvw{}} = each{{i,v}=>{p:=dst+2*i*h; store2{*VT~~p, *VT~~(p+  h), v}}, iota{l}, x}
 
 # Transpose kernel of size kw,kh in size w,h array
 def kernel_part{part_w}{src:*T, dst:*T, kw, kh, w, h} = {
-  def n = (kw*kh*width{T}) / arch_defvw      # Number of vectors
+  def n = (kw*kh*width{T}) / arch_defvw{}      # Number of vectors
   def xvs = load_k{[kw]T, src, n, w}
   def xt  = unpack_to{n==kh, n/2, xvs}       # Transpose n by n
   def rvs = if (n==kw) xt else halved_pass{n,xt} # To kh by kh for packed square
@@ -89,7 +89,7 @@ def kernel_part{part_w}{src:*T, dst:*T, kw, kh, w, h} = {
 def kernel = kernel_part{0}
 
 def kernel_part_h{part_h}{src:*T==i8, dst:*T, kw==16, kh==16, w, h} = {
-  def n = (kw*kh*width{T}) / arch_defvw
+  def n = (kw*kh*width{T}) / arch_defvw{}
   def VT = [kw]T
   off := part_h - kh/2
   def xvs = @unroll (i to n) { s := src + i*w; load2{*VT~~s, *VT~~(s+off*w)} }
@@ -221,13 +221,13 @@ fn interleave{T}(r0:*void, x0:*void, x1:*void, n:u64) : void = {
 }
 # SIMD implementations
 def uninterleave{r0:*T, r1:*T, xp:*T, n if has_simd and (not hasarch{'X86_64'} or width{T}>=32 or hasarch{'SSSE3'})} = {
-  def l = arch_defvw / width{T}
+  def l = arch_defvw{} / width{T}
   def V = [l]T
   rv0 := *V~~r0; rv1 := *V~~r1; xv := *V~~xp
   nv := n / l
   def uz = if (not hasarch{'X86_64'}) unzip else ({...xs} => {
     def reinterpret{V, xs if ktup{xs}} = each{~~{V,.}, xs}
-    def q = tr_quads{arch_defvw/128}
+    def q = tr_quads{arch_defvw{}/128}
     def k = flat_table{+, iota{2}, 2 * iota{64 / width{T}}}
     def px = each{shuf{., k}, xs}
     V~~each{q, zip128{...re_el{u64,V}~~px}}
@@ -244,11 +244,11 @@ def uninterleave{r0:*T, r1:*T, xp:*T, n if has_simd and (not hasarch{'X86_64'} o
   }
 }
 fn interleave{T if has_simd}(r:*void, x0:*void, x1:*void, n:u64) : void = {
-  def l = arch_defvw / width{T}
+  def l = arch_defvw{} / width{T}
   def V = [l]T
   xv0 := *V~~x0; xv1 := *V~~x1; rv := *V~~r
   nv := n / l
-  def q = tr_quads{arch_defvw/128}
+  def q = tr_quads{arch_defvw{}/128}
   @for (x0 in xv0, x1 in xv1 over i to nv) {
     each{store{rv+2*i, ., .}, iota{2}, zip128{q{x0},q{x1}}}
   }
@@ -294,7 +294,7 @@ def loop_fixed_width{xp, rp, h, k, st, kern} = {
 
 # Transpose a contiguous kernel of width w*p from x to r with stride rst
 def modular_kernel{w,p if w%2==1 and 2%p==0}{xp:*T, rp0:*T, rst:(u64)} = {
-  def h = arch_defvw / 8
+  def h = arch_defvw{} / 8
   def ih = iota{h}; def iw = iota{w}
   def I = [h]u8; def V = I
   def e = width{T} / 8
@@ -324,7 +324,7 @@ def modular_kernel{w,p if w%2==1 and 2%p==0}{xp:*T, rp0:*T, rst:(u64)} = {
   each{perm_store, xs}
 }
 def modular_kernel{2,2}{xp:*T, rp0:*T, rst:(u64)} = {
-  def h = arch_defvw / 8
+  def h = arch_defvw{} / 8
   def V = [h]u8; def U = n_h{V}
   def ih = iota{h}%16; def e = width{T} / 8
   # Permutation to unzip by 4 within each lane
@@ -343,7 +343,7 @@ def modular_kernel{2,2}{xp:*T, rp0:*T, rst:(u64)} = {
 }
 def transpose_fixed_width{rp:*T, xp:*T, wk, h, hs} = {
   def p = if (wk%2) 1 else 2; def w = wk/p
-  def vl = arch_defvw / (p*width{T})
+  def vl = arch_defvw{} / (p*width{T})
   loop_fixed_width{xp, rp, h, vl, wk, modular_kernel{w,p}{., ., hs}}
 }
 def transpose_fixed_width{rp:*T, xp:*T, 2, h, hs} = {
@@ -353,7 +353,7 @@ def transpose_fixed_width{rp:*T, xp:*T, 2, h, hs} = {
 # Transpose a kernel of height w*p from x with stride xst to contiguous r
 # w and h are named for the result, not argument, to match modular_kernel
 def modular_kernel_rev{w,p if w%2==1 and 2%p==0}{xp0:*T, rp:*T, xst:(u64)} = {
-  def h = arch_defvw / 8
+  def h = arch_defvw{} / 8
   def ih = iota{h}; def iw = iota{w}
   def I = [h]u8; def V = I
   def e = width{T} / 8
@@ -387,18 +387,18 @@ def modular_kernel_rev{w,p if w%2==1 and 2%p==0}{xp0:*T, rp:*T, xst:(u64)} = {
   each{store{*V~~rp, ., .}, iw, select{xs, h/e*iw % w}}
 }
 def modular_kernel_rev{2,2}{xp0:*T, rp:*T, xst:(u64)} = {
-  def V = [arch_defvw / width{T}]T; def U = n_h{V}
+  def V = [arch_defvw{} / width{T}]T; def U = n_h{V}
   xl := @unroll (i to 2) {
     xp := xp0 + i*xst
     x := load2{*U~~xp, *U~~(xp + 2*xst)}
-    if (arch_defvw==128) x else shuf{[8]u32, x, tr_iota{1,2,0}}
+    if (arch_defvw{}==128) x else shuf{[8]u32, x, tr_iota{1,2,0}}
   }
   xs := unpack_typed{...unpack_typed{...xl}}
   each{store{*V~~rp, ., .}, iota{2}, each{~~{V,.},xs}}
 }
 def transpose_fixed_height{rp:*T, xp:*T, w, ws, hk} = {
   def p = if (hk%2) 1 else 2; def h = hk/p
-  def vl = arch_defvw / (p*width{T})
+  def vl = arch_defvw{} / (p*width{T})
   loop_fixed_height{xp, rp, w, vl, hk, modular_kernel_rev{h,p}{., ., ws}}
 }
 def transpose_fixed_height{rp:*T, xp:*T, w, ws, 2} = {
@@ -409,7 +409,7 @@ fn transpose{T, {k, kh}}(r0:*void, x0:*void, w:u64, h:u64, ws:u64, hs:u64) : voi
   rp:*T = *T~~r0
   xp:*T = *T~~x0
   def wT = width{T}
-  def vl = arch_defvw / wT
+  def vl = arch_defvw{} / wT
   # Transposes with code dedicated to a particular width or height
   def try_fixed_dim{tr, l, lst, nl, l_max} = {
     def incl{l} = if (k>4) 1 else l!=4

@@ -29,7 +29,7 @@ fn fold_idem{T, op}(x:*T, len:u64) : T = {
   a
 }
 fn fold_idem{T==f64, op if has_simd}(x:*T, len:u64) : T = {
-  def bulk = arch_defvw/width{T}
+  def bulk = arch_defvw{}/width{T}
   def V = [bulk]T
   xv:= *V ~~ x
   r:V = [bulk]f64**0
@@ -62,7 +62,7 @@ fn fold_assoc_0{T, op}(x:*T, len:u64) : T = {
   a
 }
 fn fold_assoc_0{T==f64, op if has_simd}(x:*T, len:u64) : T = {
-  def bulk = arch_defvw/width{T}
+  def bulk = arch_defvw{}/width{T}
   def V = [bulk]T
   xv:= *V ~~ x
   e:= len / bulk
@@ -75,7 +75,7 @@ export{'si_sum_f64', fold_assoc_0{f64,+}}
 
 
 def extract_column_pow2{T, x0, r0, nv, k} = {
-  def V = [arch_defvw / width{T}]T
+  def V = [arch_defvw{} / width{T}]T
   xv := *V~~x0
   @for (r in *V~~r0 over i to nv) {
     xs := each{load{xv, .}, iota{k}}
@@ -234,7 +234,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
 # Maximum of n result values, return actual number written
 fn extract_column(x0:*void, r0:*void, n:usz, l:usz, el:u8) : usz = {
   n <<= el
-  def vl = arch_defvw / 8
+  def vl = arch_defvw{} / 8
   def thr = __min{vl+2, 20}
   if ((not has_simd) or n < vl or l > usz~~thr>>el or l<<el >= thr) return{0}
   nv := n / vl
@@ -529,7 +529,7 @@ fn sum_small{T if has_simd}(xv:*void, ia:usz) : i64 = {
   def A = if (width{T}<=16) i32 else i64
   xv:= *T~~xv
   def unr = 4
-  def bulk = arch_defvw / width{T}
+  def bulk = arch_defvw{} / width{T}
   def V = [bulk]T
   
   def acc = sum_accumulator{A, unr, V}

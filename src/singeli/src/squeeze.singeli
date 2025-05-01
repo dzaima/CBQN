@@ -147,12 +147,12 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   } else assert{0}
 }
 
-export{'si_squeeze_i8',   squeeze{arch_defvw, i8,  0, 0}}
-export{'si_squeeze_i16',  squeeze{arch_defvw, i16, 0, 0}}
-export{'si_squeeze_i32',  squeeze{arch_defvw, i32, 0, 0}}
-export{'si_squeeze_f64',  squeeze{arch_defvw, f64, 0, 0}}
-export{'si_squeeze_numB', squeeze{arch_defvw, f64, 0, 1}}
+export{'si_squeeze_i8',   squeeze{arch_defvw{}, i8,  0, 0}}
+export{'si_squeeze_i16',  squeeze{arch_defvw{}, i16, 0, 0}}
+export{'si_squeeze_i32',  squeeze{arch_defvw{}, i32, 0, 0}}
+export{'si_squeeze_f64',  squeeze{arch_defvw{}, f64, 0, 0}}
+export{'si_squeeze_numB', squeeze{arch_defvw{}, f64, 0, 1}}
 
-export{'si_squeeze_c16',  squeeze{arch_defvw, u16, 1, 0}}
-export{'si_squeeze_c32',  squeeze{arch_defvw, u32, 1, 0}}
-export{'si_squeeze_chrB', squeeze{arch_defvw, u64, 1, 1}}
+export{'si_squeeze_c16',  squeeze{arch_defvw{}, u16, 1, 0}}
+export{'si_squeeze_c32',  squeeze{arch_defvw{}, u32, 1, 0}}
+export{'si_squeeze_chrB', squeeze{arch_defvw{}, u64, 1, 1}}

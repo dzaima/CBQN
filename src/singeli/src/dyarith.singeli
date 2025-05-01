@@ -164,7 +164,7 @@ fn arithAAu{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : void = {
 }
 
 def arithAA{mode, F, W, X, R} = {
-  def vw = arch_defvw
+  def vw = arch_defvw{}
   if (mode==1 or mode==2) arithAAc{vw, mode, F, W, X, R}
   else arithAAu{vw, mode, F, W, X, R}
 }
@@ -192,7 +192,7 @@ fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 
   else len
 }
 
-def arithSA{mode, F, swap, W, X, R} = arithSAf{arch_defvw, mode, F, swap, W, X, R}
+def arithSA{mode, F, swap, W, X, R} = arithSAf{arch_defvw{}, mode, F, swap, W, X, R}
 
 fn andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
   assert{vw>=64}
@@ -203,6 +203,6 @@ fn andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
   @for_masked{bulk}(sr in tup{'g',r}, cx in tup{T8,x} over len) sr{cx & maskFull}
 }
 
-export{'simd_andBytes', andBytes{arch_defvw}}
+export{'simd_andBytes', andBytes{arch_defvw{}}}
 export{'orSAc_f64_f64_f64', arithSA{2,bqn_or,0,f64,f64,f64}}
 include 'gen/arDefs'
