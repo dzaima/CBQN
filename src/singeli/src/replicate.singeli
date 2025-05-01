@@ -431,8 +431,7 @@ def rep_const_bool_div8{wv, x, r, nw if has_simd} = {
   }
   def run8{rep_bytes} = {
     i:usz = 0; while (1) { check_done{}
-      xh := load{*[16]u8~~(*ty_u{vl}~~x + i)}; ++i
-      xv := if (avx2) pair{xh, xh} else xh
+      xv := V**load{*[16]u8 ~~ (*ty_u{vl}~~x + i)}; ++i
       xe := rep_bytes{xv}
       output{(xe & mkV{1 << (iV % 8)}) > V**0}
     }

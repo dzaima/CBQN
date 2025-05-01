@@ -1,6 +1,5 @@
 def __shl{(u16)}{a:T, b} = T~~(re_el{u16,a}<<b) # for x86's lack of u8 shift
 def __shr{(u16)}{a:T, b} = T~~(re_el{u16,a}>>b)
-def broadcast{[(n*2)]E, x:[n]E} = pair{x, x}
 def pow2_up{v, least} = __max{least, 1<<ceil_log2{v}} # least ⌈ ⌈⌾(2⊸⋆⁼) v
 
 # make a LUT of at least nt elements in tab, to be indexed by [ni_real≥ni]u8
@@ -191,8 +190,7 @@ def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='c' and E>=u16} = 0
 def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='i' and E==u64 and nt>16} = 0
 
 
-def lut16{tab:([16]u8), idxs:([16]u8)} = shuf{[16]u8, tab, idxs}
-def lut16{tab:([16]u8), idxs:([32]u8) if hasarch{'X86_64'}} = shuf{[16]u8, pair{tab, tab}, idxs}
+def lut16{tab:([16]u8), idxs:IV} = shuf{[16]u8, IV**tab, idxs}
 
 def shuf_u8bits{inds:(*u8), ni} = 0
 def shuf_u8bits{inds:(*u8), ni if has_sel} = {

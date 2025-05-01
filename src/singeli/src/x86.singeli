@@ -80,6 +80,9 @@ def extract{D=[kd]E, x:X=[ks]E, i if kd<ks and int_idx{i, ks/kd}} = match (width
 }
 def half{x:[k]E, i} = extract{[k/2]E, x, i}
 
+def broadcast{[dk]E, v:[k]E if k*2 == dk} = pair{v, v}
+def broadcast{[dk]E, v:[k]E if width{[dk]E}==512 and width{[k]E}==128} = emit{[dk]E, intrin{[dk]E, merge{'broadcast_', vec_x{to_x{[k]E}}}}, v}
+
 def x86_low_elts{n, x:V=[k]E} = extract{x86_vec_low{n,E}, x, 0}
 
 

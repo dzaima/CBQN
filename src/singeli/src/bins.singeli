@@ -44,7 +44,7 @@ fn max_scan{T, up}(x:*T, len:u64) : void = {
 def getsel{...x} = assert{'shuffling not supported', show{...x}}
 if_inline (hasarch{'AVX2'}) {
   def getsel{h:H=[16]T if width{T}==8} = {
-    shuf{H, pair{h,h}, .}
+    shuf{H, [32]T**h, .}
   }
   def getsel{v:V=[vl==32]T if width{T}==8} = {
     def H = n_h{V}
