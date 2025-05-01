@@ -12,6 +12,8 @@ def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
   emit{void, intrin_i{V, 'mask_storeu'}, p, m, v}
 }
 
+def store{p:*E, v:[k]E if width{E}>=8, vl if any_int{vl} and not (knum{vl} and is_pow2{vl})} = store_masked_hom{p, lowelt_mask{[k]u1, vl}, v}
+
 local def maskop{M=[k](u1), op, ...args} = emit{M, merge{'_k',op,'_',mt{k}}, ...args}
 def  __and{a:M=[k](u1), b:M} = maskop{M, 'and', a, b}
 def andnot{a:M=[k](u1), b:M} = maskop{M, 'andn', b, a}
