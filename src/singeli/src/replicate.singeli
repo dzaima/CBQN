@@ -104,7 +104,7 @@ rcsh4_lkup:*i8 = shiftright{0, scan{+, fold{|, table{==, rcsh4_dom, iota{64}}}}}
 def read_shuf_vecs{l, ellw:(u64), shp:*V} = { # tuple of byte selectors in 1<<ellw
   def double{x:X if hasarch{'AVX2'}} = {
     s:=shuf{u64, x, 0,2,1,3}; s+=s
-    r:=each{bind{~~,[32]i8},mzip128{s, s + X**1}}
+    r:=each{~~{[32]i8,.}, mzip128{s, s + X**1}}
     r
   }
   def double{x:X if has_bytesel_128} = {
