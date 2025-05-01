@@ -6,10 +6,13 @@ local def bit_mask_init{w} = {
 mask256_1:*u8 = bit_mask_init{256}; def mask_of_first_bits{T,n if width{T}==256} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
 mask128_1:*u8 = bit_mask_init{128}; def mask_of_first_bits{T,n if width{T}==128} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
 
-mask256:*i64 = merge{4 ** -1,  4 ** 0}
-local def mask_of_impl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth{T}/8))}
+# mask256:*i64 = merge{4 ** -1,  4 ** 0}
+# local def mask_of_impl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask256 + 32 - n*(elwidth{T}/8))}
+mask512:*i64 = merge{8 ** -1,  8 ** 0}
+local def mask_of_impl{T, n, w} = load{*ty_u{T} ~~ (*u8~~mask512 + 64 - n*(elwidth{T}/8))}
 
 # get homogeneous mask of first n items; 0 ≤ n ≤ vcount{T}
+def mask_of_first{T,n if w512{T}} = mask_of_impl{T, n, 512}
 def mask_of_first{T,n if w256{T}} = mask_of_impl{T, n, 256}
 def mask_of_first{T,n if w128{T}} = mask_of_impl{T, n, 128}
 def mask_of_first{T,n if  w64{T}} = mask_of_impl{T, n,  64}
@@ -36,7 +39,8 @@ def mask_first{n} = {
   def mask{X, 'to homogeneous bits'} = mask_of_first{X,n}
   def mask{'count'} = n
   def mask{{x}} = tup{mask{x}}
-  def mask{x:X if vect{X}} = x & (X~~mask_of_first{X,n})
+  def mask{x:V if vect{V}} = x & (V~~mask_of_first{V,n})
+  def mask{x:[k](u1)} = x & lowelt_mask{[k]u1, n}
   def mask{x:X if any_int{x}} = tail{n, x}
   def mask{0} = 1
 }
@@ -51,8 +55,13 @@ def store_narrow{ptr:*E0, i, x:[k]E1, M} = {
   def TF = re_el{E0, [k]E1}
   xu:= narrow{E0, x}
   
-  if (M{0}) store_blended_hom{rpos, M{TF, 'to homogeneous bits'}, undef_promote{TF, xu}}
-  else store{rpos, xu, k}
+  if (M{0}) {
+    def xw = undef_promote{TF, xu}
+    if (x86_has512e{TF}) store{rpos, xw, M{'count'}}
+    else store_blended_hom{rpos, M{TF, 'to homogeneous bits'}, xw}
+  } else {
+    store{rpos, xu, k}
+  }
 }
 
 # (sign/zero)-extend the i-th batch of k elements at ptr to [k]E1
@@ -67,7 +76,7 @@ def store_narrow{ptr:*E, {...ns}, xs, M} = each{store_narrow{ptr, ., ., M}, ns, 
 
 local def anyall{is_all}{inv} = { def extend _{me} = {
   def me{M if kgen{M}, ...vs} = me{...vs, ...(if (M{0}) tup{M{'count'}} else tup{})}
-  def me{v:[k]E, vl if any_num{vl} and not same{vl,k}} = {
+  def me{v:[k]E, vl if any_num{vl} and not same{vl,k} and E!=u1} = {
     if (is_all) ~inv{}{mask_first{vl}{~v}}
     else me{mask_first{vl}{v}}
   }
