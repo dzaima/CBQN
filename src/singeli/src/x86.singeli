@@ -52,6 +52,7 @@ local def vec_l{V=[_]E} = merge{match (E) { # e.g. ps128 / pd128 / si128
 local def vec_x{V=[k]E} = { # e.g. i64x2 / f32x4 / f64x2
   merge{if (isint{E}) 'i' else 'f', fmtwidth{E}, 'x', fmtnat{k}}
 }
+local def to_x{V=[_]E} = if (width{E}<32) re_el{i32, V} else V
 
 include './sse'
 include './avx'
@@ -69,7 +70,7 @@ def extract{D=[kd]E, x:X=[ks]E, i if kd<ks and int_idx{i, ks/kd}} = match (width
   {_, 0} => x86_vec_cvt{'cast', X, D, x}
   {256, _} => emit{D, intrin{X, 'extract', if (hasarch{'AVX2'} and isint{E}) 'i' else 'f', '128_', vec_s{X}}, x, i}
   {512, _} => {
-    def Z = if (width{E}<32) re_el{i32, D} else D
+    def Z = to_x{D}
     emit{D, intrin_i{re_el{eltype{Z},X}, 'extract', vec_x{Z}}, x, i}
   }
 }
