@@ -202,9 +202,22 @@ v←1 ⋄ ! •BQN∘•Repr⊸≡ ⟨+,1‿2,+¨,(+V)(V+V),2‿2⥊↕4⟩
 64‿1•bit._cast •ParseFloat¨ "123.456000000000000"‿"123.45600000000002" %% "11101110011111011111100101011000111101001011101101111010000000100001111001111101111110010101100011110100101110110111101000000010"-'0'
 ! ∧´'e'=•ParseFloat⎊'e'¨ "-"‿"e2"‿"-e2"‿"."‿".e2"‿"123e"‿"123e-"‿"123e+"
 •ParseFloat "0."∾(n⥊'0')∾"1234e"∾•Repr n←1000000 %% 0.1234
+•ParseFloat 1e6⥊'1' %% ∞
+!"•ParseFloat 𝕩: Input too long" % •ParseFloat 2e6⥊'1'
 •Repr∘•ParseFloat¨ ⟨"1.23516411460311636e-323", "1.23516411460311637e-323"⟩ %% ⟨"1e¯323","1.5e¯323"⟩
 •Repr∘•ParseFloat¨ ⟨"1.235164114603116360e-323", "1.235164114603116361e-323"⟩ %% ⟨"1e¯323","1e¯323"⟩
 •Repr∘•ParseFloat¨ ⟨"1.2351641146031163604e-323", "1.2351641146031163605e-323"⟩ %% ⟨"1e¯323","1e¯323"⟩
+!"•ParseFloat 𝕩: Input was empty" % •ParseFloat ""
+!"•ParseFloat 𝕩: Input was empty" % •ParseFloat ↕0
+!"•ParseFloat 𝕩: Input must have rank 1" % •ParseFloat <@
+!"•ParseFloat 𝕩: Input must have rank 1" % •ParseFloat 1‿1⥊'1'
+!"•ParseFloat 𝕩: Expected a character list argument" % •ParseFloat 48‿49
+!"•ParseFloat 𝕩: Expected a character list argument" % •ParseFloat <48
+!"•ParseFloat 𝕩: Malformed input" % •ParseFloat "1e1e1"
+!"•ParseFloat 𝕩: Malformed input" % •ParseFloat ⋈@
+!"•ParseFloat 𝕩: Malformed input" % •ParseFloat ⋈@+254
+!"•ParseFloat 𝕩: Malformed input" % •ParseFloat ⋈@+1111
+!"•ParseFloat 𝕩: Malformed input" % •ParseFloat ⋈@+1114111
 
 # •Fmt
 •Fmt 123 %% "123"

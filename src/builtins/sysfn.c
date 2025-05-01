@@ -121,7 +121,10 @@ B parseFloat_c1(B t, B x) {
   if (isAtm(x)) thrM("•ParseFloat 𝕩: Expected a character list argument");
   if (TI(x,elType)!=el_c8) {
     x = chr_squeeze(x);
-    if (TI(x,elType)!=el_c8) thrM("•ParseFloat 𝕩: Expected a character list argument");
+    if (TI(x,elType)!=el_c8) {
+      if (elChr(TI(x,elType))) malformed: thrM("•ParseFloat 𝕩: Malformed input");
+      thrM("•ParseFloat 𝕩: Expected a character list argument");
+    }
   }
   usz ia = IA(x);
   if (RNK(x)!=1) thrM("•ParseFloat 𝕩: Input must have rank 1");
@@ -129,7 +132,7 @@ B parseFloat_c1(B t, B x) {
   if (ia >= (1<<20)) thrM("•ParseFloat 𝕩: Input too long"); // assumption by ryu_s2d_n
   u8* data = c8any_ptr(x);
   f64 res;
-  if (!ryu_s2d_n(data, ia, &res)) thrM("•ParseFloat 𝕩: Malformed input");
+  if (!ryu_s2d_n(data, ia, &res)) goto malformed;
   decG(x);
   return m_f64(res);
 }
