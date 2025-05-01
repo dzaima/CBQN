@@ -308,6 +308,7 @@ def broadcast{V=[k]E, v:V} = v
 def make{V=[_]_, ...xs} = vec_make{V, ...xs}
 def iota{V=[k]_} = make{V, ...range{k}}
 def absu{a:[_]_} = ty_u{__abs{a}}
+def add_hom_1{a:[k]E, m:[k]ME if isunsigned{ME} and veci{[k]E, width{ME}}} = a - [k]E~~assert_hom{m} # adds 1 to a where m is true
 def hom_ones{[k]E} = [k]E ** hom_ones{E}
 def hom_ones{E if issigned{E}} = E ~~ -1
 def hom_ones{E if isunsigned{E}} = E ~~ maxvalue{E}

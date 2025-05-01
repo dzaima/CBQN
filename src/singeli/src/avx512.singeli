@@ -130,3 +130,4 @@ def   compress{...} = masked_op1{'compress'}
 
 def __and{a:V=[k]E, b:[k](u1) if veci{V}} = masked_mov{a, b, 0}
 def  __or{a:V=[k]E, b:[k](u1) if veci{V}} = masked_mov{a, b, hom_ones{[k]E}}
+def add_hom_1{a:[k]E, m:[k](u1)} = __sub{a, hom_ones{[k]E}, m, a}
