@@ -122,12 +122,12 @@ fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) 
       iv:= iota{I}; j:= I**cast_i{IE,l*f}
       spr:= I**il - j + iv
       def inds = @collect (k) {
-        v:= iv - (j &~ I~~(iv<j))
+        v:= iv - (j &~ lt_hom{I, iv, j})
         spr = selI{spr, v}
         js:= j; j+= j
         if (not same{op, +}) selI{., v}
         else if (same{IE,i8}) selI{., iv - js}
-        else { m:= V~~(iv >= js); {x} => selI{x, v} & m }
+        else { m:= ge_hom{V, iv, js}; {x} => selI{x, v} & m }
       }
       c:= V**id{T}
       @for_masked{vl} (x in tup{V, x}, r in tup{V, r}, M in 'm' over ia) {

@@ -178,3 +178,13 @@ def and_bit_none{x:T, y:T if nveci{T}} = ~any_bit{x&y}
 def hom_to_int_ext{a:V=[_]E if w128u{V}} = tup{width{E}/2, extract{[1]u64~~narrow_trunc{w_h{E}, a}, 0}} # E==u8 fully handled by the below cases
 def hom_to_int_ext{a:V=[_]E if w64u{V}} = tup{width{E}, extract{[1]u64~~a, 0}}
 def hom_to_int_ext{a:([16]u8)} = tup{4, extract{[1]u64~~shrn{re_el{u16,a}, 4}, 0}}
+
+local def extend cmp_ops{base, hom} = {
+  def hom{a:V, b:V if nvec{V}} = base{a, b}
+}
+extend cmp_ops{__eq, eq_hom}
+extend cmp_ops{__ne, ne_hom}
+extend cmp_ops{__gt, gt_hom}
+extend cmp_ops{__ge, ge_hom}
+extend cmp_ops{__lt, lt_hom}
+extend cmp_ops{__le, le_hom}
