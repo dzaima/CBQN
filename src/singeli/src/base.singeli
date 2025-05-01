@@ -290,7 +290,7 @@ def fold_addw{E, x:V=[_]E} = vfold{+, x}
 def fold_addw{x:[k]E if k <= (1<<width{E})} = fold_addw{w_d{E}, x}
 
 def broadcast{T, v if primt{T}} = v
-def broadcast{V=[_]T, v} = vec_broadcast{V, if (knum{v}) v else promote{T,v}}
+def broadcast{V=[_]T, v if any_num{v}} = vec_broadcast{V, if (knum{v}) v else promote{T,v}}
 def make{V=[_]_, ...xs} = vec_make{V, ...xs}
 def iota{V=[k]_} = make{V, ...range{k}}
 def absu{a:[_]_} = ty_u{__abs{a}}
