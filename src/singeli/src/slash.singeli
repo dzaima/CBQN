@@ -249,7 +249,7 @@ fn slash{c, T if hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64
     # The compress-store instruction performs very poorly on Zen4,
     # and is also a lot worse than the following on Tiger Lake
     # emitT{void, 'mask_compressstoreu', r, m, x}
-    cs := cast_i{I,promote{i64,1}<<(c%64) - 1}
+    cs := cast_i{I, tail{u64, c%64}}
     if (vl==64) cs -= cast_i{I,c}>>6
     v := emitT{V, 'mask_compress', x, m, x}
     store_masked_hom{r, [vl]u1~~cs, v}
