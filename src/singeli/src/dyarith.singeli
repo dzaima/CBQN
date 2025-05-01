@@ -4,6 +4,7 @@ include './f64'
 include './bitops'
 include './mask'
 include './dyarith_common'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def bqn_or{a, b} = (a+b)-(a*b)
 
