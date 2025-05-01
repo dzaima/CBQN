@@ -12,6 +12,8 @@ def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
   emit{void, intrin_i{V, 'mask_storeu'}, p, m, v}
 }
 
+def store{p:*E, v:[k]E if width{E}>=8, vl if any_int{vl} and not (knum{vl} and is_pow2{vl})} = store_masked_hom{p, lowelt_mask{[k]u1, vl}, v}
+
 local def maskop{M=[k](u1), op, ...args} = emit{M, merge{'_k',op,'_',mt{k}}, ...args}
 def  __and{a:M=[k](u1), b:M} = maskop{M, 'and', a, b}
 def andnot{a:M=[k](u1), b:M} = maskop{M, 'andn', b, a}
@@ -86,6 +88,8 @@ def multishift{a:[k](u64), i:V=[(k*8)](u8) if has512{V, 'VBMI'}} = emit{V, intri
 def narrow{DE, x:[k]SE if isint{DE} and quality{DE}==quality{SE} and x86_has512e{[k]SE}} = {
   emit{x86_vec_low{k,DE}, intrin{[k]SE, 'cvtepi', fmtwidth{SE}, '_epi', fmtwidth{DE}}, x}
 }
+def widen{D=[8](f64), x:[k](i32) if k>=8} = emit{D, '_mm512_cvtepi32_pd', x86_low_elts{8, x}}
+def narrow{(i32), x:[8](f64)} = emit{[8]i32, '_mm512_cvtpd_epi32', x}
 
 local def a5cmp{a:V=[k]E, b:[k]E, int, flt if isfloat{E}} = emit{[k]u1, mr{intrin_t{V, 'cmp'}}, a, b, flt}
 local def a5cmp{a:V=[k]E, b:[k]E, int, flt if   isint{E}} = emit{[k]u1, mr{intrin_t{V, 'cmp',int}}, a, b}
