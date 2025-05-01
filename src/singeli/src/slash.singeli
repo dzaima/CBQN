@@ -341,7 +341,7 @@ def pext_popc{x0:V, m0:V if hasarch{'PCLMUL'} and V==[2]u64} = {
   m := m0
   x := x0 & m
   d := ~m << 1           # One bit of the position difference at x
-  c := V**tail{64}
+  c := hom_ones{V}
   @unroll (i to lb{scalwidth{V}}) {
     def sh = 1 << i
     def shift_at{v, s} = { v = (v&~s) | (v&s)>>sh }

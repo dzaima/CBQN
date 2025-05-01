@@ -294,6 +294,9 @@ def broadcast{V=[_]T, v} = vec_broadcast{V, if (knum{v}) v else promote{T,v}}
 def make{V=[_]_, ...xs} = vec_make{V, ...xs}
 def iota{V=[k]_} = make{V, ...range{k}}
 def absu{a:[_]_} = ty_u{__abs{a}}
+def hom_ones{[k]E} = [k]E ** hom_ones{E}
+def hom_ones{E if issigned{E}} = E ~~ -1
+def hom_ones{E if isunsigned{E}} = E ~~ maxvalue{E}
 def shuf = vec_shuffle
 
 
