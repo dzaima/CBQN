@@ -18,7 +18,10 @@ def any_nonC32{M, x:[_](u64)} = any_hom{M{~in_range_len{x, cbqn_c32Tag{}<<48, 1<
 def any_nonC32{M, x:T=[_]_ if hasarch{'X86_64'}} = {
   def H = re_el{u32, T}
   def ne = H~~x  !=  H**cast_i{u32, cbqn_c32Tag{}<<16}
-  any_top{M, T~~ne}
+  match (ne) {
+    {_:[k](u1)} => any_hom{mask_scale{M,2}, ne & make{[k]u1, range{k}&1}}
+    {_:[_]E} => any_top{M, T~~ne}
+  }
 }
 def any_nonC32{(mask_none), x:[k](u64), y:[k](u64)} = {
   def T32 = [k*2]u32
