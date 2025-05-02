@@ -2,6 +2,7 @@ include './base'
 include './vecfold'
 include './mask'
 include './accumulator'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def __lt{a:V=[_]_, b if knum{b}} = a < V**b
 def __eq{a:V=[_]_, b if knum{b}} = a == V**b
