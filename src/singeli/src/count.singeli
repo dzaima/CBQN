@@ -1,5 +1,6 @@
 include './base'
 include './vecfold'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def inc{ptr:*T, ind, v} = store{ptr, ind, trunc{T,v} + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
