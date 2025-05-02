@@ -97,7 +97,7 @@ def assoc_accumulator{F if kgen{F}, unr if knum{unr}, VT=[_]E, ident} = {
 }
 
 def bool_accumulator{F, unr, VT=[k]SE, ident if isunsigned{SE}} = {
-  def {acc, acc_scal, acc_tup, acc_vec} = acc_impl{mask_ident{F,ident}, F, unr, VT, ident * maxvalue{SE}, u1, ident}
+  def {acc, acc_scal, acc_tup, acc_vec} = acc_impl{mask_ident{F,ident}, F, unr, VT, ident * hom_ones{SE}, u1, ident}
   def me{...} = acc
   def me{'acc', ...M, v} = acc{'acc', ...M, assert_hom{v}}
   def me{'to_scal', ..._ if is{F,__or}} = acc_scal|= any_hom{acc_vec}
