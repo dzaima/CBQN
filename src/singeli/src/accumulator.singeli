@@ -54,7 +54,7 @@ def sum_accumulator  {DE, '!', T if primt{T}} = scalar_acc_impl{add_promote, DE,
 local def mask_ident{A, ident}{M, acc_vec, v:V=[_]_} = {
   if (M{0}==0) A{acc_vec, v}
   else if (is{ident,0}) A{acc_vec, M{v}}
-  else blend_hom{acc_vec, A{acc_vec, v}, M{V, 'to homogeneous bits'}}
+  else blend_hom{acc_vec, A{acc_vec, v}, M}
 }
 
 local def acc_impl{A, M, unr, VT, S, init} = acc_impl{A, M, unr, VT, init, S, init}
