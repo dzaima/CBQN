@@ -3,6 +3,7 @@ include './mask'
 include './vecfold'
 include './hashtab'
 include './accumulator'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def find_first{C, M, F, ...v1} = {
   def exit = makelabel{}
@@ -114,7 +115,7 @@ def readbytes{vtab}{} = {
   def side{i} = {
     def U = arch_vec{ty_u{k}}
     def m = @collect (vtab over _ from i to i+l) hom_to_int{vtab} # TODO multi-value hom_to_int
-    VI~~make{U, if (vcount{U}>l) merge{m,m} else m}
+    VI~~make{U, cycle{vcount{U}, m}}
   }
   def side{i if hasarch{'AARCH64'}} = {
     def m = each{hom_to_int, split{4, @collect (vtab over _ from i to i+l) vtab}}
