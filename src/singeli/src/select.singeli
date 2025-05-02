@@ -3,6 +3,7 @@ include './cbqnDefs'
 include './mask'
 include './bitops'
 include './lut'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def arch_minvw = if (hasarch{'AARCH64'}) 64 else 128
 def arch_minv{T=[_]E if width{T}< arch_minvw} = [arch_minvw / width{E}]E
