@@ -48,9 +48,6 @@ def widen{T, x:X if w128i{T} and w128i{X} and w128s{T}==w128s{X} and elwidth{T}>
   def s{v:(T)} = v
   s{x} >> (elwidth{T} - elwidth{X})
 }
-def widen{T==[2]f64, x:X if w128s{X} and elwidth{X}<32} = widen{T, widen{[4]i32, x}}
-def widen{T==[2]f64, x:X==[4]i32} = emit{T, '_mm_cvtepi32_pd', x}
-def widen{T==[2]f64, x:X==[4]f32} = emit{T, '_mm_cvtps_pd', x}
 
 local def nsh = tup{0,2,3,3}
 local def nar = vec_shuffle{..., nsh}
@@ -63,9 +60,6 @@ def narrow{T==u8,  x:([4]u32)} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{x}}}
 def narrow{T==u8,  x:([2]u64)} = { def f{v} = narrow{u8, [8]u16~~v}; f{f{f{x}}}}
 def narrow{T==u16, x:([2]u64)} = vec_shuffle16_lo{[8]u16~~nar{i32, x}, nsh}
 def narrow{T==u32, x:([2]u64)} = [4]u32~~nar{i32, x}
-
-def narrow{T, x:X if w128f{X,64} and T<i32} = narrow{T, narrow{i32, x}}
-def narrow{T==i32, x:([2]f64)} = emit{[4]i32, '_mm_cvtpd_epi32', x}
 
 
 
