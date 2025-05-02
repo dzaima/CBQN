@@ -2,10 +2,6 @@
 def packQQ{a:T,b:T==[4]i64} = vec_shuffle{[4]i32, a, 0,2,1,1} | vec_shuffle{[4]i32, b, 1,1,0,2}
 def packQQ{{a, b}} = packQQ{a, b}
 
-# structural operations
-def sel{L, x:T, i:I if w256{T} and lvec{L,8,32} and w256{I,32}} = vec_shuffle{L, x, i}
-def sel{L, x:T, i:I if w256{T} and lvec{L,16,8} and w256{I, 8}} = vec_shuffle{L, x, i}
-
 # masked store; F variants may not be a single instruction
 def store_masked_top{p:*E, m:M=[k]_, v:V=[k]E if w256{V, 32} and w256i{M}} = emit{void, '_mm256_maskstore_epi32', *i32~~p, m, [8]i32~~v}
 def store_masked_top{p:*E, m:M=[k]_, v:V=[k]E if w256{V, 64} and w256i{M}} = emit{void, '_mm256_maskstore_pd',    *f64~~p, m, [4]f64~~v}
