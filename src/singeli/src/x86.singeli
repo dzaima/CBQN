@@ -136,13 +136,17 @@ local def packs_impl{check}{a:V=[k]E, b:V if veci{V} and check{V} and (width{E}=
 def packs128{...} = packs_impl{{_}=>1}
 def packs{...} = packs_impl{{V}=>width{V}==128}
 
-def widen{D=[k]DE, x:S=[k0]SE if isint{DE} and quality{DE}==quality{SE} and DE>SE and k<=k0 and (match (width{D}) {
-  {128} => hasarch{'SSE4.1'}
-  {256} => hasarch{'AVX2'}
-  {512} => x86_has512e{re_el{DE,S}}
-})} = {
+# int→int
+def widen{D=[k]DE, x:S=[k0]SE if isint{DE} and quality{DE}==quality{SE} and DE>SE and k<=k0 and hase{[k]DE, 'SSE4.1', 'AVX2', x86_has512e{re_el{DE,S}}}} = {
   emit{D, intrin_i{D, 'cvtep', if (isunsigned{SE}) 'u' else 'i', fmtwidth{SE}}, x86_low_elts{k, x}}
 }
+
+def widen{D=[k](f64), x:[k0]E     if k<=k0 and issigned{E} and width{E}<32} = widen{D, widen{x86_vec_low{k,i32}, x}} # i8/i16→f64
+def widen{D=[k](f64), x:[k0](i32) if k<=k0 and hase{D}} = emit{D, intrin_t{D,'cvtepi32'}, x86_low_elts{k,x}} # i32→f64
+def widen{D=[k](f64), x:[k0](f32) if k<=k0 and hase{D}} = emit{D, intrin_t{D,'cvtps'}, x86_low_elts{k,x}} # f32→f64
+
+def narrow{DE, x:[xk](f64) if issigned{DE} and width{DE}<32} = narrow{DE, narrow{i32, x}}
+def narrow{(i32), x:[k](f64) if hase{[k]f64}} = emit{x86_vec_low{k,i32}, intrin{[k]f64, 'cvtpd_epi32'}, x}
 
 local def extend cmp_ops{base, hom, mask} = {
   def  hom{a:V=[k]E, b:V if width{V}<=256} = base{a, b}
