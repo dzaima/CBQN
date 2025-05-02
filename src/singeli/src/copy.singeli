@@ -2,6 +2,7 @@ include './base'
 include './mask'
 include './cbqnDefs'
 include './bitops'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def copyFromBits{V=[bulk]T, loadFn, rp, l:(u64)} = {
   def U = ty_u{V}
@@ -68,8 +69,7 @@ fn copy_ubit{R}(r: *void, x: *void, l:u64, xRaw: *void) : void = {
   # if ((xs&7)==0) {
   #   copy{u1, R}(*void~~(x0 + (xs>>3)), r, l, xRaw)
   # } else {
-  def vw = arch_defvw{}
-  def bulk = vw/width{R}
+  def bulk = __min{32, arch_defvw{}/width{R}} # no bulk==64 as loadu_bits_trunc doesn't support such
   def RV = [bulk]R
   rp:= *R~~r
   
