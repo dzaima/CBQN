@@ -3,7 +3,7 @@ include './cbqnDefs'
 include './f64'
 include './bitops'
 include './mask'
-
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 fn absFn{T}(r:*void, x:*void, len:u64) : u64 = {
   def bulk = arch_defvw{}/width{T}

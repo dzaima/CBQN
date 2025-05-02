@@ -2,7 +2,7 @@ include './base'
 include './cbqnDefs'
 include './f64'
 include './bitops'
-
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def fillbits{dst:(*u64), len:(ux), v   } = { emit{void, 'fillBits',    dst, len, v   }; return{}; }
 def fillbits{dst:(*u64), len:(ux), v, x} = { emit{void, 'fillBitsDec', dst, len, v, x}; return{}; }
