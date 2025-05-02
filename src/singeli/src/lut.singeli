@@ -166,6 +166,31 @@ def lut_gen{mode, E==u32, nt, ni if hasarch{'AVX2'} and nt<=8 and ni<=16} = tup{
   def me{is:([16]u8)} = each{{{_,v}}=>v, me{'idxs', is}}
 }}}
 
+def has512shuf{E if primt{E}} = 0
+if_inline(hasarch{'X86_64'}) {
+  def has512shuf{E if primt{E}} = hasarch{match (E) { {8}=>'AVX512VBMI'; {16}=>'AVX512BW'; {_}=>'AVX512F' }}
+  def avx512_minw{} = 256
+  def avx512_maxw{} = 256
+  
+  def shuf{L=[k]E, {t0:V     }, idxs:I if has512shuf{E} and width{L}==width{V} and width{V}==width{I}} = emit{V, x86_intrin_i{L, 'permutexvar' }, idxs, t0}
+  def shuf{L=[k]E, {t0:V,t1:V}, idxs:I if has512shuf{E} and width{L}==width{V} and width{V}==width{I}} = emit{V, x86_intrin_i{L, 'permutex2var'}, t0, idxs, t1}
+  
+  def lut_gen{mode, E, nt, ni if has512shuf{E} and width{E}*nt <= avx512_maxw{}*2 and width{E}*__max{16,ni} <= avx512_maxw{}} = {
+    def ew = width{E}
+    def idx_w0 = pow2_up{__max{16,ni}*ew, avx512_minw{}}
+    def tab_w  = pow2_up{nt*ew, idx_w0}
+    def idx_w  = __max{idx_w0, tab_w/2}
+    def nt = tab_w/ew
+    def ni = idx_w/ew
+    def k = nt/ni
+    assert{k==1 or k==2}
+    
+    tup{nt, ni, loader{{TG} => {
+      def lut = each{TG{[ni]E, .}, range{k}}
+      {is:([ni](u8))} => tup{shuf{[ni]E, lut, widen{[ni]E, is}}}
+    }}}
+  }
+}
 
 
 # def lut_gen{mode, E==u8, nt, ni if hasarch{'AARCH64'} and nt<=128 and ni<=16} = blend_halves{mode, E, 128, 16}
@@ -175,7 +200,7 @@ def lut_gen{mode, E==u8, nt, ni if hasarch{'AARCH64'} and nt<=16*4 and ni<=16} =
 }}}}
 # TODO E==u8 nt==128 via tbx4(tbl4,d,i-64)
 
-def lut_gen{mode, E, nt, ni if mode=='i' and hasarch{'AVX2'} and (E==u16 or E==u64)} = zip_halves{mode, E, nt, ni}
+def lut_gen{mode, E, nt, ni if mode=='i' and hasarch{'AVX2'} and (E==u16 or E==u64) and ~has512shuf{E}} = zip_halves{mode, E, nt, ni}
 # def lut_gen{mode, E, nt, ni if mode=='c' and hasarch{'AVX2'} and E==u16} = widen_inds{mode, E, nt, __max{ni,16}, 2}
 # def lut_gen{mode, E, nt, ni if mode=='c' and hasarch{'AVX2'} and E==u64} = widen_inds{mode, E, nt, ni, 2}
 # def lut_gen{mode, E, nt, ni if mode=='c' and E==u64} = zip_halves{mode, E, nt, ni} # widen_inds{mode, E, nt, __max{ni,16}, 2}

@@ -29,6 +29,7 @@ def anyne_positive{x:V=[_]_, y:V, M if M{0}==1} = {
   def E = tern{type{m}==u64, u64, u32}
   (promote{E,~m} << (width{E}-M{'count'}*n)) != 0
 }
+def blend_hom{a:V=[k]E, b:V, M if kgen{M} and M{0}} = blend_hom{a, b, if (x86_has512e{V}) lowelt_mask{[k]u1, M{'count'}} else M{V, 'to homogeneous bits'}}
 
 def mask_none{x} = x
 def mask_none{x, 'all bits zeroes'} = ~any_bit{x}
