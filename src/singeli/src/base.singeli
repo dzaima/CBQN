@@ -167,9 +167,7 @@ def has_sel = hasarch{'AVX2'} or hasarch{'AARCH64'}
 def fast_BMI2{} = hasarch{'BMI2'} and not SLOW_PDEP
 def assert_hom{{...vs}} = each{assert_hom, vs}
 def assert_hom{x:[_]E if quality{E}=='u'} = x
-
-# test if vector has a specific width & element type
-def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 }
+def sel{L=[_]_, v:[_]_, i:[_]_} = vec_shuffle{L, v, i}
 
 # base cases
 def {
@@ -178,7 +176,7 @@ def {
   all_hom,any_hom,blend_hom,hom_to_int,store_masked_hom,store_blended_hom,
   all_top,any_top,blend_top,top_to_int,store_masked_top,store_blended_top,
   load_expand_bits,make,mask_to_hom,mulw_split,mulh,narrow,narrow_trunc,narrow_pair,
-  pair,pdep,pext,bzhi,rbit,sel,reverse_units,broadcast_sel,absdiff_sum,mul_sum,mul_sum_sat,
+  pair,pdep,pext,bzhi,rbit,reverse_units,broadcast_sel,absdiff_sum,mul_sum,mul_sum_sat,
   unord,unzip,vfold,vec_select,vec_shuffle,widen,widen_upper,multishift,
   addp,addpw,addpwa,
 }

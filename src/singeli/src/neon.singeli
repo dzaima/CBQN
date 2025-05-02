@@ -92,7 +92,7 @@ def unzip{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vuzp2', T}, T~~x, T~~y}
 def trn{x:T, y:T, 0 if nvec{T}} = emit{T, ntyp{'vtrn1', T}, x, y}
 def trn{x:T, y:T, 1 if nvec{T}} = emit{T, ntyp{'vtrn2', T}, x, y}
 
-def sel{L, x:T, i:I if lvec{L,16,8} and w128{T} and nvec{I, 8}} = vec_select{eltype{L}, x, i}
+def lvec = match { {[n]T, n, (width{T})} => 1; {T, n, w} => 0 } # test if vector has a specific width & element type
 def sel{{...xs}, i:I if length{xs}>=1 and length{xs}<=4 and all_same{each{type,xs}} and lvec{one_type{xs},16,8} and nvec{I, 8}} = vec_select{xs, i}
 
 
