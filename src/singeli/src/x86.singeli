@@ -7,13 +7,14 @@ def v2f{x:T=[_]_} = re_el{f32, x}
 def v2d{x:T=[_]_} = re_el{f64, x}
 def x86_vec_low{n, E if primt{E}} = [__max{128/width{E},n}]E
 
+local def has512_post{post} = hasarch{merge{'AVX512', post}}
 def x86_has512{V=[_]E} = if (width{V}==512) hasarch{'AVX512F'} else (width{V}==256 or width{V}==128) and hasarch{'AVX512VL'}
-def x86_has512{V, post} = has512{V} and hasarch{merge{'AVX512', post}}
+def x86_has512{V, post} = x86_has512{V} and has512_post{post}
 local def has512 = x86_has512
 
 def x86_has512e{V=[_]E if width{E}>=32} = has512{V}
 def x86_has512e{V=[_]E if width{E}<=16} = has512{V, 'BW'}
-def x86_has512e{V=[_]E, post} = x86_has512e{V} and has512{V, post}
+def x86_has512e{V=[_]E, post} = x86_has512e{V} and has512_post{post}
 local def hase{V=[_]E} = hase{V, 'SSE2'}
 local def hase{V=[_]E, min_sse} = hase{V, min_sse, if (isint{E}) 'AVX2' else 'AVX'}
 local def hase{V=[_]E, min_sse, min_avx} = hase{V, min_sse, min_avx, {} => x86_has512e{V}}
