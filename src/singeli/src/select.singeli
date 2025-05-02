@@ -8,18 +8,37 @@ def arch_minvw = if (hasarch{'AARCH64'}) 64 else 128
 def arch_minv{T=[_]E if width{T}< arch_minvw} = [arch_minvw / width{E}]E
 def arch_minv{T      if width{T}>=arch_minvw} = T
 
+def vec_shuffle{([8]u64), vs:V, idx:I} = emit{V, '_mm512_permutexvar_epi64', idx, vs}
+def vec_shuffle{([8]u64), vs:V, {...idx}} = emit{V, '_mm512_permutexvar_epi64', make{[8]u64,idx}, vs}
+def unzip{a:T, b:T, k if w512u{T}} = vec_shuffle{[8]u64, unzip128{a, b, k}, tup{0,2,4,6,1,3,5,7}}
+
 def gather
-if_inline (hasarch{'AVX2'}) {
-  # def:T - masked original content
-  # b:B - pointer to data to index; if width{B}<elwidth{T}, padding bytes are garbage read after wanted position
-  # idx - actual (unscaled) index list
-  def gather{d:T, b:B, idx:([8]i32), M if w256{T,32}} = {
-    if (M{0}) T ~~ emit{[8]i32, '_mm256_mask_i32gather_epi32', d, *void~~b, idx, M{T,'to sign bits'}, elwidth{B}/8}
-    else      T ~~ emit{[8]i32, '_mm256_i32gather_epi32',         *void~~b, idx,                      elwidth{B}/8}
-  }
-  def gather{d:T, b:B, idx:([4]i32), M if w256{T,64}} = {
-    if (M{0}) T ~~ emit{[4]i64, '_mm256_mask_i32gather_epi64', d, *void~~b, idx, M{T,'to sign bits'}, elwidth{B}/8}
-    else      T ~~ emit{[4]i64, '_mm256_i32gather_epi64',         *void~~b, idx,                      elwidth{B}/8}
+if_inline (hasarch{'X86_64'}) {
+  local def maxtype{E, ...vs} = [fold{__max, each{width, vs}}/width{E}]E
+  local def am_to_base_mask{V=[k]E, (mask_none)} = tup{}
+  local def am_to_base_mask{V=[k]E, M if kgen{M} and M{0}} = tup{V**0, M{V, 'to sign bits'}}
+  local def am_to_base_mask{V=[k]E, M if kgen{M} and M{0} and x86_has512e{V}} = tup{V**0, lowelt_mask{[k]u1, M{'count'}}}
+  
+  def gather{RV=[k]E, ptr:*E, scale if knum{scale}, idx:IV=[k]IE, am if width{E}>=32 and width{IE}>=32 and (x86_has512e{[k]E} or hasarch{'AVX2'})} = {
+    def bm = am_to_base_mask{RV, am}
+    def nomask = length{bm}==0
+    
+    def MT = maxtype{E, RV, IV}
+    def avx2m = match (bm) { {{_,m:V if vece{V}}}=>1; {_}=>0 }
+    def stupid = width{MT}<512 and not avx2m # _mm512_ is annoyingly different from _mm256_ & _mm_ intrinsics
+    def intrin = x86_intrin_i{MT,
+      merge{
+        if (nomask) '' else if (stupid) 'mmask_' else 'mask_',
+        'i', fmtwidth{IE}, 'gather'
+      }
+    }
+    if (avx2m) {
+      def {base, mask} = bm
+      emit{RV, intrin, base, ptr, idx, mask, scale}
+    } else {
+      def idx_base = if (stupid and nomask) tup{ptr,idx} else tup{idx,ptr}
+      emit{RV, intrin, ...bm, ...idx_base, scale}
+    }
   }
 }
 
@@ -153,7 +172,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
   }, select_rows_parts}}}}
   
   def exportP{T, n, vs} = { a:*T = vs; export{n, a} }
-  exportP{u8, 'select_rows_max_indn',   each{{row} => if (length{row}==0) 0 else one_val{       each{select{.,1}, row}}, select_rows_parts}}
+  exportP{u8, 'select_rows_max_indn',   each{{row} => if (length{row}==0) 0 else    fold{__max, each{select{.,1}, row}}, select_rows_parts}}
   exportP{u8, 'select_rows_min_logcsz', each{{row} => if (length{row}==0) 0 else lb{fold{__min, each{select{.,0}, row}}}, select_rows_parts}}
   
   def select_rows_better = scan{{p,{v,i}} => if (length{v}==0) p else i, 0, each{tup, select_rows_parts, range{4}}}
@@ -222,7 +241,8 @@ fn select_fn{rw, TI, TD}(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     
     @for_masked{bulk}(cw0 in tup{VI,w}, sr in tup{'g',r}, M in 'm' over wl) {
       cw:= wrapChk{cw0, xlf, M}
-      got:= gather{VD**0, x, cw, M}
+      # got:= gather{VD**0, x, cw, M}
+      got:= gather{VD, *TDE~~x, width{TD}/8, cw, M}
       if (TDE!=TD) got&= VD**tail{wd}
       sr{got}
     }
@@ -269,7 +289,7 @@ export_tab{'si_select_tab', join{table{select_fn,
 (if(has_sel) {
   fn simd_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     def TI = i8
-    def VI = [arch_defvw{}/8]TI
+    def VI = [__min{256,arch_defvw{}}/8]TI
     def VU = ty_u{VI}
     w:= *VI ~~ w0
     xlf:= VI**cast_i{TI, xl}

@@ -23,7 +23,7 @@ def search{E, x, n:(u64), OP} = {
   def bulk = arch_defvw{}/width{E}
   def VT = [bulk]E
   def end = make_branch{
-    tup{u64, ty_u{VT}},
+    tup{u64, if (width{VT}==512) [bulk]u1 else ty_u{VT}},
     {i,c} => return{i*bulk + promote{u64, first_hom{c}}}
   }
   @for_mu{bulk, tern{arch_defvw{}>=256, 1, 2}}(x in tup{VT,*E~~x}, M in 'm' over is to n) {

@@ -4,6 +4,8 @@ include './vecfold'
 def inc{ptr:*T, ind, v} = store{ptr, ind, trunc{T,v} + load{ptr, ind}}
 def inc{ptr, ind} = inc{ptr, ind, 1}
 
+def __decr{a:V=[k]E, b:[k](u1)} = { a = add_hom_1{a, b} }
+
 # Write counts (2⋆15)|/⁼x to tab, overflows to ov, and return ⌈´x
 fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
   def vbits = arch_defvw{}
