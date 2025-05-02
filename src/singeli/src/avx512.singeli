@@ -75,8 +75,12 @@ def all_hom{x:V=[k]E if w512i{V}} = all_hom{top_to_mask{x}}
 def and_bit_none{x:V, y:V if w512i{V}} = ~any_hom{andnz_mask{re_el{u8,x}, re_el{u8,y}}}
 
 
-
-def sel{(ty_u{V}), x:V=[_]E, i:I==(ty_u{V}) if (if (width{E}>8) has512e{V} else has512{V, 'VBMI'})} = emit{V, intrin_i{V, 'permutexvar'}, i, x}
+def vec_shuffle{L=[k]E, x:XV=[_]XE, i:IV if veci{IV} and all_same{each{width,tup{L,XV,IV}}} and (if (width{E}>8) has512e{L} else has512{L, 'VBMI'})} = {
+  def SE = primtype{if (width{E}<=16 and not isint{XE}) 'i' else quality{XE}, width{E}}
+  def V = [k]SE # vector type to shuffle in
+  def T = if (isint{SE} and isint{XE}) XV else V # type hopefully closer to XV but with same intrinsics type V
+  XV~~emit{T, intrin_i{V, 'permutexvar'}, i, T~~x}
+}
 
 def extract{x:V=[k]E, i if w512{V} and int_idx{i, k}} = {
   def l = 128/width{E}
