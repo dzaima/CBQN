@@ -1,7 +1,6 @@
 include './base'
 include './mask'
 include './spaced'
-# def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def ind_types = tup{u8, u16, u32}
 def dat_types = tup{...ind_types, u64}
@@ -247,7 +246,7 @@ fn rep_const_shuffle_any(wv:u64, ellw:u64, x:*i8, r:*i8, n:u64) : void = {
 
 def rep_const_broadcast{T, kv, loop, wv:(u64), x:*T, r:*T, n:(u64)} = {
   assert{kv > 0}
-  def V = [arch_defvw{}/width{T}]T
+  def V = [arch_defvw{'512'}/width{T}]T
   @for (x over n) {
     v := V**x
     @loop (j to kv) store{*V~~r, j, v}
@@ -660,7 +659,7 @@ def rep_const_bool_odd_mask4{
   def sub_carry{a, c} = match (M) {
     {[l](u64)} => {
       ca := if (hasarch{'SSE4.2'} or hasarch{'AARCH64'}) { def S = [l]i64; S~~c > S**0 }
-            else { cm := [2*l]i32~~c; cm != shuf{cm, 1,0} }
+            else { cm := re_el{i32,c}; cm != shuf{cm, 1,0} }
       a + M~~ca
     }
     {_} => a - promote{u64, c != 0}

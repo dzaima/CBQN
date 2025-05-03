@@ -63,5 +63,5 @@ def unzip128{a:[k]E, b:[k]E, 1 if hasarch{'X86_64'} and isunsigned{E}} = {
 def unzip128{a:V, b:V if vece{V,32}, k if int_idx{k,2}} = vec_shuffle{[4]f32, tup{a,b}, k+tup{0,2,0,2}}
 def unzip128{a:V, b:V if vece{V,64}, k if int_idx{k,2}} = vec_shuffle{[2]f64, tup{a,b}, k+tup{0,0}}
 
-def unzip{a:T, b:T, k if w128u{T} and hasarch{'SSE2'}} = unzip128{a, b, k}
-def unzip{a:T, b:T, k if w256u{T} and hasarch{'AVX2'}} = vec_shuffle{[4]u64, unzip128{a, b, k}, 0,2,1,3}
+def unzip{a:T, b:T, k if w128{T} and hasarch{'SSE2'}} = unzip128{a, b, k}
+def unzip{a:T, b:T, k if w256{T} and hasarch{'AVX2'}} = vec_shuffle{[4]u64, unzip128{a, b, k}, 0,2,1,3}

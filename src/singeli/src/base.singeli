@@ -161,6 +161,8 @@ def el_s{V=[_]T} = re_el{w_h{T}, V}
 
 # vector definitions
 def arch_defvw{} = if (hasarch{'AVX2'}) 256 else 128
+def arch_defvw{'512'} = arch_defvw{}
+def arch_defvw{'512' if hasarch{'AVX512BW'}} = 512
 def has_simd = hasarch{'X86_64'} or hasarch{'AARCH64'}
 def has_sel = hasarch{'AVX2'} or hasarch{'AARCH64'}
 def fast_BMI2{} = hasarch{'BMI2'} and not SLOW_PDEP
