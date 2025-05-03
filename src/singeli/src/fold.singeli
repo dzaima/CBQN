@@ -3,6 +3,7 @@ include './mask'
 include './spaced'
 include './scan_common'
 include './vecfold'
+# def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def opsh64{op}{v:[_](f64), ...perm} = op{v, shuf{v, ...perm}}
 def mix{op, v:([4]f64) if hasarch{'AVX'}} = { def sh=opsh64{op}; sh{sh{v, 1,0}, 2,3,0,1} }
@@ -29,7 +30,7 @@ fn fold_idem{T, op}(x:*T, len:u64) : T = {
   a
 }
 fn fold_idem{T==f64, op if has_simd}(x:*T, len:u64) : T = {
-  def bulk = arch_defvw{}/width{T}
+  def bulk = __min{4, arch_defvw{}/width{T}}
   def V = [bulk]T
   xv:= *V ~~ x
   r:V = [bulk]f64**0
@@ -47,8 +48,7 @@ fn fold_idem{T==f64, op if has_simd}(x:*T, len:u64) : T = {
   } else {
     i:= load{*V ~~ (x+len-bulk)}
     r0:= reduce_pairwise{op, 2, xv, (len-1)/bulk, i}
-    if (hasarch{'AARCH64'}) return{vfold{op, r0}}
-    else r = mix{op, r0}
+    return{vfold{op, r0}}
   }
   extract{r, 0}
 }
@@ -68,8 +68,7 @@ fn fold_assoc_0{T==f64, op if has_simd}(x:*T, len:u64) : T = {
   e:= len / bulk
   i:= load{xv, e} & (V~~mask_of_first{V, len % bulk})
   r:= reduce_pairwise{op, 2, xv, e, i}
-  if (hasarch{'AARCH64'}) vfold{op, r}
-  else extract{mix{op, r}, 0}
+  vfold{op, r}
 }
 export{'si_sum_f64', fold_assoc_0{f64,+}}
 
@@ -146,7 +145,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
 
   # Blend masks
   def mg = { # Iteration i should select where mg == V**i
-    ss := (si < V**(l8<<e)) & (ie == V**0)
+    ss := hom_to_hom{ty_u{V}, (si < V**(l8<<e)) & (ie == V**0)}
     vs := V**0xff - scan_assoc_id0{+}{ss}
     swap_ms{shuf{[16]u8, vs, sii}}
   }
