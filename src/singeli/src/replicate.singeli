@@ -1,6 +1,7 @@
 include './base'
 include './mask'
 include './spaced'
+# def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def ind_types = tup{u8, u16, u32}
 def dat_types = tup{...ind_types, u64}

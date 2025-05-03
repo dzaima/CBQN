@@ -71,7 +71,7 @@ def make_scan_idem{T, op} = make_scan_idem{T, op, 1}
 
 def scan_assoc_id0{op} = {
   def shl0{v:[_]T, k} = vec_shift_right_128{v, k/width{T}} # Lanewise
-  def shl0{v:V=[_]T, k==128 if hasarch{'AVX2'}} = {
+  def shl0{v:V=[_]T, k==128 if width{V}==256 and hasarch{'AVX2'}} = {
     # Broadcast end of lane 0 to entire lane 1
     if (width{T} < 64) {
       l:= V~~make{[8]i32,0,0,0,-1,0,0,0,0} & spread{v}
