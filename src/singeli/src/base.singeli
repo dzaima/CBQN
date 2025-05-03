@@ -217,6 +217,7 @@ def hom_to_int{...vs if length{vs}>1} = {
   (hi << (h*k)) | lo
 }
 def hom_to_int{x if ktup{x}} = hom_to_int{...x}
+def hom_to_hom{V=[_]_, x:V} = x
 def first_hom{x:[_]_} = ctz_ext{hom_to_int_ext{x}}
 def popc_hom{v:(u1)} = promote{ux, v}
 def popc_hom{x:[_]_} = {
