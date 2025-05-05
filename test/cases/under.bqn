@@ -30,8 +30,15 @@
 
 # ⊑
 !"𝔽⌾(a⊸⊑): Incompatible result elements" % 10‿20⌾(⟨1‿2,1‿2⟩⊸⊑) 4‿5⥊↕9
-!"𝔽⌾(a⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 10‿20‿30⌾(⟨1‿2,2‿1⟩⊸⊑) 4‿4⥊↕16
-!"𝔽⌾(a⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 1⊸∾⌾(⟨1‿2,2‿1⟩⊸⊑) 4‿4⥊↕16
+!"𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 10‿20‿30⌾(⟨1‿2,2‿1⟩⊸⊑) 4‿4⥊↕16
+!"𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got atom)" % 1⌾((<⋈2)⊸⊑) ↕10
+!"𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got atom)" % 1⌾((<1‿2)⊸⊑) 3‿3⥊↕9
+!"⁼: Inverse not found" % 1⌾((<⋈⋈2)⊸⊑) ↕10
+!"⁼: Inverse not found" % 1⌾((<⋈1‿2)⊸⊑) 3‿3⥊↕9
+!"⁼: Inverse not found" % (<1)⌾((<⟨1‿2,2‿1⟩)⊸⊑) 3‿3⥊↕9
+!"⁼: Inverse not found" % 3‿4⌾((<⟨1‿2,2‿1⟩)⊸⊑) 3‿3⥊↕9
+!"𝕨⊑𝕩: Leaf arrays in 𝕨 must have rank 1 (element: (<2))" % 1⌾((<2)⊸⊑) ↕10
+!"𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 1⊸∾⌾(⟨1‿2,2‿1⟩⊸⊑) 4‿4⥊↕16
 !"𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡¯10, 3≡≠𝕩)" % 1⊸+⌾(¯10⊸⊑) ↕3
 !"𝕨⊑𝕩: 𝕨 contained list with mixed-type elements" % 'a'⌾(1‿'a'⊸⊑) 4‿5⥊↕9
 !"𝕨⊑𝕩: Indexing out-of-bounds (index 1‿5 in array of shape 4‿5)" % 'a'⌾(1‿5⊸⊑) 4‿5⥊↕9

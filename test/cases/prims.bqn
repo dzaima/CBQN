@@ -174,6 +174,8 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 !"𝕨⊑𝕩: 𝕨 contained a non-integer" % ⟨0.1⟩⊑↕3
 !"𝕨⊑𝕩: 𝕨 contained a non-integer" % ⟨2⋆80⟩⊑↕3
 !"𝕨⊑𝕩: Leaf arrays in 𝕨 must have rank 1 (element: (1‿2⥊1‿2))" % %USE evar ⋄ (≍1‿2) {⟨𝕨⟩⊑𝕩}_evar ↕5‿5
+!"𝕨⊑𝕩: Leaf arrays in 𝕨 must have rank 1 (element: (<2))" % (<2)⊑↕3
+!"𝕨⊑𝕩: Leaf arrays in 𝕨 must have rank 1 (element: (<1))" % (<1)⊑"foo"‿"bar"‿"baz"
 %USE eqvar ⋄ 1‿2 ⊑_eqvar ↕5‿5 %% 1‿2
 
 # >𝕩
