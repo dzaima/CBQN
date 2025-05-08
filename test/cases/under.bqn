@@ -84,11 +84,14 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 100⊸+⌾(1‿2‿¯4⊸⊏) ↕10    %%    0‿101‿102‿3‿4‿5‿106‿7‿8‿9
 ⟨10⊸+⌾(1‿2⊸⊏) 0↓a←↕4, a⟩ %% ⟨0‿11‿12‿3,0‿1‿2‿3⟩
 %USE eqvar ⋄ 0‿0‿1‿1 {𝕨⌾(1‿2‿4‿5⊸⊏) 𝕩} _eqvar 1‿0‿1‿0‿1‿0‿1‿1‿0 %% 1‿0‿0‿0‿1‿1‿1‿1‿0
-!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got ⟨3⟩)" % 10‿20‿30⌾(2‿3⊸⊏) ↕10
-!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got ⟨3⟩)" % 1⊸∾⌾(2‿3⊸⊏) ↕10
-!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨10⟩, got 2‿10)" % %USE evar ⋄ 1⊸↓⌾(2‿3‿4⊸⊏)_evar 10‿10⥊0
-!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got atom)" % %USE evar ⋄ ⟨0⟩ {1⌾(𝕨⊸⊏)𝕩}_evar ⟨0⟩
-!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected 3‿4, got atom)" % %USE evar ⋄ ⟨0⟩ {1⌾(𝕨⊸⊏)𝕩}_evar 2‿3‿4⥊3
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got atom)" % 10⌾(2⊸⊏) ↕10
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got atom)" % 0⌾((<4)⊸⊏) "hello"
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 10‿20‿30⌾(2‿3⊸⊏) ↕10
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 1⊸∾⌾(2‿3⊸⊏) ↕10
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected 3‿10, got 2‿10)" % %USE evar ⋄ 1⊸↓⌾(2‿3‿4⊸⊏)_evar 10‿10⥊0
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨1⟩, got atom)" % %USE evar ⋄ ⟨0⟩ {1⌾(𝕨⊸⊏)𝕩}_evar ⟨0⟩
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected 1‿3‿4, got atom)" % %USE evar ⋄ ⟨0⟩ {1⌾(𝕨⊸⊏)𝕩}_evar 2‿3‿4⥊3
+!"𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected 2‿3‿4‿5‿1, got ⟨2⟩)" % 1‿2⌾((2‿3‿4⥊2)⊸⊏) 4‿5‿1⥊6
 !"𝔽⌾(a⊸⊏): Incompatible result elements" % 3‿4⌾(1‿1⊸⊏) ↕10
 !"𝔽⌾(a⊸⊏): Incompatible result elements" % 3‿4⌾(1‿¯9⊸⊏) ↕10
 !"𝔽⌾(a⊸⊏): Incompatible result elements" % %USE evar ⋄ 3‿4  {𝕨⌾(1‿¯9⊸⊏) 𝕩}_evar ↕10
