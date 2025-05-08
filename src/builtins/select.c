@@ -981,6 +981,7 @@ B select_ucw(B t, B o, B w, B x) {
       if (!elNum(we)) goto def;
     }
   }
+  
   usz wia = IA(w);
   B rep;
   if (isArr(o) && RNK(x)>0) {
@@ -994,10 +995,13 @@ B select_ucw(B t, B o, B w, B x) {
   } else {
     rep = c1(o, C2(select, incG(w), incG(x)));
   }
+  
   ur xr = RNK(x);
   ur wr = RNK(w);
-  bool ok = isArr(rep) && xr+wr == RNK(rep)+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
-  if (!ok) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (%H ≡ shape of a, %2H ≡ shape of ⊏𝕩, %H ≡ shape of result of 𝔽)", w, xr-1, SH(x)+1, rep);
+  if (isAtm(rep)) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %2H, got atom)", xr-1, SH(x)+1);
+  bool ok = xr+wr == RNK(rep)+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
+  if (!ok) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %2H, got %H)", xr-1, SH(x)+1, rep);
+  
   usz csz = arr_csz(x);
   if (csz == 0) { decG(rep); decG(w); return x; }
   return select_replace(U'⊏', w, x, rep, wia, *SH(x), csz);
