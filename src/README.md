@@ -365,6 +365,8 @@ A fancier message can be created with `thrF(message, …)` with printf-like (but
 %R   a B object of a number or string (string is printed without quotes or escaping)
 %H   the shape of a B object
 %2H  a shape, passed in by a ur & usz*
+%0H  the shape of a B object, or "atom" if the input is an atom, or "unit array" if it's a rank-0 array
+%02H a shape, passed in by a ur & usz*, or "unit array" if the rank is 0
 %B   a B object, formatted by •Repr (be very very careful to not give a potentially large object, which'd lead to unreadably long messages!)
 %%   "%"
 ```

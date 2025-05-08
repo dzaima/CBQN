@@ -998,9 +998,8 @@ B select_ucw(B t, B o, B w, B x) {
   
   ur xr = RNK(x);
   ur wr = RNK(w);
-  if (isAtm(rep)) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %2H, got atom)", xr-1, SH(x)+1);
-  bool ok = xr+wr == RNK(rep)+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
-  if (!ok) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %2H, got %H)", xr-1, SH(x)+1, rep);
+  bool ok = isArr(rep) && xr+wr == RNK(rep)+1 && eqShPart(SH(w),SH(rep),wr) && eqShPart(SH(x)+1,SH(rep)+wr,xr-1);
+  if (!ok) thrF("𝔽⌾(a⊸⊏)𝕩: 𝔽 must return an array with the same shape as its input (expected %02H, got %0H)", xr-1, SH(x)+1, rep);
   
   usz csz = arr_csz(x);
   if (csz == 0) { decG(rep); decG(w); return x; }

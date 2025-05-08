@@ -1401,8 +1401,7 @@ B pick_ucw(B t, B o, B w, B x) {
       w = num_squeeze(mut_fcd(r, w));
       B rep = isArr(o)? incG(o) : c1(o, C2(select, incG(w), C1(shape, incG(x))));
       // error messages will need to get more non-trivial for deeper mismatches
-      if (isAtm(rep)) thrM("𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got atom)");
-      if (!eqShape(w, rep)) thrF("𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected %H, got %H)", w, rep);
+      if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected %0H, got %0H)", w, rep);
       return select_replace(U'⊑', w, x, rep, wia, xia, 1);
     }
     decG(w);

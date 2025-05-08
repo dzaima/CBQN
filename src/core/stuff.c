@@ -236,22 +236,36 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         s = appendRaw(s, bqn_repr(inc(b)));
         break;
       }
-      case '2':
-      case 'H': {
+      case 'H': case '0': case '2': {
+        bool a2 = false;
+        bool a0 = false;
+        while (true) {
+          if (c=='H') break;
+          else if (c=='2') a2 = true;
+          else if (c=='0') a0 = true;
+          else fatal("Invalid format string following [H02]");
+          c = *p++;
+        }
         ur r;
         usz* sh;
-        if (c=='2') {
-          if ('H' != *p++) fatal("Invalid format string: expected H after %2");
+        bool atom;
+        if (a2) {
           r = va_arg(a, int);
           sh = va_arg(a, usz*);
+          atom = false;
         } else {
           B o = va_arg(a, B);
-          r = isArr(o)? RNK(o) : 0;
-          sh = isArr(o)? SH(o) : NULL;
+          atom = isAtm(o);
+          r = atom? 0 : RNK(o);
+          sh = atom? NULL : SH(o);
         }
-        if (r==0) AU("⟨⟩");
-        else if (r==1) AFMT("⟨%s⟩", sh[0]);
-        else {
+        if (r==0) {
+          if (a0 && atom) A8("atom");
+          else if (a0 && !atom) A8("unit array");
+          else AU("⟨⟩");
+        } else if (r==1) {
+          AFMT("⟨%s⟩", sh[0]);
+        } else {
           for (i32 i = 0; i < r; i++) {
             if(i) AU("‿");
             AFMT("%s", sh[i]);
