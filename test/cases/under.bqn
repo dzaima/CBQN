@@ -30,6 +30,10 @@
 
 # ⊑
 !"𝔽⌾(a⊸⊑): Incompatible result elements" % 10‿20⌾(⟨1‿2,1‿2⟩⊸⊑) 4‿5⥊↕9
+!"Expected integer, got character" % 1⊸+⌾('a'⊸⊑) "hello"
+!"Expected integer, got 1.5" % 1⊸+⌾(1.5⊸⊑) "hello"
+!"𝔽⌾(n⊸⊑)𝕩: reading out-of-bounds (n≡100, 5≡≠𝕩)" % 1⊸+⌾(100⊸⊑) "hello"
+!"𝕨⊑𝕩: 𝕩 must be a list when 𝕨 is a number (4‿4 ≡ ≢𝕩)" % 1⊸+⌾(100⊸⊑) 4‿4⥊↕16
 !"𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected ⟨2⟩, got ⟨3⟩)" % 10‿20‿30⌾(⟨1‿2,2‿1⟩⊸⊑) 4‿4⥊↕16
 !"𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got atom)" % 1⌾((<⋈2)⊸⊑) ↕10
 !"𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected unit array, got atom)" % 1⌾((<1‿2)⊸⊑) 3‿3⥊↕9
@@ -58,6 +62,10 @@ a←10‿10‿10⥊↕1000 ⋄ ! a ≡ a⌾((↕≢a)⊸⊑) a
 # ⊏
 n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡ r⌾(i⊸⊏) a
 !"𝕨⊏𝕩: 𝕩 cannot be a unit" % 0‿0⌾(0‿0⊸⊏) <0
+!"Expected integer, got character" % 1⊸+⌾('a'⊸⊏) "hello"
+!"Expected integer, got 1.5" % 1⊸+⌾(1.5⊸⊏) "hello"
+!"𝕨⊏𝕩: Indexing out-of-bounds (100∊𝕨, 5≡≠𝕩)" % 1⊸+⌾(100⊸⊏) "hello"
+!"𝕨⊏𝕩: Indexing out-of-bounds (100∊𝕨, 4≡≠𝕩)" % 1⊸+⌾(100⊸⊏) 4‿4⥊↕16
 !"𝕨⊏𝕩: 𝕩 cannot be a unit" % %USE evar ⋄ (↕0) {⊢⌾(𝕨⊸⊏)𝕩}_evar <0
 !"𝕨⊏𝕩: Indexing out-of-bounds (¯11∊𝕨, 10≡≠𝕩)" % %USE evar ⋄ 5‿¯11 {0‿1⌾(𝕨⊸⊏)𝕩}_evar 10⥊1‿0‿1
 !"𝕨⊏𝕩: Indexing out-of-bounds (10∊𝕨, 10≡≠𝕩)" %  %USE evar ⋄ 9‿10  {0‿1⌾(𝕨⊸⊏)𝕩}_evar 10⥊1‿0‿1

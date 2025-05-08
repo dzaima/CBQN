@@ -967,16 +967,24 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
 }
 
 B select_ucw(B t, B o, B w, B x) {
-  if (isAtm(x) || isAtm(w)) { def: return def_fn_ucw(t, o, w, x); }
-  usz xia = IA(x);
-  usz wia = IA(w);
-  u8 we = TI(w,elType);
-  if (!elInt(we) && IA(w)!=0) {
-    w = num_squeezeChk(w); we = TI(w,elType);
-    if (!elNum(we)) goto def;
+  if (RARE(isAtm(x))) { def: return def_fn_ucw(t, o, w, x); }
+  u8 we;
+  if (isAtm(w)) {
+    if (RARE(!isNum(w))) goto def;
+    w = m_unit(w);
+    we = TI(w,elType);
+    assert(elNum(we));
+  } else {
+    we = TI(w,elType);
+    if (!elInt(we) && IA(w)!=0) {
+      w = num_squeezeChk(w); we = TI(w,elType);
+      if (!elNum(we)) goto def;
+    }
   }
+  usz wia = IA(w);
   B rep;
   if (isArr(o) && RNK(x)>0) {
+    usz xia = IA(x);
     i64 buf[2];
     if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xia || buf[1]>=xia)) {
       C2(select, w, x);
