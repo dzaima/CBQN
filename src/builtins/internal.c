@@ -231,8 +231,8 @@ static NOINLINE B unshareShape(Arr* x) {
   arr_shReplace(x, xr, sh);
   return taga(x);
 }
-static B unshare(B x) {
-  if (!isArr(x)) return x;
+static B unshare(B x) { // doesn't consume
+  if (!isArr(x)) return inc(x);
   usz xia = IA(x);
   switch (TY(x)) {
     case t_bitarr: return unshareShape((Arr*)cpyBitArr(incG(x)));

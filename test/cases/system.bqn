@@ -413,5 +413,6 @@ a←⋈"Ai32"•internal.Variation ↕10 ⋄ •internal.Type ⊑•internal.Dee
 •internal.ClearRefs@ ⋄ •internal.Variation⟜(↕10)¨ 10⥊<"Ai32Inc" ⋄ •internal.ClearRefs "foo" %% 10
 # •internal.Unshare
 •internal.Refc∘•internal.Unshare¨ ⟨↕0, "", ⟨⟩, ↕10⟩ %% 1‿1‿1‿1
+⟨a⟩‿b‿c ← •internal.Unshare ⟨{a⇐↕2},"hi",3⟩ ⋄ a‿b‿c %% ⟨0‿1, "hi", 3⟩
 # •internal.EEqual
 %USE nan ⋄ a←1⌽nans∾•ParseFloat¨"0"‿"1.2"‿"-0" ⋄ a •internal.EEqual ⌽a %% 1
