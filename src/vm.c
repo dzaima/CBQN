@@ -1415,13 +1415,14 @@ native_print:
   }
 }
 
+bool omitStackEntries = true;
 NOINLINE void vm_pst(Env* s, Env* e) { // e not included
   assert(s<=e);
   i64 l = e-s;
   i64 i = l-1;
   while (i>=0) {
     Env* c = s+i;
-    if (l>30 && i==l-10) {
+    if (l>30 && i==l-10 && omitStackEntries) {
       fprintf(stderr, "("N64d" entries omitted)\n", l-20);
       i = 10;
     }
