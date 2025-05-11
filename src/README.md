@@ -356,6 +356,7 @@ A fancier message can be created with `thrF(message, …)` with printf-like (but
 %ul  decimal u64
 %xi  hex u32
 %xl  hex u64
+%z   decimal ux
 %s   decimal usz
 %f   f64
 %p   pointer

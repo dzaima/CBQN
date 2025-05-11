@@ -310,6 +310,12 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         A8(buf);
         break;
       }
+      case 'z': {
+        ux v = va_arg(a, ux);
+        snprintf(buf, 30, "%zu", v);
+        A8(buf);
+        break;
+      }
       case 'p': {
         snprintf(buf, 30, "%p", va_arg(a, void*));
         A8(buf);
