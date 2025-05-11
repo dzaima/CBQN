@@ -503,7 +503,7 @@ NOINLINE void print_allocStats() {
   #if ALLOC_STAT
     printf("total ever allocated: "N64u"\n", talloc);
     printf("allocated heap size:  "N64u"\n", mm_heapAlloc);
-    printf("used heap size:       "N64u"\n", mm_heapUsed());
+    printf("used heap size:       "N64u"\n", tot_heapUsed());
     ctr_a[t_harr]+= ctr_a[t_harrPartial];
     ctr_a[t_harrPartial] = 0;
     printf("ctrA←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf(N64u, ctr_a[i]); } printf("\n");
