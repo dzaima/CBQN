@@ -1988,7 +1988,7 @@ u32* const dsv_text[] = {
   U"•file.Accessed",U"•file.At",U"•file.Bytes",U"•file.Chars",U"•file.Created",U"•file.CreateDir",U"•file.Exists",U"•file.Lines",U"•file.List",
   U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.path",U"•file.RealPath",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
   
-  U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.GC",U"•internal.HasFill",U"•internal.HeapDump",U"•internal.HeapStats",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.ObjFlags",U"•internal.PureKeep",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Variation",
+  U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.GC",U"•internal.HasFill",U"•internal.HeapDump",U"•internal.HeapStats",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.ObjFlags",U"•internal.PureKeep",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Validate",U"•internal.Variation",
   U"•math.Acos",U"•math.Acosh",U"•math.Asin",U"•math.Asinh",U"•math.Atan",U"•math.Atan2",U"•math.Atanh",U"•math.Cbrt",U"•math.Comb",U"•math.Cos",U"•math.Cosh",U"•math.Erf",U"•math.ErfC",U"•math.Expm1",U"•math.Fact",U"•math.GCD",U"•math.Hypot",U"•math.LCM",U"•math.Log10",U"•math.Log1p",U"•math.Log2",U"•math.LogFact",U"•math.Sin",U"•math.Sinh",U"•math.Sum",U"•math.Tan",U"•math.Tanh",
   
   U"•ns.Get",U"•ns.Has",U"•ns.Keys",

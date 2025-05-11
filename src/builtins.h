@@ -20,7 +20,7 @@
 /* inverse.c*/M(setInvReg,"(SetInvReg)") M(setInvSwap,"(SetInvSwap)") M(nativeInvReg,"(NativeInvReg)") M(nativeInvSwap,"(NativeInvSwap)") \
 /*internal.c*/M(itype,"•internal.Type") M(elType,"•internal.ElType") M(refc,"•internal.Refc") M(isPure,"•internal.IsPure") A(info,"•internal.Info") \
 /*internal.c*/M(heapDump,"•internal.HeapDump") M(internalGC,"•internal.GC") M(heapStats,"•internal.HeapStats") A(iObjFlags,"•internal.ObjFlags") \
-/*internal.c*/D(eequal,"•internal.EEqual") M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") \
+/*internal.c*/D(eequal,"•internal.EEqual") M(squeeze,"•internal.Squeeze") M(deepSqueeze,"•internal.DeepSqueeze") M(iValidate,"•internal.Validate") \
 /*internal.c*/A(internalTemp,"•internal.Temp") M(iHasFill,"•internal.HasFill") M(iKeep,"•internal.Keep") D(iProperties,"•internal.Properties") \
 /*internal.c*/D(variation,"•internal.Variation") A(listVariations,"•internal.ListVariations") M(clearRefs,"•internal.ClearRefs") M(unshare,"•internal.Unshare") \
 /*  arithd.c*/D(hypot,"•math.Hypot") D(comb,"•math.Comb") D(gcd,"•math.GCD") D(lcm,"•math.LCM") D(atan2,"•math.Atan2") D(atan2ix,"•math.Atan2⁼") D(atan2iw,"•math.Atan2˜⁼") \

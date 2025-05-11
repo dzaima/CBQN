@@ -108,9 +108,10 @@ Namespace of various internal functions. May change at any time.
 | `•internal.Variation`      | Convert `𝕩` to the variation specified in `𝕨` |
 | `•internal.ClearRefs`      | Clear references `•internal.Variation` made for `*Inc` variations |
 | `•internal.Unshare`        | Get a unique, reference count 1 version of the argument; recursively unshares array items, doesn't touch namespaces |
-| `•internal.EEqual`         | exactly equal (NaN equals NaN, 0 equals ¯0) |
-| `•internal.Temp`           | place to test new features or temporarily expose some internal function |
-| `•internal.Properties`     | various build properties |
+| `•internal.EEqual`         | Exactly equal (NaN equals NaN, 0 equals ¯0) |
+| `•internal.Temp`           | Place to test new features or temporarily expose some internal function |
+| `•internal.Properties`     | Various build properties |
+| `•internal.Validate`       | Validate that `𝕩` has correct flags set |
 
 # FFI
 

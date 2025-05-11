@@ -3,6 +3,8 @@
 #include "../builtins.h"
 #include "../ns.h"
 #include "../utils/cstr.h"
+#include "../utils/calls.h"
+#include <stdarg.h>
 
 B itype_c1(B t, B x) {
   B r;
@@ -412,6 +414,44 @@ B iProperties_c2(B t, B w, B x) {
   return r;
 }
 
+static NOINLINE NORETURN void validate_fail(bool crash, char* p, ...) {
+  va_list a;
+  va_start(a, p);
+  B msg = do_fmt(emptyCVec(), p, a);
+  va_end(a);
+  if (!crash) thr(msg);
+  printsB(msg);
+  fatal("object failed validation");
+}
+
+
+bool validate_flags(bool crash, B x) {
+  if (isArr(x) && IA(x)!=0) {
+    if (FL_HAS(x, fl_squoze)) {
+      B t = unshare(x);
+      t = any_squeeze(t);
+      if (TI(t,elType) != TI(x,elType)) validate_fail(crash, "Validate: Wrongly squeezed: array has eltype %S, expected %S", eltype_repr(TI(x,elType)), eltype_repr(TI(t,elType)));
+      decG(t);
+    }
+    #define DSC_ASC(FLAG, CMP) \
+    if (FL_HAS(x, FLAG)) {   \
+      if (RNK(x)==1) {       \
+        SGetU(x)             \
+        usz ia = IA(x);      \
+        for (ux i = 0; i < ia-1; i++) if (compare(GetU(x,i),GetU(x,i+1)) CMP) validate_fail(crash, "Validate: Incorrectly marked " #FLAG " between indices %z+0‿1", i); \
+      }                      \
+    }
+    DSC_ASC(fl_dsc, < 0)
+    DSC_ASC(fl_asc, > 0)
+  }
+  return true;
+}
+
+B iValidate_c1(B t, B x) {
+  validate_flags(false, x);
+  return x;
+}
+
 B unshare_c1(B t, B x) {
   if (!isArr(x)) thrM("•internal.Unshare 𝕩: 𝕩 must be an array");
   B r = unshare(x);
@@ -433,8 +473,8 @@ B getInternalNS(void) {
     #undef F
     
     #define F(X) incG(bi_##X),
-    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep", "purekeep","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats", "objflags", "properties");
-    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(iPureKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats)F(iObjFlags)F(iProperties));
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep", "purekeep","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats", "objflags", "properties", "validate");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(iPureKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats)F(iObjFlags)F(iProperties)F(iValidate));
     #undef F
     gc_add(internalNS);
   }

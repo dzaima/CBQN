@@ -245,6 +245,7 @@ B vec_addN(B w, B x); // consumes both; fills may be wrong
 B vec_join(B w, B x); // consumes both
 i32 num_fmt(char buf[30], f64 x);
 #define NUM_FMT_BUF(N,X) char N[30]; num_fmt(N, X);
+B do_fmt(B s, char* p, va_list a);
 B append_fmt(B s, char* p, ...);
 B make_fmt(char* p, ...);
 void print_fmt(char* p, ...);
@@ -261,6 +262,7 @@ void fprint_fmt(FILE* f, char* p, ...);
 #define C1(F,  X) F##_c1(m_f64(0),  X)
 #define C2(F,W,X) F##_c2(m_f64(0),W,X)
 
+bool validate_flags(bool crash, B x);
 char* type_repr(u8 u);
 char* pfn_repr(u8 u);
 char* pm1_repr(u8 u);
