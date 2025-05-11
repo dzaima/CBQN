@@ -130,6 +130,7 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"Integer out of range: 1e20" % %USE evar ⋄ /_evar 1e20⌾(100⊸⊑) 200⥊10
 ! (//⁼)⊸≡8‿15‿25‿32‿90‿101‿155‿165‿584‿594‿894‿912‿1312‿1328‿1350‿1367‿1391‿1407‿1469‿1486‿1559‿1566‿1576‿1582‿1592‿1599‿1609‿1616‿1626‿1635‿4086‿4093‿4114‿4122‿4141‿4149‿4169‿4177
 /⁼1e4⥊1‿2 %% 0‿5000‿5000
+!"Expected integer, got character" % /⁼ "hello"
 !"/⁼𝕩: 𝕩 cannot contain negative numbers" % %USE evar ⋄ /⁼_evar (↕10) ∾ ¯2 ∾ 20+↕10
 !"/⁼𝕩: 𝕩 must consist of natural numbers" % %USE evar ⋄ /⁼_evar (↕10) ∾ 2.2 ∾ 20+↕10
 !"/⁼𝕩: 𝕩 must consist of natural numbers" % %USE evar ⋄ /⁼_evar (↕10) ∾ 1e20 ∾ 20+↕10

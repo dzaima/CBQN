@@ -15,6 +15,7 @@
 !"•BQN: Path must be a string" % ⟨1‿2⟩ •BQN "2+2"
 !"•BQN: Filename must be a string" % ⟨•path, 1‿2⟩ •BQN "2+2"
 ⟨•path, "abc/def"⟩ •BQN "•name" %% "abc/def"
+!"•BQN: 𝕩 must be a string" % •BQN ↕3
 !"No path present for •path" % •BQN"•path"
 !"No arguments present for •args" % •BQN"•args"
 !"No name present for •name" % •BQN"•name"
@@ -210,6 +211,7 @@ v←1 ⋄ ! •BQN∘•Repr⊸≡ ⟨+,1‿2,+¨,(+V)(V+V),2‿2⥊↕4⟩
 •Repr∘•ParseFloat¨ ⟨"1.2351641146031163604e-323", "1.2351641146031163605e-323"⟩ %% ⟨"1e¯323","1e¯323"⟩
 !"•ParseFloat 𝕩: Input was empty" % •ParseFloat ""
 !"•ParseFloat 𝕩: Input was empty" % •ParseFloat ↕0
+!"•ParseFloat 𝕩: Expected a character list argument" % •ParseFloat ↕3
 !"•ParseFloat 𝕩: Input must have rank 1" % •ParseFloat <@
 !"•ParseFloat 𝕩: Input must have rank 1" % •ParseFloat 1‿1⥊'1'
 !"•ParseFloat 𝕩: Expected a character list argument" % •ParseFloat 48‿49
