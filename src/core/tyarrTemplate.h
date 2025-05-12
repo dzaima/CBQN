@@ -25,10 +25,16 @@ SHOULD_INLINE Arr* TP(m_,arrp) (TEl** p, u64 ia) {
   *p = (TEl*)r->a;
   return (Arr*)r;
 }
-static TEl* TP(,arrv_ptr) (TyArr* x) { return (TEl*)x->a; }
 
-static TEl* TP(,arr_ptr) (B x) { VTY(x, T_ARR); return (TEl*)c(TyArr,x)->a; }
-static TEl* TP(,any_ptr) (B x) { assert(isArr(x)); u8 t=TY(x); if(t==T_ARR) return (TEl*)c(TyArr,x)->a; assert(t==T_SLICE); return (TEl*)c(TySlice,x)->a; }
+static TEl* TP(,anyv_ptr) (Arr* x) {
+  u8 t = PTY(x);
+  if (t == T_ARR) return (TEl*) ((TyArr*) x)->a;
+  assert(t == T_SLICE);
+  return (TEl*) ((TySlice*) x)->a;
+}
+static TEl* TP(,arrv_ptr) (TyArr* x) { return (TEl*) ((TyArr*) x)->a; }
+static TEl* TP(,arr_ptr)  (B x) { VTY(x, T_ARR);    return TP(,arrv_ptr)((TyArr*) a(x)); }
+static TEl* TP(,any_ptr)  (B x) { assert(isArr(x)); return TP(,anyv_ptr)(a(x)); }
 
 #undef TEl
 #undef TU
