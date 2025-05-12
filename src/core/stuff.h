@@ -275,11 +275,11 @@ B bqn_merge(B x, u32 type); // consumes
 
 B any_squeeze(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
 B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed; if this function errors due to OOM, the argument won't yet be consumed
-B num_squeeze(B x); // consumes; see note below
-B chr_squeeze(B x); // consumes; see note below
-// Note that num_squeeze & chr_squeeze don't check for fl_squoze, and unconditionally set it. Thus, don't call it on an array if it could be squeezable by the opposite method.
-// or, if you do want to, if TI(x,elType) isn't of the squeezed type, either remove fl_squoze or call the other squeeze function.
-// The functions below can be used as direct replacements of (num|chr)_squeeze if the argument might already be squeezed.
+
+B num_squeeze(B x); // consumes; always returns a bitarr on empty input
+B chr_squeeze(B x); // consumes; always returns a c8arr on empty input
+
+// these return an arbitrary-type array on empty input
 static inline B num_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : num_squeeze(x); }
 static inline B chr_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : chr_squeeze(x); }
 

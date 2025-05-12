@@ -102,7 +102,7 @@ Namespace of various internal functions. May change at any time.
 | `•internal.HeapDump`       | Create a heap dump file; saves to `•wdpath`-relative path `𝕩` or `CBQNHeapDump` if `𝕩` isn't an array |
 | `•internal.HeapStats`      | If argument is `@`, returns `⟨total heap size ⋄ used heap size⟩`. If argument is a string, prints the equivalent of `)mem the-string` |
 | `•internal.HasFill`        | Returns whether the argument has a fill element (may give `0` even if `1↑0⥊𝕩` doesn't error in some CBQN configurations) |
-| `•internal.Squeeze`        | Try to convert the argument to its most compact representation |
+| `•internal.Squeeze`        | Try to convert the argument to its most compact representation; result may have fill updated to `0` or `' '`. (input is left unchanged) |
 | `•internal.DeepSqueeze`    | Try to convert the argument and all its subarrays to its most compact representation; won't squeeze namespace fields |
 | `•internal.ListVariations` | List the possible type variations of the argument array |
 | `•internal.Variation`      | Convert `𝕩` to the variation specified in `𝕨` |

@@ -1,209 +1,267 @@
 #include "../core.h"
 
+#define SQFN_START assert(xa == a(x) && ia==IA(x) && ia>0 && TY(x)==type && a(x)==xa)
+typedef B (*SqueezeFn)(B x, Arr* xa, u8 type, ux ia);
+
+static B squeeze_smallest(B x, Arr* xa, u8 type, ux ia) {
+  SQFN_START;
+  assert(TI(x,elType)==el_bit || TI(x,elType)==el_c8);
+  FLV_SET(xa, fl_squoze);
+  return x;
+}
+static B squeeze_nope(B x, Arr* xa, u8 type, ux ia) {
+  SQFN_START;
+  return x;
+}
+
+
+
+#define SQFN_NUM_RET \
+  mostI32:MAYBE_UNUSED; if(or>I16_MAX) goto r_i32; \
+  mostI16:MAYBE_UNUSED; if(or>I8_MAX ) goto r_i16; \
+  mostI8: MAYBE_UNUSED; if(or>0      ) goto r_i8;  \
+  mostBit:MAYBE_UNUSED;                goto r_bit; \
+  r_f64:MAYBE_UNUSED; xa = cpyF64Arr(x); goto tag; \
+  r_i32:              xa = cpyI32Arr(x); goto tag; \
+  r_i16:              xa = cpyI16Arr(x); goto tag; \
+  r_i8:               xa = cpyI8Arr (x); goto tag; \
+  r_bit:              xa = cpyBitArr(x); goto tag; \
+  tag: x = taga(xa);                               \
+  squeezed: FLV_SET(xa, fl_squoze);                \
+  return x;
+
+#define SQFN_CHR_RET \
+  r_c32:MAYBE_UNUSED; xa = cpyC32Arr(x); goto tag; \
+  r_c16:MAYBE_UNUSED; xa = cpyC16Arr(x); goto tag; \
+  r_c8: MAYBE_UNUSED; xa = cpyC8Arr (x); goto tag; \
+  tag: x = taga(xa);                               \
+  squeezed: FLV_SET(xa, fl_squoze);                \
+  return x;
+
+#define SQFN_NUM(T, CORE) static B squeeze_##T(B x, Arr* xa, u8 type, ux ia) { \
+  SQFN_START;     \
+  u32 or=0; CORE; \
+  SQFN_NUM_RET;   \
+}
+#define SQFN_CHR(T, CORE) static B squeeze_##T(B x, Arr* xa, u8 type, ux ia) { \
+  SQFN_START;    \
+  CORE;          \
+  SQFN_CHR_RET;  \
+}
+
 #if SINGELI_SIMD
   #define SINGELI_FILE squeeze
   #include "../utils/includeSingeli.h"
-#endif
-
-NOINLINE B num_squeezeF(B x, usz ia) {
-  u32 or = 0;
-  SGetU(x)
-  Arr* a;
-  for (usz i = 0; i < ia; i++) {
-    B cr = GetU(x,i);
-    if (RARE(!q_i32(cr))) {
-      while (i<ia) if (!isF64(GetU(x,i++))) return FL_SET(x, fl_squoze);
-      a = (Arr*) cpyF64Arr(x);
-      goto retn;
-    }
-    i32 c = o2iG(cr);
-    or|= ((u32)c & ~1) ^ (u32)(c>>31);
-  }
-  a = or==0?          (Arr*)cpyBitArr(x)
-  : or<=(u32)I8_MAX?  (Arr*)cpyI8Arr (x)
-  : or<=(u32)I16_MAX? (Arr*)cpyI16Arr(x)
-  :                   (Arr*)cpyI32Arr(x);
   
-  retn:
-  FLV_SET(a, fl_squoze);
-  return taga(a);
-}
-B num_squeeze(B x) {
-  usz ia = IA(x);
-  u8 xe = TI(x,elType);
-  if (ia==0) {
-    if (xe==el_bit) return x;
-    goto r_bit;
-  }
+  SQFN_NUM(i8,  or = si_squeeze_i8 ( i8anyv_ptr(xa), ia); if(or>       1) goto squeezed; else goto mostBit;)
+  SQFN_NUM(i16, or = si_squeeze_i16(i16anyv_ptr(xa), ia); if(or>  I8_MAX) goto squeezed; else goto mostI8;)
+  SQFN_NUM(i32, or = si_squeeze_i32(i32anyv_ptr(xa), ia); if(or> I16_MAX) goto squeezed; else goto mostI16;)
+  SQFN_NUM(f64, or = si_squeeze_f64(f64anyv_ptr(xa), ia); if(-1==(u32)or) goto squeezed; else goto mostI32;)
   
-  #if !SINGELI_SIMD
-  usz i = 0;
-  #endif
-  
-  u32 or = 0; // using bitwise or as an approximate ⌈´
-  switch (xe) { default: UD;
-    case el_bit: goto r_x;
-    #if SINGELI_SIMD
-      case el_i8:  { or = si_squeeze_i8 (i8any_ptr (x), ia); if(or>       1) goto r_x; else goto mostBit; }
-      case el_i16: { or = si_squeeze_i16(i16any_ptr(x), ia); if(or>  I8_MAX) goto r_x; else goto mostI8; }
-      case el_i32: { or = si_squeeze_i32(i32any_ptr(x), ia); if(or> I16_MAX) goto r_x; else goto mostI16; }
-      case el_f64: { or = si_squeeze_f64(f64any_ptr(x), ia); if(-1==(u32)or) goto r_x; else goto mostI32; }
-    #else
-      case el_i8:  { i8*  xp = i8any_ptr (x); for (; i < ia; i++) { i32 c = xp[i]; or|= (u8)c;                        } if(or>      1) goto r_x; goto mostBit; }
-      case el_i16: { i16* xp = i16any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } if(or> I8_MAX) goto r_x; goto mostI8; }
-      case el_i32: { i32* xp = i32any_ptr(x); for (; i < ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } if(or>I16_MAX) goto r_x; goto mostI16; }
-      case el_f64: {
-        f64* xp = f64any_ptr(x);
-        for (; i < ia; i++) {
-          f64 cf = xp[i];
-          i32 c = (i32)cf;
-          if (c!=cf) goto r_x; // already f64
-          or|= ((u32)c & ~1) ^ (u32)(c>>31);
-        }
-        goto mostI32;
-      }
-    #endif
-    case el_B: case el_c8: case el_c16: case el_c32:; /*fallthrough*/
-  }
-  
-  B* xp = arr_bptr(x);
-  if (xp==NULL) goto r_f;
-  
-  #if SINGELI_SIMD
-    or = si_squeeze_numB(xp, ia);
-    if (-2==(i32)or) goto r_x;
-    if (-1==(i32)or) goto r_f64;
-    goto mostI32;
-  #else
-    for (; i < ia; i++) {
-      if (RARE(!q_i32(xp[i]))) {
-        while (i<ia) if (!isF64(xp[i++])) goto r_x;
-        goto r_f64;
-      }
-      i32 c = o2iG(xp[i]);
+  SQFN_CHR(c16, u32 t = si_squeeze_c16(c16anyv_ptr(xa), ia); if (t==0) goto r_c8; else goto squeezed;)
+  SQFN_CHR(c32, u32 t = si_squeeze_c32(c32anyv_ptr(xa), ia); if (t==0) goto r_c8; else if (t==1) goto r_c16; else if (t==2) goto squeezed; else UD;)
+#else
+  SQFN_NUM(i8,  i8*  xp = i8anyv_ptr (xa); for (ux i=0; i<ia; i++) { i32 c = xp[i]; or|= (u8)c;                        } if(or>      1) goto squeezed; goto mostBit;)
+  SQFN_NUM(i16, i16* xp = i16anyv_ptr(xa); for (ux i=0; i<ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } if(or> I8_MAX) goto squeezed; goto mostI8;)
+  SQFN_NUM(i32, i32* xp = i32anyv_ptr(xa); for (ux i=0; i<ia; i++) { i32 c = xp[i]; or|= ((u32)c & ~1) ^ (u32)(c>>31); } if(or>I16_MAX) goto squeezed; goto mostI16;)
+  SQFN_NUM(f64,
+    f64* xp = f64anyv_ptr(xa);
+    for (ux i = 0; i < ia; i++) {
+      f64 cf = xp[i];
+      i32 c = (i32)cf;
+      if (c!=cf) goto squeezed;
       or|= ((u32)c & ~1) ^ (u32)(c>>31);
     }
     goto mostI32;
-  #endif
+  )
   
-  mostI32: if(or>I16_MAX  ) goto r_i32;
-  mostI16: if(or>I8_MAX   ) goto r_i16;
-  mostI8:  if(or>0        ) goto r_i8;
-  mostBit: goto r_bit;
-  
-  B rb; Arr* ra;
-  r_f:   return num_squeezeF(x, ia); // rb = num_squeezeF(x,ia); goto retn;
-  r_x:   ra = a(x);   rb = x;     goto retn;
-  r_f64: ra = (Arr*)cpyF64Arr(x); goto tag;
-  r_i32: ra = (Arr*)cpyI32Arr(x); goto tag;
-  r_i16: ra = (Arr*)cpyI16Arr(x); goto tag;
-  r_i8:  ra = (Arr*)cpyI8Arr (x); goto tag;
-  r_bit: ra = (Arr*)cpyBitArr(x); goto tag;
-  
-  tag:
-  rb = taga(ra);
-  retn:
-  FLV_SET(ra, fl_squoze);
-  return rb;
-}
-B chr_squeeze(B x) {
-  usz ia = IA(x);
-  u8 xe = TI(x,elType);
-  if (ia==0) {
-    if (xe==el_c8) return x;
+  SQFN_CHR(c16,
+    u16* xp = c16anyv_ptr(xa);
+    for (ux i = 0; i < ia; i++) if (xp[i] != (u8)xp[i]) goto squeezed;
     goto r_c8;
-  }
-  usz i = 0;
-  i32 or = 0;
-  switch(xe) { default: UD;
-    case el_c8: goto r_x;
-    #if SINGELI_SIMD
-    case el_c16: { u32 t = si_squeeze_c16(c16any_ptr(x), ia); if (t==0) goto r_c8; else goto r_x; }
-    case el_c32: { u32 t = si_squeeze_c32(c32any_ptr(x), ia); if (t==0) goto r_c8; else if (t==1) goto r_c16; else if (t==2) goto r_x; else UD; }
-    #else
-    case el_c16: {
-      u16* xp = c16any_ptr(x);
-      for (; i < ia; i++) if (xp[i] != (u8)xp[i]) goto r_x;
-      goto r_c8;
+  )
+  SQFN_CHR(c32,
+    u32* xp = c32anyv_ptr(xa);
+    bool c8 = true;
+    for (ux i = 0; i < ia; i++) {
+      if (xp[i] != (u16)xp[i]) goto squeezed;
+      if (xp[i] != (u8 )xp[i]) c8 = false;
     }
-    case el_c32: {
-      u32* xp = c32any_ptr(x);
-      bool c8 = true;
-      for (; i < ia; i++) {
-        if (xp[i] != (u16)xp[i]) goto r_x;
-        if (xp[i] != (u8 )xp[i]) c8 = false;
-      }
-      if (c8) goto r_c8;
-      else    goto r_c16;
-    }
-    #endif
-    case el_bit: case el_i8: case el_i16: case el_i32: case el_f64: case el_B:; /*fallthrough*/
-  }
+    if (c8) goto r_c8;
+    else    goto r_c16;
+  )
+#endif
+
+
+
+#define SQUEEZE_NUM_B_LOOP(GET) \
+  u32 or = 0;                                              \
+  for (ux i = 0; i < ia; i++) {                            \
+    B c = GET;                                             \
+    if (RARE(!q_i32(c))) {                                 \
+      while (i<ia) { if (!isF64(GET)) goto not_num; i++; } \
+      goto r_f64;                                          \
+    }                                                      \
+    i32 ci = o2iG(c);                                      \
+    or|= ((u32)ci & ~1) ^ (u32)(ci>>31);                   \
+  }                                                        \
+  goto mostI32;
+
+#define SQFN_NUM_B            \
+  not_num:                    \
+  if (notChar) goto squeezed; \
+  else return x;              \
+  SQFN_NUM_RET;
   
-  B* xp = arr_bptr(x);
-  if (xp!=NULL) {
-    #if SINGELI_SIMD
+NOINLINE B squeeze_B_numSlow(B x, Arr* xa, u8 type, usz ia, bool notChar) {
+  SQFN_START;
+  SGetU(x)
+  SQUEEZE_NUM_B_LOOP(GetU(x,i))
+  SQFN_NUM_B;
+}
+SHOULD_INLINE B squeeze_BV_numImpl(B x, Arr* xa, u8 type, ux ia, B* xp, bool notChar) {
+  SQFN_START;
+  #if SINGELI_SIMD
+    u32 or = si_squeeze_numB(xp, ia);
+    if (-2==(i32)or) goto not_num;
+    if (-1==(i32)or) goto r_f64;
+    goto mostI32;
+  #else
+    SQUEEZE_NUM_B_LOOP(xp[i])
+  #endif
+  SQFN_NUM_B;
+}
+
+
+
+#define SQFN_CHR_B \
+  if (or>U16_MAX) goto r_c32; \
+  if (or>U8_MAX ) goto r_c16; \
+  goto r_c8;                  \
+  not_chr:                    \
+  if (notNum) goto squeezed;  \
+  else return x;              \
+  SQFN_CHR_RET;
+
+NOINLINE B squeeze_B_chrSlow(B x, Arr* xa, u8 type, usz ia, bool notNum) {
+  SQFN_START;
+  u32 or = 0;
+  SGetU(x)
+  for (ux i = 0; i < ia; i++) {
+    B cr = GetU(x,i);
+    if (!isC32(cr)) goto not_chr;
+    or|= o2cG(cr);
+  }
+  SQFN_CHR_B;
+}
+SHOULD_INLINE B squeeze_BV_chrImpl(B x, Arr* xa, u8 type, usz ia, B* xp, bool notNum) {
+  SQFN_START;
+  u32 or = 0;
+  #if SINGELI_SIMD
     u32 t = si_squeeze_chrB(xp, ia);
     if      (t==0) goto r_c8;
     else if (t==1) goto r_c16;
     else if (t==2) goto r_c32;
-    else if (t==3) goto r_x;
+    else if (t==3) goto not_chr;
     else UD;
-    #else
-    for (; i < ia; i++) {
-      if (!isC32(xp[i])) goto r_x;
+  #else
+    for (ux i = 0; i < ia; i++) {
+      if (!isC32(xp[i])) goto not_chr;
       or|= o2cG(xp[i]);
     }
-    #endif
-  } else {
-    SGetU(x)
-    for (; i < ia; i++) {
-      B cr = GetU(x,i);
-      if (!isC32(cr)) goto r_x;
-      or|= o2cG(cr);
-    }
-  }
-  if      (or<=U8_MAX ) r_c8:  return FL_SET(toC8Any(x), fl_squoze);
-  else if (or<=U16_MAX) r_c16: return FL_SET(toC16Any(x), fl_squoze);
-  else { goto r_c32; }  r_c32: return FL_SET(toC32Any(x), fl_squoze);
-  /*when known typed:*/ r_x:   return FL_SET(x, fl_squoze);
+  #endif
+  SQFN_CHR_B;
 }
 
+SHOULD_INLINE B squeeze_B_chrImpl(B x, Arr* xa, u8 type, ux ia, bool notNum) {
+  B* xp = arrv_bptr(xa);
+  if (xp!=NULL) return squeeze_BV_chrImpl(x, xa, type, ia, xp, notNum);
+  else return squeeze_B_chrSlow(x, xa, type, ia, notNum);
+}
+
+SHOULD_INLINE B squeeze_B_numImpl(B x, Arr* xa, u8 type, ux ia, bool notNum) {
+  B* xp = arrv_bptr(xa);
+  if (xp!=NULL) return squeeze_BV_numImpl(x, xa, type, ia, xp, notNum);
+  else return squeeze_B_numSlow(x, xa, type, ia, notNum);
+}
+
+static B squeeze_B_numMaybe(B x, Arr* xa, u8 type, ux ia) { return squeeze_B_numImpl(x, xa, type, ia, false); }
+static B squeeze_B_chrMaybe(B x, Arr* xa, u8 type, ux ia) { return squeeze_B_chrImpl(x, xa, type, ia, false); }
+
+NOINLINE B squeeze_BGeneric(B x, Arr* xa, u8 type, ux ia) {
+  SQFN_START;
+  B x0 = IGetU(x,0);
+  if (isNum(x0)) return squeeze_B_numSlow(x, xa, type, ia, true);
+  if (isC32(x0)) return squeeze_B_chrSlow(x, xa, type, ia, true);
+  FLV_SET(xa, fl_squoze);
+  return x;
+}
+static B squeeze_B(B x, Arr* xa, u8 type, ux ia) {
+  SQFN_START;
+  B* xp = arrv_bptr(xa);
+  if (xp == NULL) return squeeze_BGeneric(x, xa, type, ia);
+  B x0 = xp[0];
+  if (isNum(x0)) return squeeze_BV_numImpl(x, xa, type, ia, xp, true);
+  if (isC32(x0)) return squeeze_BV_chrImpl(x, xa, type, ia, xp, true);
+  FLV_SET(xa, fl_squoze);
+  return x;
+}
+
+//                                  el_bit            el_i8         el_i16        el_i32        el_f64        el_c8             el_c16        el_c32        el_B
+SqueezeFn squeeze_numFns[el_MAX] = {squeeze_smallest, squeeze_i8,   squeeze_i16,  squeeze_i32,  squeeze_f64,  squeeze_smallest, squeeze_nope, squeeze_nope, squeeze_B_numMaybe};
+SqueezeFn squeeze_chrFns[el_MAX] = {squeeze_smallest, squeeze_nope, squeeze_nope, squeeze_nope, squeeze_nope, squeeze_smallest, squeeze_c16,  squeeze_c32,  squeeze_B_chrMaybe};
+SqueezeFn squeeze_anyFns[el_MAX] = {squeeze_smallest, squeeze_i8,   squeeze_i16,  squeeze_i32,  squeeze_f64,  squeeze_smallest, squeeze_c16,  squeeze_c32,  squeeze_B};
+
 NOINLINE B int_squeeze_sorted(B x) {
-  usz xia = IA(x);
-  if (xia==0) {
-    already_squoze:;
+  assert(elInt(TI(x,elType)));
+  usz ia = IA(x);
+  if (ia==0) {
+    already_squoze:
     return FL_SET(x, fl_squoze);
   }
   SGetU(x);
   u8 x0e = selfElType_i32(o2iG(GetU(x, 0)));
-  u8 x1e = selfElType_i32(o2iG(GetU(x, xia-1)));
+  u8 x1e = selfElType_i32(o2iG(GetU(x, ia-1)));
   u8 xse = x0e>x1e? x0e : x1e;
   u8 xe = TI(x,elType);
   if (xe == xse) goto already_squoze;
   Arr* ra;
   switch (xse) { default: UD;
-    case el_i16: ra = (Arr*)cpyI16Arr(x); break;
-    case el_i8:  ra = (Arr*)cpyI8Arr (x); break;
-    case el_bit: ra = (Arr*)cpyBitArr(x); break;
+    case el_i16: ra = cpyI16Arr(x); break;
+    case el_i8:  ra = cpyI8Arr (x); break;
+    case el_bit: ra = cpyBitArr(x); break;
   }
   return taga(FLV_SET(ra, fl_squoze));
 }
+
+
 
 NOINLINE B any_squeeze(B x) {
   assert(isArr(x));
   if (FL_HAS(x, fl_squoze|fl_asc|fl_dsc)) {
     if (FL_HAS(x, fl_squoze)) return x;
-    u8 xe = TI(x,elType);
-    if (elInt(xe)) return int_squeeze_sorted(x);
+    if (elInt(TI(x,elType))) return int_squeeze_sorted(x);
     // could check for sorted character arrays (even from a TI(x,el_B) input) but sorted character arrays aren't worth it
   }
-  if (IA(x)==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type?
-  B x0 = IGetU(x, 0);
-  if (isNum(x0)) return num_squeeze(x);
-  else if (isC32(x0)) return chr_squeeze(x);
-  return FL_SET(x, fl_squoze);
+  usz ia = IA(x);
+  if (ia==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type?
+  return squeeze_anyFns[TI(x,elType)](x, a(x), TY(x), ia);
 }
+
+NOINLINE B num_squeeze(B x) {
+  assert(isArr(x));
+  u8 xe = TI(x,elType);
+  if (IA(x) == 0) return xe==el_bit? x : taga(cpyBitArr(x));
+  return squeeze_numFns[xe](x,a(x),TY(x),IA(x));
+}
+NOINLINE B chr_squeeze(B x) {
+  assert(isArr(x));
+  u8 xe = TI(x,elType);
+  if (IA(x) == 0) return xe==el_c8? x : taga(cpyC8Arr(x));
+  return squeeze_chrFns[xe](x,a(x),TY(x),IA(x));
+}
+
+
 
 B squeeze_deep(B x) {
   if (!isArr(x)) return x;
@@ -214,10 +272,10 @@ B squeeze_deep(B x) {
   B* xp = arr_bptr(x);
   B xf = getFillR(x);
   if (xp!=NULL) {
-    for (usz i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(inc(xp[i]))); }
+    for (ux i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(inc(xp[i]))); }
   } else {
     SGet(x);
-    for (usz i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(Get(x,i))); }
+    for (ux i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(Get(x,i))); }
   }
   return any_squeeze(qWithFill(HARR_FCD(r, x), xf));
 }
