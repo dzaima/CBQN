@@ -625,8 +625,14 @@ B slash_c1(B t, B x) {
 B slash_c2(B t, B w, B x) {
   i32 wv = -1;
   usz wia ONLY_GCC(=0);
+  u8 we ONLY_GCC(=0);
+  
   if (isArr(w)) {
-    if (depth(w)>1) goto base;
+    we = TI(w,elType);
+    if (!elInt(we)) {
+      w = squeeze_numTry(w, &we);
+      if (!elNum(we)) goto base;
+    }
     ur wr = RNK(w);
     if (wr>1) thrF("𝕨/𝕩: Simple 𝕨 must have rank 0 or 1 (%i≡=𝕨)", wr);
     if (wr<1) { w = TO_GET(w, 0); goto atom; }
@@ -638,6 +644,7 @@ B slash_c2(B t, B w, B x) {
     wv = o2iG(w);
     if (wv < 0) thrM("𝕨/𝕩: 𝕨 cannot be negative");
   }
+  
   if (isAtm(x) || RNK(x)==0) thrM("𝕨/𝕩: 𝕩 must have rank at least 1 for simple 𝕨");
   ur xr = RNK(x);
   usz xlen = *SH(x);
@@ -649,18 +656,14 @@ B slash_c2(B t, B w, B x) {
     if (RARE(wia!=xlen)) thrF("𝕨/𝕩: Lengths of components of 𝕨 must match 𝕩 (%s ≠ %s)", wia, xlen);
     
     u64 s;
-    u8 we = TI(w,elType);
-    if (!elInt(we)) {
-      w=squeeze_any(w); we=TI(w,elType); // TODO move squeeze to before depth(w)
-      if (!elInt(we)) {
-        s = usum(w);
-        goto arrW_base;
-      }
-    }
     if (we==el_bit) {
       wbool:
       r = compress(w, x, wia, xl, xt);
       goto decWX_ret;
+    }
+    if (!elInt(we)) {
+      s = usum(w);
+      goto arrW_base;
     }
     s = usum(w);
     if (xl>6 || (xl<3 && xl!=0)) goto arrW_base;
@@ -844,7 +847,7 @@ static B finish_small_count(B r, u16* ov) {
   if (*ov == e) {
     r = squeeze_numNew(r);
   } else {
-    r = taga(cpyI32Arr(r)); i32* rp = tyany_ptr(r);
+    r = taga(cpyI32Arr(r)); i32* rp = i32arr_ptr(r);
     usz on = 0; u16 ovi;
     for (usz i=0; (ovi=ov[i])!=e; i++) {
       i32 rv = (rp[ovi]+= 1<<15);
@@ -854,7 +857,7 @@ static B finish_small_count(B r, u16* ov) {
       }
     }
     if (RARE(on > 0)) { // Overflowed i32!
-      r = taga(cpyF64Arr(r)); f64* rp = tyany_ptr(r);
+      r = taga(cpyF64Arr(r)); f64* rp = f64arr_ptr(r);
       for (usz i=0; i<on; i++) rp[ov[i]]+= 1U<<31;
     }
     FL_SET(r, fl_squoze);

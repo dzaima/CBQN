@@ -233,13 +233,15 @@ NOINLINE B int_squeeze_sorted(B x, Arr* xa, u8 type, ux ia) {
   u8 x1e = selfElType_i32(x1v);
   u8 re = x0e>x1e? x0e : x1e;
   if (xe == re) goto squeezed;
+  u8 flags = FLV_GET(xa) | fl_squoze;
   Arr* ra;
   switch (re) { default: UD;
     case el_i16: ra = cpyI16Arr(x); break;
     case el_i8:  ra = cpyI8Arr (x); break;
     case el_bit: ra = cpyBitArr(x); break;
   }
-  return taga(FLV_SET(ra, fl_squoze));
+  debug_assert(!FLV_HAS(ra, fl_asc|fl_dsc)); // if cpy*Arr starts preserving flags, this should be changed to not do so itself
+  return taga(FLV_SET(ra, flags));
 }
 
 

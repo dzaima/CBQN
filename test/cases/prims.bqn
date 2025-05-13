@@ -89,8 +89,9 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 2‿3‿0‿1/↕4 %% 6⥊0‿0‿1‿1‿1‿3
 2‿3‿0‿1/↕⋈4 %% ⋈¨6⥊0‿0‿1‿1‿1‿3
 ""/↕3 %% ↕3
-!"Expected non-negative integer, got character" % "abc"/↕3
-!"Expected non-negative integer, got character" % "ab"/2‿2⥊9
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % "abc"/↕3
+!"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % 1‿'a'/↕2
+!"𝕨/𝕩: 𝕨 must consist of natural numbers" % "ab"/2‿2⥊9
 !"Expected non-negative integer, got ¯3" % 2‿¯3/↕2
 !"Expected non-negative integer, got ¯3e20" % 2‿¯3e20/↕2
 !"𝕨/𝕩: Lengths of components of 𝕨 must match 𝕩 (3 ≠ 4)" % 1‿2‿3/4‿5‿6‿7
@@ -110,6 +111,11 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"𝕨/𝕩: Compound 𝕨 must have rank at most 1" % (1‿2⥊<↕4) / ↕4
 !"𝕨/𝕩: 𝕨 must consist of natural numbers" % ⟨↕4, 1‿2‿3.5‿4⟩ / 4‿4⥊↕16
 !"𝕨/𝕩: 𝕨 must consist of natural numbers" % ⟨↕4, 3.5⟩       / 4‿4⥊↕16
+!"𝕨/𝕩: 𝕨 must consist of natural numbers" % (<@)/↕3
+!"𝕨/𝕩: 𝕨 must consist of natural numbers" % (<{+})/↕3
+!"𝕨/𝕩: 𝕨 cannot be negative" % (<¯2)/↕3
+!"𝕨/𝕩: Lengths of components of 𝕨 must match 𝕩 (1 ≠ 3)" % ⟨¯2⟩/↕3
+!"Expected non-negative integer, got ¯2" % ⟨¯2⟩/↕1
 !"Integer out of range: 4.611686018427388e18" % ⟨1,2⋆62⟩ / 2‿2⥊<⋈0 %USZ32
 !"Integer out of range: 4.611686018427388e18" % ⟨1,2⋆62⟩ / 2⥊<⋈0 %USZ32
 !"Out of memory" % ⟨1,2⋆62⟩ / 2‿2⥊<⋈0 %USZ64
