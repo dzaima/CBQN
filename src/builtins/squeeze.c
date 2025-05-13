@@ -212,21 +212,29 @@ SqueezeFn squeeze_numFns[el_MAX] = {squeeze_smallest, squeeze_i8,   squeeze_i16,
 SqueezeFn squeeze_chrFns[el_MAX] = {squeeze_smallest, squeeze_nope, squeeze_nope, squeeze_nope, squeeze_nope, squeeze_smallest, squeeze_c16,  squeeze_c32,  squeeze_B_chrMaybe};
 SqueezeFn squeeze_anyFns[el_MAX] = {squeeze_smallest, squeeze_i8,   squeeze_i16,  squeeze_i32,  squeeze_f64,  squeeze_smallest, squeeze_c16,  squeeze_c32,  squeeze_B};
 
-NOINLINE B int_squeeze_sorted(B x) {
+NOINLINE B int_squeeze_sorted(B x, Arr* xa, u8 type, ux ia) {
+  SQFN_START;
   assert(elInt(TI(x,elType)));
-  usz ia = IA(x);
   if (ia==0) {
-    already_squoze:
+    squeezed:
     return FL_SET(x, fl_squoze);
   }
-  SGetU(x);
-  u8 x0e = selfElType_i32(o2iG(GetU(x, 0)));
-  u8 x1e = selfElType_i32(o2iG(GetU(x, ia-1)));
-  u8 xse = x0e>x1e? x0e : x1e;
   u8 xe = TI(x,elType);
-  if (xe == xse) goto already_squoze;
+  i32 x0v, x1v;
+  void* xp = tyanyv_ptr(xa);
+  ux last = ia-1;
+  switch (xe) { default: UD;
+    case el_bit: goto squeezed;
+    case el_i8:  x0v = ((i8* )xp)[0]; x1v = ((i8* )xp)[last]; break;
+    case el_i16: x0v = ((i16*)xp)[0]; x1v = ((i16*)xp)[last]; break;
+    case el_i32: x0v = ((i32*)xp)[0]; x1v = ((i32*)xp)[last]; break;
+  }
+  u8 x0e = selfElType_i32(x0v);
+  u8 x1e = selfElType_i32(x1v);
+  u8 re = x0e>x1e? x0e : x1e;
+  if (xe == re) goto squeezed;
   Arr* ra;
-  switch (xse) { default: UD;
+  switch (re) { default: UD;
     case el_i16: ra = cpyI16Arr(x); break;
     case el_i8:  ra = cpyI8Arr (x); break;
     case el_bit: ra = cpyBitArr(x); break;
@@ -240,7 +248,7 @@ NOINLINE B any_squeeze(B x) {
   assert(isArr(x));
   if (FL_HAS(x, fl_squoze|fl_asc|fl_dsc)) {
     if (FL_HAS(x, fl_squoze)) return x;
-    if (elInt(TI(x,elType))) return int_squeeze_sorted(x);
+    if (elInt(TI(x,elType))) return int_squeeze_sorted(x, a(x), TY(x), IA(x));
     // could check for sorted character arrays (even from a TI(x,el_B) input) but sorted character arrays aren't worth it
   }
   usz ia = IA(x);
