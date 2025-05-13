@@ -33,7 +33,7 @@ B refc_c1(B t, B x) {
 }
 B squeeze_c1(B t, B x) {
   if (!isArr(x)) return x;
-  return any_squeeze(x);
+  return squeeze_any(x);
 }
 B deepSqueeze_c1(B t, B x) {
   return squeeze_deep(x);
@@ -429,7 +429,7 @@ bool validate_flags(bool crash, B x) {
   if (isArr(x) && IA(x)!=0) {
     if (FL_HAS(x, fl_squoze)) {
       B t = unshare(x);
-      t = any_squeeze(t);
+      t = squeeze_any(t);
       if (TI(t,elType) != TI(x,elType)) validate_fail(crash, "Validate: Wrongly squeezed: array has eltype %S, expected %S", eltype_repr(TI(x,elType)), eltype_repr(TI(t,elType)));
       decG(t);
     }

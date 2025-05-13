@@ -651,7 +651,7 @@ B slash_c2(B t, B w, B x) {
     u64 s;
     u8 we = TI(w,elType);
     if (!elInt(we)) {
-      w=any_squeeze(w); we=TI(w,elType); // TODO move squeeze to before depth(w)
+      w=squeeze_any(w); we=TI(w,elType); // TODO move squeeze to before depth(w)
       if (!elInt(we)) {
         s = usum(w);
         goto arrW_base;

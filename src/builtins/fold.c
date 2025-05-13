@@ -116,7 +116,7 @@ B sum_c1(B t, B x) {
   if (ia==0) { decG(x); return m_f64(0); }
   u8 xe = TI(x,elType);
   if (!elNum(xe)) {
-    x = any_squeeze(x); xe = TI(x,elType);
+    x = squeeze_any(x); xe = TI(x,elType);
     if (!elNum(xe)) thrF("•math.Sum 𝕩: 𝕩 elements must be numbers", x);
   }
   f64 r;

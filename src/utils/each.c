@@ -31,7 +31,7 @@ B eachd_fn(B fo, B w, B x, FC2 f) {
     } else {
       dec(rw? x : w);
     }
-    return any_squeeze(r.b);
+    return squeeze_any(r.b);
   }
   
   B bo = wg? w : x;
@@ -55,7 +55,7 @@ B eachd_fn(B fo, B w, B x, FC2 f) {
       if (wg) for (usz i = 0; i < min; i++) { B c=incBy(Get(x,i), ext-1); for (usz j=0; j<ext; j++) HARR_ADDA(r, f(fo, Get(w,HARR_I(r)), c)); }
       else    for (usz i = 0; i < min; i++) { B c=incBy(Get(w,i), ext-1); for (usz j=0; j<ext; j++) HARR_ADDA(r, f(fo, c, Get(x,HARR_I(r)))); }
     }
-    rb = any_squeeze(HARR_FC(r, bo));
+    rb = squeeze_any(HARR_FC(r, bo));
   }
   dec(w); dec(x);
   return rb;
@@ -100,7 +100,7 @@ B eachm_fn(B fo, B x, FC1 f) {
     }
     REUSE(x);
     for (; i < ia; i++) xp[i] = f(fo, mv(xp, i));
-    return any_squeeze(x);
+    return squeeze_any(x);
   }
   
   base:;
@@ -118,7 +118,7 @@ B eachm_fn(B fo, B x, FC1 f) {
     case el_c16: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_c32(((u16*)xp)[i]))); break;
     case el_c32: for (; i<ia; i++) HARR_ADD(r, i, f(fo, m_c32(((u32*)xp)[i]))); break;
   }
-  return any_squeeze(HARR_FCD(r, x));
+  return squeeze_any(HARR_FCD(r, x));
 }
 
 #if SEMANTIC_CATCH

@@ -273,7 +273,7 @@ B shape_c2(B t, B w, B x) {
         x = TO_GET(x, 0);
         goto unit;
       }
-      if (xia <= nia/2) x = any_squeeze(x);
+      if (xia <= nia/2) x = squeeze_any(x);
       
       u8 xl = arrTypeBitsLog(TY(x));
       u8 xt = arrNewType(TY(x));
@@ -414,7 +414,7 @@ static B recPick(B w, B x) { // doesn't consume
           if (isAtm(c)) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
           HARR_ADD(r, i, recPick(c, x));
         }
-        return any_squeeze(HARR_FC(r, w));
+        return squeeze_any(HARR_FC(r, w));
       }
     }
   }

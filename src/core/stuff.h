@@ -279,7 +279,7 @@ B bqn_merge(B x, u32 type); // consumes
 
 
 
-B any_squeeze(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
+B squeeze_any(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
 B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed; if this function errors due to OOM, the argument won't yet be consumed
 
 typedef struct { B r; u8 re; } SqRes;

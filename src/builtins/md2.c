@@ -93,7 +93,7 @@ NOINLINE B repeat_replaceR(B g, B* q) {
   usz ia = IA(g);
   M_HARR(r, ia);
   for (usz i = 0; i < ia; i++) HARR_ADD(r, i, repeat_replace(GetU(g,i), q));
-  return any_squeeze(HARR_FC(r, g));
+  return squeeze_any(HARR_FC(r, g));
 }
 #define REPEAT_T(CN, END, ...)                     \
   B g = CN(d->g, __VA_ARGS__ inc(x));              \

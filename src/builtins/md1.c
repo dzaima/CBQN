@@ -45,7 +45,7 @@ B each_c1(Md1D* d, B x) { B f = d->f;
     u8 rtid = RTID(f);
     if (rtid==n_ltack || rtid==n_rtack) {
       if (EACH_FILLS) dec(xf);
-      return TI(x,arrD1) || IA(x)==0? x : any_squeeze(EACH_FILLS? x : withFill(x, bi_noFill));
+      return TI(x,arrD1) || IA(x)==0? x : squeeze_any(EACH_FILLS? x : withFill(x, bi_noFill));
     }
     r = eachm_fn(f, x, c(Fun,f)->c1);
   } else {

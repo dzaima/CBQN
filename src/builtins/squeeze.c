@@ -256,7 +256,7 @@ NOINLINE B int_squeeze_sorted(B x, Arr* xa, u8 type, ux ia) {
   u8 xe = TI(x,elType); \
   usz ia = IA(x);
 
-NOINLINE B any_squeeze(B x) {
+NOINLINE B squeeze_any(B x) {
   SQ_READ;
   SQ_FAST_EXT(, return x);
   if (ia==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type?
@@ -296,7 +296,7 @@ B squeeze_chrOut(B x) { return squeeze_chrTryImpl(x).r; }
 
 B squeeze_deep(B x) {
   if (!isArr(x)) return x;
-  x = any_squeeze(x);
+  x = squeeze_any(x);
   if (TI(x,elType)!=el_B) return x;
   usz ia = IA(x);
   M_HARR(r, ia)
@@ -308,5 +308,5 @@ B squeeze_deep(B x) {
     SGet(x);
     for (ux i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(Get(x,i))); }
   }
-  return any_squeeze(qWithFill(HARR_FCD(r, x), xf));
+  return squeeze_any(qWithFill(HARR_FCD(r, x), xf));
 }

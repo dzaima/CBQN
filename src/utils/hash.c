@@ -8,7 +8,7 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
   if (isArr(x)) {
     usz xia = IA(x);
     if (xia==0) return ~secret[3]; // otherwise squeeze will care about fills
-    x = any_squeeze(incG(x));
+    x = squeeze_any(incG(x));
     u8 xr = RNK(x);
     u8 xe = TI(x,elType);
     u64 shHash;
