@@ -251,13 +251,13 @@ NOINLINE B any_squeeze(B x) {
 NOINLINE B num_squeeze(B x) {
   assert(isArr(x));
   u8 xe = TI(x,elType);
-  if (IA(x) == 0) return xe==el_bit? x : taga(cpyBitArr(x));
+  if (IA(x) == 0) return xe==el_bit? x : emptyNumsWithShape(x);
   return squeeze_numFns[xe](x,a(x),TY(x),IA(x));
 }
 NOINLINE B chr_squeeze(B x) {
   assert(isArr(x));
   u8 xe = TI(x,elType);
-  if (IA(x) == 0) return xe==el_c8? x : taga(cpyC8Arr(x));
+  if (IA(x) == 0) return xe==el_c8? x : emptyChrsWithShape(x);
   return squeeze_chrFns[xe](x,a(x),TY(x),IA(x));
 }
 

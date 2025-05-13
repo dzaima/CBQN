@@ -207,6 +207,8 @@ Arr* customizeShape(B x); // consumes; returns new array with unset shape
 Arr* cpyWithShape(B x); // consumes; returns new array with the same shape as x (SH(x) will be dangling, PSH(result) must be used to access it)
 Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the same fill as x; if xr>1, shape must be set
 NOINLINE Arr* emptyWithFill(B fill); // consumes; returns new array with unset shape and the specified fill
+B emptyNumsWithShape(B x); // consumes; empty bitarr with shape ≢x
+B emptyChrsWithShape(B x); // consumes; empty c8arr  with shape ≢x
 
 B m_vec1(B a);      // complete fills
 B m_vec2(B a, B b); // incomplete fills

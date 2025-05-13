@@ -234,3 +234,20 @@ NOINLINE Arr* emptyWithFill(B fill) {
   m_tyarrp(&r, 0, 0, type);
   return r;
 }
+
+NOINLINE B emptyNumsWithShape(B x) {
+  assert(IA(x)==0);
+  if (RNK(x)==1) { decG(x); return emptyIVec(); }
+  u64* tmp;
+  B r = m_bitarrc(&tmp, x);
+  decG(x);
+  return r;
+}
+NOINLINE B emptyChrsWithShape(B x) {
+  assert(IA(x)==0);
+  if (RNK(x)==1) { decG(x); return emptyCVec(); }
+  u8* tmp;
+  B r = m_c8arrc(&tmp, x);
+  decG(x);
+  return r;
+}
