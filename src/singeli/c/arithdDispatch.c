@@ -85,7 +85,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
     case u_call_wxf64sq: {
       f64* rp; r = m_f64arrc(&rp, x);
       fn->uFn(rp, tyany_ptr(w = toF64Any(w)), tyany_ptr(x = toF64Any(x)), ia);
-      r = num_squeeze(r);
+      r = squeeze_numNewTy(el_f64,r);
       goto decG_ret;
     }
     case c_call_wxi8: {
@@ -95,9 +95,9 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
       goto c_call_rbyte;
     }
     case e_call_sqx: {
-      assert(TI(x,elType)==el_f64);
-      x = num_squeezeChk(x);
       u8 xe = TI(x,elType);
+      assert(xe==el_f64);
+      x = squeeze_numTry(x, &xe);
       if (xe==el_f64) goto rec;
       e = &table->entsAA[TI(w,elType)*8 + xe];
       goto newEnt;
@@ -189,7 +189,7 @@ NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
       case el_i8:  if (wa==( u8)wa) { e=&table->ents[el_i8 ]; width=0; type=t_c8arr;  goto f1; } else goto cwiden_i8;
       case el_i16: if (wa==(u16)wa) { e=&table->ents[el_i16]; width=1; type=t_c16arr; goto f1; } else goto cwiden_i16;
       case el_i32:                    e=&table->ents[el_i32]; width=2; type=t_c32arr; goto f1;
-      case el_f64: x=num_squeezeChk(x); xe=TI(x,elType); if (xe!=el_f64) goto newXEc; else goto rec;
+      case el_f64: x=squeeze_numTry(x, &xe); if (xe!=el_f64) goto newXEc; else goto rec;
       case el_c8:  if (wa==( u8)wa) { e=&table->ents[el_c8 ]; width=0; type=t_i8arr;  goto f1; } goto cwiden_c8; // TODO check for & use unsigned w
       case el_c16: if (wa==(u16)wa) { e=&table->ents[el_c16]; width=1; type=t_i16arr; goto f1; } goto cwiden_c16;
       case el_c32:                    e=&table->ents[el_c32]; width=2; type=t_i32arr; goto f1;
@@ -282,13 +282,13 @@ B sub_c2R(B t, B w, B x) { return sub_c2(t, x, w); }
 
 static NOINLINE B or_SA(B t, B w, B x) {
   if (!isF64(w)) return arith_recd(or_c2, w, x);
-  if (LIKELY(TI(x,elType)==el_bit)) {
+  u8 xe = TI(x,elType);
+  if (LIKELY(xe==el_bit)) {
     bitsel:;
     f64 wf = o2fG(w);
     return bit_sel(x, m_f64(bqn_or(wf, 0)), m_f64(bqn_or(wf, 1)));
   }
-  x = num_squeezeChk(x);
-  u8 xe = TI(x,elType);
+  x = squeeze_numTry(x, &xe);
   if (xe==el_bit) goto bitsel;
   if (!elNum(xe)) return arith_recd(or_c2, w, x);
   x = toF64Any(x);

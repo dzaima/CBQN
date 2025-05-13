@@ -129,14 +129,13 @@ B withFill(B x, B fill) { // consumes both
   }
   usz ia = IA(x);
   if (!FL_HAS(x,fl_squoze)) {
+    u8 xe;
     if (isNum(fill)) {
-      x = num_squeeze(x);
-      if (elNum(TI(x,elType))) return x;
-      FL_KEEP(x, ~fl_squoze);
+      x = squeeze_numTry(x, &xe);
+      if (elNum(xe)) return x;
     } else if (isC32(fill)) {
-      x = chr_squeeze(x);
-      if (elChr(TI(x,elType))) return x;
-      FL_KEEP(x, ~fl_squoze);
+      x = squeeze_chrTry(x, &xe);
+      if (elChr(xe)) return x;
     }
   }
   Arr* r;

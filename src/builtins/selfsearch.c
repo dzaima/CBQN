@@ -341,11 +341,11 @@ B count_c1(B t, B x) {
     else                for (usz j=0; j<tn; j++) tab[j]=0;     \
     for (usz i=0; i<n;  i++) rp[i]=tab[xp[i]]++;               \
     decG(x); TFREE(tab);                                       \
-    return num_squeeze(r)
+    return squeeze_numNewTy(el_i32,r)
   if (lw==3) { if (n<12) { BRUTE(8); } else { LOOKUP(8); } }
   if (lw==4) { if (n<12) { BRUTE(16); } else { LOOKUP(16); } }
   #undef LOOKUP
-  #define TRY_HASHTAB(W) TRY_HASHTAB_RET(count, W, num_squeeze(r))
+  #define TRY_HASHTAB(W) TRY_HASHTAB_RET(count, W, squeeze_numNewTy(el_i32,r))
   if (lw==5) {
     if (n<20) { BRUTE(32); }
     i32* rp; B r = m_i32arrv(&rp, n);
@@ -369,7 +369,7 @@ B count_c1(B t, B x) {
     u32 *tab=    (u32*)v1;        // tn              [+]           tab 4*tn                ###########
     
     RADIX_LOOKUP_32(0, ++)
-    return num_squeeze(r);
+    return squeeze_numNewTy(el_i32,r);
   }
   if (lw==6 && canCompare64_norm(&x, &xv, n)) {
     if (n<20) { BRUTE(64); }
@@ -392,7 +392,7 @@ B count_c1(B t, B x) {
     rp[i] = had? ++map->a[p].val : (map->a[p].val = 0);
   }
   decG(x); free_b2i(map);
-  return num_squeeze(r);
+  return squeeze_numNewTy(el_i32,r);
 }
 
 static B reduceI32WidthBelow(B r, usz after) {

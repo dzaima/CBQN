@@ -120,15 +120,17 @@ B parseFloat_c1(B t, B x) { thrM("•ParseFloat 𝕩: Not supported with Ryu dis
 B parseFloat_c1(B t, B x) {
   if (isAtm(x)) thrM("•ParseFloat 𝕩: Expected a character list argument");
   if (TI(x,elType)!=el_c8) {
-    x = chr_squeeze(x);
-    if (TI(x,elType)!=el_c8) {
-      if (elChr(TI(x,elType))) malformed: thrM("•ParseFloat 𝕩: Malformed input");
+    u8 xe;
+    x = squeeze_chrTry(x, &xe);
+    if (xe!=el_c8) {
+      if (IA(x)==0) goto empty;
+      if (elChr(xe)) malformed: thrM("•ParseFloat 𝕩: Malformed input");
       thrM("•ParseFloat 𝕩: Expected a character list argument");
     }
   }
   usz ia = IA(x);
   if (RNK(x)!=1) thrM("•ParseFloat 𝕩: Input must have rank 1");
-  if (ia==0) thrM("•ParseFloat 𝕩: Input was empty");
+  if (ia==0) empty: thrM("•ParseFloat 𝕩: Input was empty");
   if (ia >= (1<<20)) thrM("•ParseFloat 𝕩: Input too long"); // assumption by ryu_s2d_n
   u8* data = c8any_ptr(x);
   f64 res;

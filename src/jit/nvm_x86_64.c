@@ -135,7 +135,7 @@ INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) if (!isNum(r.a[sz-i-1] = GSP)) allNum = false;
   NOGC_E; GS_UPD;
-  if (allNum) return num_squeeze(r.b);
+  if (allNum) return squeeze_numNew(r.b);
   return r.b;
 }
 INS B i_ARMO(B el0, i64 sz, u32* bc, B* cStack) { assert(sz>0); POS_UPD;
@@ -399,7 +399,7 @@ static OptRes opt(u32* bc0) {
           RM(c.p);
         }
         NOGC_E;
-        B r = allNum? num_squeeze(h.b) : h.b;
+        B r = allNum? squeeze_numNew(h.b) : h.b;
         cact = 5;
         TSADD(data, r.u);
         stk[TSSIZE(stk)-1] = SREF(r, pos);

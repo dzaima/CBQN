@@ -277,15 +277,26 @@ bool isPureFn(B x); // doesn't consume
 bool isStr(B x); // doesn't consume; returns if x is a rank 1 array of characters (includes any empty array)
 B bqn_merge(B x, u32 type); // consumes
 
+
+
 B any_squeeze(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
 B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed; if this function errors due to OOM, the argument won't yet be consumed
 
-B num_squeeze(B x); // consumes; always returns a bitarr on empty input
-B chr_squeeze(B x); // consumes; always returns a c8arr on empty input
+typedef struct { B r; u8 re; } SqRes;
+#define SQ_UNPACK(F)  SqRes r = F(x); *re_out = r.re; assert(r.re == TI(r.r,elType)); return r.r;
+SqRes squeeze_numTryImpl(B x);
+SqRes squeeze_chrTryImpl(B x);
 
-// these return an arbitrary-type array on empty input
-static inline B num_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : num_squeeze(x); }
-static inline B chr_squeezeChk(B x) { return FL_HAS(x,fl_squoze)? x : chr_squeeze(x); }
+B squeeze_numNew(B x); // consumes; doesn't try using any existing flags; primarily intended for squeezing a newly-created array; returns bitarr for IA(x)==0
+B squeeze_chrNew(B x); // consumes; doesn't try using any existing flags; primarily intended for squeezing a newly-created array; returns c8arr for IA(x)==0
+
+static B squeeze_numNewTy(u8 xe, B x) { debug_assert(TI(x,elType)==xe); return squeeze_numNew(x); } // squeeze_numNew but with a known eltype; currently eltype isn't used for anything
+
+static B squeeze_numTry(B x, u8* re_out) { SQ_UNPACK(squeeze_numTryImpl) } // consumes; always returns bitarr for IA(x)==0; utilizes squoze/sortedness flags
+static B squeeze_chrTry(B x, u8* re_out) { SQ_UNPACK(squeeze_chrTryImpl) } // consumes; always returns bitarr for IA(x)==0; utilizes squoze/sortedness flags
+
+B squeeze_numOut(B x); // consumes; squeeze_numTry but without re_out
+B squeeze_chrOut(B x); // consumes; squeeze_chrTry but without re_out
 
 B def_fn_uc1(B t,    B o,           B x);  B def_fn_ucw(B t,    B o,           B w, B x);
 B def_m1_uc1(Md1* t, B o, B f,      B x);  B def_m1_ucw(Md1* t, B o, B f,      B w, B x);

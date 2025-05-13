@@ -1205,11 +1205,12 @@ NOINLINE B rotate_highrank(bool inv, B w, B x) {
   if (wia>xr) goto badlen;
   
   if (wia==0) { r=x; goto decW_ret; }
-  if (!elNum(TI(w,elType))) {
-    w = num_squeeze(w);
-    if (!elNum(TI(w,elType))) thrF("𝕨⌽%U𝕩: 𝕨 contained non-number", INV);
+  u8 we = TI(w,elType);
+  if (!elNum(we)) {
+    w = squeeze_numTry(w, &we);
+    if (!elNum(we)) thrF("𝕨⌽%U𝕩: 𝕨 contained non-number", INV);
   }
-  bool origF64 = TI(w,elType)==el_f64;
+  bool origF64 = we==el_f64;
   w = toF64Any(w);
   f64* wp = tyany_ptr(w);
   if (origF64) for (ux i = 0; i < wia; i++) o2i64(m_f64(wp[i]));
@@ -1398,7 +1399,7 @@ B pick_ucw(B t, B o, B w, B x) {
         if (RARE(c==USZ_MAX)) { mut_pfree(r, i); goto def; }
         mut_setG(r, i, m_usz(c));
       }
-      w = num_squeeze(mut_fcd(r, w));
+      w = squeeze_numNew(mut_fcd(r, w));
       B rep = isArr(o)? incG(o) : c1(o, C2(select, incG(w), C1(shape, incG(x))));
       // error messages will need to get more non-trivial for deeper mismatches
       if (isAtm(rep) || !eqShape(w, rep)) thrF("𝔽⌾(nested⊸⊑)𝕩: 𝔽 must return an array with the same shape as its input (expected %0H, got %0H)", w, rep);

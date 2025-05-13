@@ -492,7 +492,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
               GRADE_UD(bp[0]=0; bp[1]=1;, bp[0]=1; bp[1]=0;)
               B i = C2(GRADE_NAME, b01, x);
               f64* c; B rw = m_f64arrv(&c, 3); c[0]=0; c[1]=c1; c[2]=wia;
-              r = C2(select, i, num_squeeze(rw));
+              r = C2(select, i, squeeze_numNewTy(el_f64,rw));
             }
           } else { // xe==el_bit: 2-element lookup table
             i8* bp; B b01 = m_i8arrv(&bp, 2); bp[0]=0; bp[1]=1;

@@ -244,30 +244,53 @@ NOINLINE B int_squeeze_sorted(B x, Arr* xa, u8 type, ux ia) {
 
 
 
-NOINLINE B any_squeeze(B x) {
-  assert(isArr(x));
-  if (FL_HAS(x, fl_squoze|fl_asc|fl_dsc)) {
-    if (FL_HAS(x, fl_squoze)) return x;
-    if (elInt(TI(x,elType))) return int_squeeze_sorted(x, a(x), TY(x), IA(x));
-    // could check for sorted character arrays (even from a TI(x,el_B) input) but sorted character arrays aren't worth it
-  }
+#define SQ_FAST(RET) if (FL_HAS(x, fl_squoze)) { RET; }
+#define SQ_FAST_EXT(NEW, RET) \
+  if (FL_HAS(x, fl_squoze|fl_asc|fl_dsc)) { \
+    SQ_FAST(RET)                            \
+    if (elInt(TI(x,elType))) { x = int_squeeze_sorted(x, a(x), TY(x), ia); NEW; RET; } \
+  } // could check for sorted character arrays (even from a TI(x,el_B) input) but sorted character arrays aren't worth it
+
+#define SQ_READ \
+  assert(isArr(x)); \
+  u8 xe = TI(x,elType); \
   usz ia = IA(x);
+
+NOINLINE B any_squeeze(B x) {
+  SQ_READ;
+  SQ_FAST_EXT(, return x);
   if (ia==0) return FL_SET(x, fl_squoze); // TODO return a version of the smallest type?
-  return squeeze_anyFns[TI(x,elType)](x, a(x), TY(x), ia);
+  return squeeze_anyFns[xe](x, a(x), TY(x), ia);
 }
 
-NOINLINE B num_squeeze(B x) {
-  assert(isArr(x));
-  u8 xe = TI(x,elType);
-  if (IA(x) == 0) return xe==el_bit? x : emptyNumsWithShape(x);
-  return squeeze_numFns[xe](x,a(x),TY(x),IA(x));
+NOINLINE B squeeze_numNew(B x) {
+  SQ_READ;
+  if (ia==0) return xe==el_bit? x : emptyNumsWithShape(x);
+  return squeeze_numFns[xe](x,a(x),TY(x),ia);
 }
-NOINLINE B chr_squeeze(B x) {
-  assert(isArr(x));
-  u8 xe = TI(x,elType);
-  if (IA(x) == 0) return xe==el_c8? x : emptyChrsWithShape(x);
-  return squeeze_chrFns[xe](x,a(x),TY(x),IA(x));
+NOINLINE B squeeze_chrNew(B x) {
+  SQ_READ;
+  if (ia==0) return xe==el_c8? x : emptyChrsWithShape(x);
+  return squeeze_chrFns[xe](x,a(x),TY(x),ia);
 }
+
+SqRes squeeze_numTryImpl(B x) {
+  SQ_READ;
+  if (ia==0) return (SqRes){xe==el_bit? x : emptyNumsWithShape(x), el_bit};
+  SQ_FAST_EXT(xe=TI(x,elType), return ((SqRes){x, xe}));
+  x = squeeze_numFns[xe](x,a(x),TY(x),ia);
+  return (SqRes){x, TI(x,elType)};
+}
+SqRes squeeze_chrTryImpl(B x) {
+  SQ_READ;
+  SQ_FAST(return ((SqRes){x, xe}));
+  if (ia==0) return (SqRes){xe==el_c8? x : emptyChrsWithShape(x), el_c8};
+  x = squeeze_chrFns[xe](x,a(x),TY(x),ia);
+  return (SqRes){x, TI(x,elType)};
+}
+
+B squeeze_numOut(B x) { return squeeze_numTryImpl(x).r; }
+B squeeze_chrOut(B x) { return squeeze_chrTryImpl(x).r; }
 
 
 

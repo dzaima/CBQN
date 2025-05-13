@@ -234,7 +234,7 @@ static NOINLINE void comps_push(B src, B state, B re) {
 #define COMPS_POP ({ ptr_dec(comps_curr); comps_curr = NULL; })
 
 static NOINLINE Block* bqn_compc(B str, B state, B re) { // consumes str,state
-  str = chr_squeeze(str);
+  str = squeeze_chrOut(str);
   COMPS_PUSH(str, state, re);
   B* o = harr_ptr(re);
   Block* r = load_buildBlock(c2G(o[re_compFn], incG(o[re_compOpts]), inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), NULL, 0);
@@ -245,7 +245,7 @@ Block* bqn_comp(B str, B state) {
   return bqn_compc(str, state, def_re);
 }
 Block* bqn_compScc(B str, B state, B re, Scope* sc, bool loose, bool noNS) {
-  str = chr_squeeze(str);
+  str = squeeze_chrOut(str);
   COMPS_PUSH(str, state, re);
   B* o = harr_ptr(re);
   B vName = emptyHVec();

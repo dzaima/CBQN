@@ -209,12 +209,7 @@ i32 num_fmt(char buf[30], f64 x) {
 }
 
 static B appendRaw(B s, B x) { assert(isArr(x) && RNK(x)==1); // consumes x
-  if (TI(x,elType)==el_c32) AJOIN(x);
-  else {
-    B sq = chr_squeezeChk(x);
-    if (!elChr(TI(sq,elType))) FL_KEEP(sq, ~fl_squoze);
-    AJOIN(sq);
-  }
+  AJOIN(squeeze_chrOut(x));
   return s;
 }
 NOINLINE B do_fmt(B s, char* p, va_list a) {

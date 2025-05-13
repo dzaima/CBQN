@@ -315,8 +315,7 @@ static u32 styG(B x) {
     if (buf[1]>max) thrF("FFI: Array provided for %S%S contained %l", ref, desc, buf[1]);
     decG(x);
   }
-  static bool elChrOk(B x, u64 max) {
-    u8 xe = TI(x,elType);
+  static bool elChrOk(B x, u64 max, u8 xe) {
     if (xe==el_c8) return true;
     if (xe==el_c16 && max>=U16_MAX) return true;
     if (xe==el_c32 && max>=U32_MAX) return true;
@@ -329,9 +328,10 @@ static u32 styG(B x) {
       if (IA(x)==0) return;
       B nonChr = nonChar(x);
       if (nonChr.u!=bi_N.u) thrF("FFI: Array provided for :c%S contained %S", desc+1, genericDesc(nonChr));
-      if (elChrOk(x, umax)) return;
-      B sq = chr_squeeze(incG(x));
-      bool ok = elChrOk(sq, umax);
+      u8 xe = TI(x,elType);
+      if (elChrOk(x, umax, xe)) return;
+      B sq = squeeze_chrTry(incG(x), &xe);
+      bool ok = elChrOk(sq, umax, xe);
       decG(sq);
       if (!ok) thrF("FFI: Array provided for :c%S contained %S", desc+1, genericDesc(nonChr));
     }
@@ -579,7 +579,7 @@ DecoratedType ffi_parseDecoratedType(B arg, bool forRes) { // doesn't consume; p
     if (!forRes) thrM("Type parser: Type was empty");
     return (DecoratedType){{.o=m_c32(sty_void), .resSingle=false}, .ffitype = ffi_type_void};
   }
-  arg = chr_squeezeChk(incG(arg));
+  arg = squeeze_chrOut(incG(arg));
   
   u32* xp0 = parseType_pre(arg, ia);
   u32* xp = xp0;
@@ -659,9 +659,9 @@ static B toU16Bits(B x) { return TI(x,elType)==el_i16? x : cpyU16Bits(x); }
 static B toU8Bits(B x)  { return TI(x,elType)==el_i8?  x : cpyU8Bits(x); }
 
 // read x as the specified type (assuming a container of the respective width signed integer array); consumes x
-NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*  xp=tyarr_ptr(x); i16* rp; B r=m_i16arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
-NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
-NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return num_squeeze(r); }
+NOINLINE B readU8Bits(B x)  { usz ia=IA(x); u8*  xp=tyarr_ptr(x); i16* rp; B r=m_i16arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return squeeze_numNewTy(el_i16,r); }
+NOINLINE B readU16Bits(B x) { usz ia=IA(x); u16* xp=tyarr_ptr(x); i32* rp; B r=m_i32arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return squeeze_numNewTy(el_i32,r); }
+NOINLINE B readU32Bits(B x) { usz ia=IA(x); u32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return squeeze_numNewTy(el_f64,r); }
 NOINLINE B readF32Bits(B x) { usz ia=IA(x); f32* xp=tyarr_ptr(x); f64* rp; B r=m_f64arrv(&rp, ia); vfor (usz i=0; i<ia; i++) rp[i]=xp[i]; return r; }
 B m_ptrobj_s(void* ptr, B o); // consumes o, sets stride to size of o
 B m_ptrobj(void* ptr, B o, ux stride); // consumes o

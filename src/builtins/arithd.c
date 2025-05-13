@@ -52,7 +52,7 @@ static B divint_AA(B w, B x) { // consumes both
   w = toI32Any(w);
   x = toI32Any(x); i32* xp = tyany_ptr(x);
   DIVLOOP(f64, i32, wp[i]/(f64)xp[i]);
-  r = num_squeeze(r); decG(w); decG(x); return r;
+  r = squeeze_numNewTy(el_f64,r); decG(w); decG(x); return r;
 }
 static B divint_AS(B w, i32 xv) { // consumes
   w = toI32Any(w);
@@ -60,7 +60,7 @@ static B divint_AS(B w, i32 xv) { // consumes
   if (xv==-1) return C1(sub, w);
   if (xv==0) return C2(mul, w, m_f64(1.0/0.0));
   DIVLOOP(f64, i32, wp[i]/(f64)xv);
-  r = num_squeeze(r); decG(w); return r;
+  r = squeeze_numNewTy(el_f64,r); decG(w); return r;
 }
 
 static B floordiv_AA(B w, B x) { // consumes both
@@ -70,7 +70,7 @@ static B floordiv_AA(B w, B x) { // consumes both
     w = taga(cpyI16Arr(w));
     x = toI32Any(x); i32* xp = i32any_ptr(x);
     DIVLOOP(f64, i16, floorf((f32)wp[i] / (f32)xp[i]));
-    r = num_squeeze(r); decG(w); decG(x); return r;
+    r = squeeze_numNewTy(el_f64,r); decG(w); decG(x); return r;
   }
   return C1(floor, divint_AA(w, x));
 }
@@ -96,8 +96,8 @@ static B floordiv_AS(B w, i32 xv) { // consumes
 }
 #undef DIVLOOP
 
-static B modint_AA(B w,    B x) { return num_squeeze(C2(sub, x, C2(mul, w,         floordiv_AA(incG(x), incG(w))))); } // consumes both
-static B modint_SA(i32 wv, B x) { return num_squeeze(C2(sub, x, C2(mul, m_i32(wv), floordiv_AS(incG(x), wv)))); } // consumes
+static B modint_AA(B w,    B x) { return squeeze_numNew(C2(sub, x, C2(mul, w,         floordiv_AA(incG(x), incG(w))))); } // consumes both
+static B modint_SA(i32 wv, B x) { return squeeze_numNew(C2(sub, x, C2(mul, m_i32(wv), floordiv_AS(incG(x), wv)))); } // consumes
 static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w)), xv)); } // consumes w, assumes xv is number
 
 
@@ -157,14 +157,14 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
             if (xe==el_i32) { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
             else            { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
           }                                                       \
-          decG(w); decG(x); return num_squeeze(r);                \
+          decG(w); decG(x); return squeeze_numNewTy(el_f64,r);    \
         }                                                         \
       } else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); \
-        if (elInt(xe)) {INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR vfor (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
-        if (xe==el_f64){       Rf64(x);         PF(x)  FLT_SAI DECOR vfor (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return num_squeeze(r); } \
+        if (elInt(xe)) {INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR vfor (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return squeeze_numNewTy(el_f64,r); } \
+        if (xe==el_f64){       Rf64(x);         PF(x)  FLT_SAI DECOR vfor (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return squeeze_numNewTy(el_f64,r); } \
       } else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); ANY_AS \
-        if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
-        if (we==el_f64){       Rf64(w);         PF(w)          DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return num_squeeze(r); } \
+        if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
+        if (we==el_f64){       Rf64(w);         PF(w)          DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
       }                                                           \
       P2(NAME)                                                    \
     }                                                             \
@@ -175,7 +175,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     , /*INT_AS*/ if(q_i32(x)) { r = divint_AS(w, o2iG(x)); /*decG(w);         */ return r; }
     , /*INT_AA*/                r = divint_AA(w, x);       /*decG(w); decG(x);*/ return r;
     , /*FLT_SAI*/
-    , /*ANY_AS*/ if((r_f64u(o2fG(x)) & ((1ULL<<52)-1)) == 0 && elNum(we)) return num_squeeze(C2(mul, w, m_f64(1/(o2fG(x)+0))));
+    , /*ANY_AS*/ if((r_f64u(o2fG(x)) & ((1ULL<<52)-1)) == 0 && elNum(we)) return squeeze_numNew(C2(mul, w, m_f64(1/(o2fG(x)+0))));
   )
   GC2f("√", root , pow(x.f+0, 1.0/(w.f+0)), NOUNROLL,,,,,)
   GC2f("⋆", pow  , pow(w.f+0, x.f), NOUNROLL,,,,,)
@@ -307,7 +307,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
           if (xei) { PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
           else     { PF(x)   DOF(EXPR,w,wp[i],xp[i]) }           \
         } else {PF(w)PI32(x) DOF(EXPR,w,wp[i],xp[i]) }           \
-        decG(w); decG(x); return num_squeeze(r);                 \
+        decG(w); decG(x); return squeeze_numNewTy(el_f64,r);     \
       }                                                          \
       EXTRA                                                      \
       if(we==el_i8  & xe==el_i8 ) { PI8 (w) PI8 (x) DOI8 (EXPR,w,wp[i],xp[i],bad) } \

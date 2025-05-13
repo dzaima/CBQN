@@ -807,7 +807,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
           NOGC_E;
           if (allNum) {
             GS_UPD;
-            ADD(num_squeeze(r.b));
+            ADD(squeeze_numNew(r.b));
           } else ADD(r.b);
         }
         break;

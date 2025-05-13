@@ -9,7 +9,7 @@
 static NOINLINE B homFil1(B f, B r, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return num_squeeze(r); }
+    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return squeeze_numNew(r); }
     if (f.u==bi_fne.u) { dec(xf); return withFill(r, emptyHVec()); }
     if (!noFill(xf)) {
       if (CATCH) { freeThrown(); return r; }
@@ -24,7 +24,7 @@ static NOINLINE B homFil1(B f, B r, B xf) {
 static NOINLINE B homFil2(B f, B r, B wf, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return num_squeeze(r); }
+    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return squeeze_numNew(r); }
     if (!noFill(wf) && !noFill(xf)) {
       if (CATCH) { freeThrown(); return r; }
       B rf = asFill(c2(f, wf, xf));

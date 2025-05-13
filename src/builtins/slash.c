@@ -577,7 +577,7 @@ B slash_c1(B t, B x) {
   usz xia = IA(x);
   B r;
   u8 xe = TI(x,elType);
-  if (xe!=el_bit && s<=xia) { x = num_squeezeChk(x); xe = TI(x,elType); }
+  if (xe!=el_bit && s<=xia) x = squeeze_numTry(x, &xe);
   if (xe==el_bit) {
     r = where(x, xia, s);
   } else if (RARE(xia > (usz)I32_MAX+1)) {
@@ -651,7 +651,7 @@ B slash_c2(B t, B w, B x) {
     u64 s;
     u8 we = TI(w,elType);
     if (!elInt(we)) {
-      w=any_squeeze(w); we=TI(w,elType);
+      w=any_squeeze(w); we=TI(w,elType); // TODO move squeeze to before depth(w)
       if (!elInt(we)) {
         s = usum(w);
         goto arrW_base;
@@ -666,7 +666,7 @@ B slash_c2(B t, B w, B x) {
     if (xl>6 || (xl<3 && xl!=0)) goto arrW_base;
     if (s<=wia) {
       if (s==0) { r = zeroCells(x); goto decWX_ret; }
-      w=num_squeezeChk(w); we=TI(w,elType);
+      w = squeeze_numTry(w, &we);
       if (we==el_bit) goto wbool;
     }
     // s≠0 now
@@ -842,7 +842,7 @@ static B finish_small_count(B r, u16* ov) {
   // Need to add 1<<15 to r at i for each index i in ov
   u16 e = -1; // ov end marker
   if (*ov == e) {
-    r = num_squeeze(r);
+    r = squeeze_numNew(r);
   } else {
     r = taga(cpyI32Arr(r)); i32* rp = tyany_ptr(r);
     usz on = 0; u16 ovi;
@@ -901,7 +901,7 @@ B slash_im(B t, B x) {
       usz ria = 1 + (sum>0);
       f64* rp; r = m_f64arrv(&rp, ria);
       rp[sum>0] = sum; rp[0] = xia - sum;
-      r = num_squeeze(r); break;
+      r = squeeze_numNewTy(el_f64,r); break;
     }
 #if SINGELI_SIMD
   #define INIT_RES(N,RIA) \
@@ -946,7 +946,7 @@ B slash_im(B t, B x) {
     if (rmax<128) { /* xia<128 or xia<ria/8, fine to process x slowly */     \
       INIT_RES(8,ria)                                                        \
       for (usz i = 0; i < xia; i++) rp[xp[i]]++;                             \
-      r = num_squeeze(r); break;                                             \
+      r = squeeze_numNewTy(el_i8,r); break;                                  \
     }
   #define CASE_SMALL(N) \
     case el_i##N: {                                                          \
@@ -976,7 +976,7 @@ B slash_im(B t, B x) {
       if (xia>I32_MAX) thrM("/⁼𝕩: 𝕩 too large");
       INIT_RES(32,ria)
       simd_count_i32_i32(rp, xp, xia);
-      r = num_squeeze(r); break;
+      r = squeeze_numNewTy(el_i32,r); break;
     }
   #undef TRY_SMALL_OUT
   #undef INIT_RES
@@ -993,7 +993,7 @@ B slash_im(B t, B x) {
       if (xia<=I32_MAX) { i32* rp; r = m_i32arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; } \
       else              { f64* rp; r = m_f64arrv(&rp, ria); vfor (usz i=0; i<ria; i++) rp[i]=t[i]; } \
       TFREE(t);                                                                \
-      r = num_squeeze(r); break; }
+      r = squeeze_numNew(r); break; }
     CASE(8) CASE(16) CASE(32)
   #undef CASE
 #endif
@@ -1014,8 +1014,7 @@ B slash_im(B t, B x) {
       break;
     }
     case el_c8: case el_c16: case el_c32: case el_B: {
-      x = num_squeezeChk(x);
-      xe = TI(x,elType);
+      x = squeeze_numTry(x, &xe);
       if (elNum(xe)) goto retry;
       B* xp = TO_BPTR(x);
       for (usz i=0; i<xia; i++) o2i64(xp[i]);
@@ -1066,15 +1065,16 @@ B slash_ucw(B t, B o, B w, B x) {
   }
   usz ia = IA(x);
   SGetU(w)
-  if (TI(w,elType) != el_bit) {
-    w = num_squeezeChk(w);
-    if (!elInt(TI(w,elType))) goto base;
+  u8 we = TI(w,elType);
+  if (we != el_bit) {
+    w = squeeze_numTry(w, &we);
+    if (!elInt(we)) goto base;
   }
   
   // (c ; C˙)¨⌾(w⊸/) x
   #if SINGELI_SIMD
   if (isFun(o) && TY(o)==t_md1D) {
-    if (TI(w,elType) != el_bit) goto notConstEach; // TODO could do w↩w≠0 after range checking
+    if (we != el_bit) goto notConstEach; // TODO could do w↩w≠0 after range checking
     u8 xe = TI(x,elType);
     if (xe==el_B) goto notConstEach;
     
@@ -1130,8 +1130,7 @@ B slash_ucw(B t, B o, B w, B x) {
   u8 re = el_or(TI(x,elType), TI(rep,elType));
   MAKE_MUT_INIT(r, ia, re? re : 1);
   usz repI = 0;
-  bool wb = TI(w,elType) == el_bit;
-  if (wb && re!=el_B) {
+  if (we==el_bit && re!=el_B) {
     u64* d = bitany_ptr(w);
     void* rp = r->a;
     switch (re) { default: UD;
@@ -1164,7 +1163,7 @@ B slash_ucw(B t, B o, B w, B x) {
     
   } else {
     SGet(x) SGet(rep) MUTG_INIT(r);
-    if (wb) {
+    if (we == el_bit) {
       u64* d = bitany_ptr(w);
       for (usz i = 0; i < ia; i++) mut_setG(r, i, bitp_get(d, i)? Get(rep,repI++) : Get(x,i));
     } else {
