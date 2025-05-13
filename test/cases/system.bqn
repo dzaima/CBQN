@@ -408,6 +408,7 @@ a←•internal.Unshare ↕10 ⋄ b←10⥊<a ⋄ ! 11 ≡ •internal.Refc a �
 •internal.HasFill¨ ⟨↕0, ↕10, ⟨⟩, 'a'‿1, ""⟩ %% 1‿1‿0‿0‿1
 # •internal.Squeeze
 a←"Ai32"•internal.Variation ↕10 ⋄ •internal.Type •internal.Squeeze a %% "i8arr"
+{! 𝕩 ≡ •internal.Squeeze 𝕩}¨ {0≥•Cmp´0‿¯1⊏𝕩? 𝕩⍋@; 𝕩⍒@}⊸⊢¨ ∾{∨´1e9≤|0‿¯1⊏𝕩? ⟨𝕩⟩; ⟨𝕩,"Ai32"•internal.Variation 𝕩⟩}¨ 1‿1000⊸/¨ ∾{⟨0‿𝕩,𝕩‿0⟩}¨ 1‿2‿¯1 ∾ ¯1⊸-⊸∾ ⥊ 0‿¯1 +⌜ 2⋆7‿15‿31
 # •internal.DeepSqueeze
 a←⋈"Ai32"•internal.Variation ↕10 ⋄ •internal.Type ⊑•internal.DeepSqueeze a %% "i8arr"
 # •internal.ClearRefs
