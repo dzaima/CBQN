@@ -45,7 +45,8 @@
 // COULD interpolation search for large 𝕩 and short 𝕨
 // COULD use linear search and galloping for sorted 𝕩
 
-#define GRADE_CAT(N) CAT(GRADE_UD(gradeUp,gradeDown),N)
+#define GRADE_NAME GRADE_UD(gradeUp,gradeDown)
+#define GRADE_CAT(N) CAT(GRADE_NAME,N)
 #define GRADE_NEG GRADE_UD(,-)
 
 // Timsort
@@ -411,7 +412,7 @@ static u64 CAT(bit_boundary,GRADE_UD(up,dn))(u64* x, u64 n) {
   return b + POPC(v);
 }
 
-#define LE_C2 CAT(GRADE_UD(le,ge),c2)
+#define LE_FN GRADE_UD(le,ge)
 extern B lt_c2(B,B,B);
 extern B le_c2(B,B,B);
 extern B gt_c2(B,B,B);
@@ -451,7 +452,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
         i64EachDec(1, x)
       );
       if (GRADE_UD(1,0) && xe==el_f64) return bit_negate(C2(lt, x, c)); // handle NaNs in x properly
-      return LE_C2(m_f64(0), c, x);
+      return C2(LE_FN, c, x);
     } else {
       SLOW2("𝕨"GRADE_CHR"𝕩", w, x); // Could narrow for mixed types
       u64* rp; r = m_bitarrc(&rp, x);
@@ -489,13 +490,13 @@ B GRADE_CAT(c2)(B t, B w, B x) {
             } else {
               i8* bp; B b01 = m_i8arrv(&bp, 2);
               GRADE_UD(bp[0]=0; bp[1]=1;, bp[0]=1; bp[1]=0;)
-              B i = GRADE_CAT(c2)(m_f64(0), b01, x);
+              B i = C2(GRADE_NAME, b01, x);
               f64* c; B rw = m_f64arrv(&c, 3); c[0]=0; c[1]=c1; c[2]=wia;
-              r = select_c2(m_f64(0), i, num_squeeze(rw));
+              r = C2(select, i, num_squeeze(rw));
             }
           } else { // xe==el_bit: 2-element lookup table
             i8* bp; B b01 = m_i8arrv(&bp, 2); bp[0]=0; bp[1]=1;
-            B i = GRADE_CAT(c2)(m_f64(0), w, b01);
+            B i = C2(GRADE_NAME, w, b01);
             SGetU(i)
             r = bit_sel(x, GetU(i,0), GetU(i,1));
             decG(i);
@@ -515,7 +516,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
             i32 w0 = o2iG(IGetU(w,0));
             // Saturation is correct except it can move low values past
             // pre. Post-adjust with mult×r
-            if (w0 == pre) mult = LE_C2(m_f64(0), m_i32(pre), incG(x));
+            if (w0 == pre) mult = C2(LE_FN, m_i32(pre), incG(x));
             // Narrow x with saturating conversion
             B xn; void *xp = m_tyarrc(&xn, elWidth(we), x, el2t(we));
             u8 ind = xe<el_f64 ? (we-el_i8)+(xe-el_i16)
@@ -552,7 +553,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
     u8 rl = wia<128 ? 0 : wia<(1<<15) ? 1 : wia<(1U<<31) ? 2 : 3;
     void *rp = m_tyarrc(&r, 1<<rl, x, el2t(el_i8+rl));
     si_bins[k*2 + GRADE_UD(0,1)](tyany_ptr(w), wia, tyany_ptr(x), xia, rp, rl);
-    if (!q_N(mult)) r = mul_c2(m_f64(0), mult, r);
+    if (!q_N(mult)) r = C2(mul, mult, r);
     #else
     i32* rp; r = m_i32arrc(&rp, x);
     i32* wi = tyany_ptr(w);
@@ -590,7 +591,7 @@ B GRADE_CAT(c2)(B t, B w, B x) {
   goto done;
 }
 #undef GRADE_CHR
-#undef LE_C2
+#undef LE_FN
 
 #undef LT
 #undef FOR
@@ -604,5 +605,6 @@ B GRADE_CAT(c2)(B t, B w, B x) {
 #undef RADIX_SORT_i16
 #undef RADIX_SORT_i32
 #undef GRADE_CAT
+#undef GRADE_NAME
 #undef GRADE_NEG
 #undef GRADE_UD
