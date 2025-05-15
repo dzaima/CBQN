@@ -58,6 +58,7 @@ void print_BCStream(FILE* f, u32* p) {
     if (*p == RETD || *p == RETN) return;
     p = nextBC(p);
   }
+  fflush(f);
 }
 
 
