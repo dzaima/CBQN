@@ -438,7 +438,7 @@ bool path_remove(B path) {
 int path_stat(struct stat* s, B path) { // doesn't consume; get stat of s; errors if path isn't string; returns non-zero on failure
   OsStr p = toOsStr(path);
 #if !defined(_WIN32)
-  int r = stat(p, s);
+  int r = lstat(p, s);
 #else
   int r = wstat(p, s);
 #endif
