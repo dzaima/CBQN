@@ -64,7 +64,7 @@ NOINLINE bool atomEqualF(B w, B x) {
   usz wia = IA(wd);
   if (wia != IA(xd)) goto dec_ne;
   for (ux i = 0; i < wia; i++) {
-    if(!equal(wdp[i], xdp[i])) goto dec_ne;
+    if(!eequal(wdp[i], xdp[i])) goto dec_ne;
   }
   decG(wd); decG(xd);
   return true;
