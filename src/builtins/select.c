@@ -480,14 +480,14 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
         B cn = Get(rep, i);
-        EQ1(!equal(mut_getU(r, cw), cn));
+        EQ1(!compatible(mut_getU(r, cw), cn));
         mut_rm(r, cw);
         mut_setG(r, cw, cn);
       }
     } else {
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
-        EQ(for (usz j = 0; j < csz; j++), !equal(mut_getU(r, cw*csz + j), Get(rep, i*csz + j)));
+        EQ(for (usz j = 0; j < csz; j++), !compatible(mut_getU(r, cw*csz + j), Get(rep, i*csz + j)));
         for (usz j = 0; j < csz; j++) mut_rm(r, cw*csz + j);
         mut_copyG(r, cw*csz, rep, i*csz, csz);
       }
@@ -538,14 +538,14 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
           B cn = Get(rep, i);
-          EQ1(!equal(cn,rp[cw]));
+          EQ1(!compatible(cn,rp[cw]));
           dec(rp[cw]);
           rp[cw] = cn;
         }
       } else {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
-          EQ(for (usz j = 0; j < csz; j++), !equal(Get(rep, i*csz + j), rp[cw*csz + j]));
+          EQ(for (usz j = 0; j < csz; j++), !compatible(Get(rep, i*csz + j), rp[cw*csz + j]));
           for (usz j = 0; j < csz; j++) dec(rp[cw*csz + j]);
           COPY_TO(rp, el_B, cw*csz, rep, i*csz, csz);
         }
@@ -554,23 +554,25 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
     }
   }
   
-  #define IMPL(T) do {              \
+  #define IMPL(T, COMPATIBLE) do {  \
     if (csz!=1) goto do_tycell;     \
     T* rp = tyarrv_ptr((TyArr*)ra); \
     T* np = tyany_ptr(rep);         \
     for (usz i = 0; i < wia; i++) { \
       READ_W(cw, i);                \
       T cn = np[i];                 \
-      EQ1(cn != rp[cw]);            \
+      EQ1(!COMPATIBLE(cn, rp[cw])); \
       rp[cw] = cn;                  \
     }                               \
     goto dec_ret_ra;                \
   } while(0)
   
-  do_u8:  IMPL(u8);
-  do_u16: IMPL(u16);
-  do_u32: IMPL(u32);
-  do_f64: IMPL(f64);
+  #define INT_EQ(A,B) ((A)==(B))
+  do_u8:  IMPL(u8,  INT_EQ);
+  do_u16: IMPL(u16, INT_EQ);
+  do_u32: IMPL(u32, INT_EQ);
+  do_f64: IMPL(f64, compatibleFloats);
+  #undef INT_EQ
   #undef IMPL
   
   do_tycell:;

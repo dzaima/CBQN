@@ -1175,7 +1175,7 @@ B slash_ucw(B t, B o, B w, B x) {
         i32 cw = o2iG(GetU(w, i));
         if (cw) {
           B cr = Get(rep,repI);
-          if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!equal(GetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
+          if (CHECK_VALID) for (i32 j = 1; j < cw; j++) if (!compatible(GetU(rep,repI+j), cr)) { mut_pfree(r,i); thrM("𝔽⌾(a⊸/): Incompatible result elements"); }
           mut_setG(r, i, cr);
           repI+= cw;
         } else mut_setG(r, i, Get(x,i));

@@ -338,6 +338,12 @@ static bool atomEqual(B w, B x) { // doesn't consume
   if (!isVal(w) | !isVal(x)) return false;
   return atomEqualF(w, x);
 }
+static bool compatible(B w, B x) {
+  return eequal(w, x);
+}
+static bool compatibleFloats(f64 a, f64 b) {
+  return a==b || (a!=a && b!=b);
+}
 
 NOINLINE usz depthF(B x);
 static usz depth(B x) { // doesn't consume
