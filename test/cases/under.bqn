@@ -1,6 +1,6 @@
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
-%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ !∘≡⟜(⊑r)¨ r ⋄ ⊑r}
+%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ !∘•internal.EEqual⟜(⊑r)¨ r ⋄ ⊑r}
 %DEF evar %USE tvar ⋄ _evar ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@} _tvar 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: variation didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ !⊑r}}
 %DEF eqerr %USE eqvar ⋄ _eqerr ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@}⌜ 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: case didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ !⊑r}}
 # ¨ & ˘
@@ -208,3 +208,53 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 !"𝕨⌽⁼𝕩: 𝕩 must have rank at least 1" % 1⌾(2⊸⌽) ↕10
 ⊏⌾(2⊸⌽) 10‿10⥊↕100 %% 28‿29‿20‿21‿22‿23‿24‿25‿26‿27
 ≍⌾(1‿2⊸⌽) 5‿5⥊↕25 %% 1‿5‿5⥊22‿23‿24‿20‿21‿2‿3‿4‿0‿1‿7‿8‿9‿5‿6‿12‿13‿14‿10‿11‿17‿18‿19‿15‿16
+
+# NaN things
+(
+  %USE eqvar
+  _test ← { set Repl _𝕣 exp:
+    # •Show ⟨"test", set, Repl, exp⟩
+    bad ⇐ {⇐}
+    _mod ← {exp? 𝔽; {"Expected error!"!bad≢𝕩⋄𝕩}∘(bad∘𝔽⎊{𝕊: •CurrentError@})}
+    
+    HasMsg ← {⟨"mismatched result/error message", exp, 𝕨, 𝕩⟩ ! (¬exp) ≡ 𝕨≡𝕩}
+    
+    exp {
+      @𝕊·: @;
+      𝕨𝕊0:
+        (1‿0‿1‿1∾6⥊0) {Repl⌾(𝕨⊸/) 𝕩}_eqvar 10⥊0‿1
+        "𝔽⌾(a⊸/): Incompatible result elements" HasMsg (1‿0‿2∾7⥊0) {Repl⌾(𝕨⊸/) 𝕩} _mod _eqvar 10⥊0‿1
+        
+        1‿2‿5 {Repl⌾(𝕨⊸⊏) 𝕩}_eqvar 10⥊0‿1
+        "𝔽⌾(a⊸⊏): Incompatible result elements" HasMsg 1‿4‿4 {Repl⌾(𝕨⊸⊏) 𝕩} _mod _eqvar 10⥊0‿1
+      ;
+      𝕨𝕊1:
+        "⌾: Incompatible result elements in structural Under" HasMsg 1‿2‿2 {Repl⌾⊑⌾(𝕨⊸⊏¨) ⋈𝕩} _mod 0‿1‿0
+    } set
+  }
+  Batch ← { expNative‿expRuntime‿Get:
+    val ← Get@
+    { 𝕊 rt:
+      # •Show ⟨"batch", get, val, rt⟩
+      expNew‿expSame ← {rt? expRuntime; expNative}
+      rt (Get¨     ) _test expNew
+      rt (Get¨   ↕3) _test expNew
+      rt {𝕊: 3⥊<val} _test expSame
+      rt (   3⥊<val) _test expSame
+      rt (val˙¨    ) _test expSame
+    }¨ 0‿1
+  }
+  ShouldNotBeCalled ← { 𝕊:
+    ! •Show "I should not be called!"
+  }
+  Batch¨ ⟨
+    ⟨0‿0, 0‿0, 0÷0⟩
+    ⟨0‿0, 0‿0, <0÷0⟩
+    ⟨0‿0, 0‿0, ⟨3,0÷0,4⟩⟩
+    ⟨1‿1, @‿@, {𝕊: ShouldNotBeCalled}⟩
+    ⟨1‿1, @‿@, ShouldNotBeCalled˙⟩
+    ⟨0‿1, @‿@, {𝕊: ShouldNotBeCalled⟜(0÷0)}⟩
+    ⟨1‿1, @‿@, ShouldNotBeCalled⟜(0÷0)˙⟩
+    ⟨1‿1, 1‿1, ∞⟩
+  ⟩
+)
