@@ -481,6 +481,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isPervasiveDyExt(f)) {
     if (xr==1) return m_unit(fold_c1(d, x));
     usz xia = IA(x);
+    if (xia==0) { assert(len!=0); return C1(select, x); }
     if (len==xia) {
       B r = m_vec1(fold_c1(d, C1(shape, x)));
       ur rr = xr - 1;
