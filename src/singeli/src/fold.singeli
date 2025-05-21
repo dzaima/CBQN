@@ -730,8 +730,9 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   }
 }
 
-def maxvalue{T==f64} = 1/0
-export_tab{
-  'si_insert_min',
-  each{{T} => insert_assoc{T, __min, maxvalue{T}}, tup{i8,i16,i32,f64}}
-}
+def minvalue{(f64)} = -1/0
+def maxvalue{(f64)} =  1/0
+export_tab{'si_insert_minmax', flat_table{
+  {{op, mv}, T} => insert_assoc{T, op, mv{T}},
+  tup{tup{__min,maxvalue}, tup{__max,minvalue}}, tup{i8,i16,i32,f64}
+}}
