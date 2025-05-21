@@ -1170,6 +1170,10 @@ B slash_ucw(B t, B o, B w, B x) {
       u64* d = bitany_ptr(w);
       for (usz i = 0; i < ia; i++) mut_setG(r, i, bitp_get(d, i)? Get(rep,repI++) : Get(x,i));
     } else {
+      if (re == el_B) {
+        mut_fillG(r, 0, m_f64(0), ia);
+        NOGC_E;
+      }
       SGetU(rep)
       for (usz i = 0; i < ia; i++) {
         i32 cw = o2iG(GetU(w, i));

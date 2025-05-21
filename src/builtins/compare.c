@@ -218,6 +218,7 @@ static NOINLINE bool eequalFloat(f64* wp, f64* xp, usz ia) {
   if (ia==0) return true;
 
 NOINLINE bool equal(B w, B x) { // doesn't consume
+  NOGC_CHECK("cannot use equal(w,x) during noAlloc");
   EQ_START(atomEqual);
   
   u8 we = TI(w,elType);
@@ -228,6 +229,7 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
 }
 
 bool eequal(B w, B x) { // doesn't consume
+  NOGC_CHECK("cannot use eequal(w,x) during noAlloc");
   if (w.u==x.u) return true;
   EQ_START(atomEEqual);
   
