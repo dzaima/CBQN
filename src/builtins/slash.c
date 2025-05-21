@@ -1068,7 +1068,6 @@ B slash_ucw(B t, B o, B w, B x) {
     return def_fn_ucw(t, o, w, x);
   }
   usz ia = IA(x);
-  SGetU(w)
   u8 we = TI(w,elType);
   if (we != el_bit) {
     w = squeeze_numTry(w, &we);
@@ -1188,7 +1187,7 @@ B slash_ucw(B t, B o, B w, B x) {
         mut_fillG(r, 0, m_f64(0), ia);
         NOGC_E;
       }
-      SGetU(rep)
+      SGetU(w) SGetU(rep)
       for (usz i = 0; i < ia; i++) {
         ux cw = o2u64G(GetU(w, i));
         if (cw) {
