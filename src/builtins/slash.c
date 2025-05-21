@@ -666,6 +666,7 @@ B slash_c2(B t, B w, B x) {
       goto arrW_base;
     }
     s = usum(w);
+    if (s>=USZ_MAX) thrOOM();
     if (xl>6 || (xl<3 && xl!=0)) goto arrW_base;
     if (s<=wia) {
       if (s==0) { r = zeroCells(x); goto decWX_ret; }
@@ -678,8 +679,11 @@ B slash_c2(B t, B w, B x) {
       arrW_base:
       SLOW2("𝕨/𝕩", w, x);
       B xf = getFillR(x);
+      ux ria = s;
       usz csz = arr_csz(x);
-      MAKE_MUT_INIT(r0, s*csz, TI(x,elType)); MUTG_INIT(r0);
+      mulOn(ria, csz);
+      if (s>=USZ_MAX) thrOOM();
+      MAKE_MUT_INIT(r0, ria, TI(x,elType)); MUTG_INIT(r0);
       SGetU(w)
       B wc; usz ri=0;
       if (csz!=1) {   for (ux i=0; i<wia; i++) { if (!q_usz(wc=GetU(w,i))) goto pfree; usz c=o2sG(wc); for(ux j=0;j<c;j++) { mut_copyG(r0, ri, x, i*csz, csz); ri+= csz; } } }
