@@ -1098,7 +1098,7 @@ B slash_ucw(B t, B o, B w, B x) {
     if (!toConstant(f, &c)) goto notConstEach;
     
     if (we != el_bit) {
-      // relies 
+      // relies on compatible(c,c) always being true
       w = C2(ne, w, m_f64(0));
       assert(TI(w,elType)==el_bit);
       we = el_bit;
