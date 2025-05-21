@@ -495,7 +495,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
     #if SINGELI
     u8 xe = TI(x,elType);
     u8 rtid = RTID(f);
-    if (elNum(xe) && xe!=el_bit && (rtid==n_floor || rtid==n_ceil)) {
+    if (elNum(xe) && xe!=el_bit && (rtid==n_floor || rtid==n_ceil || (rtid==n_add && xe==el_f64))) {
       usz* xsh = SH(x);
       usz c = shProd(xsh, 1, xr);
       Arr* r; void* rp = m_tyarrp(&r,elWidth(xe),c,el2t(xe));
@@ -506,7 +506,10 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       } else {
         arr_shVec(r);
       }
-      si_insert_minmax[4*(rtid==n_ceil) + xe-el_i8](rp, tyany_ptr(x), len, c);
+      (rtid==n_add ? si_insert_add_f64
+                   : si_insert_minmax[4*(rtid==n_ceil) + xe-el_i8])(
+        rp, tyany_ptr(x), len, c
+      );
       decG(x); return taga(r);
     }
     #endif
