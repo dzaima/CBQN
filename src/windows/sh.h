@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <process.h>
 
 typedef struct {
   HANDLE hndl;
@@ -6,7 +7,7 @@ typedef struct {
   u64 len;
 } ThreadIO;
 
-static DWORD WINAPI winThreadWrite(LPVOID arg0) {
+static unsigned int __stdcall winThreadWrite(void* arg0) {
   DWORD dwResult = ERROR_SUCCESS;
   ThreadIO* arg = arg0;
   HANDLE hndl = arg->hndl;
@@ -24,7 +25,7 @@ static DWORD WINAPI winThreadWrite(LPVOID arg0) {
   return dwResult;
 }
 
-static DWORD WINAPI winThreadRead(LPVOID arg0) {
+static unsigned int __stdcall winThreadRead(void* arg0) {
   DWORD dwResult = ERROR_SUCCESS;
   ThreadIO* arg = arg0;
   HANDLE hndl = arg->hndl;
@@ -40,9 +41,7 @@ static DWORD WINAPI winThreadRead(LPVOID arg0) {
       dwResult = GetLastError();
       break;
     }
-    char* newBuf = (rBuf == NULL)?
-      calloc(dwHasRead+dwRead, sizeof(char)) :
-      realloc(rBuf, (dwHasRead+dwRead)*sizeof(char));
+    char* newBuf = realloc(rBuf, (dwHasRead+dwRead)*sizeof(char));
     if (newBuf == NULL) { dwResult = GetLastError(); break; }
     rBuf = newBuf;
     memcpy(&rBuf[dwHasRead], buf, dwRead);
@@ -112,9 +111,9 @@ static DWORD winCmd(WCHAR* arg,
 
   DWORD exitCode = -1;
   HANDLE lpThreads[3];
-  lpThreads[0] = CreateThread(NULL, 0, winThreadWrite, (LPVOID)&data0, 0, NULL);
-  lpThreads[1] = CreateThread(NULL, 0, winThreadRead,  (LPVOID)&data1, 0, NULL);
-  lpThreads[2] = CreateThread(NULL, 0, winThreadRead,  (LPVOID)&data2, 0, NULL);
+  lpThreads[0] = (HANDLE)_beginthreadex(NULL, 0, winThreadWrite, (void*)&data0, 0, NULL);
+  lpThreads[1] = (HANDLE)_beginthreadex(NULL, 0, winThreadRead,  (void*)&data1, 0, NULL);
+  lpThreads[2] = (HANDLE)_beginthreadex(NULL, 0, winThreadRead,  (void*)&data2, 0, NULL);
 
   for (int i = 0; i < 3; ++i) {
     if (lpThreads[i] == NULL) { dwResult = GetLastError(); goto error; }
