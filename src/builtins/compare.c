@@ -133,6 +133,15 @@ u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; 
   DEF_EQ_U1(16, i16)
   DEF_EQ_U1(32, i32)
   DEF_EQ_U1(f64, f64)
+  bool equal_f64_f64_reflexive(void* wp, void* xp, ux l, u64 data) {
+    bool r = true;
+    for (ux i = 0; i < l; i++) {
+      f64 w = ((f64*)wp)[i];
+      f64 x = ((f64*)xp)[i];
+      r&= (w==x) | (w!=w & x!=x);
+    }
+    return r;
+  }
   #undef DEF_EQ_U1
 
   #define DEF_EQ_I(NAME, S, T, INIT) \
@@ -154,15 +163,6 @@ u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; 
   #undef DEF_EQ
 #endif
 static NOINLINE bool notEq(void* a, void* b, ux l, u64 data) { assert(l>0); return false; }
-static NOINLINE bool eequalFloat(void* wp, void* xp, ux l, u64 data) {
-  bool r = true;
-  for (ux i = 0; i < l; i++) {
-    f64 w = ((f64*)wp)[i];
-    f64 x = ((f64*)xp)[i];
-    r&= (w==x) | (w!=w & x!=x);
-  }
-  return r;
-}
 
 #define MAKE_TABLE(NAME, F64_F64) \
 INIT_GLOBAL MatchFn NAME[] = { \
@@ -170,13 +170,13 @@ INIT_GLOBAL MatchFn NAME[] = { \
   F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,     \
   F(1_16),  F(s8_16),  F(8_8),     F(s16_32),  F(s16_f64), notEq,    notEq,     notEq,     \
   F(1_32),  F(s8_32),  F(s16_32),  F(8_8),     F(s32_f64), notEq,    notEq,     notEq,     \
-  F(1_f64), F(s8_f64), F(s16_f64), F(s32_f64), F64_F64,    notEq,    notEq,     notEq,     \
+  F(1_f64), F(s8_f64), F(s16_f64), F(s32_f64), F(F64_F64), notEq,    notEq,     notEq,     \
   notEq,    notEq,     notEq,      notEq,      notEq,      F(8_8),   F(u8_16),  F(u8_32),  \
   notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_16), F(8_8),    F(u16_32), \
   notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_32), F(u16_32), F(8_8),    \
 };
-MAKE_TABLE(matchFns, F(f64_f64));
-MAKE_TABLE(matchFnsR, eequalFloat);
+MAKE_TABLE(matchFns, f64_f64);
+MAKE_TABLE(matchFnsR, f64_f64_reflexive);
 #undef MAKE_TABLE
 
 #undef F

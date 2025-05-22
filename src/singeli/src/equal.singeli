@@ -66,6 +66,38 @@ fn equal{W, X}(w:*void, x:*void, l:ux, d:u64) : u1 = {
   1
 }
 
+def eq_reflexive{a:V=[k](f64), b:V} = (a==b) | ((a!=a) & (b!=b))
+
+def any_ne_reflexive_qnan{M, a:V=[k](f64), b:V} = { # (a==b) | (isQNaN{a} & isQNaN{b}); assumes at least one arg isn't sNaN
+  def U = ty_u{V}
+  def t1 = U~~a & U~~b
+  
+  def ne = a != b
+  def t2 = ne & U**0x7FF8_0000_0000_0000
+  
+  def andn_bit_none{M, x:T, y:T} = ~any_bit{M{x&~y}}
+  def andn_bit_none{M, x:T, y:T if M{0}==0 and hasarch{'X86_64'}} = andn_bit_none{x,y}
+  ~andn_bit_none{M, t2, t1}
+}
+
+fn equal_reflexive{}(w:*void, x:*void, l:ux, d:u64) : u1 = {
+  def w = *f64~~w
+  def x = *f64~~x
+  def bulk = arch_defvw / width{f64}
+  def unr = if (hasarch{'AARCH64'}) 2 else 1
+  def V = [bulk]f64
+  @for_mu{bulk, unr}(w in tup{V,w}, x in tup{V,x}, M in 'm' over i to l) {
+    if (hasarch{'SSE4.1'}) {
+      each{{w,x} => {
+        if (any_ne_reflexive_qnan{M,w,x}) return{0}
+      }, w, x}
+    } else {
+      if (any_hom{M, ...each{{w,x} => ~eq_reflexive{w,x}, w, x}}) return{0}
+    }
+  }
+  1
+}
+
 export{'simd_equal_1_1',     equal{u1, u1}}
 export{'simd_equal_1_8',     equal{u1, u8}}
 export{'simd_equal_1_16',    equal{u1, u16}}
@@ -82,6 +114,7 @@ export{'simd_equal_s8_f64',  equal{i8,  f64}}
 export{'simd_equal_s16_f64', equal{i16, f64}}
 export{'simd_equal_s32_f64', equal{i32, f64}}
 export{'simd_equal_f64_f64', equal{f64, f64}}
+export{'simd_equal_f64_f64_reflexive', equal_reflexive{}}
 
 export{'simd_equal_u8_16',   equal{u8, u16}}
 export{'simd_equal_u8_32',   equal{u8, u32}}
