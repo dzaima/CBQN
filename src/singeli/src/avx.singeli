@@ -16,8 +16,6 @@ def blend_top{f:T, t:T, m:M if w256i{T,32} and w256i{M,32}} = T ~~ blend_top{v2f
 def blend_top{f:T, t:T, m:M if w256i{T,64} and w256i{M,64}} = T ~~ blend_top{v2d{f}, v2d{t}, v2d{m}}
 
 # mask stuff
-def and_bit_none{x:T, y:T if w256i{T}} = emit{u1, '_mm256_testz_si256', x, y}
-
 def top_to_int{x:T if w256{T, 32}} = emit{u8, '_mm256_movemask_ps', v2f{x}}
 def top_to_int{x:T if w256{T, 64}} = emit{u8, '_mm256_movemask_pd', v2d{x}}
 def hom_to_int{x:T if w256{T}} = top_to_int{x}

@@ -102,6 +102,9 @@ def any_bit{x:[_]_} = ~and_bit_none{x, x}
 
 def mulh{a:V, b:V=[_]E if veci{V,16} and hase{V}} = emit{V, intrin_t{V, 'mulhi'}, a, b}
 
+def  and_bit_none{x:V, y:V if width{V}<=256 and veci{V} and hase{V, 'SSE4.1'}} = emit{u1, intrin{V, 'testz_', vec_l{V}}, x, y}
+def andn_bit_none{x:V, y:V if width{V}<=256 and veci{V} and hase{V, 'SSE4.1'}} = emit{u1, intrin{V, 'testc_', vec_l{V}}, y, x}
+
 # multiplies that only read low 32 bits of arguments
 def mul32{a:V, b:V=[_](u64) if hase{V          }} = emit{V, intrin_t{el_s{V}, 'mul'}, a, b}
 def mul32{a:V, b:V=[_](i64) if hase{V, 'SSE4.1'}} = emit{V, intrin_t{el_s{V}, 'mul'}, a, b}
