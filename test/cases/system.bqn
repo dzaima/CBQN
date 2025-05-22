@@ -2,6 +2,7 @@
 
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
+%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ !∘≡⟜(⊑r)¨ r ⋄ ⊑r}
 
 # standard system values
 
@@ -280,6 +281,8 @@ a←3 ⋄ 12 {𝕊: a+↩𝕩}•_timed 10 ⋄ a %% 123
 E←•internal.EEqual ⋄ a←(¯1⊸×≍⊢) (↕3)∾∞∾0÷0 ⋄ {𝕩!(a 𝕏 0)E a 𝕏 •ParseFloat"-0" ⋄ 𝕩!(0 𝕏 a)E(•ParseFloat"-0") 𝕏 a}¨ (⊢∾{𝕏¨}¨) ⟨+,-,×,÷,⋆,√,⌊,⌈,|,¬,∧,∨,<,>,≠,=,≤,≥, •math.Atan2,•math.Comb,•math.Hypot⟩
 E←•internal.EEqual ⋄ {! (𝕏 4⥊0) E 𝕏 1↓¯1×π∾4⥊0}¨ (⊢∾{𝕏¨}¨) ⟨+,-,×,÷,⋆,√,⌊,⌈,|,¬, •math.Sin,•math.Cos,•math.Tan,•math.Asin,•math.Acos,•math.Atan,•math.Sinh,•math.Cosh,•math.Tanh,•math.Asinh,•math.Acosh,•math.Atanh,•math.Cbrt,•math.Log2,•math.Log10,•math.Log1p,•math.Expm1,•math.Fact,•math.LogFact,•math.Erf,•math.ErfC⟩
 •internal.EEqual´¨ 1⊏˘¨{⟨•math.Atan2⟜2⁼𝕩, •math.Atan2⟜0⁼𝕩, 2⊸•math.Atan2⁼𝕩, 0⊸•math.Atan2⁼𝕩⟩} (¯1⊸×≍⊢) 1.2‿0 %% 1‿1‿1‿1
+(0÷0) •internal.EEqual -0÷0 %% 1
+%USE eqvar ⋄ •internal.EEqual _eqvar⟜- ⟨0÷0, 3⥊0⟩ %% 1
 
 {15 𝕏 10}¨ ⟨•math.GCD,•math.LCM⟩ %% 5‿30
 ⌊1e5×{0.1 𝕏 0.2}¨ ⟨•math.Atan2,•math.Comb,•math.Hypot,•math.Atan2⁼,•math.Atan2˜⁼⟩ %% 110714‿96959‿22360‿2027‿49331

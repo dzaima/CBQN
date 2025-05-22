@@ -75,7 +75,7 @@ NOINLINE bool atomEqualF(B w, B x) {
 }
 
 bool atomEEqual(B w, B x) { // doesn't consume
-  if (isF64(w) & isF64(x)) return w.f==x.f;
+  if (isF64(w) & isF64(x)) return floatIndistinguishable(w.f, x.f);
   if (!isVal(w) || !isVal(x)) return false;
   
   if (TI(w,byRef) || TY(w)!=TY(x)) return false;

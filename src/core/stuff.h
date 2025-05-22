@@ -315,8 +315,10 @@ void noop_visit(Value* x);
   #define VISIT_SHAPE(X)
 #endif
 
+
+
 #define ICMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
-SHOULD_INLINE i32 compareFloat(f64 w, f64 x) {
+SHOULD_INLINE i32 floatCompare(f64 w, f64 x) { // w •Cmp x
   if (RARE(w!=w || x!=x)) return (w!=w) - (x!=x);
   #if __x86_64__
     return (w>x) - !(w>=x); // slightly better codegen from being able to reuse the same compare instruction
@@ -324,9 +326,13 @@ SHOULD_INLINE i32 compareFloat(f64 w, f64 x) {
     return (w>x) - (w<x);
   #endif
 }
+SHOULD_INLINE bool floatIndistinguishable(f64 a, f64 b) { // whether the floats are indistinguishable by BQN semantics
+  return a==b || (a!=a && b!=b);
+}
+
 NOINLINE i32 compareF(B w, B x);
 static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x
-  if (isNum(w) & isNum(x)) return compareFloat(o2fG(w), o2fG(x));
+  if (isNum(w) & isNum(x)) return floatCompare(o2fG(w), o2fG(x));
   if (isC32(w) & isC32(x)) return ICMP(o2cG(w), o2cG(x));
   return compareF(w, x);
 }
@@ -342,7 +348,7 @@ static bool compatible(B w, B x) {
   return eequal(w, x);
 }
 static bool compatibleFloats(f64 a, f64 b) {
-  return a==b || (a!=a && b!=b);
+  return floatIndistinguishable(a, b);
 }
 
 NOINLINE usz depthF(B x);
