@@ -75,7 +75,6 @@ NOINLINE bool atomEqualF(B w, B x) {
 }
 
 bool atomEEqual(B w, B x) { // doesn't consume
-  if (w.u==x.u) return true;
   #if !NEEQUAL_NEGZERO
     if (isF64(w) & isF64(x)) return w.f==x.f;
   #endif
@@ -158,25 +157,39 @@ u8 const eqFnData[] = { // for the main diagonal, amount to shift length by; oth
   #undef DEF_EQ_I
   #undef DEF_EQ
 #endif
-bool notEq(void* a, void* b, u64 l, u64 data) { assert(l>0); return false; }
-INIT_GLOBAL EqFn eqFns[] = {
-  F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,
-  F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,
-  F(1_16),  F(s8_16),  F(8_8),     F(s16_32),  F(s16_f64), notEq,    notEq,     notEq,
-  F(1_32),  F(s8_32),  F(s16_32),  F(8_8),     F(s32_f64), notEq,    notEq,     notEq,
-  F(1_f64), F(s8_f64), F(s16_f64), F(s32_f64), F(f64_f64), notEq,    notEq,     notEq,
-  notEq,    notEq,     notEq,      notEq,      notEq,      F(8_8),   F(u8_16),  F(u8_32),
-  notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_16), F(8_8),    F(u16_32),
-  notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_32), F(u16_32), F(8_8),
+static NOINLINE bool notEq(void* a, void* b, u64 l, u64 data) { assert(l>0); return false; }
+static NOINLINE bool eequalFloat(void* wp0, void* xp0, u64 ia, u64 data) {
+  f64* wp = wp0;
+  f64* xp = xp0;
+  u64 r = 1;
+  for (ux i = 0; i < (ux)ia; i++) {
+    #if NEEQUAL_NEGZERO
+    r&= ((u64*)wp)[i] == ((u64*)xp)[i];
+    #else
+    r&= (wp[i]==xp[i]) | (wp[i]!=wp[i] & xp[i]!=xp[i]);
+    #endif
+  }
+  return r;
+}
+
+#define MAKE_TABLE(NAME, F64_F64) \
+INIT_GLOBAL EqFn NAME[] = { \
+  F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,     \
+  F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,     \
+  F(1_16),  F(s8_16),  F(8_8),     F(s16_32),  F(s16_f64), notEq,    notEq,     notEq,     \
+  F(1_32),  F(s8_32),  F(s16_32),  F(8_8),     F(s32_f64), notEq,    notEq,     notEq,     \
+  F(1_f64), F(s8_f64), F(s16_f64), F(s32_f64), F64_F64,    notEq,    notEq,     notEq,     \
+  notEq,    notEq,     notEq,      notEq,      notEq,      F(8_8),   F(u8_16),  F(u8_32),  \
+  notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_16), F(8_8),    F(u16_32), \
+  notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_32), F(u16_32), F(8_8),    \
 };
+MAKE_TABLE(eqFns, F(f64_f64));
+MAKE_TABLE(eeqFns, eequalFloat);
+#undef MAKE_TABLE
+
 #undef F
 
 
-
-FORCE_INLINE bool equalTyped(B w, B x, u8 we, u8 xe, usz ia) {
-  usz idx = EQFN_INDEX(we, xe);
-  return eqFns[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]);
-}
 
 static NOINLINE bool equalSlow(B w, B x, usz ia) {
   SLOW2("equal", w, x);
@@ -190,24 +203,13 @@ static NOINLINE bool eequalSlow(B w, B x, usz ia) {
   for (usz i = 0; i < ia; i++) if(!eequal(GetU(w,i),GetU(x,i))) return false;
   return true;
 }
-static NOINLINE bool eequalFloat(f64* wp, f64* xp, usz ia) {
-  u64 r = 1;
-  for (usz i = 0; i < ia; i++) {
-    #if NEEQUAL_NEGZERO
-    r&= ((u64*)wp)[i] == ((u64*)xp)[i];
-    #else
-    r&= (wp[i]==xp[i]) | (wp[i]!=wp[i] & xp[i]!=xp[i]);
-    #endif
-  }
-  return r;
-}
 
 
 
-#define EQ_START(F)              \
+#define MATCH_IMPL(ATOM, SLOW, TABLE) \
   if (isAtm(w)) {                \
     if (!isAtm(x)) return false; \
-    return F(w, x);              \
+    return ATOM(w, x);           \
   }                              \
   if (isAtm(x)) return false;    \
   ur wr = RNK(w);                \
@@ -215,27 +217,22 @@ static NOINLINE bool eequalFloat(f64* wp, f64* xp, usz ia) {
   usz ia = IA(x);                \
   if (LIKELY(wr==1)) { if (ia != IA(w)) return false; } \
   else if (!eqShPart(SH(w), SH(x), wr)) return false;   \
-  if (ia==0) return true;
+  if (ia==0) return true;         \
+  u8 we = TI(w,elType);           \
+  u8 xe = TI(x,elType);           \
+  if (we!=el_B && xe!=el_B) {     \
+    usz idx = EQFN_INDEX(we, xe); \
+    return TABLE[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]); \
+  }                               \
+  return SLOW(w, x, ia);
 
 NOINLINE bool equal(B w, B x) { // doesn't consume
   NOGC_CHECK("cannot use equal(w,x) during noAlloc");
-  EQ_START(atomEqual);
-  
-  u8 we = TI(w,elType);
-  u8 xe = TI(x,elType);
-  if (we!=el_B && xe!=el_B) return equalTyped(w, x, we, xe, ia);
-  
-  return equalSlow(w, x, ia);
+  MATCH_IMPL(atomEqual, equalSlow, eqFns);
 }
 
 bool eequal(B w, B x) { // doesn't consume
   NOGC_CHECK("cannot use eequal(w,x) during noAlloc");
   if (w.u==x.u) return true;
-  EQ_START(atomEEqual);
-  
-  u8 we = TI(w,elType);
-  u8 xe = TI(x,elType);
-  if (we==el_f64 && xe==el_f64) return eequalFloat(f64any_ptr(w), f64any_ptr(x), ia);
-  if (RARE(we==el_B || xe==el_B)) return eequalSlow(w, x, ia);
-  return equalTyped(w, x, we, xe, ia);
+  MATCH_IMPL(atomEEqual, eequalSlow, eeqFns);
 }
