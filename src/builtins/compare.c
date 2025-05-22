@@ -115,7 +115,7 @@ u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; 
   #include "../utils/includeSingeli.h"
 #else
   #define F(X) equal_##X
-  bool F(1_1)(void* w, void* x, u64 l, u64 d) {
+  bool F(1_1)(void* w, void* x, ux l, u64 d) {
     assert(l>0);
     u64* wp = w; u64* xp = x;
     usz q = l/64;
@@ -123,7 +123,7 @@ u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; 
     usz r = (-l)%64; return r==0 || (wp[q]^xp[q])<<r == 0;
   }
   #define DEF_EQ_U1(N, T) \
-    bool F(1_##N)(void* w, void* x, u64 l, u64 d) { assert(l>0);       \
+    bool F(1_##N)(void* w, void* x, ux l, u64 d) { assert(l>0);        \
       if (d!=0) { void* t=w; w=x; x=t; }                               \
       u64* wp = w; T* xp = x;                                          \
       for (usz i=0; i<l; i++) if (bitp_get(wp,i)!=xp[i]) return false; \
@@ -136,7 +136,7 @@ u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; 
   #undef DEF_EQ_U1
 
   #define DEF_EQ_I(NAME, S, T, INIT) \
-    bool F(NAME)(void* w, void* x, u64 l, u64 d) {            \
+    bool F(NAME)(void* w, void* x, ux l, u64 d) {             \
       assert(l>0); INIT                                       \
       S* wp = w; T* xp = x;                                   \
       for (usz i=0; i<l; i++) if (wp[i]!=xp[i]) return false; \
@@ -153,10 +153,10 @@ u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; 
   #undef DEF_EQ_I
   #undef DEF_EQ
 #endif
-static NOINLINE bool notEq(void* a, void* b, u64 l, u64 data) { assert(l>0); return false; }
-static NOINLINE bool eequalFloat(void* wp, void* xp, u64 ia, u64 data) {
+static NOINLINE bool notEq(void* a, void* b, ux l, u64 data) { assert(l>0); return false; }
+static NOINLINE bool eequalFloat(void* wp, void* xp, ux l, u64 data) {
   bool r = true;
-  for (ux i = 0; i < (ux)ia; i++) {
+  for (ux i = 0; i < l; i++) {
     f64 w = ((f64*)wp)[i];
     f64 x = ((f64*)xp)[i];
     r&= (w==x) | (w!=w & x!=x);
