@@ -509,7 +509,8 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
     case el_c16: rep = toC16Any(rep); ra = reuse? a(REUSE(x)) : cpyC16Arr(x); goto do_u16;
     case el_i32: rep = toI32Any(rep); ra = reuse? a(REUSE(x)) : cpyI32Arr(x); goto do_u32;
     case el_c32: rep = toC32Any(rep); ra = reuse? a(REUSE(x)) : cpyC32Arr(x); goto do_u32;
-    case el_f64: rep = toF64Any(rep); ra = reuse? a(REUSE(x)) : cpyF64Arr(x); goto do_f64;
+    case el_f64: if (csz!=1) { reuse = false; goto generic; }
+                 rep = toF64Any(rep); ra = reuse? a(REUSE(x)) : cpyF64Arr(x); goto do_f64;
     case el_bit: {                    ra = reuse? a(REUSE(x)) : cpyBitArr(x);
       TyArr* na = toBitArr(rep); rep = taga(na);
       u64* np = bitarrv_ptr(na);
@@ -531,6 +532,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
       goto dec_ret_ra;
     }
     case el_B: {
+      generic:;
       ra = reuse? a(REUSE(x)) : cpyHArr(x);
       B* rp = harrv_ptr(ra);
       SGet(rep)

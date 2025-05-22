@@ -227,10 +227,12 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
       @𝕊·: @;
       𝕨𝕊0:
         (1‿0‿1‿1∾6⥊0) {Repl⌾(𝕨⊸/) 𝕩}_res _eqvar 10⥊0‿1
-        "𝔽⌾(a⊸/): Incompatible result elements" HasMsg (1‿0‿2∾7⥊0) {Repl⌾(𝕨⊸/) 𝕩}_res _mod _eqvar 10⥊0‿1
+        "𝔽⌾(a⊸/): Incompatible result elements"               HasMsg (1‿0‿2∾7⥊0) {    Repl ⌾(𝕨⊸/) 𝕩}_res _mod _eqvar 10  ⥊0‿1
+        "⌾: Incompatible result elements in structural Under" HasMsg (1‿0‿2∾7⥊0) {(3⥊˘Repl)⌾(𝕨⊸/) 𝕩}_res _mod _eqvar 10‿3⥊0‿1
         
         1‿2‿5 {Repl⌾(𝕨⊸⊏) 𝕩}_res _eqvar 10⥊0‿1
-        "𝔽⌾(a⊸⊏): Incompatible result elements" HasMsg 1‿4‿4 {Repl⌾(𝕨⊸⊏) 𝕩}_res _mod _eqvar 10⥊0‿1
+        "𝔽⌾(a⊸⊏): Incompatible result elements" HasMsg 1‿4‿4 {    Repl ⌾(𝕨⊸⊏) 𝕩}_res _mod _eqvar 10  ⥊0‿1
+        "𝔽⌾(a⊸⊏): Incompatible result elements" HasMsg 1‿4‿4 {(3⥊˘Repl)⌾(𝕨⊸⊏) 𝕩}_res _mod _eqvar 10‿3⥊0‿1
       ;
       𝕨𝕊1:
         "⌾: Incompatible result elements in structural Under" HasMsg 1‿2‿2 {Repl⌾⊑⌾(𝕨⊸⊏¨) ⋈𝕩}_res _mod 0‿1‿0
