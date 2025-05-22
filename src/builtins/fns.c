@@ -264,10 +264,10 @@ B find_c2(B t, B w, B x) {
         usz ni = IA(ind);
         i32* ip = i32any_ptr(ind);
         u8* wp = (u8*)tyany_ptr(w) + i*elWidth(we);
-        EqFnObj eqfn = EQFN_GET(we, xe);
+        MatchFnObj match = MATCH_GET(we, xe);
         for (usz ii = 0; ii < ni; ii++) {
           usz j = ip[ii];
-          if (!EQFN_CALL(eqfn, wp, xp + (i+j)*xw, wl-i)) bitp_set(rp, j, 0);
+          if (!MATCH_CALL(match, wp, xp + (i+j)*xw, wl-i)) bitp_set(rp, j, 0);
         }
         decG(ind);
         break;

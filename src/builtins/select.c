@@ -581,10 +581,10 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   u8 cwidth = csz * elWidth(re);
   u8* rp = (u8*) tyarrv_ptr((TyArr*)ra);
   u8* np = tyany_ptr(rep);
-  EqFnObj eq = EQFN_GET(re,re);
+  MatchFnObj eq = MATCH_GET(re,re);
   for (usz i = 0; i < wia; i++) {
     READ_W(cw, i);
-    EQ1(!EQFN_CALL(eq, rp + cw*cwidth, np + i*cwidth, csz));
+    EQ1(!MATCH_CALL(eq, rp + cw*cwidth, np + i*cwidth, csz));
     COPY_TO(rp, re, cw*csz, rep, i*csz, csz);
   }
   goto dec_ret_ra;

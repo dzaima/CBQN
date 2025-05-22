@@ -336,9 +336,9 @@ static NOINLINE Arr* match_cells(bool ne, B w, B x, ur wr, ur xr, ur k, usz len)
     CMP_AA_CALL(cmp, rp, wp, xp, len);
   } else {
     if (we==el_bit || xe==el_bit) { mm_free((Value*)r); return NULL; }
-    EqFnObj eqfn = EQFN_GET(we, xe);
+    MatchFnObj match = MATCH_GET(we, xe);
     for (usz i = 0; i < len; i++) {
-      bitp_set(rp, i, ne^EQFN_CALL(eqfn, wp, xp, csz));
+      bitp_set(rp, i, ne^MATCH_CALL(match, wp, xp, csz));
       wp += ww; xp += xw;
     }
   }

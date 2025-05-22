@@ -26,13 +26,14 @@ CMP_DEF(le, AS);
 #define CMP_AA_IMM(FN, ELT, WHERE, WP, XP, LEN) CMP_AA_CALL(CMP_AA_FN(FN, ELT), WHERE, WP, XP, LEN)
 #define CMP_AS_IMM(FN, ELT, WHERE, WP, X,  LEN) CMP_AS_CALL(CMP_AS_FN(FN, ELT), WHERE, WP, X, LEN)
 
-typedef bool (*EqFn)(void* a, void* b, u64 l, u64 data);
-extern INIT_GLOBAL EqFn eqFns[];
-extern u8 const eqFnData[];
-#define EQFN_INDEX(W_ELT, X_ELT) ((W_ELT)*8 + (X_ELT))
-typedef struct { EqFn fn; u8 data; } EqFnObj;
-#define EQFN_GET(W_ELT, X_ELT) ({ u8 eqfn_i_ = EQFN_INDEX(W_ELT, X_ELT); (EqFnObj){.fn=eqFns[eqfn_i_], .data=eqFnData[eqfn_i_]}; })
-#define EQFN_CALL(FN, W, X, L) (FN).fn(W, X, L, (FN).data) // check if L elements starting at a and b match; assumes L≥1
+typedef bool (*MatchFn)(void* a, void* b, u64 l, u64 data);
+extern INIT_GLOBAL MatchFn matchFns[];
+extern INIT_GLOBAL MatchFn matchFnsR[];
+extern u8 const matchFnData[];
+typedef struct { MatchFn fn; u8 data; } MatchFnObj;
+#define MATCH_GET( W_ELT, X_ELT) ({ u8 mfn_i_ = ((W_ELT)*8 + (X_ELT)); (MatchFnObj){.fn=matchFns [mfn_i_], .data=matchFnData[mfn_i_]}; })
+#define MATCHR_GET(W_ELT, X_ELT) ({ u8 mfn_i_ = ((W_ELT)*8 + (X_ELT)); (MatchFnObj){.fn=matchFnsR[mfn_i_], .data=matchFnData[mfn_i_]}; })
+#define MATCH_CALL(FN, W, X, L) (FN).fn(W, X, L, (FN).data) // check if L elements starting at a and b match; assumes L≥1
 
 typedef bool (*RangeFn)(void* xp, i64* res, u64 len); // assumes len≥1; if x has non-integers or values with absolute value >2⋆53, will return 0 or report min<-2⋆53 or max>2⋆53; else, writes min,max in res and returns 1
 extern INIT_GLOBAL RangeFn getRange_fns[el_f64+1]; // limited to ≤el_f64

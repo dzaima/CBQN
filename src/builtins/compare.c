@@ -99,10 +99,8 @@ bool atomEEqual(B w, B x) { // doesn't consume
   return false;
 }
 
-// Functions in eqFns compare segments for matching
-// data argument comes from eqFnData
 static const u8 n = 99;
-u8 const eqFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
+u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
   0,0,0,0,0,n,n,n,
   1,0,0,0,0,n,n,n,
   1,1,1,0,0,n,n,n,
@@ -173,7 +171,7 @@ static NOINLINE bool eequalFloat(void* wp0, void* xp0, u64 ia, u64 data) {
 }
 
 #define MAKE_TABLE(NAME, F64_F64) \
-INIT_GLOBAL EqFn NAME[] = { \
+INIT_GLOBAL MatchFn NAME[] = { \
   F(1_1),   F(1_8),    F(1_16),    F(1_32),    F(1_f64),   notEq,    notEq,     notEq,     \
   F(1_8),   F(8_8),    F(s8_16),   F(s8_32),   F(s8_f64),  notEq,    notEq,     notEq,     \
   F(1_16),  F(s8_16),  F(8_8),     F(s16_32),  F(s16_f64), notEq,    notEq,     notEq,     \
@@ -183,8 +181,8 @@ INIT_GLOBAL EqFn NAME[] = { \
   notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_16), F(8_8),    F(u16_32), \
   notEq,    notEq,     notEq,      notEq,      notEq,      F(u8_32), F(u16_32), F(8_8),    \
 };
-MAKE_TABLE(eqFns, F(f64_f64));
-MAKE_TABLE(eeqFns, eequalFloat);
+MAKE_TABLE(matchFns, F(f64_f64));
+MAKE_TABLE(matchFnsR, eequalFloat);
 #undef MAKE_TABLE
 
 #undef F
@@ -206,7 +204,7 @@ static NOINLINE bool eequalSlow(B w, B x, usz ia) {
 
 
 
-#define MATCH_IMPL(ATOM, SLOW, TABLE) \
+#define MATCH_IMPL(ATOM, SLOW, MATCH) \
   if (isAtm(w)) {                \
     if (!isAtm(x)) return false; \
     return ATOM(w, x);           \
@@ -217,22 +215,22 @@ static NOINLINE bool eequalSlow(B w, B x, usz ia) {
   usz ia = IA(x);                \
   if (LIKELY(wr==1)) { if (ia != IA(w)) return false; } \
   else if (!eqShPart(SH(w), SH(x), wr)) return false;   \
-  if (ia==0) return true;         \
-  u8 we = TI(w,elType);           \
-  u8 xe = TI(x,elType);           \
-  if (we!=el_B && xe!=el_B) {     \
-    usz idx = EQFN_INDEX(we, xe); \
-    return TABLE[idx](tyany_ptr(w), tyany_ptr(x), ia, eqFnData[idx]); \
-  }                               \
+  if (ia==0) return true;        \
+  u8 we = TI(w,elType);          \
+  u8 xe = TI(x,elType);          \
+  if (we!=el_B && xe!=el_B) {    \
+    MatchFnObj f = MATCH(we,xe); \
+    return MATCH_CALL(f, tyany_ptr(w), tyany_ptr(x), ia); \
+  }                              \
   return SLOW(w, x, ia);
 
 NOINLINE bool equal(B w, B x) { // doesn't consume
   NOGC_CHECK("cannot use equal(w,x) during noAlloc");
-  MATCH_IMPL(atomEqual, equalSlow, eqFns);
+  MATCH_IMPL(atomEqual, equalSlow, MATCH_GET);
 }
 
 bool eequal(B w, B x) { // doesn't consume
   NOGC_CHECK("cannot use eequal(w,x) during noAlloc");
   if (w.u==x.u) return true;
-  MATCH_IMPL(atomEEqual, eequalSlow, eeqFns);
+  MATCH_IMPL(atomEEqual, eequalSlow, MATCHR_GET);
 }
