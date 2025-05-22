@@ -75,9 +75,7 @@ NOINLINE bool atomEqualF(B w, B x) {
 }
 
 bool atomEEqual(B w, B x) { // doesn't consume
-  #if !NEEQUAL_NEGZERO
-    if (isF64(w) & isF64(x)) return w.f==x.f;
-  #endif
+  if (isF64(w) & isF64(x)) return w.f==x.f;
   if (!isVal(w) || !isVal(x)) return false;
   
   if (TI(w,byRef) || TY(w)!=TY(x)) return false;
@@ -156,16 +154,12 @@ u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; 
   #undef DEF_EQ
 #endif
 static NOINLINE bool notEq(void* a, void* b, u64 l, u64 data) { assert(l>0); return false; }
-static NOINLINE bool eequalFloat(void* wp0, void* xp0, u64 ia, u64 data) {
-  f64* wp = wp0;
-  f64* xp = xp0;
-  u64 r = 1;
+static NOINLINE bool eequalFloat(void* wp, void* xp, u64 ia, u64 data) {
+  bool r = true;
   for (ux i = 0; i < (ux)ia; i++) {
-    #if NEEQUAL_NEGZERO
-    r&= ((u64*)wp)[i] == ((u64*)xp)[i];
-    #else
-    r&= (wp[i]==xp[i]) | (wp[i]!=wp[i] & xp[i]!=xp[i]);
-    #endif
+    f64 w = ((f64*)wp)[i];
+    f64 x = ((f64*)xp)[i];
+    r&= (w==x) | (w!=w & x!=x);
   }
   return r;
 }
