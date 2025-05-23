@@ -94,7 +94,7 @@ NOINLINE void dumpByte(bool exp, bool has, void* ptr, u64 o) {
 }
 NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u64 allocFilled, u64 allocTotal, u64 ia, int ty) {
   printf("Corrupted tail @ %p + "N64d", checked length %d\n", ptr, off, len);
-  printf("Allocation filled with "N64d" bytes, total allocation "N64d", IA=="N64d", type==%d\n", allocFilled, allocTotal, ia, ty);
+  printf("Allocation filled with "N64d" bytes, total allocation "N64d", IA=="N64d", type==%d==%s\n", allocFilled, allocTotal, ia, ty, type_repr(ty));
   printf("Expected: x=%016"SCNx64" / u="N64u"\nGot:      x=%016"SCNx64" / u="N64u"\n\n", exp, exp, got, got);
   fflush(stdout); fflush(stderr);
   
