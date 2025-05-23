@@ -987,9 +987,9 @@ B select_ucw(B t, B o, B w, B x) {
   usz wia = IA(w);
   B rep;
   if (isArr(o) && RNK(x)>0) {
-    usz xia = IA(x);
+    usz xn = *SH(x);
     i64 buf[2];
-    if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xia || buf[1]>=xia)) {
+    if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xn || buf[1]>=xn)) {
       C2(select, w, x);
       fatal("select_ucw expected to error");
     }
