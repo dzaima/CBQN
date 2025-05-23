@@ -1,5 +1,5 @@
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
-%DEF tvar2 %USE var ⋄ _tvar2_ ← {F _𝕣_ 𝕘 x: (CLR@) ⊢ {F 𝕩 V x}¨ 𝕘 LV 𝕩; w F _𝕣_ 𝕘 x: (CLR@) ⊢ (𝕘 LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ 𝕘 LV 𝕩}
+%DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
 %DEF fastone (
   _fastone ← { F _𝕣 𝕩:
     t ← 0
@@ -42,9 +42,9 @@
 %USE fastone ⋄ a←∘‿2‿2⥊5+1e6⥊@+↕10000 ⋄ n←{𝕊: a 1⊸+⌾(1‿3‿3‿¯1⊸⊏)↩}_fastone 4 ⋄ ! a ≡ (n×⟨1,3,¯1+≠a⟩∊˜↕≠a) + ∘‿2‿2⥊5+1e6⥊@+↕10000 %!DEBUG
 
 # in-place ∾⟜atom & ∾⟜list
-%USE fastone ⋄ %USE tvar2 ⋄ {𝕊v: j←<⍟(×≡) v ⋄ {a←𝕩 ⋄ n←{𝕊: a∾↩j}_fastone 4 ⋄ !(    n +≠𝕩)≡≠a ⋄ !a≡v¨a}_tvar2_"f" 1e6   ⥊<𝕩}¨ ⟨1, 1‿2, 'a'⟩
-%USE fastone ⋄ %USE tvar2 ⋄ {𝕊v: j←10⥊<v    ⋄ {a←𝕩 ⋄ n←{𝕊: a∾↩j}_fastone 4 ⋄ !((10×n)+≠𝕩)≡≠a ⋄ !a≡v¨a}_tvar2_"f" 1e6   ⥊<𝕩}¨ ⟨1, 1‿2, 'a'⟩
-%USE fastone ⋄ %USE tvar2 ⋄ {𝕊v: j←10⥊<v    ⋄ {a←𝕩 ⋄ n←{𝕊: a∾↩j}_fastone 4 ⋄ !(10⋈˜ n+≠𝕩)≡≢a ⋄ !a≡v¨a}_tvar2_"f" 1e5‿10⥊<𝕩}¨ ⟨1, 1‿2, 'a'⟩
+%USE fastone ⋄ %USE tvar ⋄ LV↩"f"⊸LV ⋄ {𝕊v: j←<⍟(×≡) v ⋄ {a←𝕩 ⋄ n←{𝕊: a∾↩j}_fastone 4 ⋄ !(    n +≠𝕩)≡≠a ⋄ !a≡v¨a}_tvar 1e6   ⥊<𝕩}¨ ⟨1, 1‿2, 'a'⟩
+%USE fastone ⋄ %USE tvar ⋄ LV↩"f"⊸LV ⋄ {𝕊v: j←10⥊<v    ⋄ {a←𝕩 ⋄ n←{𝕊: a∾↩j}_fastone 4 ⋄ !((10×n)+≠𝕩)≡≠a ⋄ !a≡v¨a}_tvar 1e6   ⥊<𝕩}¨ ⟨1, 1‿2, 'a'⟩
+%USE fastone ⋄ %USE tvar ⋄ LV↩"f"⊸LV ⋄ {𝕊v: j←10⥊<v    ⋄ {a←𝕩 ⋄ n←{𝕊: a∾↩j}_fastone 4 ⋄ !(10⋈˜ n+≠𝕩)≡≢a ⋄ !a≡v¨a}_tvar 1e5‿10⥊<𝕩}¨ ⟨1, 1‿2, 'a'⟩
 
 # amortized fast ⍋ with long 𝕨 & tiny 𝕩
-%USE fastone ⋄ %USE tvar2 ⋄ (1e6/↕10) {𝕨⊸⍋⟜𝕩 _fastone 1} _tvar2_"f" ↕10
+%USE fastone ⋄ %USE tvar ⋄ LV↩"f"⊸LV ⋄ (1e6/↕10) {𝕨⊸⍋⟜𝕩 _fastone 1} _tvar ↕10
