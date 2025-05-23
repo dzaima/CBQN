@@ -70,6 +70,7 @@
 #include "../utils/talloc.h"
 #include "../utils/mut.h"
 #include "../utils/calls.h"
+#include "../builtins.h"
 
 #if SINGELI
   #define SINGELI_FILE select
@@ -123,6 +124,53 @@ NOINLINE CFRes cf_get(usz count, usz cszBits) {
 FORCE_INLINE void cf_call(CFRes f, void* r, ux rs, void* x, ux xs) {
   f.fn(r, rs, x, xs, f.data);
 }
+
+extern INIT_GLOBAL u8 reuseElType[t_COUNT];
+typedef struct { B obj; void* data; } DirectArr;
+static NOINLINE DirectArr toFillArr(B x, B fill) {
+    usz ia = IA(x);
+    Arr* r = arr_shCopy(m_fillarrp(ia), x);
+    fillarr_setFill(r, fill);
+    B* rp = fillarrv_ptr(r);
+    COPY_TO(rp, el_B, 0, x, 0, ia);
+    NOGC_E;
+    decG(x);
+    return (DirectArr){taga(r), rp};
+}
+static void* reusableArr_ptr(Arr* t, u8 el) {
+  return el==el_B? (void*)harrv_ptr(t) : tyarrv_ptr((TyArr*)t);
+}
+static DirectArr toEltypeArr(B x, u8 re) { // consumes x; returns an array with eltype==re, with same shape/elements/fill as x, and its data pointer
+  assert(isArr(x));
+  if (reusable(x) && re==reuseElType[TY(x)]) {
+    x = REUSE(x);
+    return (DirectArr){x, reusableArr_ptr(a(x), re)};
+  }
+  
+  Arr* tyarr;
+  switch (re) { default: UD;
+    case el_bit: tyarr = cpyBitArr(x); goto tyarr;
+    case el_i8:  tyarr = cpyI8Arr(x);  goto tyarr;
+    case el_i16: tyarr = cpyI16Arr(x); goto tyarr;
+    case el_i32: tyarr = cpyI32Arr(x); goto tyarr;
+    case el_f64: tyarr = cpyF64Arr(x); goto tyarr;
+    case el_c8:  tyarr = cpyC8Arr(x);  goto tyarr;
+    case el_c16: tyarr = cpyC16Arr(x); goto tyarr;
+    case el_c32: tyarr = cpyC32Arr(x); goto tyarr;
+    case el_B:;
+      B fill = getFillR(x);
+      if (noFill(fill)) {
+        Arr* r = cpyHArr(x);
+        return (DirectArr){taga(r), harrv_ptr(r)};
+      }
+      return toFillArr(x, fill);
+  }
+  
+  tyarr:
+  return (DirectArr){taga(tyarr), tyarrv_ptr((TyArr*) tyarr)};
+}
+
+
 
 extern GLOBAL B rt_select;
 B select_c1(B t, B x) {
@@ -441,7 +489,6 @@ B select_c2(B t, B w, B x) {
 
 
 
-extern INIT_GLOBAL u8 reuseElType[t_COUNT];
 B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consumes all; (⥊rep)⌾(⥊w⊏cam‿csz⥊⊢) x; assumes csz>0, that w is a typed (elNum) list of valid indices (squeeze already attempted on el_f64), and that rep has the proper element count
   assert(csz > 0);
   #if CHECK_VALID
@@ -971,6 +1018,53 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   return select_cells_base(inds, x, csz, cam);
 }
 
+
+
+SHOULD_INLINE i64 i64get_i32(void* xp, ux i, bool* bad) {
+  return ((i32*)xp)[i];
+}
+SHOULD_INLINE i64 i64get_f64(void* xp, ux i, bool* bad) {
+  f64 f = ((f64*)xp)[i];
+  if (q_fi64(f)) return (i64)f;
+  *bad = true;
+  return 0;
+}
+
+SHOULD_INLINE bool select_each_impl(DirectArr r, u8 re, B c, ux xn, void* wp, usz wia, i64 (*getW)(void*, ux, bool*)) {
+  #define GETW ({ bool bad=false; i64 wc = getW(wp, i, &bad); if (bad) goto bad; WRAP(wc, xn, goto bad); })
+  u64 uval;
+  switch (re) { default: UD;
+    case el_bit:;
+      bool cb = o2bG(c);
+      if (cb) for (ux i = 0; i < wia; i++) bitp_set(r.data, GETW, true);
+      else    for (ux i = 0; i < wia; i++) bitp_set(r.data, GETW, false);
+      return true;
+    case el_i8:  uval = o2iG(c); goto do_u8;
+    case el_i16: uval = o2iG(c); goto do_u16;
+    case el_i32: uval = o2iG(c); goto do_u32;
+    case el_f64: uval = r_f64u(o2fG(c)); goto do_u64;
+    case el_c8:  uval = o2cG(c); goto do_u8;
+    case el_c16: uval = o2cG(c); goto do_u16;
+    case el_c32: uval = o2cG(c); goto do_u32;
+    case el_B:
+      for (ux i = 0; i < wia; i++) {
+        B* p = (B*)r.data + GETW;
+        dec(*p);
+        *p = c;
+      }
+      return true;
+  }
+  UD;
+  
+  do_u8:  for (ux i = 0; i < wia; i++) ((u8 *)r.data)[GETW] = uval; return true;
+  do_u16: for (ux i = 0; i < wia; i++) ((u16*)r.data)[GETW] = uval; return true;
+  do_u32: for (ux i = 0; i < wia; i++) ((u32*)r.data)[GETW] = uval; return true;
+  do_u64: for (ux i = 0; i < wia; i++) ((u64*)r.data)[GETW] = uval; return true;
+  #undef GETW
+  
+  bad: return false;
+}
+
 B select_ucw(B t, B o, B w, B x) {
   if (RARE(isAtm(x))) { def: return def_fn_ucw(t, o, w, x); }
   u8 we;
@@ -981,7 +1075,7 @@ B select_ucw(B t, B o, B w, B x) {
     assert(elNum(we));
   } else {
     we = TI(w,elType);
-    if (!elInt(we) && IA(w)!=0) {
+    if (!elInt(we)) {
       w = squeeze_numTry(w, &we);
       if (!elNum(we)) goto def;
     }
@@ -993,11 +1087,49 @@ B select_ucw(B t, B o, B w, B x) {
     usz xn = *SH(x);
     i64 buf[2];
     if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xn || buf[1]>=xn)) {
+      bad:
       C2(select, w, x);
       fatal("select_ucw expected to error");
     }
     rep = incG(o);
+  } else if (isFun(o) && TY(o)==t_md1D && RNK(x)==1) {
+    Md1D* od = c(Md1D,o);
+    if (PRTID(od->m1) != n_each) goto notConstEach;
+    B c;
+    if (!toConstant(od->f, &c)) goto notConstEach;
+    
+    u8 ce = selfElType(c);
+    u8 xe = TI(x,elType);
+    u8 re = el_or(ce,xe);
+    
+    DirectArr r = toEltypeArr(x, re);
+    if (isVal(c)) {
+      if (wia==0) decG(c); // TODO could return x; fills?
+      else incByG(c, wia-1);
+    }
+    
+    usz xn = *SH(r.obj);
+    bool ok;
+    if (elInt(we)) {
+      w = toI32Any(w); we = el_i32;
+      i32* wp = i32any_ptr(w);
+      ok = select_each_impl(r, re, c, xn, wp, wia, i64get_i32);
+    } else {
+      // annoying amount of code for el_f64 𝕨 vs ≤el_i32, but as el_f64 only should apply to ≥2⋆31-element arrays it shouldn't matter much
+      assert(we==el_f64);
+      f64* wp = f64any_ptr(w);
+      ok = select_each_impl(r, re, c, xn, wp, wia, i64get_f64);
+    }
+    
+    if (ok) {
+      decG(w);
+      return r.obj;
+    } else {
+      x = r.obj;
+      goto bad;
+    }
   } else {
+    notConstEach:;
     rep = c1(o, C2(select, incG(w), incG(x)));
   }
   

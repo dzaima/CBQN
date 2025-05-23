@@ -1093,9 +1093,8 @@ B slash_ucw(B t, B o, B w, B x) {
     
     Md1D* od = c(Md1D,o);
     if (PRTID(od->m1) != n_each) goto notConstEach;
-    B f = od->f;
     B c;
-    if (!toConstant(f, &c)) goto notConstEach;
+    if (!toConstant(od->f, &c)) goto notConstEach;
     
     if (we != el_bit) {
       // relies on compatible(c,c) always being true
