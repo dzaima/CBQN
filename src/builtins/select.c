@@ -475,8 +475,9 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
     MAKE_MUT(r, cam*csz);
     mut_init_copy(r, x, re);
     NOGC_E;
-    MUTG_INIT(r); SGet(rep)
+    MUTG_INIT(r);
     if (csz==1) {
+      SGet(rep)
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
         B cn = Get(rep, i);
@@ -485,9 +486,10 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
         mut_setG(r, cw, cn);
       }
     } else {
+      SGetU(rep)
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
-        EQ(for (usz j = 0; j < csz; j++), !compatible(mut_getU(r, cw*csz + j), Get(rep, i*csz + j)));
+        EQ(for (usz j = 0; j < csz; j++), !compatible(mut_getU(r, cw*csz + j), GetU(rep, i*csz + j)));
         for (usz j = 0; j < csz; j++) mut_rm(r, cw*csz + j);
         mut_copyG(r, cw*csz, rep, i*csz, csz);
       }
@@ -533,8 +535,8 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
     case el_B: {
       ra = reuse? a(REUSE(x)) : cpyHArr(x);
       B* rp = harrv_ptr(ra);
-      SGet(rep)
       if (csz==1) {
+        SGet(rep)
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
           B cn = Get(rep, i);
@@ -543,9 +545,10 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
           rp[cw] = cn;
         }
       } else {
+        SGetU(rep)
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
-          EQ(for (usz j = 0; j < csz; j++), !compatible(Get(rep, i*csz + j), rp[cw*csz + j]));
+          EQ(for (usz j = 0; j < csz; j++), !compatible(GetU(rep, i*csz + j), rp[cw*csz + j]));
           for (usz j = 0; j < csz; j++) dec(rp[cw*csz + j]);
           COPY_TO(rp, el_B, cw*csz, rep, i*csz, csz);
         }

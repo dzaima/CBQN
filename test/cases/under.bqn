@@ -115,6 +115,10 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 %USE eqvar ⋄ (<⟨⟩) {•internal.Keep⌾(𝕨⊸⊏) 𝕩}_eqvar¨ ⟨0‿1, "ab"‿"cd"⟩ %% ⟨0‿1, "ab"‿"cd"⟩
 %USE eqvar ⋄ ⟨0÷0,0÷0⟩ {𝕨⌾(0‿0⊸⊏) 𝕩}_eqvar 3⥊0 %% ⟨0÷0,0,0⟩
 %USE eqvar ⋄ %USE nz ⋄ 0‿0 {(0 InsNZ 2⥊0)⌾(𝕨⊸⊏)𝕩}_eqvar 3⥊3 %% 0‿3‿3
+%USE eqvar ⋄ "CD" {𝕨¨⌾(2‿3‿2‿3‿4⊸⊏) 𝕩}_eqvar 10⥊<"ab" %% "ab"‿"ab"‿"CD"‿"CD"‿"CD"‿"ab"‿"ab"‿"ab"‿"ab"‿"ab"
+%USE eqvar ⋄ "CD" {𝕨¨⌾(2‿3‿2‿1⊸⊏) 𝕩}_eqvar 5‿2⥊<"ab" %% ≍˜˘ "ab"‿"CD"‿"CD"‿"CD"‿"ab"
+%USE eqvar ⋄ 2‿3‿2‿1 {(   32⊸+⊸≍˘ "AB"‿"CD"‿"AB"‿"EF")⌾(𝕨⊸⊏) 𝕩}_eqvar 5‿2⥊<"?" %% 5‿2⥊⟨"?","?","ef","EF","ab","AB","cd","CD","?","?"⟩
+%USE eqvar ⋄ 2‿3‿2‿1 {{𝕊: 32⊸+⊸≍˘ "AB"‿"CD"‿"AB"‿"EF"}⌾(𝕨⊸⊏) 𝕩}_eqvar 5‿2⥊<"?" %% 5‿2⥊⟨"?","?","ef","EF","ab","AB","cd","CD","?","?"⟩
 
 
 # ⥊
