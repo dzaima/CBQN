@@ -34,6 +34,12 @@ static void* tyslicev_ptr(Arr* x) {
 static void* tyarr_ptr(B x) { return tyarrv_ptr(c(TyArr,x)); }
 static void* tyany_ptr(B x) { return tyanyv_ptr(a(x)); }
 
+static void* arr_ptr(Arr* t, u8 el) {
+  return el==el_B? (void*)harrv_ptr(t) : tyarrv_ptr((TyArr*)t);
+}
+
+
+
 #define M_TYARR(WM, OVER, MID, RV, PRE) { PRE \
   Arr* r = m_arr((offsetof(TyArr, a) + (      \
       WM==0? ((u64)ia)*w     \

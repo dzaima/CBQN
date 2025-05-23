@@ -39,10 +39,6 @@ NOINLINE Mut make_mut_init(u64 ia, u8 el) {
 }
 #endif
 
-static void* arr_ptr(Arr* t, u8 el) {
-  return el==el_B? (void*)harrv_ptr(t) : tyarrv_ptr((TyArr*)t);
-}
-
 INIT_GLOBAL u8 reuseElType[t_COUNT];
 void mut_init_copy(Mut* m, B x, u8 el) {
   assert(m->fns == &mutFns[el_MAX]);
