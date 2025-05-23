@@ -39,13 +39,17 @@ NOINLINE Mut make_mut_init(u64 ia, u8 el) {
 }
 #endif
 
+static void* harr_tyarr_ptr(Arr* t, u8 el) {
+  return el==el_B? (void*)harrv_ptr(t) : tyarrv_ptr((TyArr*)t);
+}
+
 INIT_GLOBAL u8 reuseElType[t_COUNT];
 void mut_init_copy(Mut* m, B x, u8 el) {
   assert(m->fns == &mutFns[el_MAX]);
   if (reusable(x) && reuseElType[TY(x)]==el) {
     m->fns = &mutFns[el];
     Arr* a = m->val = a(REUSE(x));
-    m->a = arr_ptr(a, el);
+    m->a = harr_tyarr_ptr(a, el);
   } else {
     mut_to(m, el);
     mut_copy(m, 0, x, 0, IA(x));
@@ -82,7 +86,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
     #endif
     Arr* t = cpyFns[n](taga(m->val));
     m->val = t;
-    m->a = arr_ptr(t, n);
+    m->a = harr_tyarr_ptr(t, n);
   }
 }
 
