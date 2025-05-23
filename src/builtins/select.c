@@ -138,7 +138,7 @@ static NOINLINE DirectArr toFillArr(B x, B fill) {
     return (DirectArr){taga(r), rp};
 }
 static void* reusableArr_ptr(Arr* t, u8 el) {
-  return el==el_B? (void*)harrv_ptr(t) : tyarrv_ptr((TyArr*)t);
+  return el==el_B? (void*)(PTY(t)==t_fillarr? fillarrv_ptr(t) : harrv_ptr(t)) : tyarrv_ptr((TyArr*)t);
 }
 static DirectArr toEltypeArr(B x, u8 re) { // consumes x; returns an array with eltype==re, with same shape/elements/fill as x, and its data pointer
   assert(isArr(x));
@@ -513,7 +513,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   u8 we = TI(w,elType); assert(elNum(we) || wia==0);
   u8 xe = TI(x,elType);
   u8 re = el_or(xe, TI(rep,elType));
-  Arr* ra;
+  Arr* ra; B rb;
   // w = taga(cpyF64Arr(w)); we = el_f64; // test the float path
   if (we==el_f64) {
     f64* wp = f64any_ptr(w);
@@ -546,23 +546,23 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   }
   assert(elInt(we) || wia==0);
   
+  DirectArr r = toEltypeArr(x, re); rb = r.obj;
   w = toI32Any(w);
   i32* wp = i32any_ptr(w);
   SPARSE_INIT(wp[i])
-  bool reuse = reusable(x) && re==reuseElType[TY(x)];
   SLOWIF(!reuse && cam>100 && wia<cam/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
   switch (re) { default: UD;
-    case el_i8:  rep = toI8Any(rep);  ra = reuse? a(REUSE(x)) : cpyI8Arr(x);  goto do_u8;
-    case el_c8:  rep = toC8Any(rep);  ra = reuse? a(REUSE(x)) : cpyC8Arr(x);  goto do_u8;
-    case el_i16: rep = toI16Any(rep); ra = reuse? a(REUSE(x)) : cpyI16Arr(x); goto do_u16;
-    case el_c16: rep = toC16Any(rep); ra = reuse? a(REUSE(x)) : cpyC16Arr(x); goto do_u16;
-    case el_i32: rep = toI32Any(rep); ra = reuse? a(REUSE(x)) : cpyI32Arr(x); goto do_u32;
-    case el_c32: rep = toC32Any(rep); ra = reuse? a(REUSE(x)) : cpyC32Arr(x); goto do_u32;
-    case el_f64: rep = toF64Any(rep); ra = reuse? a(REUSE(x)) : cpyF64Arr(x); goto do_f64;
-    case el_bit: {                    ra = reuse? a(REUSE(x)) : cpyBitArr(x);
-      TyArr* na = toBitArr(rep); rep = taga(na);
-      u64* np = bitarrv_ptr(na);
-      u64* rp = bitarrv_ptr((TyArr*)ra);
+    case el_i8:  rep = toI8Any(rep);  goto do_u8;
+    case el_c8:  rep = toC8Any(rep);  goto do_u8;
+    case el_i16: rep = toI16Any(rep); goto do_u16;
+    case el_c16: rep = toC16Any(rep); goto do_u16;
+    case el_i32: rep = toI32Any(rep); goto do_u32;
+    case el_c32: rep = toC32Any(rep); goto do_u32;
+    case el_f64: rep = toF64Any(rep); goto do_f64;
+    case el_bit: {
+      assert(TI(rep,elType)==el_bit);
+      u64* np = bitarr_ptr(rep);
+      u64* rp = r.data;
       if (csz==1) {
         for (usz i = 0; i < wia; i++) {
           READ_W(cw, i);
@@ -577,11 +577,10 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
           COPY_TO(rp, el_bit, cw*csz, rep, i*csz, csz);
         }
       }
-      goto dec_ret_ra;
+      goto dec_ret_rb;
     }
     case el_B: {
-      ra = reuse? a(REUSE(x)) : cpyHArr(x);
-      B* rp = harrv_ptr(ra);
+      B* rp = r.data;
       if (csz==1) {
         SGet(rep)
         for (usz i = 0; i < wia; i++) {
@@ -600,13 +599,13 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
           COPY_TO(rp, el_B, cw*csz, rep, i*csz, csz);
         }
       }
-      goto dec_ret_ra;
+      goto dec_ret_rb;
     }
   }
   
   #define IMPL(T, COMPATIBLE) do {  \
     if (csz!=1) goto do_tycell;     \
-    T* rp = tyarrv_ptr((TyArr*)ra); \
+    T* rp = r.data;                 \
     T* np = tyany_ptr(rep);         \
     for (usz i = 0; i < wia; i++) { \
       READ_W(cw, i);                \
@@ -614,7 +613,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
       EQ1(!COMPATIBLE(cn, rp[cw])); \
       rp[cw] = cn;                  \
     }                               \
-    goto dec_ret_ra;                \
+    goto dec_ret_rb;                \
   } while(0)
   
   #define INT_EQ(A,B) ((A)==(B))
@@ -627,7 +626,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   
   do_tycell:;
   u8 cwidth = csz * elWidth(re);
-  u8* rp = (u8*) tyarrv_ptr((TyArr*)ra);
+  u8* rp = r.data;
   u8* np = tyany_ptr(rep);
   MatchFnObj eq = MATCHR_GET(re,re);
   for (usz i = 0; i < wia; i++) {
@@ -635,14 +634,16 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
     EQ1(!MATCH_CALL(eq, rp + cw*cwidth, np + i*cwidth, csz));
     COPY_TO(rp, re, cw*csz, rep, i*csz, csz);
   }
-  goto dec_ret_ra;
+  goto dec_ret_rb;
   
   
   
   dec_ret_ra:;
+  rb = taga(ra);
+  dec_ret_rb:;
   decG(w); decG(rep);
   FREE_CHECK;
-  return taga(ra);
+  return rb;
   
   #undef SPARSE_INIT
   #undef EQ

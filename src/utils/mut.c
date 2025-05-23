@@ -46,7 +46,7 @@ static void* harr_tyarr_ptr(Arr* t, u8 el) {
 INIT_GLOBAL u8 reuseElType[t_COUNT];
 void mut_init_copy(Mut* m, B x, u8 el) {
   assert(m->fns == &mutFns[el_MAX]);
-  if (reusable(x) && reuseElType[TY(x)]==el) {
+  if (reusable(x) && reuseElType[TY(x)]==el && TY(x)!=t_fillarr) { // reuseElType is currently primarily used for toEltypeArr; currently just leaving this special-cased until it's decided what to do with this
     m->fns = &mutFns[el];
     Arr* a = m->val = a(REUSE(x));
     m->a = harr_tyarr_ptr(a, el);
@@ -834,6 +834,7 @@ void mutF_init(void) {
   mutFns[el_c32].elType = el_c32; mutFns[el_c32].valType = t_c32arr; reuseElType[t_c32arr] = el_c32;
   mutFns[el_f64].elType = el_f64; mutFns[el_f64].valType = t_f64arr; reuseElType[t_f64arr] = el_f64;
   mutFns[el_B  ].elType = el_B  ; mutFns[el_B  ].valType = t_harr;   reuseElType[t_harr]   = el_B;
+  /* and fillarr also to complete being able to reuse any target */  reuseElType[t_fillarr]= el_B;
   mutFns[el_MAX].elType = el_MAX; mutFns[el_MAX].valType = t_COUNT;
   for (u8 i = 0; i < el_MAX; i++) copyFns[i] = mutFns[i].m_copyG;
   for (u8 i = 0; i < el_MAX; i++) fillFns[i] = mutFns[i].m_fillG;
