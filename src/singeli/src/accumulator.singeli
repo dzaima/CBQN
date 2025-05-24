@@ -176,6 +176,8 @@ def sum_accumulator{DE==i64, unr, VT=[k]SE==i32 if hasarch{'X86_64'}} = { # TODO
   def {accl, _, accl_tup, accl_vec} = acc_impl{mask_ident{+,0}, +, unr, VT, SE, 0}
   def {acch, _, acch_tup, acch_vec} = acc_impl{mask_ident{+,0}, +, unr, VT, SE, 0}
   
+  def __shl{a:T, b if issigned{T}} = T ~~ (ty_u{a} << b)
+  
   extend perv2{__shr}
   def me{'acc', ...M, v} = match (v) {
     {v:T if primtype{T} and M{0}==0} => acc += promote{DE, v}
