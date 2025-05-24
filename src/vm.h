@@ -216,7 +216,7 @@ B m_md2Block(Block* bl, Scope* psc);
 
 
 typedef struct Env {
-  u64 pos; // if top bit set, ((u32)pos)>>1 is an offset into bytecode; otherwise, it's a pointer in the bytecode
+  u64 pos; // if (pos&1)!=0, ((u32)pos)>>1 is an offset into bytecode; otherwise, it's a pointer in the bytecode
   Scope* sc;
 } Env;
 extern GLOBAL Env* envCurr;
