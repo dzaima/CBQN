@@ -695,32 +695,59 @@ def insert_generic{op, rev, r:*T, x0:*T, len, wid} = {
     s = r
   }
 }
-def insert_wide{op, rev, V=[vw]T, n, r0:*T, x0:*T, len, wid} = {
-  # Accumulate columns of n registers
-  def nvw = n*vw; def i = iota{n}
-  r := r0; xc := x0
-  end := xc + len*wid
-  if (rev) { xc = end - wid; end = x0 }
-  last := xc + wid - nvw
+def insert_wide{op, rev, V=[vw]T, n==4, r:*T, x0:*T, len, wid} = {
+  # Accumulate columns of n registers, or sometimes less
+  def nvw = n*vw
+  if (not rev) assert{wid >= nvw}
+  else if (wid <= vw) {
+    x := x0 + (len-1)*wid
+    rv := load{*V~~x}; x -= wid
+    while (x >= x0) { rv = op{rv, load{*V~~x}}; x -= wid }
+    store_blended_hom{*V~~r, mask_of_first{V, wid}, rv}
+    return{}
+  }
+  def {inc, lt} = if (not rev) tup{+=, <} else tup{-=, >=}
+  s := x0; if (rev) s += (len-1)*wid
+  xc := s; inc{xc, wid}
+  end := x0; if (not rev) end += len*wid; final_end := end
+  # Group rows if there will be multiple columns
+  def b = 32
+  if (wid > nvw) {
+    l := len - 2
+    if (rev) end += (l &~ (b-1))*wid
+    else end = x0 + ((l & (b-1)) + 2)*wid
+  }
+  # Compute position of second half for overlapping columns
+  e2:usz = 0; e4:usz = 0
+  nj := wid/nvw; q := wid%nvw
+  if (q > 0) {
+    e4 = wid - 2*vw
+    if (q <= vw) { --nj; e2 = nj*nvw + vw }
+    else  if (q <= 2*vw) { e4 = 0; e2 = wid - vw }
+  }
   while (1) {
-    def {inc, lt} = if (not rev) tup{+=, <} else tup{-=, >=}
-    x := xc
-    rv := each{load{*V~~x, .}, i}; inc{x, wid}
-    while (lt{x, end}) {
-      rv = each{{v,i} => op{v, load{*V~~x, i}}, rv, i}
-      inc{x, wid}
+    def ins_col{offset, inds} = {
+      def each_i{f, p, ...a} = {
+        def pis = flat_table{tup,each{~~{*V,.},p},inds}
+        each{{pi,...v} => f{...pi,...v}, pis, ...a}
+      }
+      x := offset{xc}
+      rv := each_i{load, offset{s}}
+      do {
+        rv = each{op, rv, each_i{load, x}}
+        each{inc{.,wid}, x}
+      } while (lt{select{x,0}, end})
+      each_i{store, offset{r}, rv}
     }
-    if (n==1 and wid<nvw) { # We only ever call with wid<nvw if n==1
-      store_blended_hom{*V~~r, mask_of_first{V, wid}, ...rv}
-      return{}
-    }
-    each{store{*V~~r, ...}, i, rv}
-    xc += nvw; r += nvw
-    if (rare{xc > last}) {
-      if (xc == last+nvw) return{}
-      xc = last
-      r = r0 + (wid - nvw)
-    }
+    j:usz = 0
+    @for (nj)   { ins_col{{p} => tup{p + j},         iota{n}}; j += nvw }
+    if (e2 > 0) { ins_col{{p} => tup{p + j, p + e2}, iota{1}}; j = e2 + vw }
+    if (e4 > 0)   ins_col{{p} => tup{p + j, p + e4}, iota{2}}
+
+    if (end == final_end) return{}
+    s = r
+    xc = end; if (rev) xc -= wid
+    inc{end, b*wid}
   }
 }
 
@@ -745,12 +772,12 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
 
 fn insert_non_assoc{T, op}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   assert{len > 1}
+  def args = tup{*T~~r0, *T~~x0, len, wid}
   if (not has_simd) {
-    insert_generic{op, 1, *T~~r0, *T~~x0, len, wid}
+    insert_generic{op, 1, ...args}
   } else {
-    def vw = arch_defvw{} / width{T}
-    def ins = insert_wide{op, 1, [vw]T, ., *T~~r0, *T~~x0, len, wid}
-    if (wid < 2*vw) ins{1} else if (wid < 4*vw) ins{2} else ins{4}
+    def V = [arch_defvw{} / width{T}]T
+    insert_wide{op, 1, V, 4, ...args}
   }
 }
 
