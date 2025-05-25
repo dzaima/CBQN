@@ -1207,7 +1207,7 @@ NOINLINE B rotate_highrank(bool inv, B w, B x) {
   if (wia==0) { r=x; goto decW_ret; }
   u8 we = TI(w,elType);
   if (!elNum(we)) {
-    w = squeeze_numTry(w, &we);
+    w = squeeze_numTry(w, &we, SQ_NUM);
     if (!elNum(we)) thrF("𝕨⌽%U𝕩: 𝕨 contained non-number", INV);
   }
   bool origF64 = we==el_f64;

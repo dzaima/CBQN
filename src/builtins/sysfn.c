@@ -121,7 +121,7 @@ B parseFloat_c1(B t, B x) {
   if (isAtm(x)) thrM("•ParseFloat 𝕩: Expected a character list argument");
   if (TI(x,elType)!=el_c8) {
     u8 xe;
-    x = squeeze_chrTry(x, &xe);
+    x = squeeze_chrTry(x, &xe, SQ_BEST);
     if (xe!=el_c8) {
       if (IA(x)==0) goto empty;
       if (elChr(xe)) malformed: thrM("•ParseFloat 𝕩: Malformed input");

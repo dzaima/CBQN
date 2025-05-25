@@ -230,7 +230,7 @@ B select_c2(B t, B w, B x) {
       decG(w);
       u8 w0e = TI(w0,elType);
       if (elNum(w0e)) return C2(select, w0, x);
-      w0 = squeeze_numTry(w0, &w0e);
+      w0 = squeeze_numTry(w0, &w0e, SQ_MSGREQ(SQ_NUM));
       if (elNum(w0e)) return C2(select, w0, x);
       w = m_vec1(w0);
     }
@@ -372,7 +372,7 @@ B select_c2(B t, B w, B x) {
       // else fallthrough - want to do integer 𝕨 if possible
     }
     case el_B: case el_c8: case el_c16: case el_c32: {
-      w = squeeze_numTry(w, &we);
+      w = squeeze_numTry(w, &we, SQ_MSGREQ(SQ_NUM));
       if (RANDOMIZE_HEURISTICS && we==el_f64) goto generic_l; // avoid infinite loop
       if (elNum(we)) goto retry;
       goto def_xf_base;
@@ -952,7 +952,7 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   }
   u8 ie = TI(inds,elType);
   if (csz<=2? ie!=el_bit : csz<=128? ie>el_i8 : !elInt(ie)) {
-    inds = squeeze_numTry(inds, &ie);
+    inds = squeeze_numTry(inds, &ie, SQ_BEST);
     if (!elInt(ie)) goto generic;
   }
   void* ip = tyany_ptr(inds);
@@ -1023,7 +1023,7 @@ B select_ucw(B t, B o, B w, B x) {
   } else {
     we = TI(w,elType);
     if (!elInt(we)) {
-      w = squeeze_numTry(w, &we);
+      w = squeeze_numTry(w, &we, SQ_MSGREQ(SQ_NUM));
       if (!elNum(we)) goto def;
     }
   }

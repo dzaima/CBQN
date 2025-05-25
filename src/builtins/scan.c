@@ -337,7 +337,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       if (xe==el_i32) { i32* xp=i32any_ptr(x); for (usz i=1; i<ia; i++) { c = c!=xp[i]; bitp_set(rp,i,c); } decG(x); return r; }
       UD;
     }
-    if (rtid==n_or) { x=squeeze_numTry(x, &xe); if (xe==el_bit) return scan_or(x, ia); }
+    if (rtid==n_or) { x=squeeze_numTry(x, &xe, SQ_ANY); if (xe==el_bit) return scan_or(x, ia); }
   }
   base:;
   if (ia!=n && ia >= 6 * (u64)n && isPervasiveDy(f)) return scan_arith(f, m_f64(0), x, SH(x));

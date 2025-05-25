@@ -83,7 +83,7 @@ B add_c1(B t, B x) {
 }
 B sub_c2(B,B,B);
 #define SUB_BODY(FEXPR) return sub_c2(t, m_f64(0), x);
-#define NOT_BODY(FEXPR) x = squeeze_numTry(x, &xe); return xe==el_bit? bit_negate(x) : C2(sub, m_f64(1), x);
+#define NOT_BODY(FEXPR) x = squeeze_numTry(x, &xe, SQ_ANY); return xe==el_bit? bit_negate(x) : C2(sub, m_f64(1), x);
 
 GC1i("-", sub,    -v,              el_bit, bit_sel(x,m_f64(0),m_f64(-1)), SUB_BODY)
 GC1i("|", stile,  fabs(v),         el_bit, x, STILE_BODY)

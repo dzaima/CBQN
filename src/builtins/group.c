@@ -280,7 +280,7 @@ B group_c2(B t, B w, B x) {
   ur xr = RNK(x);
   if (isArr(w) && RNK(w)==1 && xr>=1) {
     u8 we = TI(w,elType);
-    if (!elInt(we)) w = squeeze_numTry(w, &we);
+    if (!elInt(we)) w = squeeze_numTry(w, &we, SQ_ANY);
     if (elInt(we)) {
       usz wia = IA(w);
       usz* xsh = SH(x);

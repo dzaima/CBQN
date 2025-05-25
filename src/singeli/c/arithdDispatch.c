@@ -97,7 +97,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
     case e_call_sqx: {
       u8 xe = TI(x,elType);
       assert(xe==el_f64);
-      x = squeeze_numTry(x, &xe);
+      x = squeeze_numTry(x, &xe, SQ_NUM);
       if (xe==el_f64) goto rec;
       e = &table->entsAA[TI(w,elType)*8 + xe];
       goto newEnt;
@@ -189,7 +189,7 @@ NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
       case el_i8:  if (wa==( u8)wa) { e=&table->ents[el_i8 ]; width=0; type=t_c8arr;  goto f1; } else goto cwiden_i8;
       case el_i16: if (wa==(u16)wa) { e=&table->ents[el_i16]; width=1; type=t_c16arr; goto f1; } else goto cwiden_i16;
       case el_i32:                    e=&table->ents[el_i32]; width=2; type=t_c32arr; goto f1;
-      case el_f64: x=squeeze_numTry(x, &xe); if (xe!=el_f64) goto newXEc; else goto rec;
+      case el_f64: x=squeeze_numTry(x, &xe, SQ_CHR); if (xe!=el_f64) goto newXEc; else goto rec;
       case el_c8:  if (wa==( u8)wa) { e=&table->ents[el_c8 ]; width=0; type=t_i8arr;  goto f1; } goto cwiden_c8; // TODO check for & use unsigned w
       case el_c16: if (wa==(u16)wa) { e=&table->ents[el_c16]; width=1; type=t_i16arr; goto f1; } goto cwiden_c16;
       case el_c32:                    e=&table->ents[el_c32]; width=2; type=t_i32arr; goto f1;
@@ -288,7 +288,7 @@ static NOINLINE B or_SA(B t, B w, B x) {
     f64 wf = o2fG(w);
     return bit_sel(x, m_f64(bqn_or(wf, 0)), m_f64(bqn_or(wf, 1)));
   }
-  x = squeeze_numTry(x, &xe);
+  x = squeeze_numTry(x, &xe, SQ_NUM);
   if (xe==el_bit) goto bitsel;
   if (!elNum(xe)) return arith_recd(or_c2, w, x);
   x = toF64Any(x);

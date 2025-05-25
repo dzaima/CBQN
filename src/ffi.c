@@ -330,7 +330,7 @@ static u32 styG(B x) {
       if (nonChr.u!=bi_N.u) thrF("FFI: Array provided for :c%S contained %S", desc+1, genericDesc(nonChr));
       u8 xe = TI(x,elType);
       if (elChrOk(x, umax, xe)) return;
-      B sq = squeeze_chrTry(incG(x), &xe);
+      B sq = squeeze_chrTry(incG(x), &xe, SQ_BEST);
       bool ok = elChrOk(sq, umax, xe);
       decG(sq);
       if (!ok) {

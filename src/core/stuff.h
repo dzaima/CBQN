@@ -283,17 +283,31 @@ B squeeze_any(B x); // consumes; accepts any array, returns one with the smalles
 B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed; if this function errors due to OOM, the argument won't yet be consumed
 
 typedef struct { B r; u8 re; } SqRes;
-#define SQ_UNPACK(F)  SqRes r = F(x); *re_out = r.re; assert(r.re == TI(r.r,elType)); return r.r;
+
+#if RANDOMIZE_HEURISTICS
+SqRes squeeze_numTryRand(B x, u32 req);
+SqRes squeeze_chrTryRand(B x, u32 req);
+#define SQ_UNPACK(F) SqRes r = F##Rand(x, req); *re_out = r.re; assert(r.re == TI(r.r,elType)); return r.r;
+#else
 SqRes squeeze_numTryImpl(B x);
 SqRes squeeze_chrTryImpl(B x);
+#define SQ_UNPACK(F) SqRes r = F##Impl(x); *re_out = r.re; assert(r.re == TI(r.r,elType)); return r.r;
+#endif
 
 B squeeze_numNew(B x); // consumes; doesn't try using any existing flags; primarily intended for squeezing a newly-created array; returns bitarr for IA(x)==0
 B squeeze_chrNew(B x); // consumes; doesn't try using any existing flags; primarily intended for squeezing a newly-created array; returns c8arr for IA(x)==0
 
 static B squeeze_numNewTy(u8 xe, B x) { debug_assert(TI(x,elType)==xe); return squeeze_numNew(x); } // squeeze_numNew but with a known eltype; currently eltype isn't used for anything
 
-static B squeeze_numTry(B x, u8* re_out) { SQ_UNPACK(squeeze_numTryImpl) } // consumes; always returns bitarr for IA(x)==0; utilizes squoze/sortedness flags
-static B squeeze_chrTry(B x, u8* re_out) { SQ_UNPACK(squeeze_chrTryImpl) } // consumes; always returns bitarr for IA(x)==0; utilizes squoze/sortedness flags
+static B squeeze_numTry(B x, u8* re_out, u32 req) { SQ_UNPACK(squeeze_numTry) } // consumes; always returns bitarr for IA(x)==0; utilizes squoze/sortedness flags
+static B squeeze_chrTry(B x, u8* re_out, u32 req) { SQ_UNPACK(squeeze_chrTry) } // consumes; always returns bitarr for IA(x)==0; utilizes squoze flag
+// req parameter options (these matter for heuristic randomization, but otherwise are unused):
+#define SQ_ANY 0 // no requirements placed on result, i.e. can be a no-op or even widen type
+#define SQ_INT 1 // must squeeze to elInt(xe) if possible
+#define SQ_CHR 1 // must squeeze to elChr(xe) if possible
+#define SQ_NUM 2 // must squeeze to elNum(xe) if possible
+#define SQ_BEST 4 // must squeeze to smallest type possible
+#define SQ_MSGREQ(X) ((X)<<8) // if the settings in X aren't followed, different error messages may be produced
 
 B squeeze_numOut(B x); // consumes; squeeze_numTry but without re_out
 B squeeze_chrOut(B x); // consumes; squeeze_chrTry but without re_out

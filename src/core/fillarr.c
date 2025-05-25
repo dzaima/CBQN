@@ -131,10 +131,10 @@ B withFill(B x, B fill) { // consumes both
   if (!FL_HAS(x,fl_squoze)) {
     u8 xe;
     if (isNum(fill)) {
-      x = squeeze_numTry(x, &xe);
+      x = squeeze_numTry(x, &xe, SQ_ANY);
       if (elNum(xe)) return x;
     } else if (isC32(fill)) {
-      x = squeeze_chrTry(x, &xe);
+      x = squeeze_chrTry(x, &xe, SQ_ANY);
       if (elChr(xe)) return x;
     }
   }

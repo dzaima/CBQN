@@ -577,7 +577,7 @@ B slash_c1(B t, B x) {
   usz xia = IA(x);
   B r;
   u8 xe = TI(x,elType);
-  if (xe!=el_bit && s<=xia) x = squeeze_numTry(x, &xe);
+  if (xe!=el_bit && s<=xia) x = squeeze_numTry(x, &xe, SQ_NUM);
   if (xe==el_bit) {
     r = where(x, xia, s);
   } else if (RARE(xia > (usz)I32_MAX+1)) {
@@ -630,7 +630,7 @@ B slash_c2(B t, B w, B x) {
   if (isArr(w)) {
     we = TI(w,elType);
     if (!elInt(we)) {
-      w = squeeze_numTry(w, &we);
+      w = squeeze_numTry(w, &we, SQ_MSGREQ(SQ_NUM));
       if (!elNum(we)) goto base;
     }
     ur wr = RNK(w);
@@ -670,7 +670,7 @@ B slash_c2(B t, B w, B x) {
     if (xl>6 || (xl<3 && xl!=0)) goto arrW_base;
     if (s<=wia) {
       if (s==0) { r = zeroCells(x); goto decWX_ret; }
-      w = squeeze_numTry(w, &we);
+      w = squeeze_numTry(w, &we, SQ_NUM);
       if (we==el_bit) goto wbool;
     }
     // s≠0 now
@@ -1021,7 +1021,7 @@ B slash_im(B t, B x) {
       break;
     }
     case el_c8: case el_c16: case el_c32: case el_B: {
-      x = squeeze_numTry(x, &xe);
+      x = squeeze_numTry(x, &xe, SQ_NUM);
       if (elNum(xe)) goto retry;
       B* xp = TO_BPTR(x);
       for (usz i=0; i<xia; i++) o2i64(xp[i]);
@@ -1069,7 +1069,7 @@ B slash_ucw(B t, B o, B w, B x) {
   usz ia = IA(x);
   u8 we = TI(w,elType);
   if (we != el_bit) {
-    w = squeeze_numTry(w, &we);
+    w = squeeze_numTry(w, &we, SQ_NUM);
     if (we != el_bit) {
       if (!elNum(we)) goto base;
       i64 bounds[2];

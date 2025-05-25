@@ -630,10 +630,46 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #if RANDOMIZE_HEURISTICS
   #include "../utils/wyhash.h"
+  #ifndef MATCH_ERROR_MESSAGES
+    #define MATCH_ERROR_MESSAGES 1
+  #endif
+  
   u64 seed;
   bool heuristic_rand(bool heuristic, bool true_req, bool false_req) {
     assert(heuristic? true_req : false_req);
     if (!true_req | !false_req) return heuristic;
     return wyrand(&seed) & 1;
+  }
+  
+  
+  
+  SqRes squeeze_numTryImpl(B x);
+  SqRes squeeze_chrTryImpl(B x);
+  
+  static u32 squeeze_processReq(u32 req) {
+    if (MATCH_ERROR_MESSAGES) {
+      req|= req / SQ_MSGREQ(1);
+    }
+    return req & (SQ_NUM|SQ_INT|SQ_CHR|SQ_BEST);
+  }
+  static SqRes squeeze_ret(B x) {
+    return (SqRes){x, TI(x,elType)};
+  }
+  
+  // TODO randomize level of squeezing
+  SqRes squeeze_numTryRand(B x, u32 req) {
+    req = squeeze_processReq(req);
+    u8 xe = TI(x,elType);
+    if (MAY_T(req&SQ_BEST)) return squeeze_numTryImpl(x);
+    if ((req&SQ_NUM) && !elNum(xe)) return squeeze_numTryImpl(x);
+    if ((req&SQ_INT) && !elInt(xe)) return squeeze_numTryImpl(x);
+    return squeeze_ret(x);
+  }
+  SqRes squeeze_chrTryRand(B x, u32 req) {
+    req = squeeze_processReq(req);
+    u8 xe = TI(x,elType);
+    if (MAY_T(req&SQ_BEST)) return squeeze_chrTryImpl(x);
+    if ((req&SQ_CHR) && !elChr(xe)) return squeeze_chrTryImpl(x);
+    return squeeze_ret(x);
   }
 #endif
