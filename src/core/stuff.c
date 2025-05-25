@@ -528,18 +528,19 @@ NOINLINE void print_allocStats() {
 #endif
 
 // for gdb
+#define DEBUG_FN __attribute__((__visibility__("default")))
 B info_c2(B, B, B);
-Value* g_v(B x) { return v(x); }
-Arr*   g_a(B x) { return a(x); }
-B      g_t (void* x) { return tag(x,OBJ_TAG); }
-B      g_ta(void* x) { return tag(x,ARR_TAG); }
-B      g_tf(void* x) { return tag(x,FUN_TAG); }
 GLOBAL bool ignore_bad_tag;
-void   g_p(B x) { fprintI(stderr,x); fprintf(stderr,"\n"); fflush(stderr); }
-void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); }
-void   g_pv(void* x) { ignore_bad_tag=true; fprintI(stderr,tag(x,OBJ_TAG)); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
-void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(info, m_f64(1), inc(xo)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
-void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
+DEBUG_FN Value* g_v(B x) { return v(x); }
+DEBUG_FN Arr*   g_a(B x) { return a(x); }
+DEBUG_FN B      g_t (void* x) { return tag(x,OBJ_TAG); }
+DEBUG_FN B      g_ta(void* x) { return tag(x,ARR_TAG); }
+DEBUG_FN B      g_tf(void* x) { return tag(x,FUN_TAG); }
+DEBUG_FN void   g_p(B x) { fprintI(stderr,x); fprintf(stderr,"\n"); fflush(stderr); }
+DEBUG_FN void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); }
+DEBUG_FN void   g_pv(void* x) { ignore_bad_tag=true; fprintI(stderr,tag(x,OBJ_TAG)); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
+DEBUG_FN void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(info, m_f64(1), inc(xo)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
+DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 
 #if DEBUG
   GLOBAL bool cbqn_noAlloc;
