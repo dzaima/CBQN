@@ -1036,34 +1036,29 @@ B slash_im(B t, B x) {
   extern INIT_GLOBAL BlendArrScalarFn* blendArrScalarFns;
 #endif
 
-typedef struct { B b; void* data; } AnyArr;
-AnyArr cpyElTypeArr(u8 re, B x) { // consumes x; returns new array with the given element type, with data & shape from x
-  Arr* a;
-  switch (re) { default: UD;
-    case el_bit: a = cpyBitArr(x); goto tyarr;
-    case el_i8:  a = cpyI8Arr(x); goto tyarr;
-    case el_i16: a = cpyI16Arr(x); goto tyarr;
-    case el_i32: a = cpyI32Arr(x); goto tyarr;
-    case el_f64: a = cpyF64Arr(x); goto tyarr;
-    case el_c8:  a = cpyC8Arr(x); goto tyarr;
-    case el_c16: a = cpyC16Arr(x); goto tyarr;
-    case el_c32: a = cpyC32Arr(x); goto tyarr;
-    case el_B:
-      a = cpyHArr(x);
-      return (AnyArr){taga(a), harrv_ptr(a)};
-  }
-  tyarr:
-  return (AnyArr){taga(a), tyarrv_ptr((TyArr*)a)};
+
+#define BY_MASK(F, ELTS, C) ({ \
+  u64 c = (C);        \
+  B* elts_ = (ELTS);  \
+  while (c) {         \
+    F(elts_[CTZ(c)]); \
+    c&=c-1;           \
+  }                   \
+})
+
+static void decByMask(u64* mask, B* elts, ux ia, bool inv) {
+  u64 xor = inv? U64_MAX : 0;
+  ux e = ia>>6;
+  for (ux i=0; i<e; i++) BY_MASK(dec, elts + i*64,  xor^mask[i]);
+  if (ia&63)             BY_MASK(dec, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
 }
-AnyArr m_anyarrc(u8 re, B x) { // consumes x; returns new array with given element type; may start NOGC
-  if (re==el_B) {
-    HArr_p r = m_harrUc(x);
-    return (AnyArr) {r.b, r.a};
-  }
-  B r;
-  void* rp = m_tyarrlbc(&r, elwBitLog(re), x, el2t(re));
-  return (AnyArr) {r, rp};
+static void incByMask(u64* mask, B* elts, ux ia, bool inv) {
+  u64 xor = inv? U64_MAX : 0;
+  ux e = ia>>6;
+  for (ux i=0; i<e; i++) BY_MASK(inc, elts + i*64,  xor^mask[i]);
+  if (ia&63)             BY_MASK(inc, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
 }
+#undef BY_MASK
 
 B ne_c2(B,B,B);
 B slash_ucw(B t, B o, B w, B x) {
@@ -1089,7 +1084,6 @@ B slash_ucw(B t, B o, B w, B x) {
   #if SINGELI_SIMD
   if (isFun(o) && TY(o)==t_md1D) {
     u8 xe = TI(x,elType);
-    if (xe==el_B) goto notConstEach; // TODO not
     
     Md1D* od = c(Md1D,o);
     if (PRTID(od->m1) != n_each) goto notConstEach;
@@ -1104,26 +1098,37 @@ B slash_ucw(B t, B o, B w, B x) {
     }
     
     u8 ce = selfElType(c);
-    u8 re = el_or(ce,xe); // can be el_B
+    u8 re = el_or(ce,xe);
     
-    B r;
+    u64 sum = U64_MAX;
     if (isVal(c)) {
-      u64 sum = usum(w);
+      sum = bit_sum(bitany_ptr(w), ia);
       if (sum==0) decG(c); // TODO could return x; fills?
       else incByG(c, sum-1);
     }
     
-    void* rp;
+    DirectArr r;
     void* xp;
     if (re != xe) {
-      AnyArr a = cpyElTypeArr(re, x);
-      x = r = incG(a.b);
-      xp = rp = a.data;
+      assert(xe != el_B);
+      r = toEltypeArr(x, re);
+      x = incG(r.obj);
+      xp = r.data;
     } else {
-      AnyArr a = m_anyarrc(re, x);
-      r = a.b;
-      rp = a.data;
-      xp = tyany_ptr(x);
+      if (xe==el_B) {
+        r = potentiallyReuse(x);
+        if (r.obj.u == x.u) {
+          xp = r.data;
+          decByMask(bitany_ptr(w), xp, ia, 0);
+        } else {
+          TO_BPTR(x);
+          xp = arr_bptrG(x);
+          incByMask(bitany_ptr(w), xp, ia, 1);
+        }
+      } else {
+        r = potentiallyReuse(x);
+        xp = tyany_ptr(x);
+      }
     }
     
     u64 cv;
@@ -1134,10 +1139,10 @@ B slash_ucw(B t, B o, B w, B x) {
       cv = re==el_f64? r_f64u(o2fG(c)) : r_Bu(c);
     }
     
-    blendArrScalarFns[elwBitLog(re)](rp, xp, cv, bitany_ptr(w), IA(x));
+    blendArrScalarFns[elwBitLog(re)](r.data, xp, cv, bitany_ptr(w), ia);
     NOGC_E;
     decG(w); decG(x);
-    return r;
+    return r.obj;
   }
   #endif
   goto notConstEach; notConstEach:;

@@ -287,13 +287,23 @@ typedef void (*DirectSetRange)(void* data, ux rs, B x, ux xs, ux l);
 extern INIT_GLOBAL DirectGet directGetU[el_MAX];
 extern INIT_GLOBAL DirectSet directSet[el_MAX];
 extern INIT_GLOBAL DirectSetRange directSetRange[el_MAX];
+
+// consumes x; returns an array with eltype==re, with same shape/elements/fill as x, and its data pointer
 DirectArr toEltypeArr(B x, u8 re);
+
+// doesn't consume; returns array with same shape & fill as x, returning x itself if possible (iif so, x.u==obj.u).
+// If reused, the object is untouched besides having its refcount incremented and flags cleared.
+// As such, if an el_B array is reused, all elements effectively have 1 more refcount than they should as x's elements never get freed
+// Otherwise, functionality is the same as if a regular new array was made
+// May start NOGC
+DirectArr potentiallyReuse(B x);
+
 #define DIRECTARR_COPY(R, RE, X) \
-  u8 R##_elt = RE;                          \
-  DirectArr R = toEltypeArr(X, R##_elt);    \
-  DirectGet R##_getU = directGetU[R##_elt]; \
-  DirectSet R##_set = directSet[R##_elt];   \
-  DirectSetRange R##_setRange = directSetRange[R##_elt];
+  u8 R##_elt = RE;                                       \
+  MAYBE_UNUSED DirectArr R = toEltypeArr(X, R##_elt);    \
+  MAYBE_UNUSED DirectGet R##_getU = directGetU[R##_elt]; \
+  MAYBE_UNUSED DirectSet R##_set = directSet[R##_elt];   \
+  MAYBE_UNUSED DirectSetRange R##_setRange = directSetRange[R##_elt];
 
 #define DIRECTARR_RM(R, I) if (R##_elt == el_B) dec(((B*)R.data)[I]);
 #define DIRECTARR_GETU(R, I) R##_getU(R.data, I)

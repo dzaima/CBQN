@@ -799,7 +799,7 @@ static NOINLINE DirectArr toFillArr(B x, B fill) {
 static void* reusableArr_ptr(Arr* t, u8 el) {
   return el==el_B? (void*)(PTY(t)==t_fillarr? fillarrv_ptr(t) : harrv_ptr(t)) : tyarrv_ptr((TyArr*)t);
 }
-DirectArr toEltypeArr(B x, u8 re) { // consumes x; returns an array with eltype==re, with same shape/elements/fill as x, and its data pointer
+DirectArr toEltypeArr(B x, u8 re) {
   assert(isArr(x));
   if (reusable(x) && re==reuseElType[TY(x)]) {
     x = REUSE(x);
@@ -818,15 +818,37 @@ DirectArr toEltypeArr(B x, u8 re) { // consumes x; returns an array with eltype=
     case el_c32: tyarr = cpyC32Arr(x); goto tyarr;
     case el_B:;
       B fill = getFillR(x);
-      if (noFill(fill)) {
-        Arr* r = cpyHArr(x);
-        return (DirectArr){taga(r), harrv_ptr(r)};
-      }
-      return toFillArr(x, fill);
+      if (!noFill(fill)) return toFillArr(x, fill);
+      
+      Arr* r = cpyHArr(x);
+      return (DirectArr){taga(r), harrv_ptr(r)};
   }
   
   tyarr:
   return (DirectArr){taga(tyarr), tyarrv_ptr((TyArr*) tyarr)};
+}
+static NOINLINE DirectArr m_fillarrAs(B x, B fill) {
+  Arr* r = arr_shCopy(m_fillarrp(IA(x)), x);
+  fillarr_setFill(r, fill);
+  return (DirectArr){taga(r), fillarrv_ptr(r)};
+}
+DirectArr potentiallyReuse(B x) {
+  assert(isArr(x));
+  u8 xe = TI(x,elType);
+  if (reusable(x) && xe == reuseElType[TY(x)]) {
+    x = REUSE(x);
+    return (DirectArr){incG(x), reusableArr_ptr(a(x), xe)};
+  }
+  if (xe==el_B) {
+    B fill = getFillR(x);
+    if (!noFill(fill)) return m_fillarrAs(x, fill);
+    
+    HArr_p r = m_harrUc(x);
+    return (DirectArr) {r.b, r.a};
+  }
+  B r;
+  void* rp = m_tyarrlbc(&r, elwBitLog(xe), x, el2t(xe));
+  return (DirectArr) {r, rp};
 }
 
 B directGetU_bit(void* data, ux i) { return m_f64(bitp_get(data,i));} void directSet_bit(void* data, ux i, B v) { bitp_set(data, i, o2bG(v)); }
