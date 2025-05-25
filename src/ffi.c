@@ -333,7 +333,13 @@ static u32 styG(B x) {
       B sq = squeeze_chrTry(incG(x), &xe);
       bool ok = elChrOk(sq, umax, xe);
       decG(sq);
-      if (!ok) thrF("FFI: Array provided for :c%S contained %S", desc+1, genericDesc(nonChr));
+      if (!ok) {
+        PLAINLOOP for (ux i = 0; i < IA(x); i++) {
+          u32 c = o2cG(IGetU(x,i));
+          if (c > umax) thrF("FFI: Array provided for :c%S contained @+%i", desc+1, c);
+        }
+        fatal("expected ffi_anyRange to error");
+      }
     }
   }
 #else

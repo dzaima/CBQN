@@ -177,15 +177,15 @@
 !"FFI: Array provided for :c8 contained number" % f←@•FFI""‿"bqn_init"‿">*i8:c8" ⋄ F ⋈4
 !"FFI: Array provided for :c8 contained number" % f←@•FFI""‿"bqn_init"‿">*i8:c8" ⋄ F "Ah"•internal.Variation⋈4
 
-!"FFI: improper value for i8" %                                    f←@•FFI""‿"bqn_init"‿"*i8:c8"  ‿"i8" ⋄ F "hello"‿1000
-!"FFI: Array provided for :c8 contained object of unknown type" %  f←@•FFI""‿"bqn_init"‿"*i8:c8"  ‿"i8" ⋄ F "hello ⍉"‿1000
-!"FFI: Array provided for :c8 contained object of unknown type" %  f←@•FFI""‿"bqn_init"‿"*i8:c8"  ‿"i8" ⋄ F "hello 𝕩"‿1000
-!"FFI: improper value for i8" %                                    f←@•FFI""‿"bqn_init"‿"*i16:c16"‿"i8" ⋄ F "hello"‿1000
-!"FFI: improper value for i8" %                                    f←@•FFI""‿"bqn_init"‿"*i16:c16"‿"i8" ⋄ F "hello ⍉"‿1000
-!"FFI: Array provided for :c16 contained object of unknown type" % f←@•FFI""‿"bqn_init"‿"*i16:c16"‿"i8" ⋄ F "hello 𝕩"‿1000
-!"FFI: improper value for i8" %                                    f←@•FFI""‿"bqn_init"‿"*i32:c32"‿"i8" ⋄ F "hello"‿1000
-!"FFI: improper value for i8" %                                    f←@•FFI""‿"bqn_init"‿"*i32:c32"‿"i8" ⋄ F "hello ⍉"‿1000
-!"FFI: improper value for i8" %                                    f←@•FFI""‿"bqn_init"‿"*i32:c32"‿"i8" ⋄ F "hello 𝕩"‿1000
+!"FFI: improper value for i8"                      % f←@•FFI""‿"bqn_init"‿"*i8:c8"  ‿"i8" ⋄ F "hello"‿1000
+!"FFI: Array provided for :c8 contained @+9033"    % f←@•FFI""‿"bqn_init"‿"*i8:c8"  ‿"i8" ⋄ F "hello ⍉"‿1000
+!"FFI: Array provided for :c8 contained @+120169"  % f←@•FFI""‿"bqn_init"‿"*i8:c8"  ‿"i8" ⋄ F "hello 𝕩"‿1000
+!"FFI: improper value for i8"                      % f←@•FFI""‿"bqn_init"‿"*i16:c16"‿"i8" ⋄ F "hello"‿1000
+!"FFI: improper value for i8"                      % f←@•FFI""‿"bqn_init"‿"*i16:c16"‿"i8" ⋄ F "hello ⍉"‿1000
+!"FFI: Array provided for :c16 contained @+120169" % f←@•FFI""‿"bqn_init"‿"*i16:c16"‿"i8" ⋄ F "hello 𝕩"‿1000
+!"FFI: improper value for i8"                      % f←@•FFI""‿"bqn_init"‿"*i32:c32"‿"i8" ⋄ F "hello"‿1000
+!"FFI: improper value for i8"                      % f←@•FFI""‿"bqn_init"‿"*i32:c32"‿"i8" ⋄ F "hello ⍉"‿1000
+!"FFI: improper value for i8"                      % f←@•FFI""‿"bqn_init"‿"*i32:c32"‿"i8" ⋄ F "hello 𝕩"‿1000
 
 %USE defs ⋄ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿size_t ⋄ 1⊑F ⟨↕5, "Ah"•internal.Variation"hello", 5⟩ %% 104‿101‿108‿108‿111
 
