@@ -125,51 +125,6 @@ FORCE_INLINE void cf_call(CFRes f, void* r, ux rs, void* x, ux xs) {
   f.fn(r, rs, x, xs, f.data);
 }
 
-extern INIT_GLOBAL u8 reuseElType[t_COUNT];
-typedef struct { B obj; void* data; } DirectArr;
-static NOINLINE DirectArr toFillArr(B x, B fill) {
-    usz ia = IA(x);
-    Arr* r = arr_shCopy(m_fillarrp(ia), x);
-    fillarr_setFill(r, fill);
-    B* rp = fillarrv_ptr(r);
-    COPY_TO(rp, el_B, 0, x, 0, ia);
-    NOGC_E;
-    decG(x);
-    return (DirectArr){taga(r), rp};
-}
-static void* reusableArr_ptr(Arr* t, u8 el) {
-  return el==el_B? (void*)(PTY(t)==t_fillarr? fillarrv_ptr(t) : harrv_ptr(t)) : tyarrv_ptr((TyArr*)t);
-}
-static DirectArr toEltypeArr(B x, u8 re) { // consumes x; returns an array with eltype==re, with same shape/elements/fill as x, and its data pointer
-  assert(isArr(x));
-  if (reusable(x) && re==reuseElType[TY(x)]) {
-    x = REUSE(x);
-    return (DirectArr){x, reusableArr_ptr(a(x), re)};
-  }
-  
-  Arr* tyarr;
-  switch (re) { default: UD;
-    case el_bit: tyarr = cpyBitArr(x); goto tyarr;
-    case el_i8:  tyarr = cpyI8Arr(x);  goto tyarr;
-    case el_i16: tyarr = cpyI16Arr(x); goto tyarr;
-    case el_i32: tyarr = cpyI32Arr(x); goto tyarr;
-    case el_f64: tyarr = cpyF64Arr(x); goto tyarr;
-    case el_c8:  tyarr = cpyC8Arr(x);  goto tyarr;
-    case el_c16: tyarr = cpyC16Arr(x); goto tyarr;
-    case el_c32: tyarr = cpyC32Arr(x); goto tyarr;
-    case el_B:;
-      B fill = getFillR(x);
-      if (noFill(fill)) {
-        Arr* r = cpyHArr(x);
-        return (DirectArr){taga(r), harrv_ptr(r)};
-      }
-      return toFillArr(x, fill);
-  }
-  
-  tyarr:
-  return (DirectArr){taga(tyarr), tyarrv_ptr((TyArr*) tyarr)};
-}
-
 
 
 extern GLOBAL B rt_select;
@@ -513,40 +468,33 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   u8 we = TI(w,elType); assert(elNum(we) || wia==0);
   u8 xe = TI(x,elType);
   u8 re = el_or(xe, TI(rep,elType));
-  Arr* ra; B rb;
   // w = taga(cpyF64Arr(w)); we = el_f64; // test the float path
+  DIRECTARR_COPY(r, re, x);
+  B rb = r.obj;
+  
   if (we==el_f64) {
     f64* wp = f64any_ptr(w);
     SPARSE_INIT((i64)wp[i])
-    
-    MAKE_MUT(r, cam*csz);
-    mut_init_copy(r, x, re);
-    NOGC_E;
-    MUTG_INIT(r);
     if (csz==1) {
       SGet(rep)
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
         B cn = Get(rep, i);
-        EQ1(!compatible(mut_getU(r, cw), cn));
-        mut_rm(r, cw);
-        mut_setG(r, cw, cn);
+        EQ1(!compatible(DIRECTARR_GETU(r, cw), cn));
+        DIRECTARR_REPLACE(r, cw, cn);
       }
     } else {
       SGetU(rep)
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
-        EQ(for (usz j = 0; j < csz; j++), !compatible(mut_getU(r, cw*csz + j), GetU(rep, i*csz + j)));
-        for (usz j = 0; j < csz; j++) mut_rm(r, cw*csz + j);
-        mut_copyG(r, cw*csz, rep, i*csz, csz);
+        EQ(for (usz j = 0; j < csz; j++), !compatible(DIRECTARR_GETU(r, cw*csz + j), GetU(rep, i*csz + j)));
+        DIRECTARR_REPLACE_RANGE(r, cw*csz, rep, i*csz, csz);
       }
     }
-    ra = mut_fp(r);
-    goto dec_ret_ra;
+    goto dec_ret_rb;
   }
   assert(elInt(we) || wia==0);
   
-  DirectArr r = toEltypeArr(x, re); rb = r.obj;
   w = toI32Any(w);
   i32* wp = i32any_ptr(w);
   SPARSE_INIT(wp[i])
@@ -638,8 +586,6 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   
   
   
-  dec_ret_ra:;
-  rb = taga(ra);
   dec_ret_rb:;
   decG(w); decG(rep);
   FREE_CHECK;

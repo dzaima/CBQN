@@ -800,12 +800,79 @@ NOINLINE void apd_widen(ApdMut* m, B x, ApdFn* const* fns) {
 
 
 
+static NOINLINE DirectArr toFillArr(B x, B fill) {
+  usz ia = IA(x);
+  Arr* r = arr_shCopy(m_fillarrp(ia), x);
+  fillarr_setFill(r, fill);
+  B* rp = fillarrv_ptr(r);
+  COPY_TO(rp, el_B, 0, x, 0, ia);
+  NOGC_E;
+  decG(x);
+  return (DirectArr){taga(r), rp};
+}
+static void* reusableArr_ptr(Arr* t, u8 el) {
+  return el==el_B? (void*)(PTY(t)==t_fillarr? fillarrv_ptr(t) : harrv_ptr(t)) : tyarrv_ptr((TyArr*)t);
+}
+DirectArr toEltypeArr(B x, u8 re) { // consumes x; returns an array with eltype==re, with same shape/elements/fill as x, and its data pointer
+  assert(isArr(x));
+  if (reusable(x) && re==reuseElType[TY(x)]) {
+    x = REUSE(x);
+    return (DirectArr){x, reusableArr_ptr(a(x), re)};
+  }
+  
+  Arr* tyarr;
+  switch (re) { default: UD;
+    case el_bit: tyarr = cpyBitArr(x); goto tyarr;
+    case el_i8:  tyarr = cpyI8Arr(x);  goto tyarr;
+    case el_i16: tyarr = cpyI16Arr(x); goto tyarr;
+    case el_i32: tyarr = cpyI32Arr(x); goto tyarr;
+    case el_f64: tyarr = cpyF64Arr(x); goto tyarr;
+    case el_c8:  tyarr = cpyC8Arr(x);  goto tyarr;
+    case el_c16: tyarr = cpyC16Arr(x); goto tyarr;
+    case el_c32: tyarr = cpyC32Arr(x); goto tyarr;
+    case el_B:;
+      B fill = getFillR(x);
+      if (noFill(fill)) {
+        Arr* r = cpyHArr(x);
+        return (DirectArr){taga(r), harrv_ptr(r)};
+      }
+      return toFillArr(x, fill);
+  }
+  
+  tyarr:
+  return (DirectArr){taga(tyarr), tyarrv_ptr((TyArr*) tyarr)};
+}
 
+B directGetU_bit(void* data, ux i) { return m_f64(bitp_get(data,i));} void directSet_bit(void* data, ux i, B v) { bitp_set(data, i, o2bG(v)); }
+B directGetU_i8 (void* data, ux i) { return m_f64((( i8*)data)[i]); } void directSet_i8 (void* data, ux i, B v) { (( i8*)data)[i] = o2iG(v); }
+B directGetU_i16(void* data, ux i) { return m_f64(((i16*)data)[i]); } void directSet_i16(void* data, ux i, B v) { ((i16*)data)[i] = o2iG(v); }
+B directGetU_i32(void* data, ux i) { return m_f64(((i32*)data)[i]); } void directSet_i32(void* data, ux i, B v) { ((i32*)data)[i] = o2iG(v); }
+B directGetU_f64(void* data, ux i) { return m_f64(((f64*)data)[i]); } void directSet_f64(void* data, ux i, B v) { ((f64*)data)[i] = o2fG(v); }
+B directGetU_c8 (void* data, ux i) { return m_c32((( u8*)data)[i]); } void directSet_c8 (void* data, ux i, B v) { (( u8*)data)[i] = o2cG(v); }
+B directGetU_c16(void* data, ux i) { return m_c32(((u16*)data)[i]); } void directSet_c16(void* data, ux i, B v) { ((u16*)data)[i] = o2cG(v); }
+B directGetU_c32(void* data, ux i) { return m_c32(((u32*)data)[i]); } void directSet_c32(void* data, ux i, B v) { ((u32*)data)[i] = o2cG(v); }
+B directGetU_B  (void* data, ux i) { return         ((B*)data)[i];  } void directSet_B  (void* data, ux i, B v) { B* p = i+(B*)data; dec(*p); *p = v; }
+
+void directSetRange_bit(void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_bit, rs, x, xs, l); }
+void directSetRange_i8 (void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_i8 , rs, x, xs, l); }
+void directSetRange_i16(void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_i16, rs, x, xs, l); }
+void directSetRange_i32(void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_i32, rs, x, xs, l); }
+void directSetRange_f64(void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_f64, rs, x, xs, l); }
+void directSetRange_c8 (void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_c8 , rs, x, xs, l); }
+void directSetRange_c16(void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_c16, rs, x, xs, l); }
+void directSetRange_c32(void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_c32, rs, x, xs, l); }
+void directSetRange_B  (void* data, ux rs, B x, ux xs, ux l) {
+  for (ux i = 0; i < l; i++) dec(((B*)data)[rs+i]);
+  COPY_TO(data, el_B, rs, x, xs, l);
+}
 
 INIT_GLOBAL M_CopyF copyFns[el_MAX];
 INIT_GLOBAL M_FillF fillFns[el_MAX];
 INIT_GLOBAL MutFns mutFns[el_MAX+1];
 INIT_GLOBAL u8 el_orArr[el_MAX*16 + el_MAX+1];
+INIT_GLOBAL DirectGet directGetU[el_MAX];
+INIT_GLOBAL DirectSet directSet[el_MAX];
+INIT_GLOBAL DirectSetRange directSetRange[el_MAX];
 void mutF_init(void) {
   for (u8 i = 0; i <= el_MAX; i++) {
     for (u8 j = 0; j <= el_MAX; j++) {
@@ -826,15 +893,26 @@ void mutF_init(void) {
   for (ux i = 0; i < t_COUNT; i++) reuseElType[i] = el_MAX;
   
   mutFns[el_bit].elType = el_bit; mutFns[el_bit].valType = t_bitarr; reuseElType[t_bitarr] = el_bit;
-  mutFns[el_i8 ].elType = el_i8 ; mutFns[el_i8 ].valType = t_i8arr;  reuseElType[t_i8arr]  = el_i8;
+  mutFns[el_i8 ].elType = el_i8 ; mutFns[el_i8 ].valType = t_i8arr;  reuseElType[t_i8arr ] = el_i8;
   mutFns[el_i16].elType = el_i16; mutFns[el_i16].valType = t_i16arr; reuseElType[t_i16arr] = el_i16;
   mutFns[el_i32].elType = el_i32; mutFns[el_i32].valType = t_i32arr; reuseElType[t_i32arr] = el_i32;
-  mutFns[el_c8 ].elType = el_c8 ; mutFns[el_c8 ].valType = t_c8arr;  reuseElType[t_c8arr]  = el_c8;
+  mutFns[el_c8 ].elType = el_c8 ; mutFns[el_c8 ].valType = t_c8arr;  reuseElType[t_c8arr ] = el_c8;
   mutFns[el_c16].elType = el_c16; mutFns[el_c16].valType = t_c16arr; reuseElType[t_c16arr] = el_c16;
   mutFns[el_c32].elType = el_c32; mutFns[el_c32].valType = t_c32arr; reuseElType[t_c32arr] = el_c32;
   mutFns[el_f64].elType = el_f64; mutFns[el_f64].valType = t_f64arr; reuseElType[t_f64arr] = el_f64;
-  mutFns[el_B  ].elType = el_B  ; mutFns[el_B  ].valType = t_harr;   reuseElType[t_harr]   = el_B;
+  mutFns[el_B  ].elType = el_B  ; mutFns[el_B  ].valType = t_harr;   reuseElType[t_harr  ] = el_B;
   /* and fillarr also to complete being able to reuse any target */  reuseElType[t_fillarr]= el_B;
+  
+  directGetU[el_bit] = directGetU_bit; directSet[el_bit] = directSet_bit; directSetRange[el_bit] = directSetRange_bit;
+  directGetU[el_i8 ] = directGetU_i8;  directSet[el_i8 ] = directSet_i8;  directSetRange[el_i8 ] = directSetRange_i8;
+  directGetU[el_i16] = directGetU_i16; directSet[el_i16] = directSet_i16; directSetRange[el_i16] = directSetRange_i16;
+  directGetU[el_i32] = directGetU_i32; directSet[el_i32] = directSet_i32; directSetRange[el_i32] = directSetRange_i32;
+  directGetU[el_c8 ] = directGetU_c8;  directSet[el_c8 ] = directSet_c8;  directSetRange[el_c8 ] = directSetRange_c8;
+  directGetU[el_c16] = directGetU_c16; directSet[el_c16] = directSet_c16; directSetRange[el_c16] = directSetRange_c16;
+  directGetU[el_c32] = directGetU_c32; directSet[el_c32] = directSet_c32; directSetRange[el_c32] = directSetRange_c32;
+  directGetU[el_f64] = directGetU_f64; directSet[el_f64] = directSet_f64; directSetRange[el_f64] = directSetRange_f64;
+  directGetU[el_B  ] = directGetU_B;   directSet[el_B  ] = directSet_B;   directSetRange[el_B  ] = directSetRange_B;
+  
   mutFns[el_MAX].elType = el_MAX; mutFns[el_MAX].valType = t_COUNT;
   for (u8 i = 0; i < el_MAX; i++) copyFns[i] = mutFns[i].m_copyG;
   for (u8 i = 0; i < el_MAX; i++) fillFns[i] = mutFns[i].m_fillG;

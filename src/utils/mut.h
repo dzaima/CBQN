@@ -281,3 +281,25 @@ ApdFn apd_tot_init, apd_sh_init, apd_reshape;
 #define APDD(M, A) ({ B av_ = (A); M.apd(&M, av_); dec(av_); }) // consumes A
 #define APD_SH_GET(M, TY) (M.end(&M, TY))
 #define APD_TOT_GET(M) (M.obj)
+
+
+
+typedef struct { B obj; void* data; } DirectArr;
+typedef B (*DirectGet)(void* data, ux i);
+typedef void (*DirectSet)(void* data, ux i, B v);
+typedef void (*DirectSetRange)(void* data, ux rs, B x, ux xs, ux l);
+extern INIT_GLOBAL DirectGet directGetU[el_MAX];
+extern INIT_GLOBAL DirectSet directSet[el_MAX];
+extern INIT_GLOBAL DirectSetRange directSetRange[el_MAX];
+DirectArr toEltypeArr(B x, u8 re);
+#define DIRECTARR_COPY(R, RE, X) \
+  u8 R##_elt = RE;                          \
+  DirectArr R = toEltypeArr(X, R##_elt);    \
+  DirectGet R##_getU = directGetU[R##_elt]; \
+  DirectSet R##_set = directSet[R##_elt];   \
+  DirectSetRange R##_setRange = directSetRange[R##_elt];
+
+#define DIRECTARR_RM(R, I) if (R##_elt == el_B) dec(((B*)R.data)[I]);
+#define DIRECTARR_GETU(R, I) R##_getU(R.data, I)
+#define DIRECTARR_REPLACE(R, I, V) R##_set(R.data, I, V)
+#define DIRECTARR_REPLACE_RANGE(R, RS, X, XS, L) R##_setRange(R.data, RS, X, XS, L)

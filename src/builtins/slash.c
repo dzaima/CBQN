@@ -1089,7 +1089,7 @@ B slash_ucw(B t, B o, B w, B x) {
   #if SINGELI_SIMD
   if (isFun(o) && TY(o)==t_md1D) {
     u8 xe = TI(x,elType);
-    if (xe==el_B) goto notConstEach;
+    if (xe==el_B) goto notConstEach; // TODO not
     
     Md1D* od = c(Md1D,o);
     if (PRTID(od->m1) != n_each) goto notConstEach;
