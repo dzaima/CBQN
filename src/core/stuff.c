@@ -627,3 +627,13 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     fflush(stderr);
   }
 #endif
+
+#if RANDOMIZE_HEURISTICS
+  #include "../utils/wyhash.h"
+  u64 seed;
+  bool heuristic_rand(bool heuristic, bool true_req, bool false_req) {
+    assert(heuristic? true_req : false_req);
+    if (!true_req | !false_req) return heuristic;
+    return wyrand(&seed) & 1;
+  }
+#endif

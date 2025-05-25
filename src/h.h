@@ -315,6 +315,7 @@ typedef struct Arr {
   #define NOGC_CHECK(M) do { if (cbqn_noAlloc && !gc_depth) fatal(M); } while (0)
   #define NOGC_S cbqn_NOGC_start()
   #define NOGC_E cbqn_noAlloc=false
+  #define HEURISTIC_BOUNDED(X, TRUE_REQ, FALSE_REQ) ({ bool hb_ = (X); assert(hb_? (TRUE_REQ) : (FALSE_REQ)); hb_; })
 #else
   #define assert(X) do {if (!(X)) __builtin_unreachable();} while(0)
   #define debug_assert(X)
@@ -324,7 +325,18 @@ typedef struct Arr {
   #define NOGC_S
   #define NOGC_E
   #define NOGC_CHECK(M)
+  #define HEURISTIC_BOUNDED(X, TRUE_REQ, FALSE_REQ) (X)
 #endif
+#if RANDOMIZE_HEURISTICS
+  bool heuristic_rand(bool heuristic, bool true_req, bool false_req);
+  #undef HEURISTIC_BOUNDED
+  #define HEURISTIC_BOUNDED(X, TRUE_REQ, FALSE_REQ) heuristic_rand(X, TRUE_REQ, FALSE_REQ)
+#else
+  #define RANDOMIZE_HEURISTICS 0
+#endif
+#define HEURISTIC(X) HEURISTIC_BOUNDED(X, true, true)
+#define MAY_T(X) ({ bool hw_=(X); HEURISTIC_BOUNDED(hw_, true, !hw_); }) // returns X, or, with randomized heuristics enabled, possibly true
+#define MAY_F(X) ({ bool hw_=(X); HEURISTIC_BOUNDED(hw_, hw_,  true); }) // returns X, or, with randomized heuristics enabled, possibly false
 #if WARN_SLOW
   void warn_slow1(char* s, B x);
   void warn_slow2(char* s, B w, B x);
