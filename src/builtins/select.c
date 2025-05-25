@@ -291,7 +291,7 @@ B select_c2(B t, B w, B x) {
     #define BOOL_SPECIAL(W)
   #endif
   
-  if (!bool_use_simd && xe==el_bit && (csz&7)!=0 && (xl==0? wia>=256 : wia>=4) && csz<128 && TI(w,arrD1)) {
+  if (!bool_use_simd && xe==el_bit && (csz&7)!=0 && HEURISTIC(xl==0? wia>=256 : wia>=4) && csz<128 && TI(w,arrD1)) {
     // test widen/narrow on bitarr input
     // ShArr* sh = RNK(x)==1? NULL : ptr_inc(shObj(x));
     // B t = C2(select, w, widenBitArr(x, 1));
@@ -300,7 +300,7 @@ B select_c2(B t, B w, B x) {
     // return r;
     if (csz==1) {
       if (wia/4>=xia) return taga(cpyBitArr(C2(select, w, taga(cpyI8Arr(x)))));
-    } else if (csz>64? wia/2>=xn : wia>=xn/2) {
+    } else if (HEURISTIC(csz>64? wia/2>=xn : wia>=xn/2)) {
       ShArr* sh = ptr_inc(shObj(x));
       B t = C2(select, w, widenBitArr(x, 1));
       B r = narrowWidenedBitArr(t, wr, xr-1, sh->a+1);
@@ -368,11 +368,12 @@ B select_c2(B t, B w, B x) {
     case el_i16: TYPE(i16,cpyI32Arr)
     case el_i32: TYPE(i32,cpyF64Arr)
     case el_f64: {
-      if (FL_HAS(w, fl_squoze)) goto generic_l; // either has non-integers (i.e. error, thus don't care about speed) or very large (i.e. will hit memory bandwidth anyway)
+      if (MAY_T(FL_HAS(w, fl_squoze))) goto generic_l; // either has non-integers (i.e. error, thus don't care about speed) or very large (i.e. will hit memory bandwidth anyway)
       // else fallthrough - want to do integer 𝕨 if possible
     }
     case el_B: case el_c8: case el_c16: case el_c32: {
       w = squeeze_numTry(w, &we);
+      if (RANDOMIZE_HEURISTICS && we==el_f64) goto generic_l; // avoid infinite loop
       if (elNum(we)) goto retry;
       goto def_xf_base;
     }
@@ -721,8 +722,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   
   if (ie==el_bit) {
     // TODO path for xe==el_bit + long indn
-    if (csz>32 || indn>32 || indn>INDS_BUF_MAX) { // TODO properly tune
-      assert(xe!=el_bit && (csz>8 || indn>8));
+    if (HEURISTIC_BOUNDED(csz>32 || indn>32 || indn>INDS_BUF_MAX, xe!=el_bit && (csz>8 || indn>8), true)) { // TODO properly tune
       u8* rp = m_arrv_same(&r, ria, x);
       for (ux i = 0; i < cam; i++) {
         bitselFns[lb](rp, inds, loadu_u64(xp), loadu_u64(xp + (1<<lb)), indn);
@@ -1030,7 +1030,7 @@ B select_ucw(B t, B o, B w, B x) {
   
   usz wia = IA(w);
   B rep;
-  if (isArr(o) && RNK(x)>0) {
+  if (MAY_F(isArr(o) && RNK(x)>0)) {
     usz xn = *SH(x);
     i64 buf[2];
     if (wia!=0 && (!getRange_fns[we](tyany_ptr(w), buf, wia) || buf[0]<-(i64)xn || buf[1]>=xn)) {
@@ -1039,7 +1039,7 @@ B select_ucw(B t, B o, B w, B x) {
       fatal("select_ucw expected to error");
     }
     rep = incG(o);
-  } else if (isFun(o) && TY(o)==t_md1D && RNK(x)==1) {
+  } else if (MAY_F(isFun(o) && TY(o)==t_md1D && RNK(x)==1)) {
     Md1D* od = c(Md1D,o);
     if (PRTID(od->m1) != n_each) goto notConstEach;
     B c;

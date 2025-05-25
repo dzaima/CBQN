@@ -214,7 +214,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
   ur br = wr>xr? wr : xr;
   
   usz csz = shProd(bsh, mr, br);
-  if (csz<5120>>arrTypeBitsLog(TY(b))) {
+  if (HEURISTIC(csz<5120>>arrTypeBitsLog(TY(b)))) {
     B s = mr==wr? w : x; // smaller argument
     s = C2(slash, m_usz(csz), taga(arr_shVec(TI(s,slice)(s,0,IA(s)))));
     assert(reusable(s) && RNK(s)==1);
@@ -265,7 +265,7 @@ static NOINLINE B pick_cells(usz ind, B x, ur xr, usz cam, usz k) { // ind <∘�
 static void set_column_typed(void* rp, B v, u8 e, ux p, ux stride, ux n) { // may write to all elements 0 ≤ i < stride×n, and after that too for masked stores
   assert(p < stride);
   switch(e) { default: UD;
-    case el_bit: if (stride<64 && n>64) goto bit_special;
+    case el_bit: if (stride<64 && HEURISTIC(n>64)) goto bit_special;
                  NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) bitp_set(rp, p, o2bG(v));return;
     case el_c8 : NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u8 *)rp)[p] = o2cG(v); return;
     case el_c16: NOVECTORIZE for (usz i=0; i<n; i++, p+= stride) ((u16*)rp)[p] = o2cG(v); return;
@@ -703,7 +703,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr 
     if (IA(w)!=0 && isPervasiveDy(f)) {
       if (isAtm(x)) return c2(f, w, x);
       if (RNK(x)!=wcr || !eqShPart(SH(x), wsh+wk, wcr)) goto generic;
-      if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(x)>(2048*8)>>arrTypeBitsLog(TY(x)) && IA(w)!=IA(x))) goto generic;
+      if (TI(w,elType)==el_B || TI(x,elType)==el_B || HEURISTIC(IA(x)>(2048*8)>>arrTypeBitsLog(TY(x)) && IA(w)!=IA(x))) goto generic;
       return c2(f, w, C2(shape, C1(fne, incG(w)), x));
     }
   } else if (!isMd(f)) {
@@ -812,7 +812,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
         if (isAtm(w)) return c2(f, w, x);
         if (IA(x)==0) break;
         if (RNK(w)!=xcr || !eqShPart(SH(w), xsh+xk, xcr)) break;
-        if (TI(w,elType)==el_B || TI(x,elType)==el_B || (IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) break;
+        if (TI(w,elType)==el_B || TI(x,elType)==el_B || HEURISTIC(IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) break;
         return c2(f, C2(shape, C1(fne, incG(x)), w), x);
       }
     }
