@@ -384,7 +384,7 @@ char* genericDesc(B x) {
   if (isMd1(x)) return "1-modifier";
   if (isMd2(x)) return "2-modifier";
   if (isNsp(x)) return "namespace";
-  return "object of unknown type";
+  fatal("genericDesc was passed an object of unhandled type");
 }
 
 NOINLINE NORETURN void expI_B(B what) {
