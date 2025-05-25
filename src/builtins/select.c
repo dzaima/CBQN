@@ -488,7 +488,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
       for (usz i = 0; i < wia; i++) {
         READ_W(cw, i);
         EQ(for (usz j = 0; j < csz; j++), !compatible(DIRECTARR_GETU(r, cw*csz + j), GetU(rep, i*csz + j)));
-        DIRECTARR_REPLACE_RANGE(r, cw*csz, rep, i*csz, csz);
+        DIRECTARR_REPLACE_RANGE(r, cw*csz, rep, i*csz, csz); // TODO use cf_*
       }
     }
     goto dec_ret_rb;

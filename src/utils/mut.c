@@ -43,21 +43,6 @@ static void* harr_tyarr_ptr(Arr* t, u8 el) {
   return el==el_B? (void*)harrv_ptr(t) : tyarrv_ptr((TyArr*)t);
 }
 
-INIT_GLOBAL u8 reuseElType[t_COUNT];
-void mut_init_copy(Mut* m, B x, u8 el) {
-  assert(m->fns == &mutFns[el_MAX]);
-  if (reusable(x) && reuseElType[TY(x)]==el && TY(x)!=t_fillarr) { // reuseElType is currently primarily used for toEltypeArr; currently just leaving this special-cased until it's decided what to do with this
-    m->fns = &mutFns[el];
-    Arr* a = m->val = a(REUSE(x));
-    m->a = harr_tyarr_ptr(a, el);
-  } else {
-    mut_to(m, el);
-    mut_copy(m, 0, x, 0, IA(x));
-    arr_shCopy(m->val, x);
-    decG(x);
-  }
-}
-
 static Arr* (* const cpyFns[])(B) = {
   [el_bit] = cpyBitArr,
   [el_i8]  = cpyI8Arr,  [el_c8]  = cpyC8Arr,
@@ -800,6 +785,7 @@ NOINLINE void apd_widen(ApdMut* m, B x, ApdFn* const* fns) {
 
 
 
+INIT_GLOBAL u8 reuseElType[t_COUNT];
 static NOINLINE DirectArr toFillArr(B x, B fill) {
   usz ia = IA(x);
   Arr* r = arr_shCopy(m_fillarrp(ia), x);

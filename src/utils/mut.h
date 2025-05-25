@@ -80,12 +80,8 @@ void mut_pfree(Mut* m, usz n);
 // consumes x; sets m[ms] to x
 static void mut_set(Mut* m, usz ms, B x) { m->fns->m_set(m, ms, x); }
 
-
 // clears the object (decrements its refcount) at position ms
 static void mut_rm(Mut* m, usz ms) { if (m->fns->elType == el_B) dec(((B*)m->a)[ms]); }
-
-// gets object at position ms, without increasing refcount
-static B mut_getU(Mut* m, usz ms) { return m->fns->m_getU(m->a, ms); }
 
 // doesn't consume; fills m[ms…ms+l] with x
 static void mut_fill(Mut* m, usz ms, B x, usz l) { m->fns->m_fill(m, ms, x, l); }
