@@ -1084,7 +1084,7 @@ B slash_ucw(B t, B o, B w, B x) {
   
   // (c ; C˙)¨⌾(w⊸/) x
   #if SINGELI_SIMD
-  if (isFun(o) && TY(o)==t_md1D) {
+  if (MAY_F(isFun(o) && TY(o)==t_md1D)) {
     u8 xe = TI(x,elType);
     
     Md1D* od = c(Md1D,o);
@@ -1109,28 +1109,12 @@ B slash_ucw(B t, B o, B w, B x) {
       else incByG(c, sum-1);
     }
     
-    DirectArr r;
-    void* xp;
-    if (re != xe) {
-      assert(xe != el_B);
-      r = toEltypeArr(x, re);
-      x = incG(r.obj);
-      xp = r.data;
-    } else {
-      if (xe==el_B) {
-        r = potentiallyReuse(x);
-        if (r.obj.u == x.u) {
-          xp = r.data;
-          decByMask(bitany_ptr(w), xp, ia, 0);
-        } else {
-          TO_BPTR(x);
-          xp = arr_bptrG(x);
-          incByMask(bitany_ptr(w), xp, ia, 1);
-        }
-      } else {
-        r = potentiallyReuse(x);
-        xp = tyany_ptr(x);
-      }
+    ConvArr r = toEltypeArrX(x, re);
+    assert((xe==el_B) == (r.refState!=0));
+    if (r.refState != 0) {
+      assert(re == el_B);
+      if (r.refState == 1) decByMask(bitany_ptr(w), r.xp, ia, 0);
+      else                 incByMask(bitany_ptr(w), r.xp, ia, 1);
     }
     
     u64 cv;
@@ -1141,10 +1125,10 @@ B slash_ucw(B t, B o, B w, B x) {
       cv = re==el_f64? r_f64u(o2fG(c)) : r_Bu(c);
     }
     
-    blendArrScalarFns[elwBitLog(re)](r.data, xp, cv, bitany_ptr(w), ia);
+    blendArrScalarFns[elwBitLog(re)](r.rp, r.xp, cv, bitany_ptr(w), ia);
     NOGC_E;
     decG(w); decG(x);
-    return r.obj;
+    return r.res;
   }
   #endif
   goto notConstEach; notConstEach:;

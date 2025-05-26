@@ -799,12 +799,14 @@ static NOINLINE DirectArr toFillArr(B x, B fill) {
 static void* reusableArr_ptr(Arr* t, u8 el) {
   return el==el_B? (void*)(PTY(t)==t_fillarr? fillarrv_ptr(t) : harrv_ptr(t)) : tyarrv_ptr((TyArr*)t);
 }
-DirectArr toEltypeArr(B x, u8 re) {
+static DirectArr doReuse(B x, u8 xe) { // consumes (i.e. transfers x to result)
+  assert(TI(x,elType)==xe);
+  x = REUSE(x);
+  return (DirectArr){x, reusableArr_ptr(a(x), xe)};
+}
+DirectArr toEltypeArr(B x, u8 re) { // consumes
   assert(isArr(x));
-  if (reusable(x) && re==reuseElType[TY(x)]) {
-    x = REUSE(x);
-    return (DirectArr){x, reusableArr_ptr(a(x), re)};
-  }
+  if (reusable(x) && re==reuseElType[TY(x)]) return doReuse(x, re);
   
   Arr* tyarr;
   switch (re) { default: UD;
@@ -827,18 +829,15 @@ DirectArr toEltypeArr(B x, u8 re) {
   tyarr:
   return (DirectArr){taga(tyarr), tyarrv_ptr((TyArr*) tyarr)};
 }
-static NOINLINE DirectArr m_fillarrAs(B x, B fill) {
+
+
+
+static NOINLINE DirectArr m_fillarrAs(B x, B fill) { // doesn't consume
   Arr* r = arr_shCopy(m_fillarrp(IA(x)), x);
   fillarr_setFill(r, fill);
   return (DirectArr){taga(r), fillarrv_ptr(r)};
 }
-DirectArr potentiallyReuse(B x) {
-  assert(isArr(x));
-  u8 xe = TI(x,elType);
-  if (reusable(x) && xe == reuseElType[TY(x)]) {
-    x = REUSE(x);
-    return (DirectArr){incG(x), reusableArr_ptr(a(x), xe)};
-  }
+static DirectArr m_directarrAs(B x, u8 xe) { // doesn't consume
   if (xe==el_B) {
     B fill = getFillR(x);
     if (!noFill(fill)) return m_fillarrAs(x, fill);
@@ -849,6 +848,48 @@ DirectArr potentiallyReuse(B x) {
   B r;
   void* rp = m_tyarrlbc(&r, elwBitLog(xe), x, el2t(xe));
   return (DirectArr) {r, rp};
+}
+static bool canReuse(B x, u8 xe) {
+  return reusable(x) && xe == reuseElType[TY(x)];
+}
+DirectArr potentiallyReuse(B x) { // doesn't consume
+  assert(isArr(x));
+  u8 xe = TI(x,elType);
+  return canReuse(x, xe)? doReuse(incG(x), xe) : m_directarrAs(x, xe);
+}
+
+ConvArr toEltypeArrX(B x, u8 re) { // doesn't consume
+  debug_assert(isArr(x) && el_or(re,TI(x,elType))==re);
+  u8 xe = TI(x,elType);
+  u8 refState = 0;
+  DirectArr dr;
+  if (re == xe) {
+    if (canReuse(x, xe)) {
+      refState = xe==el_B? 1 : 0;
+      dr = doReuse(incG(x), xe);
+      goto ret_dr;
+    } else {
+      void* xp;
+      if (xe == el_B) {
+        xp = arr_bptr(x);
+        if (xp == NULL) {
+          refState = 1;
+          goto toEltype;
+        }
+        refState = 2;
+      } else {
+        xp = tyany_ptr(x);
+      }
+      DirectArr r = m_directarrAs(x, re);
+      return (ConvArr){r.obj, r.data, xp, refState};
+    }
+  } else {
+    assert(xe != el_B);
+    toEltype:;
+    dr = toEltypeArr(incG(x), re);
+    ret_dr:
+    return (ConvArr){dr.obj, dr.data, dr.data, refState};
+  }
 }
 
 B directGetU_bit(void* data, ux i) { return m_f64(bitp_get(data,i));} void directSet_bit(void* data, ux i, B v) { bitp_set(data, i, o2bG(v)); }
