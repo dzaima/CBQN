@@ -85,6 +85,29 @@ static bool atomEEqual(B w, B x) { // doesn't consume
   return atomEqualF(w, x);
 }
 
+bool indistinguishable(B w, B x) {
+  if (w.u == x.u) return true;
+  if (isAtm(w)) {
+    if (!isAtm(x)) return false;
+    if (isF64(w)) return isF64(x) && floatIndistinguishable(o2fG(w), o2fG(x));
+    if (!isVal(w) || !isVal(x)) return false; // incl. non-equal c32
+    return decomposeEqual(w, x, indistinguishable);
+  }
+  if (isAtm(x)) return false;
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
+  if (we!=el_B && xe!=el_B) {
+    if (elNum(we) != elNum(xe)) return false;
+    return eequal(w, x); // fast path
+  }
+  if (!eqShape(w, x)) return false;
+  usz wia = IA(w);
+  SGetU(w) SGetU(x)
+  for (ux i = 0; i < wia; i++) if (!indistinguishable(GetU(w,i), GetU(x,i))) return false;
+  if (!indistinguishable(getFillN(w), getFillN(x))) return false;
+  return true;
+}
+
 static const u8 n = 99;
 u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; otherwise, whether to swap arguments
   0,0,0,0,0,n,n,n,

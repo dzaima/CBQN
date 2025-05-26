@@ -343,6 +343,7 @@ SHOULD_INLINE i32 floatCompare(f64 w, f64 x) { // w •Cmp x
 SHOULD_INLINE bool floatIndistinguishable(f64 a, f64 b) { // whether the floats are indistinguishable by BQN semantics
   return a==b || (a!=a && b!=b);
 }
+NOINLINE bool indistinguishable(B w, B x); // whether w and x are semantically indistinguishable (i.e. NaN==NaN, fill equality is checked; different internal type/metadata is tolerated)
 
 NOINLINE i32 compareF(B w, B x);
 static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x
