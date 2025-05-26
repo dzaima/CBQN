@@ -64,7 +64,7 @@ extern INIT_GLOBAL M_FillF fillFns[el_MAX];
 #define TYARR_SZ2(T,IA) TYARR_SZ(T,IA)
 #define TYARR_SZW(W,IA) (offsetof(TyArr, a) + (W)*(IA))
 
-#define WRAP(X,IA,MSG) ({ i64 wV=(i64)(X); u64 iaW=(IA); if(RARE((u64)wV >= iaW)) { if(wV<0) wV+= iaW; if((u64)wV >= iaW) {MSG;} }; (usz)wV; })
+#define WRAP(X,IA,MSG) ({ i64 wV=(i64)(X); u64 iaW=(IA); if(RARE((u64)wV >= iaW)) { wV+= iaW; if(RARE((u64)wV >= iaW)) {MSG;} }; (usz)wV; })
 
 static void tyarrv_freeP(Arr* x) { assert(PRNK(x)<=1 && IS_DIRECT_TYARR(PTY(x))); mm_free((Value*)x); }
 static void tyarrv_free(B x) { tyarrv_freeP(a(x)); }
