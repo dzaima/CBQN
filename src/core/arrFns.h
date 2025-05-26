@@ -10,13 +10,8 @@
 static B* arrv_bptrG(Arr* xa) {          ARRV_BPTR_BODY; UD; }
 static B* arr_bptrG(B x) { Arr* xa=a(x); ARRV_BPTR_BODY; UD; }
 
-#if ARR_BPTR_NEVER
-  static B* arr_bptr(B x) { return NULL; }
-  static B* arrv_bptr(Arr* x) { return NULL; }
-#else
-  static B* arr_bptr(B x) { Arr* xa=a(x); ARRV_BPTR_BODY; return NULL; }
-  static B* arrv_bptr(Arr* xa) {          ARRV_BPTR_BODY; return NULL; }
-#endif
+static B* arr_bptr(B x) { Arr* xa=a(x); if (HEURISTIC(true)) { ARRV_BPTR_BODY; } return NULL; }
+static B* arrv_bptr(Arr* xa) {          if (HEURISTIC(true)) { ARRV_BPTR_BODY; } return NULL; }
 
 static void* tyarrv_ptr(TyArr* x) {
   assert(IS_ANY_ARR(PTY(x)) && !IS_SLICE(PTY(x)));
