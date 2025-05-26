@@ -97,20 +97,6 @@ static void interleave_bits(u64* rp, void* x0v, void* x1v, usz n) {
   }
 }
 
-NOINLINE B toElTypeArr(u8 re, B x) { // consumes; returns an array with the given element type (re==el_B guarantees TO_BPTR working)
-  switch (re) { default: UD;
-    case el_bit: return toBitAny(x);
-    case el_i8:  return toI8Any(x);
-    case el_i16: return toI16Any(x);
-    case el_i32: return toI32Any(x);
-    case el_f64: return toF64Any(x);
-    case el_c8:  return toC8Any(x);
-    case el_c16: return toC16Any(x);
-    case el_c32: return toC32Any(x);
-    case el_B: TO_BPTR(x); return x;
-  }
-}
-
 Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊⎉(-k) 𝕩; result has unset shape
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
@@ -118,8 +104,8 @@ Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊�
   u8 re = we==xe? we : el_or(we, xe);
   if (0) { goto to_equal_types; to_equal_types:; 
     // delay doing this until it's known that there will be code that can utilize it
-    if (re!=we) w = toElTypeArr(re, w);
-    if (re!=xe) x = toElTypeArr(re, x);
+    if (re!=we) w = toEltypeArr(w, re).obj;
+    if (re!=xe) x = toEltypeArr(x, re).obj;
     return join_cells(w, x, k);
   }
   
