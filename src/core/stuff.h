@@ -481,7 +481,7 @@ FORCE_INLINE void preFree(Value* x, bool mmx) {
     if (x->type==t_empty) fatal("double-free");
     // u32 undef;
     // x->refc = undef;
-    x->refc = -1431655000;
+    x->refc = -1111119190; // unsigned: 3183848106; hex: 0xbdc5aaaa
   #endif
   // x->refc = 0x61616161;
 }
