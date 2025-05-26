@@ -598,18 +598,30 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   #undef FREE_CHECK
 }
 
-static void* m_arrv_same_t(B* r, usz ia, u8 ty) {
+static void* m_arrv_same_t(B* r, B** rbp, usz ia, u8 ty, B src) {
+  assert(isArr(src));
   u8 se = TIi(ty,elType);
   if (se==el_B) {
-    HArr_p p = m_harr0v(ia);
-    *r = p.b;
-    return p.a;
+    B fill = getFillQ(src);
+    if (noFill(fill)) {
+      HArr_p p = m_harrUv(ia);
+      *rbp = p.a;
+      *r = p.b;
+    } else {
+      Arr* ra = m_fillarrp(ia);
+      fillarr_setFill(ra, fill);
+      *rbp = fillarrv_ptr(ra);
+      *r = taga(ra);
+    }
+    FILL_TO(*rbp, el_B, 0, m_f64(0), ia);
+    NOGC_E;
+    return *rbp;
   } else {
     return m_tyarrlbv(r, arrTypeBitsLog(ty), ia, arrNewType(ty));
   }
 }
-static void* m_arrv_same(B* r, usz ia, B src) { // makes a new array with same element type as src, but new ia
-  return m_arrv_same_t(r, ia, TY(src));
+static void* m_arrv_same(B* r, B** rbp, usz ia, B src) { // makes a new array with same element type and fill as src, but new ia
+  return m_arrv_same_t(r, rbp, ia, TY(src), src);
 }
 
 B slash_c2(B, B, B);
@@ -696,6 +708,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   
   ux ria = indn * cam;
   B r;
+  B* rbp = NULL;
   u8* xp;
   u8 xe = TI(x,elType);
   u8 lb = arrTypeWidthLog(TY(x));
@@ -723,13 +736,13 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   if (ie==el_bit) {
     // TODO path for xe==el_bit + long indn
     if (HEURISTIC_BOUNDED(csz>32 || indn>32 || indn>INDS_BUF_MAX, xe!=el_bit && (csz>8 || indn>8), true)) { // TODO properly tune
-      u8* rp = m_arrv_same(&r, ria, x);
+      u8* rp = m_arrv_same(&r, &rbp, ria, x);
       for (ux i = 0; i < cam; i++) {
         bitselFns[lb](rp, inds, loadu_u64(xp), loadu_u64(xp + (1<<lb)), indn);
         xp+= xbump;
         rp+= rbump;
       }
-      goto decG_ret;
+      goto decG_B_ret;
     } else {
       assert(inds_buf != inds);
       COPY_TO_FROM(inds_buf, el_i8, inds, el_bit, indn);
@@ -835,7 +848,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
       }
     #endif
     
-    u8* rp = m_arrv_same(&r, ria, x);
+    u8* rp = m_arrv_same(&r, &rbp, ria, x);
     
     ux slow_cam = cam;
     #if SINGELI_AVX2 || SINGELI_NEON
@@ -894,7 +907,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
         }
       }
       
-      goto decG_ret;
+      goto decG_B_ret;
     }
     no_fast:;
     #endif
@@ -905,7 +918,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
       xp+= xbump;
       rp+= rbump;
     }
-    goto decG_ret;
+    goto decG_B_ret;
   }
   #else
     (void) bounds;
@@ -926,11 +939,11 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   B indo = taga(arr_shVec(m_tyslice(inds, a(emptyIVec()), t_i8slice + ie-el_i8, indn)));
   return select_cells_base(indo, x, csz, cam);
   
-  decG_ret:;
-  if (xe==el_B) {
-    B* rp = harr_ptr(r);
-    for (ux i = 0; i < ria; i++) inc(rp[i]); // TODO if only a few columns are selected, could incBy in a stride per selected column
+  decG_B_ret:;
+  if (rbp != NULL) {
+    for (ux i = 0; i < ria; i++) inc(rbp[i]); // TODO if only a few columns are selected, could incBy in a stride per selected column
   }
+  decG_ret:;
   decG(x);
   return r;
 }
