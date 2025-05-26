@@ -416,7 +416,7 @@ static B insert_scal(B f, FC2 fc2, B x, bool has_w, B fxw, usz xia, ur rr) {
   B rf;
   if (has_w) {
     // fxw is (⊢˝𝕩)𝔽𝕨 so shape errors have been caught
-    rf = getFillR(fxw);
+    rf = noFill(xf)? bi_noFill : getFillR(fxw);
     COPY_TO(r.a, el_B, 0, fxw, 0, csz);
     decG(fxw);
   } else {
@@ -443,6 +443,7 @@ static B insert_scal(B f, FC2 fc2, B x, bool has_w, B fxw, usz xia, ur rr) {
       if (!has_w) rf = fc2(f, inc(xf), rf);
       if (n%2 == !has_w) rf = fc2(f, inc(xf), rf);
       else fc2(f, inc(xf), inc(rf)); // could error, -˜˝"abc"
+      rf = asFill(rf);
       popCatch();
     }
     #else
@@ -450,7 +451,7 @@ static B insert_scal(B f, FC2 fc2, B x, bool has_w, B fxw, usz xia, ur rr) {
     #endif
   }
   decG(x);
-  return withFill(r.b, rf);
+  return noFill(rf)? squeeze_any(r.b) : withFill(r.b, rf);
 }
 
 B insert_c1(Md1D* d, B x) { B f = d->f;
@@ -491,7 +492,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       }
       return r;
     }
-    if (len>2 && xia<6*(u64)len) {
+    if (len>2 && HEURISTIC(xia<6*(u64)len)) {
       return insert_scal(f, c2fn(f), x, 0, m_f64(0), xia, xr-1);
     }
   }
@@ -545,7 +546,7 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
       }
       return r;
     }
-    if (len>2 && xia<6*(u64)len && !(isArr(w) && RNK(w)>rr)) {
+    if (len>2 && HEURISTIC(xia<6*(u64)len) && !(isArr(w) && RNK(w)>rr)) {
       FC2 fc2 = c2fn(f);
       w = fc2(f, C2(select, m_f64(-1), incG(x)), w);
       return insert_scal(f, fc2, x, 1, w, xia, rr);

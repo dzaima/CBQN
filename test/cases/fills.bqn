@@ -41,6 +41,10 @@
 {3↑      -˝𝕩‿2⥊<<'a'}¨ 5‿6 %!HEAPVERIFY %% <¨¨ ⟨"aa ", 3⥊0⟩
 {3↑ (2⥊2)-˝𝕩‿2⥊<<'x'}¨ 5‿6 %!HEAPVERIFY %% <¨¨ ⟨"vv ", 2‿2‿0⟩
 {3↑  "ee"-˝𝕩‿2⥊<<'a'}¨ 5‿6 %!HEAPVERIFY %% <¨¨ ⟨¯4‿¯4‿0, "ee "⟩
+%USE fill ⋄ Fill (↕ 4) ≠˝ "Ah"•internal.Variation 4‿4⥊'a' %% 0
+%USE fill ⋄ Fill (↕⋈4) ≠˝ "Ah"•internal.Variation 4‿4⥊'a' %% 'e'
+%USE fill ⋄ Fill (↕ 4) ≠˝ 4‿4⥊'a' %% 0
+%USE fill ⋄ Fill (↕⋈4) ≠˝ 4‿4⥊'a' %% ⋈0 %!HEAPVERIFY
 
 %DEF sqfill SqFill ← {•internal.Squeeze "Ah"•internal.Variation 𝕩}
 %USE fill ⋄ %USE eqall ⋄ %USE sqfill ⋄ F←•internal.Keep∘⊢ ⋄ {EqAll Fill¨ ⟨SqFill ⟨𝕩⟩, F¨<𝕩, @F¨<𝕩, @F¨⋈𝕩⟩}¨ ⟨"abc", 4, 'a', {⇐}⟩
