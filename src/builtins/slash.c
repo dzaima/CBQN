@@ -211,7 +211,8 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) { // expected 
         for (usz i = 0; i < wia; i++) if (bitp_get(wp,i)) {
           for (usz j = 0; j < csz; j++) HARR_ADDA(rp, Get(x,i*csz+j));
         }
-        return withFill(HARR_FV(rp), getFillR(x));
+        r = withFill(HARR_FV(rp), getFillR(x));
+        goto b_res;
       }
       
       rh = m_harrUv(ria);
@@ -222,6 +223,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) { // expected 
       for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
       NOGC_E;
       r = withFill(rh.b, getFillR(x));
+      b_res:;
       a(r)->ia = wsum; // Shape-setting code at end of compress expects this
     }
   } else { // Bits
