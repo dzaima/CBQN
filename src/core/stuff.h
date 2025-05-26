@@ -353,7 +353,7 @@ static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if wâ‰
 
 NOINLINE bool atomEqualF(B w, B x);
 static bool atomEqual(B w, B x) { // doesn't consume
-  if(isF64(w)&isF64(x)) return w.f==x.f;
+  if(isF64(w)) return isF64(x) && o2fG(w) == o2fG(x);
   if (w.u==x.u) return true;
   if (!isVal(w) | !isVal(x)) return false;
   return atomEqualF(w, x);

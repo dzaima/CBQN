@@ -53,7 +53,8 @@ NOINLINE i32 compareF(B w, B x) {
   return rc;
 }
 
-NOINLINE bool atomEqualF(B w, B x) {
+SHOULD_INLINE bool decomposeEqual(B w, B x, bool (*partEqual)(B,B)) {
+  assert(w.u != x.u);
   if (TI(w,byRef) || TY(w)!=TY(x)) return false;
   
   B2B dcf = TI(w,decompose);
@@ -64,7 +65,7 @@ NOINLINE bool atomEqualF(B w, B x) {
   usz wia = IA(wd);
   if (wia != IA(xd)) goto dec_ne;
   for (ux i = 0; i < wia; i++) {
-    if(!eequal(wdp[i], xdp[i])) goto dec_ne;
+    if(!partEqual(wdp[i], xdp[i])) goto dec_ne;
   }
   decG(wd); decG(xd);
   return true;
@@ -74,27 +75,14 @@ NOINLINE bool atomEqualF(B w, B x) {
   return false;
 }
 
-bool atomEEqual(B w, B x) { // doesn't consume
-  if (isF64(w) & isF64(x)) return floatIndistinguishable(w.f, x.f);
+NOINLINE bool atomEqualF(B w, B x) { // doesn't consume
+  return decomposeEqual(w, x, eequal);
+}
+
+static bool atomEEqual(B w, B x) { // doesn't consume
+  if (isF64(w)) return isF64(x) && floatIndistinguishable(w.f, x.f);
   if (!isVal(w) || !isVal(x)) return false;
-  
-  if (TI(w,byRef) || TY(w)!=TY(x)) return false;
-  B2B dcf = TI(w,decompose);
-  B xd=dcf(incG(x)); B* xdp=harr_ptr(xd);
-  if (o2i(xdp[0])<=1) goto decx_ne;
-  B wd=dcf(incG(w)); B* wdp=harr_ptr(wd);
-  
-  usz wia = IA(wd);
-  if (wia != IA(xd)) goto dec_ne;
-  for (ux i = 0; i < wia; i++) {
-    if(!eequal(wdp[i], xdp[i])) goto dec_ne;
-  }
-  decG(wd); decG(xd);
-  return true;
-  
-  dec_ne:; decG(wd);
-  decx_ne:; decG(xd);
-  return false;
+  return atomEqualF(w, x);
 }
 
 static const u8 n = 99;
