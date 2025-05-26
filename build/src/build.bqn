@@ -24,6 +24,7 @@ opts ← ⟨
   ⟨1,"stored-warn",0,"Print stored warnings from cached build steps"⟩
   ⟨1, "notui",    @, "Disable live-updating status display"⟩
   ⟨1, "nogit",    0, "Error if something attempts to use git"⟩
+  ⟨1,"keep-going",0, "Continue building things even after others fail to"⟩
   ⟨1, "quiet",    0, "Don't output final status line (or any, combined with notui)"∾@+10⟩
   
   ⟨0, "CC",    @, "The used C compiler"⟩
@@ -175,7 +176,7 @@ allCaches ← ⟨"cbqn", "singeli", "replxx", "linker"⟩
 
 po ← { # parsed options
   ⟨
-    verbose, J, clean, rebuild, warnStored, tui, loud, output, clangd, versionName,
+    verbose, J, clean, rebuild, keepGoing, warnStored, tui, loud, output, clangd, versionName,
     os, arch, native, has,
     emcc, wasm, replxx, singeli, staticLib,
     usz, ffi, o3, debug, rtverify, heapverify,
@@ -192,6 +193,7 @@ po ← { # parsed options
   J ⇐ {𝕊: v←GetOpt "j" ⋄ v≢@? •ParseFloat v; •ParseFloat⎊4 ¯1↓"4" TrySH ⟨"nproc"⟩}
   tui ⇐ @⊸≡◶¬‿{𝕊: f←@•FFI"i32"‿"isatty"‿">i32" ⋄ F 1} GetOpt "notui"
   warnStored ⇐ GetOpt "stored-warn"
+  keepGoing ⇐ GetOpt "keep-going"
   loud ⇐ ¬GetOpt "quiet"
   nogit ↩ GetOpt "nogit"
   truecc ⇐ GetOpt "target-from-cc"
@@ -622,8 +624,8 @@ Run ← { 𝕊:
   
   tmap ← ⟨⟩ # threads in the order they're displayed on-screen (dynamically calculated so that if there's only ever only one job in parallel, there are no pointless empty lines)
   doneCount ← 0
-  stopping ← 0
-  Fail ← {stopping↩1 ⋄ Log 𝕩}
+  failed ← 0
+  Fail ← {failed↩1 ⋄ Log 𝕩}
   nextRedraw ← ¯∞
   DoneLine ← {𝕊: ∾⟨•Repr doneCount, "/", •Repr ≠req⟩}
   { 𝕊:
@@ -634,7 +636,7 @@ Run ← { 𝕊:
       t.Request "dry"⊸⋈⍟po.dry v.CMD@
       work∾↩ {t⇐t, i⇐i, v⇐v, t0⇐•MonoTime@}
       
-    }•_while_{𝕊: ∧´0<≠¨ left‿free}⍟¬ stopping
+    }•_while_{𝕊: ∧´0<≠¨ left‿free}⍟⊢ po.keepGoing ∨ ¬failed
     
     t1 ← •MonoTime@
     tmap ↩ ⍷tmap∾Ts work
@@ -659,11 +661,11 @@ Run ← { 𝕊:
       Fail "Error: During '"∾𝕩.v.disp∾"'"
     }¨ done
     free∾↩ Ts done
-  }•_while_{𝕊: (0<≠work) ∨ (¬stopping)∧0<≠left}@
+  }•_while_{𝕊: (0<≠work) ∨ (¬failed)∧0<≠left}@
   
-  Log⍟po.loud ∾⟨DoneLine@, " in ", FmtTime t0g-˜•MonoTime@, "s", stopping/"; failed to build", anyStoredWarnings/"; cached build steps had warnings - view with stored-warn=1"⟩
+  Log⍟po.loud ∾⟨DoneLine@, " in ", FmtTime t0g-˜•MonoTime@, "s", failed/"; failed to build", anyStoredWarnings/"; cached build steps had warnings - view with stored-warn=1"⟩
   
-  ¬stopping
+  ¬failed
 }
 
 
