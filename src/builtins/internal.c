@@ -113,8 +113,22 @@ B listVariations_c2(B t, B w, B x) {
     if      (xe==el_i8 ) { i8*  xp = i8any_ptr (x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
     else if (xe==el_i16) { i16* xp = i16any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
     else if (xe==el_i32) { i32* xp = i32any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
-    else if (xe==el_f64) { f64* xp = f64any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; if(xp[i]!=(i32)xp[i]) goto onlyF64; } }
-    else for (usz i = 0; i < xia; i++) { B c = GetU(x, i); if (!isF64(c)) goto noSpec; if (c.f>max) max=c.f; if (c.f<min) min=c.f; }
+    else if (xe==el_f64) { f64* xp = f64any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; if(!q_fi32(xp[i])) goto onlyF64; } }
+    else {
+      bool notFloat = false;
+      for (usz i = 0; i < xia; i++) {
+        B c = GetU(x, i);
+        if (!isF64(c)) goto noSpec;
+        if (!q_fi32(o2fG(c))) {
+          notFloat=true;
+        } else {
+          i32 v = o2iG(c);
+          if (v>max) max=v;
+          if (v<min) min=v;
+        }
+      }
+      if (notFloat) goto onlyF64;
+    }
     ai8  = min==(i8 )min && max==(i8 )max;
     ai16 = min==(i16)min && max==(i16)max;
     ai32 = min==(i32)min && max==(i32)max;

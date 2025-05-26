@@ -387,6 +387,10 @@ Str ← {!=𝕩 ⋄ !×≠𝕩 ⋄ ! ∧´2=•Type¨𝕩} ⋄ Str •platform.o
   ! 0‿1‿2‿3‿4‿5‿6‿7‿8‿8‿1‿2‿3‿4‿5‿6‿7‿8‿8 ≡ {•internal.ElType 𝕩 •internal.Variation ⟨⟩}¨ var
   # TODO test •internal.ListVariations
 )
+%USE eqvar ⋄ LV↩"i"⊸LV ⋄ •internal.ListVariations _eqvar π×↕10 %% ⟨"Af64","Sf64","Af64Inc","Sf64Inc","Ah","Sh","AhInc","ShInc","Af","Sf","AfInc","SfInc"⟩
+%USE eqvar ⋄ LV↩"i"⊸LV ⋄ •internal.ListVariations _eqvar (π×↕10)∾{⇐} %% ⟨"Ah","Sh","AhInc","ShInc","Af","Sf","AfInc","SfInc"⟩
+%USE eqvar ⋄ LV↩"i"⊸LV ⋄ •internal.ListVariations _eqvar ↕1000 %% ⟨"Ai16","Si16","Ai16Inc","Si16Inc","Ai32","Si32","Ai32Inc","Si32Inc","Af64","Sf64","Af64Inc","Sf64Inc","Ah","Sh","AhInc","ShInc","Af","Sf","AfInc","SfInc"⟩
+%USE eqvar ⋄ LV↩"i"⊸LV ⋄ •internal.ListVariations _eqvar 100⥊1‿0 %% ⟨"Ab","AbInc","Ai8","Si8","Ai8Inc","Si8Inc","Ai16","Si16","Ai16Inc","Si16Inc","Ai32","Si32","Ai32Inc","Si32Inc","Af64","Sf64","Af64Inc","Sf64Inc","Ah","Sh","AhInc","ShInc","Af","Sf","AfInc","SfInc"⟩
 
 # •internal.Keep
 •internal.Keep ↕10 %% ↕10
