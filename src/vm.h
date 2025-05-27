@@ -177,12 +177,14 @@ static B execBlockInplace(Block* block, Scope* sc) { // doesn't consume; execute
 #if JIT_START != -1
 NOINLINE B mnvmExecBodyInplace(Body* body, Scope* sc);
 #endif
+extern bool jit_enabled;
 FORCE_INLINE B execBodyInplaceI(Body* body, Scope* sc, Block* block) { // consumes sc, unlike execBlockInplace
+  debug_assert(body->bl == block);
   #if JIT_START != -1
     if (LIKELY(body->nvm != NULL)) return evalJIT(body, sc, body->nvm);
     bool jit = true;
     #if JIT_START > 0
-      jit = body->callCount++ >= JIT_START;
+      jit = body->callCount++ == JIT_START;
     #endif
     // jit = body->bc[2]==m_f64(123456).u>>32; // enable JIT for blocks starting with `123456⋄`
     if (jit) return mnvmExecBodyInplace(body, sc);

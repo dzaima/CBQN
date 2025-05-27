@@ -963,6 +963,9 @@ int main(int argc, char* argv[]) {
         } else if (!strcmp(carg, "--replxx-read-only")) {
           replxx_read_only = true;
           continue;
+        } else if (!strcmp(carg, "--disable-jit")) {
+          jit_enabled = false;
+          continue;
         #endif
         } else {
           printf("%s: Unknown option: %s\n", argv[0], carg);

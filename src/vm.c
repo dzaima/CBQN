@@ -985,8 +985,10 @@ NOINLINE Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* ini
 
 B execBlockInplaceImpl(Body* body, Scope* sc, Block* block) { return execBodyInplaceI(block->bodies[0], sc, block); }
 
+bool jit_enabled = true;
 #if JIT_START != -1
 B mnvmExecBodyInplace(Body* body, Scope* sc) {
+  if (!jit_enabled) return evalBC(body, sc, body->bl);
   Nvm_res r = m_nvm(body);
   body->nvm = r.p;
   body->nvmRefs = r.refs;
