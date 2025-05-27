@@ -646,11 +646,12 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   SqRes squeeze_numTryImpl(B x);
   SqRes squeeze_chrTryImpl(B x);
   
-  static u32 squeeze_processReq(u32 req) {
+  static u32 squeeze_processReq(B x, u32 req) {
+    assert(isArr(x));
     if (MATCH_ERROR_MESSAGES) {
       req|= req / SQ_MSGREQ(1);
     }
-    return req & (SQ_NUM|SQ_INT|SQ_CHR|SQ_BEST);
+    return req & (SQ_NUM|SQ_INT|SQ_CHR|SQ_BEST|SQ_EMPTY);
   }
   static SqRes squeeze_ret(B x) {
     return (SqRes){x, TI(x,elType)};
@@ -658,17 +659,17 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   
   // TODO randomize level of squeezing
   SqRes squeeze_numTryRand(B x, u32 req) {
-    req = squeeze_processReq(req);
+    req = squeeze_processReq(x, req);
     u8 xe = TI(x,elType);
-    if (MAY_T(req&SQ_BEST)) return squeeze_numTryImpl(x);
+    if (MAY_T((req&SQ_BEST) || ((req&SQ_EMPTY) && IA(x)==0))) return squeeze_numTryImpl(x);
     if ((req&SQ_NUM) && !elNum(xe)) return squeeze_numTryImpl(x);
     if ((req&SQ_INT) && !elInt(xe)) return squeeze_numTryImpl(x);
     return squeeze_ret(x);
   }
   SqRes squeeze_chrTryRand(B x, u32 req) {
-    req = squeeze_processReq(req);
+    req = squeeze_processReq(x, req);
     u8 xe = TI(x,elType);
-    if (MAY_T(req&SQ_BEST)) return squeeze_chrTryImpl(x);
+    if (MAY_T((req&SQ_BEST) || ((req&SQ_EMPTY) && IA(x)==0))) return squeeze_chrTryImpl(x);
     if ((req&SQ_CHR) && !elChr(xe)) return squeeze_chrTryImpl(x);
     return squeeze_ret(x);
   }

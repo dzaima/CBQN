@@ -288,7 +288,7 @@ static NOINLINE B or_SA(B t, B w, B x) {
     f64 wf = o2fG(w);
     return bit_sel(x, m_f64(bqn_or(wf, 0)), m_f64(bqn_or(wf, 1)));
   }
-  x = squeeze_numTry(x, &xe, SQ_NUM);
+  x = squeeze_numTry(x, &xe, SQ_NUM | SQ_EMPTY);
   if (xe==el_bit) goto bitsel;
   if (!elNum(xe)) return arith_recd(or_c2, w, x);
   x = toF64Any(x);

@@ -307,6 +307,7 @@ static B squeeze_chrTry(B x, u8* re_out, u32 req) { SQ_UNPACK(squeeze_chrTry) } 
 #define SQ_CHR 1 // must squeeze to elChr(xe) if possible
 #define SQ_NUM 2 // must squeeze to elNum(xe) if possible
 #define SQ_BEST 4 // must squeeze to smallest type possible
+#define SQ_EMPTY 8 // must squeeze to smallest type possible on empty input
 #define SQ_MSGREQ(X) ((X)<<8) // if the settings in X aren't followed, different error messages may be produced
 
 B squeeze_numOut(B x); // consumes; squeeze_numTry but without re_out
