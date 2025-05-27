@@ -150,7 +150,17 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"/⁼𝕩: 𝕩 must consist of natural numbers" % %USE evar ⋄ /⁼_evar (↕10) ∾ 1e20 ∾ 20+↕10
 
 # 𝕨⊏𝕩
-•internal.ElType¨ {(100⥊↕2)⊏𝕨‿𝕩}⌜˜ ⟨0, 1, 2, 127, 128, 32767, 32768, ¯32767, ¯32768, ¯32769, ¯1+2⋆31, 2⋆31, @, @+1, @+255, @+256, @+1114111, {⇐}, 1‿2⟩ %% (8-(=⌜˜<⟜5)×8-⌈⌜˜) 0‿0‿1‿1‿2‿2‿3‿2‿2‿3‿3‿4‿5‿5‿5‿6‿7‿8‿8
+(
+  vals ← ⟨0, 1, 2, 127, 128, 32767, 32768, ¯32767, ¯32768, ¯32769, ¯1+2⋆31, 2⋆31, @, @+1, @+255, @+256, @+1114111, {⇐}, 1‿2⟩
+  e1 ← ⌈⌜˜ 0‿0‿1‿1‿2‿2‿3‿2‿2‿3‿3‿4‿8‿8‿8‿8‿8‿8‿8
+  e2 ← (8-(=⌜˜<⟜5)×8-⌈⌜˜) 0‿0‿1‿1‿2‿2‿3‿2‿2‿3‿3‿4‿5‿5‿5‿6‿7‿8‿8
+  a ← 100⥊↕2
+  ⟨Variation, ListVariations, ElType⟩ ← •internal
+  { 𝕊 v:
+    ! e1 ≡ ElType¨ {(v Variation a) ⊏ 𝕨‿𝕩}⌜˜ vals
+    ! e2 ≡ ElType¨ {(v Variation a) ⊏ 𝕨⋈𝕩}⌜˜ vals
+  }¨ "i"ListVariations a
+)
 0‿0‿0 ⊏ 1‿3⥊↕10 %% 3‿3⥊0‿1‿2
 ≢¨ ⟨(2‿0‿3‿4‿5⥊1)⊏9‿8‿0‿7⥊0 ⋄ ⟨⟩⊏0‿8‿0‿7⥊0 ⋄ (2‿3‿0‿4⥊1)⊏↕10⟩ %% ⟨2‿0‿3‿4‿5‿8‿0‿7,0‿8‿0‿7,2‿3‿0‿4⟩
 !"𝕨⊏𝕩: Indexing out-of-bounds (1∊𝕨, 1≡≠𝕩)" % ⊏˜(200⥊1)⥊1
@@ -173,6 +183,9 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such arrays" % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ ⟨⋈⋈{⇐}, <<<4, ⋈⋈⋈4, 1.5‿{⋈}⟩ ⊏_evar _eqerr ⟨↕10, 10‿10⥊↕100⟩
 !"𝕨⊏𝕩: Compound 𝕨 must have rank at most 1" % %USE eqerr ⋄ ⟨≍⋈↕5⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
 !"Expected integer, got namespace" % %USE eqerr ⋄ ⟨≍⋈{⇐}, ⋈{⇐}⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
+%USE eqvar ⋄ (⌽↕4) ⊏_eqvar 10×↕10 %% 30‿20‿10‿0
+%USE eqvar ⋄ (4⥊0) ⊏_eqvar 40‿30‿20 %% 4⥊40
+%USE eqvar ⋄ 1‿0‿0 ⊏_eqvar "ab"⌾(0‿1⊸⊏) ↕2 %% "baa"
 %USE eqvar ⋄ (⌽↕4) ⋈⊸⊏_eqvar "abcdefgh" %% "dcba"
 (<↕3) ⊏ "hello" %% "hel"
 (<<4) ⊏ "hello" %% <'o'

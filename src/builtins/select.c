@@ -362,6 +362,7 @@ B select_c2(B t, B w, B x) {
       }
       B r = bit_sel(w, x0, x1);
       decG(x);
+      if (noFill(xf) && TI(r,elType)!=el_B) return taga(cpyHArr(r));
       return withFill(r, xf);
     }
     case el_i8:  TYPE(i8, cpyI16Arr)
