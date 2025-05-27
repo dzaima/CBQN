@@ -950,7 +950,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   if (rbp != NULL) {
     for (ux i = 0; i < ria; i++) inc(rbp[i]); // TODO if only a few columns are selected, could incBy in a stride per selected column
   }
-  decG_ret:;
+  decG_ret: MAYBE_UNUSED;
   decG(x);
   return r;
 }
