@@ -297,6 +297,9 @@ DirectArr toEltypeArr(B x, u8 re); // consumes
 // Otherwise, functionality is the same as if a regular new array was made (i.e. uninitialized elements, may start NOGC)
 DirectArr potentiallyReuse(B x); // doesn't consume
 
+typedef struct { Arr* obj; void* data; } UntaggedArr;
+UntaggedArr m_arrp_fill(B x, ux ia); // doesn't consume; create new array with the fill and eltype of x
+
 typedef struct {
   B res;
   void* rp;

@@ -101,12 +101,11 @@ static Arr* take_head(usz ria, B x) { // consumes; returns ria↑x with unset sh
     
     try_copy:;
     // if (used > 64) goto base;
-    MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
-    mut_copyG(rm, 0, x, 0, ria);
-    Arr* r = mut_fp(rm);
-    if (xt==t_fillarr) r = a(withFill(taga(arr_shVec(r)), getFillR(x)));
+    UntaggedArr r = m_arrp_fill(x, ria);
+    COPY_TO(r.data, TI(x,elType), 0, x, 0, ria);
+    NOGC_E;
     decG(x);
-    return r;
+    return r.obj;
   }
   base:;
   return TI(x,slice)(x,0,ria);
