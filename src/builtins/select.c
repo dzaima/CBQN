@@ -742,7 +742,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   
   if (ie==el_bit) {
     // TODO path for xe==el_bit + long indn
-    if (HEURISTIC_BOUNDED(csz>32 || indn>32 || indn>INDS_BUF_MAX, xe!=el_bit && (csz>8 || indn>8), true)) { // TODO properly tune
+    if (HEURISTIC_BOUNDED(csz>32 || indn>32 || indn>INDS_BUF_MAX, xe!=el_bit && (csz>8 || indn>8), indn<=32)) { // TODO properly tune
       u8* rp = m_arrv_same(&r, &rbp, ria, x);
       for (ux i = 0; i < cam; i++) {
         bitselFns[lb](rp, inds, loadu_u64(xp), loadu_u64(xp + (1<<lb)), indn);
