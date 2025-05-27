@@ -209,7 +209,7 @@ Run ← { 𝕊 testname:
 }
 
 helpers ← {
-  ⟨TV⇐Variation, CLR⇐ClearRefs, HasFill, EEqual⟩ ← •internal
+  ⟨TV⇐Variation, CLR⇐ClearRefs, HasFill, EEqual, ListVariations⟩ ← •internal
   indistinguishable ← {⟨I⇐Indistinguishable⟩: I; EEqual} •internal
   _tvar0_ ⇐ {
       F _𝕣_ LV x: (CLR@) ⊢        {         F 𝕩 TV x}¨ LV 𝕩;
@@ -241,6 +241,9 @@ helpers ← {
     }¨ class ⊔ r
     ⊑r
   }
+  
+  _eqvar ⇐ {𝔽 _eqvar0_ ListVariations}
+  _eqvarv_ ⇐ {𝔽 _eqvar0_ (𝕘⊸ListVariations)}
 }
 
 Run¨ SearchRefine o.files
