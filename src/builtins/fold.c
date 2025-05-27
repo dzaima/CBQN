@@ -367,7 +367,6 @@ u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, 
       f64 c = p[i];
       if (!q_fu64(c)) expU_f64(c);
       u64 ci = (u64)c;
-      if (ci<0) goto neg;
       if (addOn(r,ci)) goto overflow;
     }
   } else {

@@ -179,7 +179,7 @@ NOINLINE B toCells(B x) {
   }
 }
 NOINLINE B toKCells(B x, ur k) {
-  assert(isArr(x) && k<=RNK(x) && k>=0);
+  assert(isArr(x) && k<=RNK(x));
   usz* xsh = SH(x);
   usz cam = shProd(xsh, 0, k);
   

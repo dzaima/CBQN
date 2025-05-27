@@ -191,7 +191,7 @@ static B m_ffiFn(NFnDesc* desc, B obj, FC1 c1, FC2 c2, void* wc1, void* wc2) {
 BQN_EXP BQNV bqn_makeBoundFn1(bqn_boundFn1 f, BQNV obj) { return makeX(m_ffiFn(boundFnDesc, inc(getB(obj)), boundFn_c1, c2_bad, f, NULL)); }
 BQN_EXP BQNV bqn_makeBoundFn2(bqn_boundFn2 f, BQNV obj) { return makeX(m_ffiFn(boundFnDesc, inc(getB(obj)), c1_bad, boundFn_c2, NULL, f)); }
 
-const static u8 typeMap[] = {
+static const u8 typeMap[] = {
   [el_bit] = elt_unk,
   [el_B  ] = elt_unk,
   [el_i8 ] = elt_i8,  [el_c8 ] = elt_c8,
