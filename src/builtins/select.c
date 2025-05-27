@@ -651,12 +651,15 @@ B select_cells_single(usz ind, B x, usz cam, usz l, usz csz) { // ⥊ ind ⊏˘ 
         ri+= csz;
       }
       ra = mut_fp(rm);
+      arr_shVec(ra);
+      goto copyFill;
     } else if (xe==el_B) {
       assert(csz == 1);
       SGet(x)
       HArr_p rp = m_harrUv(ria);
       for (usz i = 0; i < cam; i++) rp.a[i] = Get(x, i*l+ind);
       NOGC_E; ra = (Arr*)rp.c;
+      goto copyFill;
     } else {
       void* rp = m_tyarrlbp(&ra, ewl, ria, el2t(xe));
       void* xp = tyany_ptr(x);
@@ -681,6 +684,9 @@ B select_cells_single(usz ind, B x, usz cam, usz l, usz csz) { // ⥊ ind ⊏˘ 
     }
   }
   return taga(ra);
+  
+  copyFill:
+  return withFill(taga(ra), getFillQ(x));
 }
 
 #define CLZC(X) (64-(CLZ((u64)(X))))
