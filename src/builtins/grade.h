@@ -389,8 +389,13 @@ bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
       #undef HI
     }
     case el_B: {
-      B* xp = TO_BPTR(x);
-      CMP(compare(xp[i-1], xp[i]) GRADE_UD(>,<) 0)
+      B* xp = arr_bptr(x);
+      if (xp!=NULL) {
+        CMP(compare(xp[i-1], xp[i]) GRADE_UD(>,<) 0)
+      } else {
+        SGetU(x)
+        CMP(compare(GetU(x,i-1), GetU(x,i)) GRADE_UD(>,<) 0)
+      }
     }
   }
   #undef CASE
