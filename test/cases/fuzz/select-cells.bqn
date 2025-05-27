@@ -1,6 +1,6 @@
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
-%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ !∘≡⟜(⊑r)¨ r ⋄ ⊑r}
+%DEF eqvar LV←•internal.ListVariations ⋄ ⟨_eqvar0_⟩←⊑•args ⋄ _eqvar ← {𝔽 _eqvar0_ LV}
 
 (
   %USE eqvar

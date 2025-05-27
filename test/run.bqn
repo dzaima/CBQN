@@ -148,7 +148,7 @@ Run ← { 𝕊 testname:
       badCount+↩ 1
     }
     ErrMsg ← {𝕊: m←•CurrentError@ ⋄ {1==m? ∧´2=•Type¨m? m; •Repr⎊"(unrepresentable)" m}}
-    Eval ← {⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨"arg0",1⟩⟩ •BQN 𝕩}
+    Eval ← {⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨helpers,"arg0",1⟩⟩ •BQN 𝕩}
     EvalS ← •BQN⎊{𝕊: Bad "Bad comparison value" ⋄ "(bad)"}
     toRun ← tests
     toRun {{𝕩.enabled}∘⊑¨⊸/𝕩}↩
@@ -207,6 +207,42 @@ Run ← { 𝕊 testname:
     }
   }⍟o.run @
 }
+
+helpers ← {
+  ⟨TV⇐Variation, CLR⇐ClearRefs, HasFill, EEqual⟩ ← •internal
+  indistinguishable ← {⟨I⇐Indistinguishable⟩: I; EEqual} •internal
+  _tvar0_ ⇐ {
+      F _𝕣_ LV x: (CLR@) ⊢        {         F 𝕩 TV x}¨ LV 𝕩;
+    w F _𝕣_ LV x: (CLR@) ⊢ (LV 𝕨) {(𝕨 TV w) F 𝕩 TV x}⌜ LV 𝕩
+  }
+  
+  {o.heapverify? Indistinguishable↩EEqual; @}
+  Classify ← {(≢𝕩)⥊ ⊐Indistinguishable⌜˜ ⥊𝕩}
+  
+  _eqvar0_ ⇐ { LV ← 𝔾
+    r ← 𝕨 𝔽 _tvar0_ 𝔾 𝕩
+    class ← {·𝕊·: 𝕨+2×𝕩; 𝕊·: 𝕩} c0←(≢r) {HasFill 𝕩? 'h' = 1⊸⊑¨ LV 𝕩; 𝕨⥊0}¨ args←𝕨⋈𝕩
+    (⊑r)⊸("failed eqvar eequal" ! EEqual)¨ 1↓⥊r
+    {
+      c0 ← ⊑𝕩
+      {
+        c0 Indistinguishable 𝕩?
+          1;
+        
+        classes ← {
+          ⟨a⟩: (@+10)∾ •Fmt "type"‿"class" ∾˘ a ≍ Classify r;
+          wc‿xc:
+            wv‿xv ← LV¨ args
+            wc‿xc+↩'A'
+            "row=type of 𝕨, col=type of 𝕩:" ∾ ∾⟨@+10,' ',' '⟩⊸∾¨ ⟨∾⟨"\|",xc," ==",∾' '⊸∾¨xv⟩⟩ ∾ (wc⋈¨wv) {c‿v𝕊𝕩: c ∾ '|' ∾ 𝕩 ∾ ' ' ∾ v}¨ <˘ '0'+Classify r
+        } c0
+        ! "TEST FAIL: _eqvar0_ failed: "∾classes
+      }¨ 𝕩
+    }¨ class ⊔ r
+    ⊑r
+  }
+}
+
 Run¨ SearchRefine o.files
 
 •Exit⍟(0⊸≠)⍟(¬o.heapverify) exitCode

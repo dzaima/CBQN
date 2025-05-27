@@ -1,6 +1,6 @@
 %DEF var V←•internal.Variation ⋄ LV←•internal.ListVariations ⋄ CLR←•internal.ClearRefs
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
-%DEF eqvar %USE tvar ⋄ _eqvar ← {r ← 𝕨 𝔽 _tvar 𝕩 ⋄ "failed eqvar"⊸!∘•internal.EEqual⟜(⊑r)¨ r ⋄ ⊑r}
+%DEF eqvar LV←•internal.ListVariations ⋄ ⟨_eqvar0_⟩←⊑•args ⋄ _eqvar ← {𝔽 _eqvar0_ LV}
 # not tested here: •Out •Show •Exit •GetLine •Cmp •CurrentError •FFI •internal.HeapDump
 
 
@@ -73,10 +73,10 @@ f←•ReBQN{system⇐⟨"e1"⋈↕0, "e2"⋈"", "e3"⋈0⥊<"hi"⟩ ⋄ primiti
 !¨ (•Type¨1⊑¨•primitives)∊3‿4‿5
 
 # •state
-6⊸↑⌾(1⊸⊑) •file.Name⌾⊑ •state %% ⟨"testDir","system",⟨"arg0",1⟩⟩
+6⊸↑⌾(1⊸⊑) 1⊸↓⌾(2⊸⊑) •file.Name⌾⊑ •state %% ⟨"testDir","system",⟨"arg0",1⟩⟩
 
 # •args
-•args %% ⟨"arg0",1⟩
+1↓•args %% ⟨"arg0",1⟩
 
 # •path & •file.path
 •file.Name •path %% "testDir"
