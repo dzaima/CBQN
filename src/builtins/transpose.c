@@ -125,13 +125,15 @@ Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊�
 #if SINGELI
     } else if (csz==1 && re==el_B) {
       if (we!=xe) goto to_equal_types;
-      B* wp = TO_BPTR(w); B* xp = TO_BPTR(x);
+      B w2 = incG(w); B* wp = TO_BPTR(w2); // must least fill of w & x as-is
+      B x2 = incG(x); B* xp = TO_BPTR(x2);
       
       HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
       interleave_fns[3](p.a, wp, xp, n);
       for (usz i=0; i<ia; i++) inc(p.a[i]);
       NOGC_E;
       r = (Arr*) p.c;
+      decG(w2); decG(x2);
       goto add_fill;
     } else if (csz<=64>>xlw && csz<<xlw>=8) { // Require CPU-sized cells
       if (we!=xe) goto to_equal_types;
