@@ -394,16 +394,16 @@ B select_c2(B t, B w, B x) {
     CFRes f = cf_get(1, csz<<elwBitLog(xe));
     
     MAKE_MUT_INIT(rm, ria, xe);
-    usz i = 0; f64 badw;
+    usz i = 0;
     if (xe<el_B && elInt(we)) {
       void* wp = tyany_ptr(w);
       void* xp = tyany_ptr(x);
       ux ri = 0;
       switch(we) { default: UD;
-        case el_bit: for (; i<wia; i++) { i8  c =bitp_get(wp,i); if (c>=xn)          { badw=c;  goto bad1; }   cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } // TODO something better
-        case el_i8:  for (; i<wia; i++) { i8  c0=((i8* )wp)[i]; usz c = WRAP(c0, xn, { badw=c0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; }
-        case el_i16: for (; i<wia; i++) { i16 c0=((i16*)wp)[i]; usz c = WRAP(c0, xn, { badw=c0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; }
-        case el_i32: for (; i<wia; i++) { i32 c0=((i32*)wp)[i]; usz c = WRAP(c0, xn, { badw=c0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; }
+        case el_bit:               for (; i<wia; i++) { ux c = bitp_get(wp,i);           if (c >= xn) { goto bad1; }   cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; }   break; // TODO something better
+        case el_i8:  { i8*  w0=wp; for (i8*  wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } } break;
+        case el_i16: { i16* w0=wp; for (i16* wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } } break;
+        case el_i32: { i32* w0=wp; for (i32* wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } } break;
       }
       
       assert(!isVal(xf));
@@ -412,7 +412,7 @@ B select_c2(B t, B w, B x) {
       MUTG_INIT(rm);
       for (; i < wia; i++) {
         B cw = GetU(w, i); // assumed number from previous squeeze
-        if (!q_i64(cw)) { bad_cw: badw=o2fG(cw); goto bad1; }
+        if (!q_i64(cw)) { bad_cw: goto bad1; }
         usz c = WRAP(o2i64G(cw), xn, goto bad_cw; );
         mut_copyG(rm, i*csz, x, csz*c, csz);
       }
@@ -422,7 +422,7 @@ B select_c2(B t, B w, B x) {
     
     bad1:;
     mut_pfree(rm, i*csz);
-    if (!q_fi64(badw)) expI_f64(badw);
+    f64 badw = o2i64(IGetU(w,i));
     thrF("𝕨⊏𝕩: Indexing out-of-bounds (%f∊𝕨, %s≡≠𝕩)", badw, xn);
   }
   
