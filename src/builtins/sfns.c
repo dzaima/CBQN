@@ -320,6 +320,7 @@ B shape_c2(B t, B w, B x) {
           return withFill(taga(arr_shSetUO(mut_fp(m), nr, sh)), xf);
         }
         u8 xk = xl - 3;
+        if (nia >= USZ_MAX) thrOOM();
         rp = m_tyarrp(&r, 1<<xk, nia, xt);
         bi = (u64)xia<<xk;
         bf = (u64)nia<<xk;

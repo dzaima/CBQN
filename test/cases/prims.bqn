@@ -380,6 +380,8 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 
 # 𝕨⥊𝕩
 !"𝕨⥊𝕩: Result rank too large" % (0∾300⥊2)⥊0
+!"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 1.1}¨_eqerr 63-↕10
+!"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 7⥊1.1}¨_eqerr 63-↕10
 
 # 𝕨⍷𝕩
 %USE eqvar ⋄ "ab" ⍷_eqvar "" %% ⟨⟩
