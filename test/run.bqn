@@ -170,7 +170,7 @@ Run ← { 𝕊 testname:
       PreEval@
       ⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨helpers,"arg0",1⟩⟩ •BQN 𝕩
     }
-    EvalS ← •BQN⎊{𝕊: Bad "Bad comparison value" ⋄ "(bad)"}
+    EvalS ← •BQN⎊{𝕊: Bad "Computing expected value errored" ⋄ "(could not compute expected value)"}
     toRun ← tests
     toRun {{𝕩.enabled}∘⊑¨⊸/𝕩}↩
     skipped+↩ (≠tests)-≠toRun
