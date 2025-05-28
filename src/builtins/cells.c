@@ -251,7 +251,7 @@ static NOINLINE B select_cells(usz ind, B x, ur xr, usz cam, usz k) { // ind ⊏
   return r;
 }
 static NOINLINE B pick_cells(usz ind, B x, ur xr, usz cam, usz k) { // ind <∘⊑⎉¯k x
-  assert(xr == RNK(x) && xr>1 && k<=xr);
+  assert(xr == RNK(x) && xr>0 && k<=xr);
   usz* xsh = SH(x);
   usz l = shProd(xsh, k, xr);
   assert(ind < (k==xr? 1 : xsh[k]) && cam*l == IA(x));
