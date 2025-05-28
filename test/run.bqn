@@ -245,9 +245,9 @@ helpers ← {
     class ← {·𝕊·: 𝕨+2×𝕩; 𝕊·: 𝕩} c0←(≢r) {HasFill 𝕩? 'h' = 1⊸⊑¨ LV 𝕩; 𝕨⥊0}¨ args←𝕨⋈𝕩
     (⊑r)⊸("failed eqvar eequal" ! EEqual)¨ 1↓⥊r
     {
-      c0 ← ⊑𝕩
+      r0 ← ⊑𝕩
       {
-        c0 Indistinguishable 𝕩?
+        r0 Indistinguishable 𝕩?
           1;
         
         classes ← {
