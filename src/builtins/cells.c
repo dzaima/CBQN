@@ -761,15 +761,21 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
         usz l = xsh[xk];
         return pick_cells(WRAP(o2i64(w), l, thrF("𝕨⊑𝕩: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, xr, cam, xk);
       } break;
-      case n_shifta: case n_shiftb: if (isAtm(w)) {
-        if (IA(x)==0) return x;
-        if (xcr!=1) {
-          if (xcr==0) break;
-          if (!(xsh[xk]==1 || shProd(xsh, xk+1, xr)==1)) break;
+      case n_shifta: case n_shiftb:
+        if (isAtm(w)) {
+          shift_atm:;
+          if (IA(x)==0) return x;
+          if (xcr!=1) {
+            if (xcr==0) break;
+            if (!(xsh[xk]==1 || shProd(xsh, xk+1, xr)==1)) break;
+          }
+          return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
         }
-        if (isArr(w)) w = TO_GET(w, 0);
-        return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
-      } break;
+        if (RNK(w)==0) {
+          w = TO_GET(w, 0);
+          goto shift_atm;
+        }
+        break;
       case n_take: case n_drop: {
         bool take = rtid==n_take;
         B a;
