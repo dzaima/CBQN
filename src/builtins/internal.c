@@ -293,7 +293,14 @@ B indistinguishable_c2(B t, B w, B x) {
   return m_i32(r);
 }
 
-#ifdef TEST_BITCPY
+B internalTemp_c1(B t, B x) {
+  return x;
+}
+
+#if DEBUG && !defined(TEST_UTILS)
+  #define TEST_UTILS 1
+#endif
+#ifdef TEST_UTILS
   #include "../utils/mut.h"
 #endif
 #if NATIVE_COMPILER
@@ -304,68 +311,92 @@ B indistinguishable_c2(B t, B w, B x) {
   extern i32 fullCellFills;
   extern i32 cellFillErrored;
 #endif
-#if TEST_RANGE
-  #include "../utils/calls.h"
-#endif
-#if TEST_GROUP_STAT
+#if TEST_UTILS && SINGELI
   extern void (*const si_group_statistics_i8)(void*,usz,uint8_t*,usz*,uint8_t*,usz*,int8_t*);
   extern void (*const si_group_statistics_i16)(void*,usz,uint8_t*,usz*,uint8_t*,usz*,int16_t*);
   extern void (*const si_group_statistics_i32)(void*,usz,uint8_t*,usz*,uint8_t*,usz*,int32_t*);
 #endif
-B internalTemp_c1(B t, B x) {
-  #if TEST_GROUP_STAT
-    u8 bad; usz neg; u8 sort; usz change; i32 max;
-    #define CASE(T) \
-      if (TI(x,elType)==el_##T) { T max_t; si_group_statistics_##T(tyany_ptr(x), IA(x), &bad, &neg, &sort, &change, &max_t); max = max_t; } \
-      else
-    CASE(i8) CASE(i16) CASE(i32)
-    thrM("bad eltype");
-    #undef CASE
-    decG(x);
-    f64* rp; B r = m_f64arrv(&rp, 5);
-    rp[0] = bad; rp[1] = neg; rp[2] = sort; rp[3] = change; rp[4] = max;
-    return r;
-  #endif
-  #if TEST_RANGE
-    i64 buf[2];
-    bool b = getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x));
-    decG(x);
-    f64* rp;
-    B r = m_f64arrv(&rp, 3);
-    rp[0] = buf[0];
-    rp[1] = buf[1];
-    rp[2] = b;
-    return r;
-  #endif
-  #if TEST_CELL_FILLS
-    if (isNum(x)) fullCellFills = o2iG(x);
-    B r = m_i32(cellFillErrored);
-    cellFillErrored = 0;
-    return r;
-  #endif
-  #if NATIVE_COMPILER
-    switchComp();
-    B r = bqn_exec(x, bi_N);
-    switchComp();
-    return r;
-  #endif
-  #ifdef TEST_BITCPY
-    SGetU(x)
-    bit_cpyN(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitany_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
-  #endif
-  return x;
-}
-
+  
 B internalTemp_c2(B t, B w, B x) {
-  #if NATIVE_COMPILER
-    return c2(native_comp, w, x);
-  #endif
-  #ifdef TEST_MUT
-    SGetU(x)
-    FILL_TO(tyarr_ptr(w), o2s(GetU(x,0)), o2s(GetU(x,1)), GetU(x,2), o2s(GetU(x,3)));
-    dec(w);
-  #endif
-  return x;
+  i32 o = o2i(w);
+  B r;
+  switch (o) {
+    case 0: {
+      printI(x);
+      return x;
+    }
+    
+    #if NATIVE_COMPILER
+      case 100: {
+        SGet(x)
+        r = c2(native_comp, Get(x,0), Get(x,1));
+        goto dec_ret;
+      }
+      case 101: {
+        switchComp();
+        B r = bqn_exec(x, bi_N);
+        switchComp();
+        return r;
+      }
+    #endif
+    
+    #if TEST_UTILS
+      case 201: { // test/mut.bqn
+        SGetU(x)
+        FILL_TO(tyarr_ptr(GetU(x,4)), o2s(GetU(x,0)), o2s(GetU(x,1)), GetU(x,2), o2s(GetU(x,3)));
+        return x;
+      }
+      case 202: { // test/bitcpy.bqn
+        SGetU(x)
+        bit_cpyN(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitany_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
+        return x;
+      }
+      case 203: { // test/cases/build-specific/test_range.bqn
+        i64 buf[2];
+        bool b = getRange_fns[TI(x,elType)](tyany_ptr(x), buf, IA(x));
+        decG(x);
+        f64* rp;
+        B r = m_f64arrv(&rp, 3);
+        rp[0] = buf[0];
+        rp[1] = buf[1];
+        rp[2] = b;
+        return r;
+      }
+    #endif
+    
+    #if TEST_UTILS && SINGELI
+      case 298: { // test/cases/build-specific/test_group_stat.bqn
+        u8 bad; usz neg; u8 sort; usz change; i32 max;
+        #define CASE(T) \
+          if (TI(x,elType)==el_##T) { T max_t; si_group_statistics_##T(tyany_ptr(x), IA(x), &bad, &neg, &sort, &change, &max_t); max = max_t; } \
+          else
+        CASE(i8) CASE(i16) CASE(i32)
+        thrM("bad eltype");
+        #undef CASE
+        decG(x);
+        f64* rp; B r = m_f64arrv(&rp, 5);
+        rp[0] = bad; rp[1] = neg; rp[2] = sort; rp[3] = change; rp[4] = max;
+        return r;
+      }
+    #endif
+    
+    #if TEST_CELL_FILLS
+      case 299: { // test/cells.bqn
+        if (isNum(x)) fullCellFills = o2iG(x);
+        B r = m_i32(cellFillErrored);
+        cellFillErrored = 0;
+        return r;
+      }
+    #endif
+    
+    default:
+      thrF("Unknown/unsupported •internal.Temp mode: %i", o);
+  }
+  thrM("•internal.Temp: shouldn't break!");
+  
+  dec_ret: MAYBE_UNUSED;
+  dec(x);
+  return r;
 }
 
 B heapDump_c1(B t, B x) {

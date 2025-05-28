@@ -125,9 +125,9 @@ RunTests ← {
     HTests ← { 𝕊:
       okTests ← ok/tests
       hasFill ← 0=ok/valid
-      cbqni.Temp 2 ⋄ f1 ← RunTests okTests /˜ hasFill
-      cbqni.Temp 1 ⋄ f0 ← RunTests okTests /˜ ¬hasFill
-      cbqni.Temp 0
+      299 cbqni.Temp 2 ⋄ f1 ← RunTests okTests /˜ hasFill
+      299 cbqni.Temp 1 ⋄ f0 ← RunTests okTests /˜ ¬hasFill
+      299 cbqni.Temp 0
       (⍋⍋hasFill) ⊏ f0∾f1
     }
     hCBQNFile •FChars •Repr HTests⌾(ok⊸/) "err"¨ tests
@@ -137,7 +137,7 @@ RunTests ← {
     
     tests ← GetTests@
     •Out ∾⟨"Running ", •Repr ≠tests, " tests on base CBQN.."⟩
-    cfe‿fo ← <˘⍉>{cbqni.Temp@ ⋄ (cbqni.Temp@) ⋈ ⊑RunTests ⋈𝕩}¨ tests
+    cfe‿fo ← <˘⍉>{299 cbqni.Temp@ ⋄ (299 cbqni.Temp@) ⋈ ⊑RunTests ⋈𝕩}¨ tests
     validFile •FChars '0'+ 2⌊ cfe + 2×"err"⊸≡¨ fo # 2: errored; 1: invalid fill; 0: valid fill
     
     { 𝕊:

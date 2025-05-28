@@ -1,6 +1,6 @@
 ## Tests
 
-Must be run from the projects root directory.
+Must be run from the projects root directory. Some tests require `-DTEST_UTILS` (enabled by default in debug builds)
 
 ``` C
 test/mainCfgs.sh path/to/mlochbaum/BQN // run the test suite for a couple primary configurations
@@ -10,9 +10,9 @@ test/run.bqn // run tests in test/cases/
 ./BQN test/cmp.bqn // fuzz-test scalar comparison functions =≠<≤>≥
 ./BQN test/equal.bqn // fuzz-test 𝕨≡𝕩
 ./BQN test/copy.bqn // fuzz-test creating new arrays with elements copied from another
-./BQN test/bitcpy.bqn // fuzz-test bit_cpy; requires -DTEST_BITCPY
+./BQN test/bitcpy.bqn // fuzz-test bit_cpy
 ./BQN test/bit.bqn // fuzz-test •bit functions
-./BQN test/mut.bqn // fuzz-test mut.h (currently just bitarr fill); requires -DTEST_MUT
+./BQN test/mut.bqn // fuzz-test mut.h (currently just bitarr fill)
 ./BQN test/hash.bqn // fuzz-test hashing
 ./BQN test/squeezeValid.bqn // fuzz-test squeezing giving a correct result
 ./BQN test/squeezeExact.bqn // fuzz-test squeezing giving the exact smallest result
@@ -41,7 +41,7 @@ tests:
     # the '(' and ')' lines must have no other characters in them
   )
 
-# flags addable anywhere in code:
+# flags addable anywhere in code to restrict when it's run:
   %SLOW # enable only if 'slow' argument present
   %!DEBUG # disable if 'debug' argument present
   %!HEAPVERIFY # disable if 'heapverify' argument present

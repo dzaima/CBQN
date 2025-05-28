@@ -7,7 +7,7 @@ Do ← {𝕊:
   mut ← "Ab"•internal.Variation orig
   l ← Range (1+≠orig)-s
   v ← Range 2
-  mut •internal.Temp ⟨0,s,0,l⟩
+  201 •internal.Temp ⟨0,s,0,l,mut⟩
   exp ← 0¨⌾((s+↕l)⊸⊏) orig
   mut ≢ exp?
     •Show '0'+orig

@@ -1,7 +1,6 @@
-# needs: Singeli & -DTEST_GROUP_STAT
-"basic test doesn't work; are you on a -DTEST_GROUP_STAT build?" ! 0‿0‿1‿10‿9 ≡ •internal.Temp ↕10
+298 •internal.Temp ↕10 %% 0‿0‿1‿10‿9
 
-%DEF tvar AllEq←{v←⊑𝕩 ⋄ {𝕩≡v?1;!𝕩‿v}¨ ⥊𝕩 ⋄ v} ⋄ _tvar ← {Sel _𝕣 a: AllEq {Sel •internal.Temp 𝕩•internal.Variation a}¨ ∊⟜"Ai8"‿"Ai16"‿"Ai32"⊸/ •internal.ListVariations •internal.Squeeze a}
+%DEF tvar AllEq←{v←⊑𝕩 ⋄ {𝕩≡v?1;!𝕩‿v}¨ ⥊𝕩 ⋄ v} ⋄ _tvar ← {Sel _𝕣 a: AllEq {Sel 298 •internal.Temp 𝕩•internal.Variation a}¨ ∊⟜"Ai8"‿"Ai16"‿"Ai32"⊸/ •internal.ListVariations •internal.Squeeze a}
 %USE tvar ⋄ ⊢_tvar ↕10 %% 0‿0‿1‿10‿9
 
 %USE tvar ⋄ AllEq {a←𝕩⥊0 ⋄ AllEq {⊑_tvar   ¯2⌾(𝕩⊸⊑) a}¨ ↕𝕩}¨ 1+↕40 %% 1

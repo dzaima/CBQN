@@ -1,4 +1,3 @@
-# make o3-singeli f=-DTEST_BITCPY && ./BQN test/bitcpy.bqn
 ⟨Temp, Type, Unshare, Squeeze, Info, Variation⟩ ← •internal
 u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
 # u ↩ 123
@@ -21,7 +20,7 @@ Do ← { 𝕊:
     i ← ↕bl
     exp ← ((bs+i)⊏b)⌾((as+i)⊸⊏) a
     aC ← Unshare a
-    Temp ⟨aC, as, b, bs, bl⟩
+    202 Temp ⟨aC, as, b, bs, bl⟩
     aC ≢ exp?
       •Out "Fail:"
       F ← {(¬ ·∧`⌾⌽ ' '⊸=)⊸/ ⥊' '∾˘˜ ↑‿64⥊ '0'+𝕩}
