@@ -6,6 +6,13 @@
 #include "../utils/calls.h"
 #include <stdarg.h>
 
+#ifndef DEBUG
+  #define DEBUG 0
+#endif
+#ifndef TEST_UTILS
+  #define TEST_UTILS DEBUG
+#endif
+
 B itype_c1(B t, B x) {
   B r;
   if(isVal(x)) {
@@ -297,11 +304,11 @@ B internalTemp_c1(B t, B x) {
   return x;
 }
 
-#if DEBUG && !defined(TEST_UTILS)
-  #define TEST_UTILS 1
-#endif
-#ifdef TEST_UTILS
+#if TEST_UTILS
   #include "../utils/mut.h"
+  #if RANDOMIZE_HEURISTICS
+    extern u64 heuristic_seed;
+  #endif
 #endif
 #if NATIVE_COMPILER
   extern B native_comp;
@@ -325,6 +332,28 @@ B internalTemp_c2(B t, B w, B x) {
       printI(x);
       return x;
     }
+    #if RANDOMIZE_HEURISTICS
+      case 1: {
+        if (isC32(x)) { // read seed
+          i32* rp;
+          r = m_i32arrv(&rp, 2);
+          rp[0] = (u32) heuristic_seed;
+          rp[1] = (u32) (heuristic_seed >> 32);
+          return r;
+        }
+        if (q_i32(x)) { // simple set seed
+          heuristic_seed = o2i(x);
+          return x;
+        }
+        if (isArr(x)) { // full set seed
+          x = toI32Any(x);
+          i32* xp = i32any_ptr(x);
+          heuristic_seed = (u32)xp[0] | ((u64)(u32)xp[1])<<32;
+          return x;
+        }
+        thrM("•internal.Temp: bad RANDOMIZE_HEURISTICS usage");
+      }
+    #endif
     
     #if NATIVE_COMPILER
       case 100: {
@@ -460,10 +489,20 @@ B iKeep_c1(B t, B x) { return x; }
 B iProperties_c2(B t, B w, B x) {
   if (w.u!=m_c32(0).u || x.u != m_c32(0).u) thrM("𝕨 •internal.Properties 𝕩: bad arg");
   i32* rp;
-  B r = m_i32arrv(&rp, 3);
+  B r = m_i32arrv(&rp, 7);
   rp[0] = sizeof(usz)*8;
   rp[1] = PROPER_FILLS;
   rp[2] = EACH_FILLS;
+  rp[3] = 0;
+  #if RANDOMIZE_HEURISTICS
+  rp[3] = 1;
+  #endif
+  rp[4] = 0;
+  #if HEAP_VERIFY
+  rp[4] = 1;
+  #endif
+  rp[5] = DEBUG;
+  rp[6] = TEST_UTILS;
   return r;
 }
 

@@ -15,6 +15,7 @@ Trim ← {((∨`⌾⌽∧∨`)𝕩≠' ')/𝕩}
   •Out "  update-messages  Auto-update error messages in tests"
   •Out "  ignore-messages  Don't warn about incorrect error messages"
   •Out "  bin-search       Binary search for some property. Next argument should be /[01]*/, with a 1 appended every time the property is matched, and a 0 otherwise"
+  •Out "  seed=123         Random seed for tests that care (default=1; seed=u will choose a random seed)"
   •Exit 0
 }⍟⊢ (0=≠•args) ∨´ "help"‿"h"‿"?"∊'-'⊸≠⊸/¨•args
 
@@ -28,8 +29,9 @@ o ← {
     search ↩ search∾1
     args ↩ (¬n∨𝕩)/args
   }⍟(∨´) "bin-search"⊸≡¨ args
-  named ← "run"‿"lint"‿"update-messages"‿"slow"‿"ignore-messages"‿"noerr"‿"heapverify"‿"debug"‿"no-catch"
-  i ← named⊐args
+  
+  named ← "run"‿"lint"‿"update-messages"‿"slow"‿"ignore-messages"‿"noerr"‿"heapverify"‿"debug"‿"no-catch"‿"seed"
+  i ← named⊐{𝕩↑˜⊑𝕩⊐'='}¨ args
   run    ⇐ ∨´i=0
   lint   ⇐ ∨´i=1
   update ⇐ ∨´i=2
@@ -39,11 +41,22 @@ o ← {
   heapverify ⇐ ∨´i=6
   debug      ⇐ ∨´i=7
   noCatch    ⇐ ∨´i=8
+  seed ⇐ {
+    ⟨⟩: 1;
+    ⟨"u"⟩: s←•rand.Range 2⋆31 ⋄ •Out "seed="∾•Repr s ⋄ s;
+    ⟨s⟩: •ParseFloat 5↓s
+  } (i=9)/args
   
-  pr ← 32‿0‿0 {𝕩∾(≠𝕩)↓𝕨} {⟨P⇐Properties⟩: 3↑@P@; ⟨⟩} •internal
-  usz ⇐ 0⊑pr
-  properFills ⇐ 1⊑pr
-  eachFills   ⇐ 2⊑pr
+  ⟨
+    usz
+    properFills
+    eachFills
+    randomizeHeuristics
+    knownHeapverify
+    knownDebug
+    hasTestUtils
+  ⟩ ⇐ 32‿0‿0‿0‿0‿0‿0 {(≠𝕨)↑ 𝕩 ∾ (≠𝕩)↓𝕨} {⟨P⇐Properties⟩: @P@; ⟨⟩} •internal
+  
   noerr∨↩ heapverify
   update∧↩ ¬heapverify
   files ⇐ (i=≠named)/args
@@ -148,7 +161,15 @@ Run ← { 𝕊 testname:
       badCount+↩ 1
     }
     ErrMsg ← {𝕊: m←•CurrentError@ ⋄ {1==m? ∧´2=•Type¨m? m; •Repr⎊"(unrepresentable)" m}}
-    Eval ← {⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨helpers,"arg0",1⟩⟩ •BQN 𝕩}
+    
+    PreEval ← ⊢
+    _addPreEval ← {𝕩? PreEval↩PreEval 𝔽; @}
+    {𝕊: 1 •internal.Temp o.seed}_addPreEval o.randomizeHeuristics
+    
+    Eval ← {
+      PreEval@
+      ⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨helpers,"arg0",1⟩⟩ •BQN 𝕩
+    }
     EvalS ← •BQN⎊{𝕊: Bad "Bad comparison value" ⋄ "(bad)"}
     toRun ← tests
     toRun {{𝕩.enabled}∘⊑¨⊸/𝕩}↩

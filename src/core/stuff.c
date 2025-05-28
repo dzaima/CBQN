@@ -634,11 +634,11 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     #define MATCH_ERROR_MESSAGES 1
   #endif
   
-  u64 seed;
+  u64 heuristic_seed;
   bool heuristic_rand(bool heuristic, bool true_req, bool false_req) {
     assert(heuristic? true_req : false_req);
     if (!true_req | !false_req) return heuristic;
-    return wyrand(&seed) & 1;
+    return wyrand(&heuristic_seed) & 1;
   }
   
   
