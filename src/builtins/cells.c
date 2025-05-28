@@ -765,7 +765,10 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
         if (xcr!=1) break;
         if (isAtm(w)) {
           shift_atm:;
-          if (IA(x)==0) return x;
+          if (IA(x)==0) {
+            dec(w);
+            return x;
+          }
           return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
         }
         if (RNK(w)==0) {
