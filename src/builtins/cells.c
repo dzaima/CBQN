@@ -762,13 +762,10 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
         return pick_cells(WRAP(o2i64(w), l, thrF("𝕨⊑𝕩: Indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, l)), x, xr, cam, xk);
       } break;
       case n_shifta: case n_shiftb:
+        if (xcr!=1) break;
         if (isAtm(w)) {
           shift_atm:;
           if (IA(x)==0) return x;
-          if (xcr!=1) {
-            if (xcr==0) break;
-            if (!(xsh[xk]==1 || shProd(xsh, xk+1, xr)==1)) break;
-          }
           return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
         }
         if (RNK(w)==0) {
