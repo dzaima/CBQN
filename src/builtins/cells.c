@@ -763,18 +763,12 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
       } break;
       case n_shifta: case n_shiftb:
         if (xcr!=1) break;
-        if (isAtm(w)) {
-          shift_atm:;
-          if (IA(x)==0) {
-            dec(w);
-            return x;
-          }
-          return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
+        if (!unpack_unit(&w)) break;
+        if (IA(x)==0) {
+          dec(w);
+          return x;
         }
-        if (RNK(w)==0) {
-          w = TO_GET(w, 0);
-          goto shift_atm;
-        }
+        return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
         break;
       case n_take: case n_drop: {
         bool take = rtid==n_take;
