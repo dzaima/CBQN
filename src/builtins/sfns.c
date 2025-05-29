@@ -197,21 +197,53 @@ B shape_c1(B t, B x) {
   return taga(arr_shVec(TI(x,slice)(x, 0, ia)));
 }
 
+static void shape_c2_prim0(B c) {
+  if (RARE(!isPrim(c))) {
+    if (isF64(c)) thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %B)", c);
+    else          thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %S)", genericDesc(c));
+  }
+}
+#define SHAPE_C2_PRIM1(ID, GET) if (ID!=n_atop & ID!=n_floor & ID!=n_reverse & ID!=n_take) thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %B)", GET)
+
+B shape_c2(B t, B w, B x);
+B shape_c2_01(usz wia, B w, B x) {
+  switch (wia) { default: UD;
+    case 0: // ⟨⟩⥊x
+      decG(w);
+      if (isAtm(x)) return m_unit(x);
+      if (RARE(IA(x) == 0)) thrM("𝕨⥊𝕩: Empty 𝕩 and non-empty result");
+      return taga(arr_rnk01(take_impl(1, x), 0));
+    case 1: // ⟨x⟩⥊1
+      w = TO_GET(w,0);
+      // fallthrough
+    case 2: // atom
+      if (!q_usz(w)) {
+        shape_c2_prim0(w);
+        u8 id = RTID(w);
+        SHAPE_C2_PRIM1(id, w);
+        decG(w);
+        return C1(shape, x);
+      }
+      return C2(shape, w, x);
+  }
+}
+
 B shape_c2(B t, B w, B x) {
   usz nia = 1;
   ur nr;
   ShArr* sh;
-  usz tmp;
   if (q_usz(w)) {
     nia = o2sG(w);
     nr = 1;
     sh = NULL;
   } else {
-    if (RARE(isAtm(w))) w = m_unit(w);
+    if (RARE(isAtm(w))) return shape_c2_01(2, w, x);
     if (RNK(w) > 1) thrF("𝕨⥊𝕩: 𝕨 must be a list or unit (%i ≡ =𝕩)", RNK(w));
-    if (IA(w) > UR_MAX) thrF("𝕨⥊𝕩: Result rank too large (%i ≡ ≠𝕨)", IA(w));
-    nr = IA(w);
-    sh = nr<=1? RFLD(&tmp,ShArr,a) : m_shArr(nr);
+    usz wia = IA(w);
+    if (wia <= 1) return shape_c2_01(wia, w, x);
+    if (wia > UR_MAX) thrF("𝕨⥊𝕩: Result rank too large (%i ≡ ≠𝕨)", wia);
+    nr = wia;
+    sh = m_shArr(nr);
     
     SGetU(w)
     i32 unkPos = -1;
@@ -226,10 +258,7 @@ B shape_c2(B t, B w, B x) {
         if (RARE(mulOn(nia, v))) bad = true;
         good|= v==0;
       } else {
-        if (RARE(!isPrim(c))) {
-          if (isF64(c)) thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %B)", c);
-          else          thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %S)", genericDesc(c));
-        }
+        shape_c2_prim0(c);
         if (unkPos!=-1) thrM("𝕨⥊𝕩: 𝕨 contained multiple computed axes");
         unkPos = i;
         unkID = RTID(c);
@@ -240,7 +269,7 @@ B shape_c2(B t, B w, B x) {
     if (bad && !good) thrM("𝕨⥊𝕩: 𝕨 too large");
     
     if (unkPos!=-1) {
-      if (unkID!=n_atop & unkID!=n_floor & unkID!=n_reverse & unkID!=n_take) thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %B)", GetU(w,unkPos));
+      SHAPE_C2_PRIM1(unkID, GetU(w,unkPos));
       if (nia==0) thrM("𝕨⥊𝕩: Can't compute axis when the rest of the shape is empty");
       usz div = xia/nia;
       usz mod = xia%nia;

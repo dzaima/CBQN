@@ -387,8 +387,8 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 !"𝕨⥊𝕩: 𝕨 too large" % %USE eqerr ⋄ {1e8‿1e8‿𝕩‿1e8‿1e8⥊"foo"}_eqerr ∘‿⌽‿↑
 
 !"𝕨⥊𝕩: 𝕨 must be a list or unit (4 ≡ =𝕩)" % %USE eqerr ⋄ ⟨3‿1‿4‿1⥊2⟩ ⥊_eqerr ⟨↕10, ↕0, 4⟩
-!"𝕨⥊𝕩: Empty 𝕩 and non-empty result" % 10‿10⥊↕0
-!"𝕨⥊𝕩: Shape must be exact when reshaping with ∘ (⟨42⟩ ≡ ≢𝕩, 10 is the product of non-computed axis)" % ∘‿2‿5 ⥊ ↕42
+!"𝕨⥊𝕩: Empty 𝕩 and non-empty result" % %USE eqerr ⋄ ⟨10‿10, 1, ⟨⟩, ⋈1⟩ ⥊_eqerr ⟨↕0, "", 0‿0⥊0, 10‿0⥊"", 0‿10⥊<"hi"⟩
+!"𝕨⥊𝕩: Empty 𝕩 and non-empty result" % %USE eqvar ⋄ (↕0) ⥊_eqvar ↕0
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained namespace)" % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩} {⇐}) ⥊_eqerr ⟨↕0, 1, ↕10⟩
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained function)"  % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}{+¨}) ⥊_eqerr ⟨↕0, 1, ↕10⟩
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained function)"  % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}•out) ⥊_eqerr ⟨↕0, 1, ↕10⟩
@@ -397,6 +397,7 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained 1e40)"      % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}1e40) ⥊_eqerr ⟨↕0, 1, ↕10⟩
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained ¯10)"       % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩} ¯10) ⥊_eqerr ⟨↕0, 1, ↕10⟩
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained 10.5)"      % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}10.5) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: Shape must be exact when reshaping with ∘ (⟨42⟩ ≡ ≢𝕩, 10 is the product of non-computed axis)" % ∘‿2‿5 ⥊ ↕42
 !"𝕨⥊𝕩: Can't compute axis when the rest of the shape is empty" % %USE eqerr ⋄ ∘‿⌽‿↑‿⌊ {4‿𝕨‿0 ⥊ 𝕩}_eqerr ⟨↕1, ↕0⟩
 ⍷ ⥊⟜⟨⟩¨ ∘‿⌊‿↑‿⌽ %% ⋈ ⟨⟩
 ⍷ ⥊⟜1¨ ∘‿⌊‿↑‿⌽ %% ⋈ ⟨1⟩
