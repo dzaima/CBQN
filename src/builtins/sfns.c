@@ -198,65 +198,72 @@ B shape_c1(B t, B x) {
 }
 
 B shape_c2(B t, B w, B x) {
-  usz xia = isArr(x)? IA(x) : 1;
   usz nia = 1;
   ur nr;
   ShArr* sh;
-  if (isF64(w)) {
-    nia = o2s(w);
+  usz tmp;
+  if (q_usz(w)) {
+    nia = o2sG(w);
     nr = 1;
     sh = NULL;
   } else {
     if (RARE(isAtm(w))) w = m_unit(w);
-    if (RNK(w)>1) thrM("𝕨⥊𝕩: 𝕨 must have rank at most 1");
-    if (IA(w)>UR_MAX) thrM("𝕨⥊𝕩: Result rank too large");
+    if (RNK(w) > 1) thrF("𝕨⥊𝕩: 𝕨 must be a list or unit (%i ≡ =𝕩)", RNK(w));
+    if (IA(w) > UR_MAX) thrF("𝕨⥊𝕩: Result rank too large (%i ≡ ≠𝕨)", IA(w));
     nr = IA(w);
-    sh = nr<=1? NULL : m_shArr(nr);
+    sh = nr<=1? RFLD(&tmp,ShArr,a) : m_shArr(nr);
+    
     SGetU(w)
     i32 unkPos = -1;
-    i32 unkInd ONLY_GCC(=0);
+    i32 unkID ONLY_GCC(=0);
+    usz xia ONLY_GCC(=0);
     bool bad=false, good=false;
     for (i32 i = 0; i < nr; i++) {
       B c = GetU(w, i);
-      if (isF64(c)) {
-        usz v = o2s(c);
-        if (sh) sh->a[i] = v;
-        bad|= mulOn(nia, v);
+      if (q_usz(c)) {
+        usz v = o2sG(c);
+        sh->a[i] = v;
+        if (RARE(mulOn(nia, v))) bad = true;
         good|= v==0;
       } else {
-        if (isArr(c) || !isVal(c)) thrM("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+        if (RARE(!isPrim(c))) {
+          if (isF64(c)) thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %B)", c);
+          else          thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %S)", genericDesc(c));
+        }
         if (unkPos!=-1) thrM("𝕨⥊𝕩: 𝕨 contained multiple computed axes");
         unkPos = i;
-        if (!isPrim(c)) thrM("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
-        unkInd = RTID(c);
-        good|= xia==0 | unkInd==n_floor;
+        unkID = RTID(c);
+        xia = isArr(x)? IA(x) : 1;
+        good|= xia==0 | unkID==n_floor;
       }
     }
     if (bad && !good) thrM("𝕨⥊𝕩: 𝕨 too large");
+    
     if (unkPos!=-1) {
-      if (unkInd!=n_atop & unkInd!=n_floor & unkInd!=n_reverse & unkInd!=n_take) thrM("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑");
+      if (unkID!=n_atop & unkID!=n_floor & unkID!=n_reverse & unkID!=n_take) thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %B)", GetU(w,unkPos));
       if (nia==0) thrM("𝕨⥊𝕩: Can't compute axis when the rest of the shape is empty");
-      i64 div = xia/nia;
-      i64 mod = xia%nia;
+      usz div = xia/nia;
+      usz mod = xia%nia;
       usz item;
       bool fill = false;
-      if (unkInd == n_atop) {
-        if (mod!=0) thrM("𝕨⥊𝕩: Shape must be exact when reshaping with ∘");
+      if (unkID == n_atop) {
+        if (mod!=0) thrF("𝕨⥊𝕩: Shape must be exact when reshaping with ∘ (%H ≡ ≢𝕩, %s is the product of non-computed axis)", x, nia);
         item = div;
-      } else if (unkInd == n_floor) {
+      } else if (unkID == n_floor) {
         item = div;
-      } else if (unkInd == n_reverse) {
+      } else if (unkID == n_reverse) {
         item = mod? div+1 : div;
-      } else if (unkInd == n_take) {
+      } else if (unkID == n_take) {
         item = mod? div+1 : div;
         fill = true;
       } else UD;
-      if (sh) sh->a[unkPos] = item;
+      sh->a[unkPos] = item;
       nia = uszMul(nia, item);
       if (fill) {
         if (!isArr(x)) x = m_unit(x);
         x = taga(arr_shVec(take_impl(nia, x)));
-        xia = nia;
+        decG(w);
+        return truncReshape(x, nia, nia, nr, sh); // could be improved
       }
     }
     decG(w);
@@ -264,6 +271,7 @@ B shape_c2(B t, B w, B x) {
   
   Arr* r;
   if (isArr(x)) {
+    usz xia = IA(x);
     if (nia <= xia) {
       return truncReshape(x, xia, nia, nr, sh);
     } else {

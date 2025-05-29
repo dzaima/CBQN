@@ -379,9 +379,37 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 ≡0 %% 0
 
 # 𝕨⥊𝕩
-!"𝕨⥊𝕩: Result rank too large" % (0∾300⥊2)⥊0
+!"𝕨⥊𝕩: Result rank too large (301 ≡ ≠𝕨)" % (0∾300⥊2)⥊0
 !"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 1.1}¨_eqerr 63-↕10
 !"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 7⥊1.1}¨_eqerr 63-↕10
+1e8‿1e8‿⌊‿1e8‿1e8⥊↕5 %% 1e8‿1e8‿0‿1e8‿1e8⥊0
+⍷ {1e8‿1e8‿𝕩‿1e8‿1e8⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e8‿1e8‿0‿1e8‿1e8⥊0
+!"𝕨⥊𝕩: 𝕨 too large" % %USE eqerr ⋄ {1e8‿1e8‿𝕩‿1e8‿1e8⥊"foo"}_eqerr ∘‿⌽‿↑
+
+!"𝕨⥊𝕩: 𝕨 must be a list or unit (4 ≡ =𝕩)" % %USE eqerr ⋄ ⟨3‿1‿4‿1⥊2⟩ ⥊_eqerr ⟨↕10, ↕0, 4⟩
+!"𝕨⥊𝕩: Empty 𝕩 and non-empty result" % 10‿10⥊↕0
+!"𝕨⥊𝕩: Shape must be exact when reshaping with ∘ (⟨42⟩ ≡ ≢𝕩, 10 is the product of non-computed axis)" % ∘‿2‿5 ⥊ ↕42
+!"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained namespace)" % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩} {⇐}) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained function)"  % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}{+¨}) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained function)"  % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}•out) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained ¨)"         % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩} {¨}) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained ∧)"         % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩} {∧}) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained 1e40)"      % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}1e40) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained ¯10)"       % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩} ¯10) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained 10.5)"      % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}10.5) ⥊_eqerr ⟨↕0, 1, ↕10⟩
+!"𝕨⥊𝕩: Can't compute axis when the rest of the shape is empty" % %USE eqerr ⋄ ∘‿⌽‿↑‿⌊ {4‿𝕨‿0 ⥊ 𝕩}_eqerr ⟨↕1, ↕0⟩
+⍷ ⥊⟜⟨⟩¨ ∘‿⌊‿↑‿⌽ %% ⋈ ⟨⟩
+⍷ ⥊⟜1¨ ∘‿⌊‿↑‿⌽ %% ⋈ ⟨1⟩
+⍷ ⥊⟜"hello"¨ ∘‿⌊‿↑‿⌽ %% ⋈ "hello"
+!"𝕨⥊𝕩: 𝕨 contained multiple computed axes" % ∘‿∘⥊1
+!"𝕨⥊𝕩: 𝕨 contained multiple computed axes" % ∘‿∧⥊1
+
+%USE eqvarv ⋄  ↑‿4 ⥊_eqvarv_"i" ↕9 %% [0‿1‿2‿3, 4‿5‿6‿7, 8‿0‿0‿0]
+%USE eqvar  ⋄  ⌽‿4 ⥊_eqvar      ↕9 %% [0‿1‿2‿3, 4‿5‿6‿7, 8‿0‿1‿2]
+%USE eqvar  ⋄  ⌊‿4 ⥊_eqvar      ↕9 %% [0‿1‿2‿3, 4‿5‿6‿7]
+%USE eqvarv ⋄  ↑‿4 ⥊_eqvarv_"i" "abcde" %% ["abcd", "e   "]
+%USE eqvar  ⋄  ⌽‿4 ⥊_eqvar      "abcde" %% ["abcd", "eabc"]
+%USE eqvar  ⋄  ⌊‿4 ⥊_eqvar      "abcde" %% ["abcd"]
 
 # 𝕨⍷𝕩
 %USE eqvar ⋄ "ab" ⍷_eqvar "" %% ⟨⟩
