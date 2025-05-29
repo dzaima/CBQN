@@ -205,6 +205,7 @@ static void shape_c2_prim0(B c) {
 }
 #define SHAPE_C2_PRIM1(ID, GET) if (ID!=n_atop & ID!=n_floor & ID!=n_reverse & ID!=n_take) thrF("𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained %B)", GET)
 
+B reshape_cycle(usz nia, usz xia, B x, ur nr, ShArr* sh);
 B shape_c2(B t, B w, B x);
 B shape_c2_01(usz wia, B w, B x) {
   switch (wia) { default: UD;
@@ -304,83 +305,92 @@ B shape_c2(B t, B w, B x) {
     if (nia <= xia) {
       return truncReshape(x, xia, nia, nr, sh);
     } else {
-      if (xia <= 1) {
-        if (RARE(xia == 0)) thrM("𝕨⥊𝕩: Empty 𝕩 and non-empty result");
-        x = TO_GET(x, 0);
-        goto unit;
-      }
-      if (xia <= nia/2) x = squeeze_any(x);
-      
-      u8 xl = arrTypeBitsLog(TY(x));
-      u8 xt = arrNewType(TY(x));
-      u8* rp;
-      u64 bi, bf; // Bytes present, bytes wanted
-      if (xl == 0) { // Bits
-        u64* rq; r = m_bitarrp(&rq, nia);
-        rp = (u8*)rq;
-        usz nw = BIT_N(nia);
-        u64* xp = bitany_ptr(x);
-        u64 b = xia;
-        if (b % 8) {
-          if (b < 64) {
-            // Need to avoid calling bit_cpy with arguments <64 bits apart
-            u64 v = xp[0] & (~(u64)0 >> (64-b));
-            do { v |= v<<b; b*=2; } while (b%8 && b<64);
-            rq[0] = v;
-            if (b>64 && nia>64) rq[1] = v>>(64-b/2);
-          } else {
-            memcpy(rq, xp, (b+7)/8);
-          }
-          for (; b%8; b*=2) {
-            if (b>nw*32) {
-              if (b<nia) bit_cpyN(rq, b, rq, 0, nia-b);
-              b = 64*nw; // Ensure bi>=bf since bf is rounded up
-              break;
-            }
-            bit_cpyN(rq, b, rq, 0, b);
-          }
-        } else {
-          memcpy(rp, xp, b/8);
-        }
-        bi = b/8;
-        bf = 8*nw;
-        if (bi == 1) { memset(rp, rp[0], bf); bi=bf; }
-      } else {
-        if (TI(x,elType) == el_B) {
-          MAKE_MUT_INIT(m, nia, el_B); MUTG_INIT(m);
-          i64 div = nia/xia;
-          i64 mod = nia%xia;
-          for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
-          mut_copyG(m, div*xia, x, 0, mod);
-          B xf = getFillR(x);
-          decG(x);
-          return withFill(taga(arr_shSetUO(mut_fp(m), nr, sh)), xf);
-        }
-        u8 xk = xl - 3;
-        if (nia >= USZ_MAX) thrOOM();
-        rp = m_tyarrp(&r, 1<<xk, nia, xt);
-        bi = (u64)xia<<xk;
-        bf = (u64)nia<<xk;
-        memcpy(rp, tyany_ptr(x), bi);
-      }
-      decG(x);
-      if (bi<=8 && !(bi & (bi-1))) {
-        // Divisor of 8: write words
-        usz b = bi*8;
-        u64 v = *(u64*)rp & (~(u64)0 >> (64-b));
-        while (b<64) { v |= v<<b; b*=2; }
-        fill_words(rp, v, bf);
-      } else {
-        // Double up to length l, then copy in blocks
-        u64 l = 1<<15; if (l>bf) l=bf;
-        for (; bi<=l/2; bi+=bi) memcpy(rp+bi, rp, bi);
-        u64 e=bi; for (; e+bi<=bf; e+=bi) memcpy(rp+e, rp, bi);
-        if (e<bf) memcpy(rp+e, rp, bf-e);
-      }
+      return reshape_cycle(nia, xia, x, nr, sh);
     }
   } else {
-    unit:;
     r = reshape_one(nia, x);
+  }
+  return taga(arr_shSetUO(r,nr,sh));
+}
+
+B reshape_cycle(usz nia, usz xia, B x, ur nr, ShArr* sh) {
+  assert(nia > xia);
+  Arr* r;
+  if (xia <= 1) {
+    if (RARE(xia == 0)) thrM("𝕨⥊𝕩: Empty 𝕩 and non-empty result");
+    x = TO_GET(x, 0);
+    
+    r = reshape_one(nia, x);
+    return taga(arr_shSetUO(r,nr,sh));
+  }
+  if (xia <= nia/2) x = squeeze_any(x);
+  
+  u8 xl = arrTypeBitsLog(TY(x));
+  u8 xt = arrNewType(TY(x));
+  u8* rp;
+  u64 bi, bf; // Bytes present, bytes wanted
+  if (xl == 0) { // Bits
+    u64* rq; r = m_bitarrp(&rq, nia);
+    rp = (u8*)rq;
+    usz nw = BIT_N(nia);
+    u64* xp = bitany_ptr(x);
+    u64 b = xia;
+    if (b % 8) {
+      if (b < 64) {
+        // Need to avoid calling bit_cpy with arguments <64 bits apart
+        u64 v = xp[0] & (~(u64)0 >> (64-b));
+        do { v |= v<<b; b*=2; } while (b%8 && b<64);
+        rq[0] = v;
+        if (b>64 && nia>64) rq[1] = v>>(64-b/2);
+      } else {
+        memcpy(rq, xp, (b+7)/8);
+      }
+      for (; b%8; b*=2) {
+        if (b>nw*32) {
+          if (b<nia) bit_cpyN(rq, b, rq, 0, nia-b);
+          b = 64*nw; // Ensure bi>=bf since bf is rounded up
+          break;
+        }
+        bit_cpyN(rq, b, rq, 0, b);
+      }
+    } else {
+      memcpy(rp, xp, b/8);
+    }
+    bi = b/8;
+    bf = 8*nw;
+    if (bi == 1) { memset(rp, rp[0], bf); bi=bf; }
+  } else {
+    if (TI(x,elType) == el_B) {
+      MAKE_MUT_INIT(m, nia, el_B); MUTG_INIT(m);
+      i64 div = nia/xia;
+      i64 mod = nia%xia;
+      for (i64 i = 0; i < div; i++) mut_copyG(m, i*xia, x, 0, xia);
+      mut_copyG(m, div*xia, x, 0, mod);
+      B xf = getFillR(x);
+      decG(x);
+      return withFill(taga(arr_shSetUO(mut_fp(m), nr, sh)), xf);
+    }
+    u8 xk = xl - 3;
+    if (nia >= USZ_MAX) thrOOM();
+    rp = m_tyarrp(&r, 1<<xk, nia, xt);
+    bi = (u64)xia<<xk;
+    bf = (u64)nia<<xk;
+    memcpy(rp, tyany_ptr(x), bi);
+  }
+  
+  decG(x);
+  if (bi<=8 && !(bi & (bi-1))) {
+    // Divisor of 8: write words
+    usz b = bi*8;
+    u64 v = *(u64*)rp & (~(u64)0 >> (64-b));
+    while (b<64) { v |= v<<b; b*=2; }
+    fill_words(rp, v, bf);
+  } else {
+    // Double up to length l, then copy in blocks
+    u64 l = 1<<15; if (l>bf) l=bf;
+    for (; bi<=l/2; bi+=bi) memcpy(rp+bi, rp, bi);
+    u64 e=bi; for (; e+bi<=bf; e+=bi) memcpy(rp+e, rp, bi);
+    if (e<bf) memcpy(rp+e, rp, bf-e);
   }
   return taga(arr_shSetUO(r,nr,sh));
 }
