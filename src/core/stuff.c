@@ -439,22 +439,33 @@ char* eltype_repr(u8 u) {
   }
 }
 bool isPureFn(B x) { // doesn't consume
-  if (isCallable(x)) {
-    if (isPrim(x)) return true;
-    B2B dcf = TI(x,decompose);
-    B xd = dcf(inc(x));
-    B* xdp = harr_ptr(xd);
-    i32 t = o2iG(xdp[0]);
-    if (t<2) { decG(xd); return t==0; }
-    usz xdia = IA(xd);
-    for (u64 i = 1; i<xdia; i++) if(!isPureFn(xdp[i])) { decG(xd); return false; }
-    decG(xd); return true;
-  } else if (isArr(x)) {
-    usz ia = IA(x);
-    SGetU(x)
-    for (usz i = 0; i < ia; i++) if (!isPureFn(GetU(x,i))) return false;
-    return true;
-  } else return isNum(x) || isC32(x);
+  NOGC_CHECK("cannot call isPureFn during noAlloc");
+  if (!isCallable(x)) return true;
+  
+  if (isPrim(x)) return true;
+  
+  B xd = TI(x,decompose)(inc(x));
+  B* xdp = harr_ptr(xd);
+  i32 t = o2iG(xdp[0]);
+  
+  if (t < 2) { decG(xd); return t==0; }
+  
+  if (t == 5) { // ⟨5, F, _r_, G⟩
+    if (isPrim(xdp[2]) && RTID(xdp[2])==n_cond) {
+      B sel = xdp[3];
+      if (isArr(sel)) {
+        usz ia = IA(sel);
+        SGetU(sel)
+        for (ux i = 0; i < ia; i++) if (!isPureFn(GetU(sel,i))) goto retf;
+      }
+      if (isPureFn(xdp[1])) goto rett;
+      else goto retf;
+    }
+  }
+  
+  usz xdia = IA(xd);
+  for (ux i = 1; i < xdia; i++) if(!isPureFn(xdp[i])) { retf: decG(xd); return false; }
+  rett: decG(xd); return true;
 }
 
 B bqn_merge(B x, u32 type) {
