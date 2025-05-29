@@ -1,3 +1,5 @@
+%DEF eqvar ⟨_eqvar⟩←⊑•args
+
 # some checks for behavior around ¯0; not strictly necessary to stay, but other tests will probably become meaningless without these!
 1⊏64‿1•bit._cast ≍˘ •ParseFloat¨ "1.2"‿"-0" %% 63‿1/0‿1
 ! (4⥊0) (≡ ∧ ≢○(64‿1•bit._cast⊢)) 1↓¯1×π∾4⥊0
@@ -33,7 +35,9 @@ a←(•ParseFloat¨ "1.2"‿"-0"‿"0")∾-⊸⋈0÷0 ⋄ ! (0‿3‿3‿3⊏a)
 (32767⥊"abc")⊐100⥊"ababacadabacaba" %% (100⥊0‿1‿0‿1‿0‿2‿0‿32767‿0‿1‿0‿2‿0‿1‿0)
 (32768⥊"abc")⊐100⥊"ababacadabacaba" %% (100⥊0‿1‿0‿1‿0‿2‿0‿32768‿0‿1‿0‿2‿0‿1‿0)
 ⍷ •internal.Variation⟜(↕1)¨ "Ab"‿"Ai8" %% ⟨⋈0⟩
-!∘≡¨⟜⊏ 0•Hash¨ ⟨↕5 ⋄ 1↓0.5∾↕5 ⋄ 1↓'h'∾↕5⟩
+%USE eqvar ⋄ 0⊸•Hash _eqvar ↕5
+%USE eqvar ⋄ 0⊸•Hash _eqvar "hello"
+%USE eqvar ⋄ 0⊸•Hash _eqvar ↕⋈10
 
 {b←•internal.Unshare a←"Ai8"•internal.Variation ∾⟨16⥊0‿0‿0‿0‿0‿0‿0‿¯128, 8⥊0, 8↑2⟩ ⋄ c←8‿64•bit._cast a ⋄ ! 1‿0‿0‿1≡∊c ⋄ •internal.Keep •Hash c ⋄ ! a≡b} # make sure sign bit doesn't mutate away
 

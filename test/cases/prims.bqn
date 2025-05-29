@@ -4,6 +4,7 @@
 %DEF eqvarv ⟨_eqvarv_⟩←⊑•args
 %DEF evar %USE tvar ⋄ _evar ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@} _tvar 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: variation didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ (⊑r)!0}}
 %DEF eqerr %USE eqvar ⋄ _eqerr ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@}⌜ 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: case didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ (⊑r)!0}}
+%DEF eqall _eqall0 ← {r←⊑𝕩 ⋄ ("TEST FAIL: eqall failed" ! r⊸𝔽)¨ 𝕩 ⋄ r} ⋄ EqAll ← •internal.Indistinguishable _eqall0
 %DEF k _k ← {𝔽○•internal.Keep}
 
 # batch checks
@@ -225,10 +226,10 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 {a←↕3 ⋄ !'e'≡>⎊'e' ⟨a, a, ↕2, a, a⟩ ⋄ ! 1≡•internal.Refc a}
 {a←↕3 ⋄      >     ⟨a, a, ↕3, a, a⟩ ⋄ ! 1≡•internal.Refc a}
 {a←(200⥊1)⥊↕3 ⋄ ! 'e'≡>⎊'e' (200⥊1)⥊⟨a, a, ↕2, a, a⟩ ⋄ ! 1≡•internal.Refc a}
-%USE var ⋄ a←2‿3⥊↕6 ⋄ b←2‿3⥊"abcdef" ⋄ !∘≡¨⟜⊏ ⥊ (LV a) {>1‿2‿1‿1⥊𝕨‿𝕩V¨a‿b}⌜ LV b
-%USE var ⋄ a←b←2‿3⥊<<˘"abcd" ⋄ !∘≡¨⟜⊏ ⥊ (LV a) {>1‿2‿1‿1⥊𝕨‿𝕩V¨a‿b}⌜ LV b
-%USE var ⋄ {a‿b: ! ∧´(⊏≡¨⊢)⥊ (LV a) {>1‿2‿1‿1⥊𝕨‿𝕩V¨a‿b}⌜ LV b}¨ ⟨2⥊<2‿3⥊<<˘"abcd" ⋄ ⟨2‿3⥊↕6,2‿3⥊"abcdef"⟩⟩
-%USE var ⋄ {a‿b: ! ∧´(⊏≡¨⊢)⥊ (LV a) {∾𝕨‿𝕩V¨a‿b}⌜ LV b}¨ ⟨2⥊<2‿3⥊<<˘"abcd" ⋄ ⟨2‿3⥊↕6,2‿3⥊"abcdef"⟩⟩
+%USE eqvar ⋄ a←2‿3⥊↕6 ⋄ b←2‿3⥊"abcdef" ⋄ a {>1‿2‿1‿1⥊𝕨‿𝕩}_eqvar b %% 1‿2‿1‿1‿2‿3⥊0‿1‿2‿3‿4‿5‿'a'‿'b'‿'c'‿'d'‿'e'‿'f'
+%USE eqvar ⋄ a←b←2‿3⥊<<˘"abcd"         ⋄ a {>1‿2‿1‿1⥊𝕨‿𝕩}_eqvar b %% 1‿2‿1‿1‿2‿3⥊<<¨"abcd"
+%USE eqvar ⋄ {>1‿2‿1‿1⥊𝕨‿𝕩}_eqvar´¨ ⟨2⥊<2‿3⥊<<˘"abcd" ⋄ ⟨2‿3⥊↕6,2‿3⥊"abcdef"⟩⟩ %% ⟨1‿2‿1‿1‿2‿3⥊<<¨"abcd", 1‿2‿1‿1‿2‿3⥊0‿1‿2‿3‿4‿5‿'a'‿'b'‿'c'‿'d'‿'e'‿'f'⟩
+%USE eqvar ⋄         {∾𝕨‿𝕩}_eqvar´¨ ⟨2⥊<2‿3⥊<<˘"abcd" ⋄ ⟨2‿3⥊↕6,2‿3⥊"abcdef"⟩⟩ %% ⟨        4‿3⥊<<¨"abcd",         4‿3⥊0‿1‿2‿3‿4‿5‿'a'‿'b'‿'c'‿'d'‿'e'‿'f'⟩
 
 # <𝕩
 ! ⊑∘<¨⊸≡ ∾⟜- ⥊(¯2+↕5)+⌜2⋆↕40
@@ -297,9 +298,9 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 !"»𝕩: 𝕩 cannot be a scalar" % »<0
 
 # ⍉𝕩
-%USE var ⋄ !∘≡¨⟜⊏ {⍉ 𝕩 V a}¨ LV a←2‿3‿4•rand.Range 2
-%USE var ⋄ !∘≡¨⟜⊏ {⍉ 𝕩 V a}¨ LV a←⋈¨ 2‿3‿4•rand.Range 2
-%USE var ⋄ !∘≡¨⟜⊏ {⍉ 𝕩 V a}¨ LV a←@+2‿3‿4•rand.Range 100
+%USE eqvar ⋄ ⍉_eqvar 2‿3‿4•rand.Range 2
+%USE eqvar ⋄ ⍉_eqvar ⋈¨ 2‿3‿4•rand.Range 2
+%USE eqvar ⋄ ⍉_eqvar @+2‿3‿4•rand.Range 100
 
 # ⌽𝕩
 %USE var ⋄ {{! 𝕩 ≡ ⌽"Ai8"V⌽𝕩} 𝕩•rand.Range 2}¨ ↕1000
@@ -335,14 +336,10 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 ≠⍷•Hash¨ ⟨10000↑•internal.Squeeze 1e9∾˜↕10000, ↕10000⟩ %% 1
 
 # ¨
-  1 {𝕊:1‿2}¨ 1 %% <1‿2
-  1 {𝕊:1‿2}¨<1 %% <1‿2
-(<1){𝕊:1‿2}¨ 1 %% <1‿2
-(<1){𝕊:1‿2}¨<1 %% <1‿2
-  1 1‿2¨ 1 %% <1‿2
-  1 1‿2¨<1 %% <1‿2
-(<1)1‿2¨ 1 %% <1‿2
-(<1)1‿2¨<1 %% <1‿2
+%USE eqall ⋄ Eqall {𝕊: 1‿2}¨⌜˜ ⟨1, <1⟩ %% <1‿2
+%USE eqall ⋄ Eqall      1‿2¨⌜˜ ⟨1, <1⟩ %% <1‿2
+%USE eqall ⋄ Eqall ⟨1‿2˙,1‿2⟩ {𝕨¨˜ 𝕩}⌜ ⟨↕5, "hello", ↕⋈5⟩ %% 5⥊<1‿2
+%USE eqall ⋄ Eqall ⟨{𝕊:1‿2}⟩  {𝕨¨˜ 𝕩}⌜ ⟨↕5, "hello", ↕⋈5⟩ %% 5⥊<1‿2
 !"Mapping: Expected equal shape prefix (⟨2⟩ ≡ ≢𝕨, 4‿4 ≡ ≢𝕩)" % 1‿2+¨↕4‿4
 !"Mapping: Expected equal shape prefix (⟨2⟩ ≡ ≢𝕨, ⟨4⟩ ≡ ≢𝕩)" % 1‿2+¨↕4
 ⊢¨ {a←𝕩 ⋄ ⥊𝕩} 2‿3⥊<"a"      %% 6⥊<"a"
