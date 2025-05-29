@@ -298,7 +298,8 @@ DirectArr toEltypeArr(B x, u8 re); // consumes
 DirectArr potentiallyReuse(B x); // doesn't consume
 
 typedef struct { Arr* obj; void* data; } UntaggedArr;
-UntaggedArr m_arrp_fill(B x, ux ia); // doesn't consume; create new array with the fill and eltype of x
+UntaggedArr m_barrp_fill(B x, ux ia); // doesn't consume; create new fillarr or harr with the fill of x
+UntaggedArr m_arrp_fill(B x, ux ia);  // doesn't consume; create new array with the fill and eltype of x
 
 typedef struct {
   B res;

@@ -832,19 +832,21 @@ DirectArr toEltypeArr(B x, u8 re) { // consumes
 
 
 
+UntaggedArr m_barrp_fill(B x, ux ia) { // doesn't consume
+  B fill = getFillR(x);
+  if (noFill(fill)) {
+    HArr_p r = m_harrUp(ia);
+    return (UntaggedArr) {(Arr*)r.c, r.a};
+  } else {
+    Arr* r = m_fillarrp(ia);
+    fillarr_setFill(r, fill);
+    return (UntaggedArr){r, fillarrv_ptr(r)};
+  }
+}
+  
 UntaggedArr m_arrp_fill(B x, ux ia) { // doesn't consume
   u8 xe = TI(x,elType);
-  if (xe==el_B) {
-    B fill = getFillR(x);
-    if (noFill(fill)) {
-      Arr* r = m_fillarrp(ia);
-      fillarr_setFill(r, fill);
-      return (UntaggedArr){r, fillarrv_ptr(r)};
-    } else {
-      HArr_p r = m_harrUp(ia);
-      return (UntaggedArr) {(Arr*)r.c, r.a};
-    }
-  }
+  if (xe==el_B) return m_barrp_fill(x, ia);
   Arr* r;
   void* rp = m_tyarrlbp(&r, elwBitLog(xe), ia, el2t(xe));
   return (UntaggedArr) {r, rp};

@@ -410,6 +410,7 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 %USE eqvarv ⋄  ↑‿4 ⥊_eqvarv_"i" "abcde" %% ["abcd", "e   "]
 %USE eqvar  ⋄  ⌽‿4 ⥊_eqvar      "abcde" %% ["abcd", "eabc"]
 %USE eqvar  ⋄  ⌊‿4 ⥊_eqvar      "abcde" %% ["abcd"]
+%USE eqvar  ⋄  2‿2 ⥊_eqvar ↕1000 %% [0‿1,2‿3]
 
 # 𝕨⍷𝕩
 %USE eqvar ⋄ "ab" ⍷_eqvar "" %% ⟨⟩
