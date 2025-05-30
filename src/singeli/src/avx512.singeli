@@ -12,6 +12,17 @@ def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
   emit{void, intrin_i{V, 'mask_storeu'}, p, m, v}
 }
 
+local def maskop{M=[k](u1), op, ...args} = emit{M, merge{'_k',op,'_',mt{k}}, ...args}
+def  __and{a:M=[k](u1), b:M} = maskop{M, 'and', a, b}
+def andnot{a:M=[k](u1), b:M} = maskop{M, 'andn', b, a}
+def   __or{a:M=[k](u1), b:M} = maskop{M, 'or', a, b}
+def  __xor{a:M=[k](u1), b:M} = maskop{M, 'xor', a, b}
+def   __ne{a:M=[k](u1), b:M} = maskop{M, 'xor', a, b}
+def   __eq{a:M=[k](u1), b:M} = maskop{M, 'xnor', a, b}
+def  __not{a:M=[k](u1)} = maskop{M, 'not', a}
+def vec_shift_left {a:M=[k](u1), am if int_idx{am, k}} = maskop{M, 'shiftri', a, am}
+def vec_shift_right{a:M=[k](u1), am if int_idx{am, k}} = maskop{M, 'shiftli', a, am}
+
 
 
 # mask conversions
