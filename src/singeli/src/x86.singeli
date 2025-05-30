@@ -11,16 +11,19 @@ def x86_has512{V=[_]E} = if (width{V}==512) hasarch{'AVX512F'} else (width{V}==2
 def x86_has512{V, post} = has512{V} and hasarch{merge{'AVX512', post}}
 local def has512 = x86_has512
 
+def x86_has512e{_} = 0
 def x86_has512e{V=[_]E if width{E}>=32} = has512{V}
 def x86_has512e{V=[_]E if width{E}<=16} = has512{V, 'BW'}
 def x86_has512e{V=[_]E, post} = x86_has512e{V} and has512{V, post}
 local def hase{V=[_]E} = hase{V, 'SSE2'}
 local def hase{V=[_]E, min_sse} = hase{V, min_sse, if (isint{E}) 'AVX2' else 'AVX'}
 local def hase{V=[_]E, min_sse, min_avx} = hase{V, min_sse, min_avx, {} => x86_has512e{V}}
-local def hase{V=[_]E, min_sse, min_avx, avx512_check} = match (width{V}) {
+local def hase{V=[_]E, min_sse, min_avx, min_avx512} = match (width{V}) {
   {128} => hasarch{min_sse}
   {256} => hasarch{min_avx}
-  {512} => avx512_check{}
+  {512 if kgen{min_avx512}} => min_avx512{}
+  {512 if knum{min_avx512}} => min_avx512
+  {512 if ksym{min_avx512}} => hasarch{min_avx512}
   {_} => 0
 }
 
@@ -38,6 +41,7 @@ def x86_scal{E} = scal_q{quality{E}, E}
 
 local def intrin_t{V=[_]E, ...rest} = intrin{V, ...rest, '_', scal_q{quality{E}, E}}
 local def intrin_i{V=[_]E, ...rest} = intrin{V, ...rest, '_', scal_q{'i', E}}
+def x86_intrin_t = intrin_t
 
 local def vec_s{V=[_]E} = match (E) { # e.g. ps / pd / si128
   {(f32)} => 'ps'
@@ -52,6 +56,7 @@ local def vec_l{V=[_]E} = merge{match (E) { # e.g. ps128 / pd128 / si128
 local def vec_x{V=[k]E} = { # e.g. i64x2 / f32x4 / f64x2
   merge{if (isint{E}) 'i' else 'f', fmtwidth{E}, 'x', fmtnat{k}}
 }
+local def to_x{V=[_]E} = if (width{E}<32) re_el{i32, V} else V
 
 include './sse'
 include './avx'
@@ -69,7 +74,7 @@ def extract{D=[kd]E, x:X=[ks]E, i if kd<ks and int_idx{i, ks/kd}} = match (width
   {_, 0} => x86_vec_cvt{'cast', X, D, x}
   {256, _} => emit{D, intrin{X, 'extract', if (hasarch{'AVX2'} and isint{E}) 'i' else 'f', '128_', vec_s{X}}, x, i}
   {512, _} => {
-    def Z = if (width{E}<32) re_el{i32, D} else D
+    def Z = to_x{D}
     emit{D, intrin_i{re_el{eltype{Z},X}, 'extract', vec_x{Z}}, x, i}
   }
 }

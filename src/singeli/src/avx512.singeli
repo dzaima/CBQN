@@ -9,6 +9,9 @@ local {
   def has512 = x86_has512
   def has512e = x86_has512e
   def intrin = x86_intrin
+  def intrin_t = x86_intrin_t
+  def mt{k} = merge{'mask', fmtnat{__max{k,8}}}
+  def mr{s} = merge{s, '_mask'}
 }
 
 local def re_mask{[l]_, sub} = {
