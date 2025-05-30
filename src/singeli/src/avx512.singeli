@@ -48,6 +48,24 @@ def narrow{DE, x:[k]SE if isint{DE} and quality{DE}==quality{SE} and x86_has512e
 }
 def narrow{(i32), x:[8](f64)} = emit{[8]i32, '_mm512_cvtpd_epi32', x}
 
+
+
+local def cmp_ops{int, flt} = {
+  def extend _{base, mask} = {
+    def base{a:V=[k]E, b:V if width{V}==512} = mask{a, b}
+    def mask{a:V=[k]E, b:[k]E if isfloat{E}} = emit{[k]u1, mr{intrin_t{V, 'cmp'}}, a, b, flt}
+    def mask{a:V=[k]E, b:[k]E if   isint{E}} = emit{[k]u1, mr{intrin_t{V, 'cmp',int}}, a, b}
+  }
+}
+extend (cmp_ops{'eq',  0}){__eq, eq_mask}
+extend (cmp_ops{'neq', 4}){__ne, ne_mask}
+extend (cmp_ops{'gt', 30}){__gt, gt_mask}
+extend (cmp_ops{'ge', 29}){__ge, ge_mask}
+extend (cmp_ops{'lt', 17}){__lt, lt_mask}
+extend (cmp_ops{'le', 18}){__le, le_mask}
+
+
+
 local def masked_op{name, pattern} = {
   def ok{args, k, base} = {
     def got = match (...args) {
