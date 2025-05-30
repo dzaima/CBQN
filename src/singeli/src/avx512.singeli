@@ -120,6 +120,9 @@ local def masked_op{name, pattern} = {
   }
 }
 
-def masked_op1{name} = masked_op{name, {a:V if has512e{V}} => tup{V,a}}
+def masked_op2{name} = masked_op{name, {a:V, b:V if has512e{V}} => tup{V,a,b}}
+def masked_op1{name} = masked_op{name, {a:V      if has512e{V}} => tup{V,a}}
+def      __add{...} = masked_op2{'add'}
+def      __sub{...} = masked_op2{'sub'}
 def masked_mov{...} = masked_op1{'mov'}
 def   compress{...} = masked_op1{'compress'}
