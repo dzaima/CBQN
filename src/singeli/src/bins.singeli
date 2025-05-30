@@ -1,6 +1,7 @@
 include './base'
 include './cbqnDefs'
 include './mask'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def for_dir{up} = if (up) for else for_backwards
 

@@ -92,6 +92,7 @@ def multishift{a:[k](u64), i:V=[(k*8)](u8) if has512{V, 'VBMI'}} = emit{V, intri
 def narrow{DE, x:[k]SE if isint{DE} and quality{DE}==quality{SE} and x86_has512e{[k]SE}} = {
   emit{x86_vec_low{k,DE}, intrin{[k]SE, 'cvtepi', fmtwidth{SE}, '_epi', fmtwidth{DE}}, x}
 }
+def widen{D=[8](f64), x:[k]E if k>=8 and isint{E} and width{E}<=32} = widen{D, widen{[8]i32, x}}
 def widen{D=[8](f64), x:[k](i32) if k>=8} = emit{D, '_mm512_cvtepi32_pd', x86_low_elts{8, x}}
 def narrow{(i32), x:[8](f64)} = emit{[8]i32, '_mm512_cvtpd_epi32', x}
 

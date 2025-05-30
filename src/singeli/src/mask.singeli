@@ -3,6 +3,7 @@ local def bit_mask_init{w} = {
     merge{(w/8-1)**255, tail{x}, (w/8)**0}
   }, iota{8}}}
 }
+mask512_1:*u8 = bit_mask_init{512}; def mask_of_first_bits{T,n if width{T}==512} = load{*[64]u8  ~~  (mask512_1 + (n>>3)^63 +128*(n&7))}
 mask256_1:*u8 = bit_mask_init{256}; def mask_of_first_bits{T,n if width{T}==256} = load{*[32]u8  ~~  (mask256_1 + (n>>3)^31 + 64*(n&7))}
 mask128_1:*u8 = bit_mask_init{128}; def mask_of_first_bits{T,n if width{T}==128} = load{*[16]u8  ~~  (mask128_1 + (n>>3)^15 + 32*(n&7))}
 
