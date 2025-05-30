@@ -159,15 +159,16 @@ def shufb128{} = hasarch{'SSSE3'} | hasarch{'AARCH64'}
 def thresh{c==1, T==i8  if shufb128{}} = 64
 def thresh{c==1, T==i16 if shufb128{}} = 32
 fn slash{c==1, T if T<=i16 and shufb128{}}(wp:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
-  def V = [16]i8
+  def V8 = [16]i8
+  def VT = re_el{T,V8}
   @for_special_buffered{r,8} (w in *u8~~wp over i to sum) {
     ind := load{itab, w}
     pc := popc_alt{w, ind, 8}
-    s := V~~make{[2]u64, ind,0}
-    if (T==i16) { s+=s; s = V~~mzip{s, s+V**1, 0} }
-    res := sel{V, load{*V~~(x+8*i)}, s}
-    if (T==i8) storeu{*u64~~r, extract{[2]u64~~res, 0}}
-    else store{*V~~r, 0, res}
+    s := V8~~make{[2]u64, ind,0}
+    if (T==i16) { s+=s; s = V8~~mzip{s, s+V8**1, 0} }
+    src := load{VT, x+8*i, 8}
+    dst := sel{V8, src, s}
+    store{r, dst, 8}
     r+= pc
   }
 }
@@ -242,17 +243,13 @@ fn slash{c, T if hasarch{if (width{T}>=32) 'AVX512F' else 'AVX512VBMI2'}}(w:*u64
   def X = getter{c, V, x}
   def I = ty_u{vl}
   @for (w in *(ty_u{vl})~~w over cdiv{l,vl}) {
-    def emitT{O, name, ...a} = emit{O, merge{'_mm512_',name,'_epi',f{wt}}, ...a}
     m := [vl]u1~~w
     c := popc{w}
     x := X{}
     # The compress-store instruction performs very poorly on Zen4,
     # and is also a lot worse than the following on Tiger Lake
-    # emitT{void, 'mask_compressstoreu', r, m, x}
-    cs := cast_i{I, tail{u64, c%64}}
-    if (vl==64) cs -= cast_i{I,c}>>6
-    v := emitT{V, 'mask_compress', x, m, x}
-    store_masked_hom{r, [vl]u1~~cs, v}
+    v := compress{x, m, 0}
+    store_masked_hom{r, lowelt_mask{[vl]u1, c}, v}
     r += c
   }
 }
