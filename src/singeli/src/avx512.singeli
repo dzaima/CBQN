@@ -36,3 +36,31 @@ def multishift{a:[k](u64), i:V=[(k*8)](u8) if has512{V, 'VBMI'}} = emit{V, intri
 def narrow{DE, x:[k]SE if isint{DE} and quality{DE}==quality{SE} and x86_has512e{[k]SE}} = {
   emit{x86_vec_low{k,DE}, intrin{[k]SE, 'cvtepi', fmtwidth{SE}, '_epi', fmtwidth{DE}}, x}
 }
+
+local def masked_op{name, pattern} = {
+  def ok{args, k, base} = {
+    def got = match (...args) {
+      (pattern)
+      {..._} => tup{}
+    }
+    match (got, k, base) {
+      {{V=[k]_, ..._}, k, 0  } => 1
+      {{V=[k]_, ..._}, k, _:V} => 1
+      {..._} => 0
+    }
+  }
+  def me{...args, m:[k](u1), base if ok{args, k, base}} = {
+    def {V,...rest} = pattern{...args}
+    def has_base = not is{base,0}
+    emit{V,
+      intrin_i{V, merge{if (has_base) 'mask_' else 'maskz_', name}},
+      ...has_base**base,
+      m,
+      ...rest
+    }
+  }
+}
+
+def masked_op1{name} = masked_op{name, {a:V if has512e{V}} => tup{V,a}}
+def masked_mov{...} = masked_op1{'mov'}
+def   compress{...} = masked_op1{'compress'}

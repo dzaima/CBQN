@@ -178,6 +178,7 @@ def {
   load_expand_bits,make,mask_to_hom,mulw_split,mulh,narrow,narrow_trunc,narrow_pair,
   pair,pdep,pext,bzhi,rbit,reverse_units,broadcast_sel,absdiff_sum,mul_sum,mul_sum_sat,
   unord,unzip,vfold,vec_select,vec_shuffle,widen,widen_upper,multishift,lowelt_mask,
+  masked_mov,compress,
   addp,addpw,addpwa,
 }
 
