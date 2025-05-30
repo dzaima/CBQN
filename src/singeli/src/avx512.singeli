@@ -47,6 +47,15 @@ def narrow{DE, x:[k]SE if isint{DE} and quality{DE}==quality{SE} and x86_has512e
   emit{x86_vec_low{k,DE}, intrin{[k]SE, 'cvtepi', fmtwidth{SE}, '_epi', fmtwidth{DE}}, x}
 }
 
+local def a5cmp{a:V=[k]E, b:[k]E, int, flt if isfloat{E}} = emit{[k]u1, mr{intrin_t{V, 'cmp'}}, a, b, flt}
+local def a5cmp{a:V=[k]E, b:[k]E, int, flt if   isint{E}} = emit{[k]u1, mr{intrin_t{V, 'cmp',int}}, a, b}
+def eq_mask{a:V, b:V if has512e{V}} = a5cmp{a, b, 'eq',  0}
+def ne_mask{a:V, b:V if has512e{V}} = a5cmp{a, b, 'neq', 4}
+def gt_mask{a:V, b:V if has512e{V}} = a5cmp{a, b, 'gt',  30}
+def ge_mask{a:V, b:V if has512e{V}} = a5cmp{a, b, 'ge',  29}
+def lt_mask{a:V, b:V if has512e{V}} = a5cmp{a, b, 'lt',  17}
+def le_mask{a:V, b:V if has512e{V}} = a5cmp{a, b, 'le',  18}
+
 local def masked_op{name, pattern} = {
   def ok{args, k, base} = {
     def got = match (...args) {

@@ -181,6 +181,17 @@ def {
   addp,addpw,addpwa,
 }
 
+local def extend cmp_ops{hom, mask} = {
+  def hom{R, a:V=[k]E, b:V if ktyp{R} and width{R}==width{V}} = R~~hom{a,b}
+}
+
+extend cmp_ops{eq_hom, eq_mask}
+extend cmp_ops{ne_hom, ne_mask}
+extend cmp_ops{gt_hom, gt_mask}
+extend cmp_ops{ge_hom, ge_mask}
+extend cmp_ops{lt_hom, lt_mask}
+extend cmp_ops{le_hom, le_mask}
+
 # extended by arch/*/select where applicable
 def blend_bit{f:T, t:T, m:M if width{T}==width{M}} = T ~~ ((M~~t & m) | (M~~f &~ m))
 def blend_hom{f:T, t:T, m:M} = blend_bit{f, t, m}

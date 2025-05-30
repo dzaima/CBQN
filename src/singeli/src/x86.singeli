@@ -143,3 +143,16 @@ def widen{D=[k]DE, x:S=[k0]SE if isint{DE} and quality{DE}==quality{SE} and DE>S
 })} = {
   emit{D, intrin_i{D, 'cvtep', if (isunsigned{SE}) 'u' else 'i', fmtwidth{SE}}, x86_low_elts{k, x}}
 }
+
+local def extend cmp_ops{base, hom, mask} = {
+  def  hom{a:V=[k]E, b:V if width{V}<=256} = base{a, b}
+  def  hom{a:V=[k]E, b:V if width{V}==512} = mask_to_hom{ty_u{V}, mask{a, b}}
+  def base{a:V=[k]E, b:V if width{V}==512} = mask{a, b}
+}
+
+extend cmp_ops{__eq, eq_hom, eq_mask}
+extend cmp_ops{__ne, ne_hom, ne_mask}
+extend cmp_ops{__gt, gt_hom, gt_mask}
+extend cmp_ops{__ge, ge_hom, ge_mask}
+extend cmp_ops{__lt, lt_hom, lt_mask}
+extend cmp_ops{__le, le_hom, le_mask}

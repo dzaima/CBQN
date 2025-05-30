@@ -72,7 +72,7 @@ def any_ne_reflexive_qnan{M, a:V=[k](f64), b:V} = { # (a==b) | (isQNaN{a} & isQN
   def U = ty_u{V}
   def t1 = U~~a & U~~b
   
-  def ne = a != b
+  def ne = ne_hom{a, b}
   def t2 = ne & U**0x7FF8_0000_0000_0000
   
   def andn_bit_none{M, x:T, y:T} = ~any_bit{M{x&~y}}
