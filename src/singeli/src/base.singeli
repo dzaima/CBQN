@@ -182,6 +182,24 @@ def {
   addp,addpw,addpwa,
 }
 
+local def extend cmp_ops{base, hom, mask} = {
+  def hom{R, a:V=[k]E, b:V if ktyp{R} and width{R}==width{V}} = R~~hom{a,b}
+  def hom{a:V=[k]E, b:V} = {
+    def VU = ty_u{V}
+    match (base{a, b}) {
+      {r:(VU)} => r
+      {r:([k]u1)} => mask_to_hom{VU, r}
+    }
+  }
+}
+
+extend cmp_ops{__eq, eq_hom, eq_mask}
+extend cmp_ops{__ne, ne_hom, ne_mask}
+extend cmp_ops{__gt, gt_hom, gt_mask}
+extend cmp_ops{__ge, ge_hom, ge_mask}
+extend cmp_ops{__lt, lt_hom, lt_mask}
+extend cmp_ops{__le, le_hom, le_mask}
+
 # extended by arch/*/select where applicable
 def blend_bit{f:T, t:T, m:M if width{T}==width{M}} = T ~~ ((M~~t & m) | (M~~f &~ m))
 def blend_hom{f:T, t:T, m:M} = blend_bit{f, t, m}

@@ -106,7 +106,7 @@ def extract_column_pow2{T, x0, r0, nv, k} = {
       def proc{hx} = {
         ri := D~~f{hx}
         top := D**(1<<15); m := D**tail{16}
-        (ri & m) | (D~~(ri&top == top) &~ m)
+        (ri & m) | (eq_hom{D, ri&top, top} &~ m)
       }
       r = V~~packs128{each{proc, split{k/2, xs}}}
     }

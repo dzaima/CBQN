@@ -28,7 +28,7 @@ fn count{T if T<=i16}(tab:*u16, ov:*u16, xp:*void, n:u64, min_allowed:T) : T = {
     # (double-counts at index vec but it doesn't need to be exact)
     xv := *V~~x
     jv := load{xv}; mv := jv
-    ne := jv != load{*V~~(x+1)}; dc := -ne
+    ne := ne_hom{jv, load{*V~~(x+1)}}; dc := -ne
     # Quickly skip ahead if initial values are all equal
     a:u64 = 1
     if (not any_hom{ne} and b>=4) {

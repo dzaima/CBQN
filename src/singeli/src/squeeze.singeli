@@ -41,7 +41,7 @@ fn squeeze{vw, X, CHR, B}(x0:*void, len:ux) : u32 = {
   }
   
   def mix_pos{x:T=[_]E} = x & (T ** ~E~~1)
-  def mix_neg{x:T=[_]E} = mix_pos{x} ^ T~~(x!=T**0)
+  def mix_neg{x:T=[_]E} = mix_pos{x} ^ ne_hom{T, x, T**0}
   def mix{x:T} = mix_pos{x} ^ (x >> (width{T}-1))
   
   def int_acc{T} = {
