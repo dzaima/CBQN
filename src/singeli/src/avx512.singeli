@@ -22,6 +22,7 @@ def   __eq{a:M=[k](u1), b:M} = maskop{M, 'xnor', a, b}
 def  __not{a:M=[k](u1)} = maskop{M, 'not', a}
 def vec_shift_left {a:M=[k](u1), am if int_idx{am, k}} = maskop{M, 'shiftri', a, am}
 def vec_shift_right{a:M=[k](u1), am if int_idx{am, k}} = maskop{M, 'shiftli', a, am}
+local def real_mask{x:[k](u1) if k<8} = emit{[8]u1, '', x} # in general could have arbitrary bits in the top (esp int_to_mask), but most ops should produce zeroes
 
 
 
@@ -50,7 +51,34 @@ def hom_to_hom{V=[k]E, x:[k](u1) if E!=u1} = mask_to_hom{V,x}
 
 def lowelt_mask{[k](u1), n if any_int{n}} = int_to_mask{[k]u1, bzhi{hom_ones{u64}, n}}
 
+
+
+# mask tests
+local def kortest{a:M=[k](u1), b:M, kind} = emit{u1, merge{'_kortest',kind,'_',mt{k},'_u8'}, a, b}
+def any_hom{x:M=[k](u1), y:M} = ~kortest{x, y, 'z'}
+def any_hom{x:[k](u1)} = ~kortest{x, x, 'z'}
+def all_hom{x:[k](u1) if k>=8} = kortest{x, x, 'c'}
+def all_hom{x:[k](u1) if  k<8} = kortest{real_mask{x}, [8]u1~~u8~~zlow{k,0xff}, 'c'}
+def any_hom{x:[k](u1), vl if any_int{vl} and not same{vl,k}} = bzhi{promote{u64,hom_to_int{x}}, vl} != 0
+
+
+
+# vector tests
+def andnz_mask{x:V=[k]E, y:V if has512e{V} and veci{V}} = emit{[k]u1, mr{intrin_i{V, 'test'}}, x, y}
+def any_top{x:V=[k]E if w512i{V}} = any_hom{top_to_mask{x}}
+def any_hom{x:V=[k]E if w512i{V}} = any_hom{top_to_mask{x}}
+def all_top{x:V=[k]E if w512i{V}} = all_hom{top_to_mask{x}}
+def all_hom{x:V=[k]E if w512i{V}} = all_hom{top_to_mask{x}}
+def and_bit_none{x:V, y:V if w512i{V}} = ~any_hom{andnz_mask{re_el{u8,x}, re_el{u8,y}}}
+
+
+
 def sel{(ty_u{V}), x:V=[_]E, i:I==(ty_u{V}) if (if (width{E}>8) has512e{V} else has512{V, 'VBMI'})} = emit{V, intrin_i{V, 'permutexvar'}, i, x}
+
+def extract{x:V=[k]E, i if w512{V} and int_idx{i, k}} = {
+  def l = 128/width{E}
+  extract{extract{[l]E, x, i >> lb{l}}, i % l}
+}
 
 def multishift{a:[k](u64), i:V=[(k*8)](u8) if has512{V, 'VBMI'}} = emit{V, intrin_i{V, 'multishift_epi64'}, i, a}
 
