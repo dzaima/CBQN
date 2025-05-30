@@ -8,24 +8,22 @@ local {
   def mr{s} = merge{s, '_mask'}
 }
 
-local def re_mask{[l]_, sub} = {
-  def w = __max{32,l}
-  sub{fmtnat{l}, fmtnat{w}, ty_u{w}}
-}
-def reinterpret{M=[l==width{T}](u1), a:T} = {
-  re_mask{M, {l,w,W} => emit{M, merge{'_cvtu',w,'_mask',l}, promote{W, a}}}
-}
-def reinterpret{T, a:M=[l==width{T}](u1)} = {
-  re_mask{M, {l,w,W} => cast_i{T, emit{W, merge{'_cvtmask',l,'_u',w}, a}}}
-}
-
 def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
   emit{void, intrin_i{V, 'mask_storeu'}, p, m, v}
 }
 
+
+
+# mask conversions
+def hom_to_int{x:[k](u1)} = emit{ty_u{__max{k,8}}, merge{'_cvt',mt{k},'_u',fmtnat{__max{k,32}}}, x}
+def int_to_mask{[k](u1), x:T if isunsigned{T} and width{T}>=k} = emit{[k]u1, merge{'_cvtu',fmtnat{__max{k,32}},'_',mt{k}}, x}
+
+def reinterpret{T, a:M=[l](u1) if isint{T} and l==width{T}} = T~~hom_to_int{a}
+def reinterpret{M=[l](u1), a:T if isint{T} and l==width{T}} = int_to_mask{M, a}
+
 def top_to_mask{x:V=[k]E if E!=u1 and veci{V}} = emit{[k]u1, mr{intrin{V,'mov',x86_scali{E}}}, x}
-def top_to_int{x:V=[k]_ if 512==width{V}} = ty_u{k}~~top_to_mask{x}
-def hom_to_int{x:V=[_]_ if 512==width{V}} = top_to_int{x}
+def top_to_int{x:V=[_]_ if w512i{V}} = hom_to_int{top_to_mask{x}}
+def hom_to_int{x:V=[_]_ if w512i{V}} = top_to_int{x}
 
 def mask_to_hom{V=[l]_, x:[l](u1)} = emit{V, intrin_i{V,'movm'}, x}
 
