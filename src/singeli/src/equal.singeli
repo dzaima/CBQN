@@ -3,6 +3,7 @@ include './cbqnDefs'
 include './f64'
 include './mask'
 include './bitops'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def swap{w,x} = {
   t:= w
@@ -27,11 +28,11 @@ fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
       f0:= TF**0.0
       f1:= TF**1.0
       @for_masked_pos{bulk}(M in 'm' over i to l) {
-        wu:= (if (hasarch{'AVX2'}) {
+        wu:= (if (hasarch{'AVX2'} and not hasarch{'AVX512F'}) {
           cw:= load_bits_lo{bulk, *u64~~w, i}
           blend_top{f0, f1, TU**cw << make{TU,63-iota{vcount{TU}}}}
         } else {
-          cw:= load_expand_bits{TU, *u64~~w, i}
+          cw:= load_expand_bits{TU, *u64~~w, i} # TODO don't expand for AVX-512
           blend_hom{f0, f1, cw}
         })
         cx:= load{*TF ~~ x, i}
@@ -76,7 +77,7 @@ def any_ne_reflexive_qnan{M, a:V=[k](f64), b:V} = { # (a==b) | (isQNaN{a} & isQN
   def t2 = ne & U**0x7FF8_0000_0000_0000
   
   def andn_bit_none{M, x:T, y:T} = ~any_bit{M{x&~y}}
-  def andn_bit_none{M, x:T, y:T if M{0}==0 and hasarch{'X86_64'}} = andn_bit_none{x,y}
+  def andn_bit_none{M, x:T, y:T if M{0}==0 and hasarch{'X86_64'} and width{T}<=256} = andn_bit_none{x,y}
   ~andn_bit_none{M, t2, t1}
 }
 
