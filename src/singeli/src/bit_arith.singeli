@@ -4,6 +4,7 @@ include './f64'
 include './bitops'
 include './mask'
 include './dyarith_common'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def __mul{a:(u16), b:(u16)} = trunc{u16, promote{u32,a} * promote{u32,b}}
 

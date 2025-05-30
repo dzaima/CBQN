@@ -2,6 +2,7 @@ include './base'
 include './mask'
 include './cbqnDefs'
 include './vecfold'
+def arch_defvw{if hasarch{'AVX512BW'}} = 512
 
 def is_sNaN{x:[_](u64)} = tup{any_hom, in_range_len{x<<1, (0xFFE<<52)+2, (1<<52)-2}}
 def is_sNaN{x:[2](u64) if hasarch{'X86_64'} and not hasarch{'SSE4.2'}} = { # avoiding i64 comparisons
