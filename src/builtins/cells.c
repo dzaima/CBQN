@@ -729,9 +729,9 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
       case n_select:
         if (isArr(w) && xcr==1) {
           if (!TI(w,arrD1)) {
-            u8 xe;
-            w = squeeze_numTry(w, &xe, SQ_ANY);
-            if (xe==el_B) break;
+            u8 we;
+            w = squeeze_numTry(w, &we, SQ_ANY);
+            if (we==el_B) break;
           }
           assert(xr > 1);
           ur wr = RNK(w);
