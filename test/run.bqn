@@ -44,8 +44,8 @@ o ← {
   seed ⇐ {
     ⟨⟩: 1;
     ⟨"u"⟩: s←•rand.Range 2⋆31 ⋄ •Out "seed="∾•Repr s ⋄ s;
-    ⟨s⟩: •ParseFloat 5↓s
-  } (i=9)/args
+    ⟨s⟩: •ParseFloat s
+  } 5↓¨ (i=9)/args
   
   ⟨
     usz
