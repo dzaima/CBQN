@@ -82,7 +82,11 @@ static Arr* m_fillarrp(usz ia) { // needs a NOGC_E after fill & all elements are
   NOGC_S;
   return r;
 }
-static void fillarr_setFill(Arr* x, B fill) { assert(PTY(x)==t_fillarr); ((FillArr*)x)->fill = fill; } // consumes fill
+static void fillarr_setFill(Arr* x, B fill) { // consumes fill
+  assert(PTY(x)==t_fillarr);
+  if (DEBUG) validateFill(fill);
+  ((FillArr*)x)->fill = fill;
+}
 static B* fillarrv_ptr  (Arr* x) { assert(PTY(x)==t_fillarr);   return ((FillArr*)x)->a; }
 static B* fillslicev_ptr(Arr* x) { assert(PTY(x)==t_fillslice); return ((FillSlice*)x)->a; }
 static Arr* m_fillarrpEmpty(B fill) {
