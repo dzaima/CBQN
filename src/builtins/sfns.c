@@ -1162,13 +1162,6 @@ B shifta_c2(B t, B w, B x) {
   return qWithFill(mut_fcd(r, x), f);
 }
 
-static u64 bit_reverse(u64 x) {
-  u64 c = __builtin_bswap64(x);
-  c = (c&0x0f0f0f0f0f0f0f0f)<<4 | (c&0xf0f0f0f0f0f0f0f0)>>4;
-  c = (c&0x3333333333333333)<<2 | (c&0xcccccccccccccccc)>>2;
-  c = (c&0x5555555555555555)<<1 | (c&0xaaaaaaaaaaaaaaaa)>>1;
-  return c;
-}
 B reverse_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽𝕩: 𝕩 cannot be a unit");
   usz n = *SH(x);
@@ -1182,7 +1175,7 @@ B reverse_c1(B t, B x) {
       case 0: {
         u64* rp; r = m_bitarrc(&rp, x);
         u64* xp=xv; usz g = BIT_N(n); usz e = g-1;
-        vfor (usz i = 0; i < g; i++) rp[i] = bit_reverse(xp[e-i]);
+        vfor (usz i = 0; i < g; i++) rp[i] = bit_reverse64(xp[e-i]);
         if (n&63) {
           u64 sh=(-n)&63;
           vfor (usz i=0; i<e; i++) rp[i]=rp[i]>>sh|rp[i+1]<<(64-sh);

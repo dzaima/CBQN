@@ -9,6 +9,14 @@ static void storeu_u16(void* p, u16 v) { memcpy(p, &v, 2); }  static u16 loadu_u
 #define ptr_roundUp(P, N) ({ AUTO p_ = (P); u64 n_ = (N); TOPTR(typeof(*p_), (ptr2u64(p_)+n_-1) & ~(n_-1)); })
 #define ptr_roundUpToEl(P) ({ AUTO p2_ = (P); ptr_roundUp(p2_, _Alignof(typeof(*p2_))); })
 
+static u64 bit_reverse64(u64 x) {
+  u64 c = __builtin_bswap64(x);
+  c = (c&0x0f0f0f0f0f0f0f0f)<<4 | (c&0xf0f0f0f0f0f0f0f0)>>4;
+  c = (c&0x3333333333333333)<<2 | (c&0xcccccccccccccccc)>>2;
+  c = (c&0x5555555555555555)<<1 | (c&0xaaaaaaaaaaaaaaaa)>>1;
+  return c;
+}
+
 void print_allocStats(void);
 void vm_pstLive(void);
 
