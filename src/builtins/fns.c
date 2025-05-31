@@ -39,54 +39,94 @@ B intRange(ux s, ux n) { // intended for s+n≥128; assumes n≥1
   return intRangeF64(s, n);
 }
 
-static B* ud_rec(B* p, usz d, usz r, i32* pos, usz* sh) {
-  usz cl = sh[d];
-  if (d+1==r) {
-    
-    for (usz i = 0; i < cl; i++) {
-      i32* p1; *p = m_i32arrv(&p1, r);
-      NOUNROLL for (usz i = 0; i < d; i++) p1[i] = pos[i];
-      p1[d] = i;
-      p++;
-    }
-  } else {
-    for (usz i = 0; i < cl; i++) {
-      pos[d] = i;
-      p = ud_rec(p, d+1, r, pos, sh);
-    }
-  }
-  return p;
+#define UD_REC(T) static B* ud_rec_##T(B* p, usz d, usz r, void* pos0, usz* sh) { \
+  T* pos = pos0;                            \
+  usz cl = sh[d];                           \
+  if (d+1==r) {                             \
+    for (usz i = 0; i < cl; i++) {          \
+      T* p1; *p = m_##T##arrv(&p1, r);      \
+      NOUNROLL for (ux i = 0; i < d; i++) { \
+        p1[i] = pos[i];                     \
+      }                                     \
+      p1[d] = i;                            \
+      p++;                                  \
+    }                                       \
+  } else {                                  \
+    for (usz i = 0; i < cl; i++) {          \
+      pos[d] = i;                           \
+      p = ud_rec_##T(p, d+1, r, pos, sh);   \
+    }                                       \
+  }                                         \
+  return p;                                 \
 }
+UD_REC(i8)
+UD_REC(i16)
+UD_REC(i32)
+
+static u64 bit_reverse64_low(u64 x, ux n) {
+  assert(n>0 && n<=64);
+  return bit_reverse64(x) >> (64-n);
+}
+B eq_c2(B,B,B);
 NOINLINE B list_range(B x) {
   SGetU(x)
   usz xia = IA(x);
   if (RNK(x)!=1) thrF("↕𝕩: 𝕩 must be either an integer or integer list (had rank %i)", RNK(x));
   if (xia>UR_MAX) thrF("↕𝕩: Result rank too large (%s≡≠𝕩)", xia);
   if (xia==0) { decG(x); return m_funit(emptyIVec()); }
-  usz sh[xia]; // stack allocation of rank items
-  i32 pos[xia];
-  usz ria = 1;
-  bool bad=false, good=false;
-  for (usz i = xia; i--; ) {
-    usz c = o2s(GetU(x, i));
-    sh[i] = c;
-    good|= c==0;
-    bad|= (c > I32_MAX) | mulOn(ria, c);
+  
+  i32 pos[xia]; // stack allocation of rank items; also used as i16[xia] and i8[xia]
+  ShArr* sh;
+  usz ria, min, max;
+  ria = min = max = o2s(GetU(x, 0));
+  bool bad = false;
+  if (xia > 1) {
+    sh = m_shArr(xia);
+    sh->a[0] = min;
+    for (ux i = 1; i < xia; i++) {
+      usz c = o2s(GetU(x, i));
+      sh->a[i] = c;
+      bad|= mulOn(ria, c);
+      if (c > max) max = c;
+      if (c < min) min = c;
+    }
+  } else {
+    sh = NULL;
   }
-  if (bad && !good) thrM("↕𝕩: Result too large");
-  decG(x);
+  if ((bad && min!=0) || max > 1+(u64)I32_MAX) {
+    if (sh) mm_free((Value*) sh);
+    thrM("↕𝕩: Result too large");
+  }
   
   Arr* r = m_fillarr0p(ria);
-  usz* rsh = arr_shAlloc(r, xia);
-  if (rsh) shcpy(rsh, sh, xia);
+  arr_shSetUO(r, xia, sh);
   
   if (ria) {
+    assert(min>0 && max>0);
     B* rp = fillarrv_ptr(r);
-    ud_rec(rp, 0, xia, pos, sh);
+    if (MAY_F(max==2 && xia<=64)) {
+      x = toBitAny(C2(eq, x, m_f64(2)));
+      u64 m = bit_reverse64_low(~loadu_u64(bitany_ptr(x)), xia);
+      if (xia < 64) m&= (1ull<<xia)-1;
+      u64 c = m;
+      for (ux i = 0; i < ria; i++) {
+        u64* cr;
+        rp[i] = m_bitarrv(&cr, xia);
+        cr[0] = bit_reverse64_low(c &~ m, xia);
+        c = (c|m) + 1;
+      }
+    } else if (MAY_F(max <= 1+I8_MAX)) {
+      ud_rec_i8(rp, 0, xia, pos, PSH(r));
+    } else if (MAY_F(max <= 1+I16_MAX)) {
+      ud_rec_i16(rp, 0, xia, pos, PSH(r));
+    } else { // max checked before
+      ud_rec_i32(rp, 0, xia, pos, PSH(r));
+    }
     fillarr_setFill(r, incG(rp[0]));
   } else {
     fillarr_setFill(r, taga(arr_shVec(allZeroes(xia))));
   }
+  decG(x);
   return taga(r);
 }
 
