@@ -21,6 +21,9 @@
 #ifndef RANDSEED
   #define RANDSEED 0
 #endif
+#ifndef DEBUG
+  #define DEBUG 0
+#endif
 #ifndef FFI
   #define FFI 2
   #ifndef CBQN_EXPORT
@@ -655,16 +658,12 @@ static inline B inc(B x) {
   return x;
 }
 static inline void decG(B x) {
-  #if DEBUG
-    assert(isVal(x) && v(x)->refc>0);
-  #endif
+  if (DEBUG) assert(isVal(x) && v(x)->refc>0);
   Value* vx = v(x);
   if(!--vx->refc) value_free(vx);
 }
 FORCE_INLINE void ptr_decT(Arr* x) { // assumes argument is an array and consists of non-heap-allocated elements
-  #if DEBUG
-    assert(x->refc>0);
-  #endif
+  if (DEBUG) assert(x->refc>0);
   if (x->refc==1) TIv(x,freeT)((Value*) x);
   else x->refc--;
 }

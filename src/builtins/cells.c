@@ -204,9 +204,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
   assert(isArr(w) && isArr(x) && TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0);
   ur wr = RNK(w);
   ur xr = RNK(x);
-  #if DEBUG
-    assert(wr!=xr && (mr==wr || mr==xr) && eqShPart(wsh, xsh, mr));
-  #endif
+  if (DEBUG) assert(wr!=xr && (mr==wr || mr==xr) && eqShPart(wsh, xsh, mr));
   usz cam = shProd(xsh, 0, mr);
   
   B b = mr==wr? x : w; // bigger argument

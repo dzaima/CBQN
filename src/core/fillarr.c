@@ -109,9 +109,7 @@ NOINLINE bool fillEqualF(B w, B x) { // doesn't consume; both args must be array
 
 B withFill(B x, B fill) { // consumes both
   assert(isArr(x));
-  #if DEBUG
-  validateFill(fill);
-  #endif
+  if (DEBUG) validateFill(fill);
   u8 xt = TY(x);
   if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
   switch(xt) {
