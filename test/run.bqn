@@ -152,7 +152,7 @@ Run ← { 𝕊 testname:
     ty←1⊑d
     Lint ← {𝕊: •Out ∾⟨"Lint: ", Pos ln, ": ", 𝕨⟩}⍟(¬⊢)
     {
-      "eval"≡ty? "No check or assert" Lint ∨´'!'=2⊑d;
+      "eval"≡ty? "No check or assert" Lint (∨´"_eqvar"⍷2⊑d) ∨ ∨´'!'=2⊑d;
       @
     }
   }¨⍟o.lint tests
