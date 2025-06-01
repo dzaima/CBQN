@@ -10,7 +10,6 @@ test/run.bqn // run tests in test/cases/
 ./BQN test/cmp.bqn // fuzz-test scalar comparison functions =≠<≤>≥
 ./BQN test/equal.bqn // fuzz-test 𝕨≡𝕩
 ./BQN test/copy.bqn // fuzz-test creating new arrays with elements copied from another
-./BQN test/bit.bqn // fuzz-test •bit functions
 ./BQN test/mut.bqn // fuzz-test mut.h (currently just bitarr fill)
 ./BQN test/various.bqn // tests for various small things
 ./BQN test/random.bqn // test (•MakeRand n).Range

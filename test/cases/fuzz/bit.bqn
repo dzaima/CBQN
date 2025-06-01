@@ -1,6 +1,8 @@
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-r ← •MakeRand •Show u
-⟨RandVals, casts⟩ ← ⟨r⟩ •Import "utils.bqn"
+### WHOLE-FILE-TEST
+# •bit tests
+helpers ← ⊑•args
+r ← (helpers.GetRand@)
+⟨RandVals, casts⟩ ← ⟨r⟩ helpers.Import "utils.bqn"
 widths ← ⊑¨casts
 
 # Test •bit._cast first
