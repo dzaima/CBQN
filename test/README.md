@@ -13,8 +13,6 @@ test/run.bqn // run tests in test/cases/
 ./BQN test/bit.bqn // fuzz-test •bit functions
 ./BQN test/mut.bqn // fuzz-test mut.h (currently just bitarr fill)
 ./BQN test/hash.bqn // fuzz-test hashing
-./BQN test/squeezeValid.bqn // fuzz-test squeezing giving a correct result
-./BQN test/squeezeExact.bqn // fuzz-test squeezing giving the exact smallest result
 ./BQN test/various.bqn // tests for various small things
 ./BQN test/random.bqn // test (•MakeRand n).Range
 ./BQN test/joinReuse.bqn // test in-place join; requires -DPRINT_JOIN_REUSE

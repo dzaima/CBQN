@@ -1,7 +1,8 @@
-⟨EEqual, ClearRefs, Variation, Squeeze, Type⟩ ← •internal
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-
-r ← •MakeRand •Show u
+### WHOLE-FILE-TEST
+# tests if squeeze produces the optimal result
+helpers ← ⊑•args
+r ← helpers.GetRand@
+⟨EEqual, ClearRefs, Variation, Unshare, Squeeze, Type⟩ ← •internal
 
 ntn ← "bit"‿"i8"‿"i16"‿"i32"‿"f64"
 ntv ← "Ab"‿"Ai8"‿"Ai16"‿"Ai32"‿"Af64"
@@ -13,7 +14,7 @@ ctn ← "c8"‿"c16"‿"c32"
 ctv ← "Ac8"‿"Ac16"‿"Ac32"
 cmax ← 1114112⌊2⋆8×2⋆↕3
 
-⟨specF64⟩ ← ⟨r⟩ •Import "utils.bqn"
+⟨specF64⟩ ← ⟨r⟩ helpers.Import "utils.bqn"
 spec ← specF64∾{⇐}∾"a⍉𝕨"∾(@+1114111-↕5)∾<"foo"
 
 RandEl ← r.Range∘3◶⟨
@@ -51,30 +52,24 @@ Do ← { 𝕊:
   
   { 
     arrv ← 𝕩 Variation arr
+    arrv0 ← Unshare arrv
     sq ← Squeeze arrv
     sqt ← Type sq
     sqt↩{
          "arr"≡¯3↑sqt?  ¯3↓sqt;
       !"slice"≡¯5↑sqt ⋄ ¯5↓sqt
     }
-    ¬ (arrv EEqual arr) ∧ (arrv EEqual sq) ∧ (⊑(<sqt) ∊ tOut)?
+    ¬ (arrv0 EEqual arr) ∧ (arrv0 EEqual sq) ∧ (⊑(<sqt) ∊ tOut)?
       •Out "Fail:"
       •Out "Array: "∾•Repr arr
       •Out "Squeezed: "∾•Repr sq
       •Out "Testing variation "∾•Repr 𝕩
       •Out "Got: "∾(Type sq)∾" / "∾sqt
       •Out "Expected one of: "∾•Repr tOut
-      •Exit 1
+      !0
     ;@
   }¨ tIn
   ClearRefs@
-}
-
-n0a ← "Af64" Variation 1↓1‿1‿¯1×π‿0‿0
-n0b ← Squeeze n0a
-{
-  n0a≡○÷n0b? •Out "Squeeze behavior on negative zero: keep";
-             •Out "Squeeze behavior on negative zero: discard"
 }
 
 Do¨ ↕100000
