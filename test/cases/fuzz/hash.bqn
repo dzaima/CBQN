@@ -1,6 +1,7 @@
+### WHOLE-FILE-TEST
 # note: tests only bit/i8/i16/i32 arrays; no f64/c8/c16/c32/generic array tests
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-R ← (•MakeRand •Show u).Range
+helpers ← ⊑•args
+R ← (helpers.GetRand@).Range
 
 M ← (2⋆32)⊸×⊸+´
 Test ← { 𝕊:
@@ -23,3 +24,4 @@ fails ← 0‿0
 {𝕊: fails+↩ Test@}¨↕1000
 •Out ∾⟨"Collisions: " ⋄ •Repr 0⊑fails ⋄ " (expected 0, assuming no actual hash collisions)"⟩
 •Out ∾⟨"Mismatches: " ⋄ •Repr 1⊑fails ⋄ " (expected 0)"⟩
+! 0 = 1⊑fails
