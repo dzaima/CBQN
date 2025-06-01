@@ -124,6 +124,7 @@ Run ← { 𝕊 testname:
         enabled∧↩ {0‿0: 1; 1‿0: o.eachFills  ; 0‿1: ¬o.eachFills  } Flag¨ "%EACH_FILLS"‿"%!EACH_FILLS"
         enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%USZ64"
         enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%EACHFILLS"
+        enabled∧↩ ¬ o.noerr ∧ (⊑'⎊'∊str) ∧ ¬Flag "%ALLOW_CATCH"
         
         ln ⇐ i-1
         str ⇐ str # at end to let Flag have updated it
@@ -157,7 +158,6 @@ Run ← { 𝕊 testname:
     badCount ← 0
     badMessage ← 0
     currLn ← 0
-    skipped ← 0
     dir ← •file.At "testDir"
     •file.CreateDir⍟(¬•file.Exists) dir
     Bad ← {
@@ -178,16 +178,16 @@ Run ← { 𝕊 testname:
       ⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨helpers,"arg0",1⟩⟩ •BQN 𝕩
     }
     EvalS ← •BQN⎊{𝕊: Bad "Computing expected value errored" ⋄ "(could not compute expected value)"}
+    
     toRun ← tests
     toRun {{𝕩.enabled}∘⊑¨⊸/𝕩}↩
-    skipped+↩ (≠tests)-≠toRun
+    skipped ← (≠tests)-≠toRun
     results ← {
-      "eval"‿str: {
-        o.noerr? ⊑'⎊'∊str? skipped+↩1;
+      ns‿"eval"‿str: {
         Eval _catch_ {𝕊: Bad "Expected success, got error: "∾ErrMsg@} str
         @
       };
-      "error"‿str‿exp: {
+      ·‿"error"‿str‿exp: {
         o.noerr? skipped+↩1;
         ok‿got ← (1⋈Eval)⎊(0⋈ErrMsg) str
         exp ↩ EvalS⍟{×≠Trim𝕩} exp
@@ -199,8 +199,7 @@ Run ← { 𝕊 testname:
           got
         }
       };
-      "equal"‿str‿exp: {
-        o.noerr? ⊑'⎊'∊str? skipped+↩1;
+      ns‿"equal"‿str‿exp: {
         ok‿got ← (1⋈Eval)_catch_(0⋈ErrMsg) str
         exp ↩ EvalS exp
         {
@@ -211,7 +210,7 @@ Run ← { 𝕊 testname:
         }
         @
       }
-    }∘{currLn↩(⊑𝕩).ln ⋄ 1↓𝕩}¨ toRun
+    }∘{currLn↩(⊑𝕩).ln ⋄ 𝕩}¨ toRun
     
     {𝕊:
       res‿desc ← ({@≡𝕩? 0; (¬⊑(@+10)∊𝕩) ∧ ¬∨´"TEST FAIL"⍷𝕩}¨ results)⊸/¨ results‿toRun

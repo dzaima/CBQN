@@ -45,6 +45,7 @@ tests:
   %SLOW # enable only if 'slow' argument present
   %!DEBUG # disable if 'debug' argument present
   %!HEAPVERIFY # disable if 'heapverify' argument present
+  %ALLOW_CATCH # allow running in noerr mode even if ⎊ is present
   %!PROPER_FILLS # enable only if has PROPER_FILLS==0
   %PROPER_FILLS # enable only if has PROPER_FILLS==1
 ```
