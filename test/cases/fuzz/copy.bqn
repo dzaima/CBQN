@@ -1,6 +1,8 @@
+### WHOLE-FILE-TEST
+# tests full array copying via •internal.Variation
+helpers ← ⊑•args
+R ← (helpers.GetRand@).Range
 ⟨Variation, ListVariations, ClearRefs⟩ ⇐ •internal
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-R ← (•MakeRand •Show u).Range
 
 vn ← "Ab"‿"Ai8"‿"Ai16"‿"Ai32"‿"Af64"‿"Ac8"‿"Ac16"‿"Ac32"‿"Ah"‿"Af"
 vi ←⟨0,   0,    0,     0,     1,     2,    2,     2,     1,   1⟩
@@ -14,7 +16,7 @@ vf ↩ ∾⟜(8↓vn)¨ vf
 vf ↩ (↕10) {𝕩 ∾ 'S'∾¨ 1↓¨ (𝕨=0)↓𝕩}¨ vf
 vf ↩ {𝕩 ∾ ∾⟜"Inc"¨ 𝕩}¨ vf
 
-•Show¨ vf
+# •Show¨ vf
 
 count ← 10000
 eqlen ← 0
@@ -44,7 +46,7 @@ eqlen ← 0
       a0 ≡ a1?1;
       •Out "fail:"
       •Show v0‿"→"‿𝕩
-      •Exit 1
+      !0
     }¨ vs
   }¨ vs
   ClearRefs@
