@@ -283,6 +283,7 @@ helpers ← {
   
   GetRand ⇐ {𝕊: •MakeRand (GetTestState@).rand.Range 1e9}
   
+  AtRoot ⇐ {𝕊: •file.At 𝕩}
   Import ⇐ {𝕊: 𝕨 •Import •file.At 𝕩}
   
   _eqvar ⇐ {𝔽 _eqvar0_ ListVariations}
