@@ -1,9 +1,8 @@
-# make o3n-singeli && ./BQN test/equal.bqn
+### WHOLE-FILE-TEST
+# tests 𝕨 ≡ 𝕩
+helpers ← ⊑•args
+r ← helpers.GetRand@
 ⟨ListVariations, ClearRefs, Variation, Squeeze, Info⟩ ← •internal
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-# u ↩ 123
-
-r ← •MakeRand •Show u
 
 TestVars ← { w𝕊a‿b:
   n ← ¬w
@@ -13,14 +12,14 @@ TestVars ← { w𝕊a‿b:
     •Out •Repr a
     •Out •Repr b
     •Out •Repr a≠b
-    •Exit 1
+    !0
   }⌜ ListVariations b
   ClearRefs@
 }
 
 (1 TestVars ⋈˜)¨ ⟨⟨⟩ ⋄ "" ⋄ ↕0⟩
 
-⟨RandVals⟩ ← ⟨r⟩ •Import "utils.bqn"
+⟨RandVals⟩ ← ⟨r⟩ helpers.Import "utils.bqn"
 
 Do ← { 𝕊:
   at ← r.Range 8

@@ -8,7 +8,6 @@ test/x86Cfgs.sh  path/to/mlochbaum/BQN // run the test suite for x86-64-specific
 test/moreCfgs.sh path/to/mlochbaum/BQN // run "2+2" in a bunch of configurations; requires dzaima/BQN to be accessible as dbqn
 test/run.bqn // run tests in test/cases/
 ./BQN test/cmp.bqn // fuzz-test scalar comparison functions =≠<≤>≥
-./BQN test/equal.bqn // fuzz-test 𝕨≡𝕩
 ./BQN test/copy.bqn // fuzz-test creating new arrays with elements copied from another
 ./BQN test/mut.bqn // fuzz-test mut.h (currently just bitarr fill)
 ./BQN test/various.bqn // tests for various small things
