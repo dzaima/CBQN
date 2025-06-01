@@ -1,8 +1,10 @@
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-ro← •MakeRand •Show u
+### WHOLE-FILE-TEST
+# •HashMap fuzzing
+helpers ← ⊑•args
+ro ← helpers.GetRand@
 R ← ro.Range
 
-err ← 1  # Run operations that should error
+err ← ¬helpers.shouldNotError # %ALLOW_CATCH
 
 Test ← {iter 𝕊 n:
   # Global set of keys that might be used
