@@ -1,6 +1,8 @@
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-
-Range ← (•MakeRand •Show u).Range
+### WHOLE-FILE-TEST
+# tests (•MakeRand x).Range itself
+helpers ← ⊑•args
+seed0 ← (helpers.GetRand@).Range 1e18
+Range ← (•MakeRand seed0).Range
 
 ExpectedRangeStep ← { n‿len𝕊depth‿max:
   ls ← {𝕊:len Range max}¨↕n
@@ -31,11 +33,11 @@ ExpectedRange ← ExpectedRangeStep⟜(0⊸⋈)
 # •Show (+´÷≠) |{𝕊:  10‿1000 ExpectedRange 1e6}¨↕10000
 
 am ← 10000
-•Out "general"
+# •Out "general"
 ((500+↕20)∾↕10) {(⌊(5×am)÷𝕨⌈1)‿𝕨 ExpectedRange 𝕩}⌜ 3‿10‿100‿1000‿10000‿100000‿1e8‿1e15 ∾ ⥊¯1‿0‿1+⌜2⋆2↓↕34
 (↕10) {! ∧´0=𝕩 Range 1}⌜ ↕200
 
-•Out "bit boolean"
+# •Out "bit boolean"
 {⟨5×am,𝕩⟩ ExpectedRange 2}¨ ⥊31‿32‿33×⌜↕100
-•Out "float"
+# •Out "float"
 {⟨2×am,𝕩⟩ ExpectedRange 0}¨ ↕100

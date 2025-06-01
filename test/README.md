@@ -8,7 +8,6 @@ test/x86Cfgs.sh  path/to/mlochbaum/BQN // run the test suite for x86-64-specific
 test/moreCfgs.sh path/to/mlochbaum/BQN // run "2+2" in a bunch of configurations; requires dzaima/BQN to be accessible as dbqn
 test/run.bqn // run tests in test/cases/
 ./BQN test/various.bqn // tests for various small things
-./BQN test/random.bqn // test (•MakeRand n).Range
 ./BQN test/joinReuse.bqn // test in-place join; requires -DPRINT_JOIN_REUSE
 make -C test/ffi // test FFI functionality; expects both regular and shared library CBQN builds to already exist
 
