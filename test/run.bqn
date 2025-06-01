@@ -77,7 +77,10 @@ searchRefine ← {
 
 exitCode ← 0
 Run ← { 𝕊 testname:
-  lns ← •FLines fullfile ← "cases"•file.At filename ← ".bqn" ∾˜⍟(⊣≢-∘≠⊸↑) testname
+  filename ← testname
+  filename ".bqn"⊸(∾˜⍟(⊣≢-∘≠⊸↑))↩
+  filename "test/cases/"⊸(≠⊸↓⍟(⊣≡≠⊸↑))↩
+  lns ← •FLines fullfile ← "cases"•file.At filename
   {
     1≤≠lns?
     "### WHOLE-FILE-TEST" ≡ ⊑lns?
