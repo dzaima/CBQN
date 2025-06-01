@@ -1,9 +1,7 @@
+### WHOLE-FILE-TEST
+# tests bit_cpy
+r ← (⊑•args).GetRand@
 ⟨Temp, Type, Unshare, Squeeze, Info, Variation⟩ ← •internal
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-# u ↩ 123
-
-r ← •MakeRand •Show u
-
 
 Do ← { 𝕊:
   al ← 1+r.Range 500
@@ -32,10 +30,10 @@ Do ← { 𝕊:
       •Out "x:   "∾F b
       •Out "xs:  "∾•Repr bs
       •Out "l:   "∾•Repr bl
-      •Exit 1
+      !0
     ;0
   }∘@⍟500 @
   ! a ≡ aT
 }
 
-@∘Do⍟(⊑(•BQN¨•args)∾2000) @
+@∘Do⍟2000 @
