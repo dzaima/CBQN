@@ -1,5 +1,6 @@
-u ← ⌊100×(•UnixTime+1|100×•MonoTime)@
-Range ← (•MakeRand •Show u).Range
+### WHOLE-FILE-TEST
+helpers ← ⊑•args
+Range ← (helpers.GetRand@).Range
 
 Do ← {𝕊:
   orig ← (1000⌊𝕩) Range 2
@@ -14,7 +15,7 @@ Do ← {𝕊:
     •Show '0'+mut
     •Show '0'+exp
     •Show s‿l‿v
-    •Exit 1;
+    !0;
   𝕩
 }
 

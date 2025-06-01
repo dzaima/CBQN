@@ -370,7 +370,7 @@ B internalTemp_c2(B t, B w, B x) {
     #endif
     
     #if TEST_UTILS
-      case 201: { // test/mut.bqn
+      case 201: { // test/cases/fuzz/bitarr-fill.bqn
         SGetU(x)
         FILL_TO(tyarr_ptr(GetU(x,4)), o2s(GetU(x,0)), o2s(GetU(x,1)), GetU(x,2), o2s(GetU(x,3)));
         return x;
