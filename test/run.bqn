@@ -167,6 +167,7 @@ Run ← { 𝕊 testname:
     {𝕊: 1 •internal.Temp o.seed}_addPreEval o.randomizeHeuristics
     
     Eval ← {
+      currTestState ↩ @
       PreEval@
       ⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨helpers,"arg0",1⟩⟩ •BQN 𝕩
     }
@@ -229,6 +230,13 @@ Run ← { 𝕊 testname:
   }⍟o.run @
 }
 
+currTestState ← @
+GetTestState ← @⊸≡◶⊢‿{ 𝕊:
+  currTestState ↩ {
+    rand ⇐ •MakeRand o.seed
+  }
+} {𝕊: currTestState}
+
 helpers ← {
   ⟨TV⇐Variation, CLR⇐ClearRefs, HasFill, EEqual, ListVariations⟩ ← •internal
   indistinguishable ← {⟨I⇐Indistinguishable⟩: I; EEqual} •internal
@@ -262,6 +270,8 @@ helpers ← {
     }¨ class ⊔ r
     ⊑r
   }
+  
+  GetRand ⇐ {𝕊: •MakeRand (GetTestState@).rand.Range 1e9}
   
   _eqvar ⇐ {𝔽 _eqvar0_ ListVariations}
   _eqvarv_ ⇐ {𝔽 _eqvar0_ (𝕘⊸ListVariations)}
