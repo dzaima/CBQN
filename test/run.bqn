@@ -250,6 +250,8 @@ helpers ← {
     w F _𝕣_ LV x: (CLR@) ⊢ (LV 𝕨) {(𝕨 TV w) F 𝕩 TV x}⌜ LV 𝕩
   }
   
+  shouldNotError ⇐ o.noerr
+  
   {o.heapverify? Indistinguishable↩EEqual; @}
   Classify ← {(≢𝕩)⥊ ⊐Indistinguishable⌜˜ ⥊𝕩}
   

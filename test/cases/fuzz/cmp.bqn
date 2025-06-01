@@ -1,5 +1,7 @@
-noerr←≠•args
-•Out⍟noerr "Not executing tests that would error"
+### WHOLE-FILE-TEST
+# tests scalar comparison functions =≠<≤>≥
+helpers ← ⊑•args
+noerr ← helpers.shouldNotError # %ALLOW_CATCH
 fns ← =‿≠‿<‿≤‿>‿≥
 n ← 0÷0
 nn ← -n
@@ -31,7 +33,7 @@ ElType ← •internal.ElType
 
 NEas ← ((⊑¨∊=‿≠˙) ∨ 8≠·ElType 2⊑¨⊢)⊸/
 
-•Out "AS"
+# •Out "AS"
 {
 fn‿arr‿atm:
   C@ ⋄ ∧´(⊏≡¨⊢) {(𝕩 V arr) Fn⎊"err" atm}¨ LV arr?0;
@@ -41,10 +43,10 @@ fn‿arr‿atm:
   •Show fn
   •Show atm
   •Show ⍉(LV arr)≍{(𝕩 V arr) Fn⎊"err" atm}¨ LV arr
-  •Exit 1
+  ! 0
 }¨ NEas⍟noerr ⥊(<⟨⟩)<⊸∾⌜´ fns‿arrs‿atms
 
-•Out "AA"
+# •Out "AA"
 {
 fn‿l‿r:
   C@
