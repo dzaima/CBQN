@@ -78,6 +78,12 @@ searchRefine ← {
 exitCode ← 0
 Run ← { 𝕊 testname:
   lns ← •FLines fullfile ← "cases"•file.At filename ← ".bqn" ∾˜⍟(⊣≢-∘≠⊸↑) testname
+  {
+    1≤≠lns?
+    "### WHOLE-FILE-TEST" ≡ ⊑lns?
+    lns ↩ ⟨"("⟩∾(1↓lns)∾⟨")"⟩
+    ;@
+  }
   defk‿defv ← ⟨"IS_HEAPVERIFY"⟩‿⟨"heapverify←"∾•Repr o.heapverify⟩
   i ← 0
   Pos ← {∾⟨filename, ":", •Repr 1+𝕩⟩}
@@ -89,7 +95,7 @@ Run ← { 𝕊 testname:
     ;
       "":@
     ;
-      '#'≡⊑𝕩? @
+      '#'≡⊑𝕩? ¬⊑(@+10)∊𝕩? @
     ;
       "("≡𝕩?
         Process ∾ ∾⟜(@+10)¨ ¯1↓ ∾⟜<⟜Next•_while_{")"≢¯1⊑𝕩} ⟨Next@⟩
