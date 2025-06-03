@@ -717,20 +717,15 @@ def insert_wide{op, rev, V=[vw]T, n==4, r:*T, x0:*T, len, wid} = {
     if (rev) end += (l &~ (b-1))*wid
     else end = x0 + ((l & (b-1)) + 2)*wid
   }
-  # Compute position of second half for overlapping columns
-  e2:usz = 0; e4:usz = 0
-  nj := wid/nvw; q := wid%nvw
-  if (q > 0) {
-    e4 = wid - 2*vw
-    if (q <= vw) { --nj; e2 = nj*nvw + vw }
-    else  if (q <= 2*vw) { e4 = 0; e2 = wid - vw }
-  }
   while (1) {
-    def ins_col{offset, inds} = {
+    # Reduce c vector columns, with halves starting at j and j+o
+    def ins_col{c, j, o} = {
       def each_i{f, p, ...a} = {
-        def pis = flat_table{tup,each{~~{*V,.},p},inds}
+        def pis = flat_table{tup, each{~~{*V,.},p}, iota{c/2}}
         each{{pi,...v} => f{...pi,...v}, pis, ...a}
       }
+      assert{o <= (c/2)*vw}
+      def offset{p} = { pj := p + j; tup{pj, pj + o} }
       x := offset{xc}
       rv := each_i{load, offset{s}}
       do {
@@ -739,11 +734,21 @@ def insert_wide{op, rev, V=[vw]T, n==4, r:*T, x0:*T, len, wid} = {
       } while (lt{select{x,0}, end})
       each_i{store, offset{r}, rv}
     }
-    j:usz = 0
-    @for (nj)   { ins_col{{p} => tup{p + j},         iota{n}}; j += nvw }
-    if (e2 > 0) { ins_col{{p} => tup{p + j, p + e2}, iota{1}}; j = e2 + vw }
-    if (e4 > 0)   ins_col{{p} => tup{p + j, p + e4}, iota{2}}
-
+    # Break into columns of 4 and maybe one of 2
+    j:usz = 0; o:usz = 2*vw
+    def break = makelabel{}; while (1) {
+      rem := wid - j
+      if (rem < 5*vw) {  # 5*vw is full 4 plus squashed 2
+        if (rem <= 2*vw) {
+          if (rem > 0) ins_col{2, j, rem - vw}
+          goto{break}
+        }
+        o = (rem-1)%(2*vw) + 1  # Leave a full 2 if rem > 4*vw
+      }
+      ins_col{4, j, o}
+      j += o + 2*vw
+    }
+    setlabel{break}
     if (end == final_end) return{}
     s = r
     xc = end; if (rev) xc -= wid
