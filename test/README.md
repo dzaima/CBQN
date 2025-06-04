@@ -1,25 +1,27 @@
 ## Tests
 
-Must be run from the projects root directory. Some tests require `-DTEST_UTILS` (enabled by default in debug builds)
+All of the below must be ran from the project's root directory. Some tests require `-DTEST_UTILS` (enabled by default in debug builds)
 
 ``` C
 test/mainCfgs.sh path/to/mlochbaum/BQN // run the test suite for a couple primary configurations
 test/x86Cfgs.sh  path/to/mlochbaum/BQN // run the test suite for x86-64-specific configurations, including singeli; 32-bit build is "supposed" to fail one test involving ⋆⁼
 test/moreCfgs.sh path/to/mlochbaum/BQN // run "2+2" in a bunch of configurations; requires dzaima/BQN to be accessible as dbqn
 test/run.bqn // run tests in test/cases/
-./BQN test/joinReuse.bqn // test in-place join; requires -DPRINT_JOIN_REUSE
 make -C test/ffi // test FFI functionality; expects both regular and shared library CBQN builds to already exist
 
-legacy utilities:
+legacy things:
+  test/joinReuse.bqn // test in-place join; requires -DPRINT_JOIN_REUSE
   test/readTests.bqn // read mlochbaum/BQN tests in various formats
-  test/precompiled.bqn // run a precompiled expression 
+  test/precompiled.bqn // run a precompiled expression
 ```
 
 Format of tests in `test/cases/`:
 ```python
 %DEF somename some code # add a definition to be used by later tests or other %DEFs
 %USE somename # copy-paste in the code of the given definition to here
+# if the first line is "### WHOLE-FILE-TEST", the whole file is a single test
 tests:
+  # •args contains `helpers‿"arg0"‿1`, "helpers" being run.bqn's variable of the same name
   code that runs some !assertions # if there are no '!'s, 'lint' will complain
   !"error message" % erroring code # can be written as "!% erroring code" at first, and let 'update-messages' insert the message
   code %% expected value
