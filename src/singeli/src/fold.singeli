@@ -695,65 +695,45 @@ def insert_generic{op, rev, r:*T, x0:*T, len, wid} = {
     s = r
   }
 }
-def insert_wide{op, rev, V=[vw]T, n==4, r:*T, x0:*T, len, wid} = {
-  # Accumulate columns of n registers, or sometimes less
-  def nvw = n*vw
-  if (not rev) assert{wid >= nvw}
-  else if (wid <= vw) {
-    x := x0 + (len-1)*wid
-    rv := load{*V~~x}; x -= wid
-    while (x >= x0) { rv = op{rv, load{*V~~x}}; x -= wid }
-    store_blended_hom{*V~~r, mask_of_first{V, wid}, rv}
-    return{}
+
+# Break into columns of 4 and maybe one of 2
+def iter_columns_4{vw, wid, on_col_h} = {
+  def on_col{c, j, o} = {
+    def h = c/2
+    assert{o <= h*vw}
+    on_col_h{h, j, o}
   }
-  def {inc, lt} = if (not rev) tup{+=, <} else tup{-=, >=}
-  s := x0; if (rev) s += (len-1)*wid
-  xc := s; inc{xc, wid}
-  end := x0; if (not rev) end += len*wid; final_end := end
-  # Group rows if there will be multiple columns
-  def b = 32
-  if (wid > nvw) {
-    l := len - 2
-    if (rev) end += (l &~ (b-1))*wid
-    else end = x0 + ((l & (b-1)) + 2)*wid
-  }
-  while (1) {
-    # Reduce c vector columns, with halves starting at j and j+o
-    def ins_col{c, j, o} = {
-      def each_i{f, p, ...a} = {
-        def pis = flat_table{tup, each{~~{*V,.},p}, iota{c/2}}
-        each{{pi,...v} => f{...pi,...v}, pis, ...a}
+  j:usz = 0; o:usz = 2*vw
+  def break = makelabel{}; while (1) {
+    rem := wid - j
+    if (rem < 5*vw) {  # 5*vw is full 4 plus squashed 2
+      if (rem <= 2*vw) {
+        if (rem > 0) on_col{2, j, rem - vw}
+        goto{break}
       }
-      assert{o <= (c/2)*vw}
-      def offset{p} = { pj := p + j; tup{pj, pj + o} }
-      x := offset{xc}
-      rv := each_i{load, offset{s}}
-      do {
-        rv = each{op, rv, each_i{load, x}}
-        each{inc{.,wid}, x}
-      } while (lt{select{x,0}, end})
-      each_i{store, offset{r}, rv}
+      o = (rem-1)%(2*vw) + 1  # Leave a full 2 if rem > 4*vw
     }
-    # Break into columns of 4 and maybe one of 2
-    j:usz = 0; o:usz = 2*vw
-    def break = makelabel{}; while (1) {
-      rem := wid - j
-      if (rem < 5*vw) {  # 5*vw is full 4 plus squashed 2
-        if (rem <= 2*vw) {
-          if (rem > 0) ins_col{2, j, rem - vw}
-          goto{break}
-        }
-        o = (rem-1)%(2*vw) + 1  # Leave a full 2 if rem > 4*vw
-      }
-      ins_col{4, j, o}
-      j += o + 2*vw
-    }
-    setlabel{break}
-    if (end == final_end) return{}
-    s = r
-    xc = end; if (rev) xc -= wid
-    inc{end, b*wid}
+    on_col{4, j, o}
+    j += o + 2*vw
   }
+  setlabel{break}
+}
+def fold_columns_4{inc,lt, op,V=[vw]_, s,x0,xend,r, wid} = {
+  iter_columns_4{vw,wid, {h, j, o} => {
+    # Reduce one (multi-vector) column
+    def offset{p} = { def pj = p + j; tup{pj, pj + o} }
+    def each_i{f, p, ...a} = {
+      def pis = flat_table{tup, each{~~{*V,.},p}, iota{h}}
+      each{{pi,...v} => f{...pi,...v}, pis, ...a}
+    }
+    rv := each_i{load, offset{s}}
+    x := offset{x0}
+    do {
+      rv = each{op, each_i{load, x}, rv}
+      each{inc{.,wid}, x}
+    } while (lt{select{x,0}, xend})
+    each_i{store, offset{r}, rv}
+  }}
 }
 
 fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
@@ -770,19 +750,45 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
         {{...rv}} => write_reg{r0, rv, wb}
       }
     } else {
-      insert_wide{op, 0, V, 4, *T~~r0, *T~~x0, len, wid}
+      r := *T~~r0; s := *T~~x0; x := s + wid
+      final_end := s + len*wid
+      def b = 32  # Maximum rows at a time, for cache reuse between columns
+      end := s + (((len-2) & (b-1)) + 2)*wid
+      while (1) {
+        fold_columns_4{+=,<, op,V, s,x,end,r, wid}
+        if (end == final_end) return{}
+        s = r
+        x = end; end += b*wid
+      }
     }
   }
 }
 
-fn insert_non_assoc{T, op}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
+fn insert_non_assoc{T, op}(rp:*void, xp:*void, len:usz, wid:usz) : void = {
   assert{len > 1}
-  def args = tup{*T~~r0, *T~~x0, len, wid}
+  r := *T~~rp; x0 := *T~~xp
   if (not has_simd) {
-    insert_generic{op, 1, ...args}
+    insert_generic{op, 1, r, x0, len, wid}
   } else {
-    def V = [arch_defvw{} / width{T}]T
-    insert_wide{op, 1, V, 4, ...args}
+    def vw = arch_defvw{} / width{T}; def V = [vw]T
+    s := x0 + (len-1)*wid
+    if (wid <= vw) {
+      x := s
+      rv := load{*V~~x}; x -= wid
+      while (x >= x0) { rv = op{rv, load{*V~~x}}; x -= wid }
+      store_blended_hom{*V~~r, mask_of_first{V, wid}, rv}
+    } else {
+      x := s - wid; end := x0
+      # Group rows only if there will be multiple columns
+      def b = 32; if (wid > 4*vw) end += ((len-2) &~ (b-1))*wid
+      while (1) {
+        fold_columns_4{-=,>=, op,V, s,x,end,r, wid}
+        if (end == x0) return{}
+        s = r
+        x = end - wid
+        end -= b*wid
+      }
+    }
   }
 }
 
