@@ -697,35 +697,37 @@ def insert_generic{op, rev, r:*T, x0:*T, len, wid} = {
 }
 
 # Break into columns of 4 and maybe one of 2
-def iter_columns_4{vw, wid, on_col_h} = {
-  def on_col{c, j, o} = {
-    def h = c/2
+def iter_columns_4{vw, wid, on_col} = {
+  def run_col{c, j, o} = {
+    def h = c/2; def ih = iota{h}
     assert{o <= h*vw}
-    on_col_h{h, j, o}
+    def offset{   p} = { def pj =      p + j ; tup{pj, pj + o} }
+    def offset{T, p} = { def pj = *T~~(p + j); tup{pj, pj + o} }
+    def each_i{V, f, p, ...a} = {
+      def pis = flat_table{tup, each{~~{*V,.},p}, ih}
+      each{{pi,...v} => f{...pi,...v}, pis, ...a}
+    }
+    on_col{offset, each_i, {} => h*vw + o}
   }
   j:usz = 0; o:usz = 2*vw
   def break = makelabel{}; while (1) {
     rem := wid - j
     if (rem < 5*vw) {  # 5*vw is full 4 plus squashed 2
       if (rem <= 2*vw) {
-        if (rem > 0) on_col{2, j, rem - vw}
+        if (rem > 0) run_col{2, j, rem - vw}
         goto{break}
       }
       o = (rem-1)%(2*vw) + 1  # Leave a full 2 if rem > 4*vw
     }
-    on_col{4, j, o}
+    run_col{4, j, o}
     j += o + 2*vw
   }
   setlabel{break}
 }
 def fold_columns_4{inc,lt, op,V=[vw]_, s,x0,xend,r, wid} = {
-  iter_columns_4{vw,wid, {h, j, o} => {
+  iter_columns_4{vw,wid, {offset, each_i_g, _} => {
     # Reduce one (multi-vector) column
-    def offset{p} = { def pj = p + j; tup{pj, pj + o} }
-    def each_i{f, p, ...a} = {
-      def pis = flat_table{tup, each{~~{*V,.},p}, iota{h}}
-      each{{pi,...v} => f{...pi,...v}, pis, ...a}
-    }
+    def each_i = each_i_g{V, ...}
     rv := each_i{load, offset{s}}
     x := offset{x0}
     do {
@@ -792,10 +794,35 @@ fn insert_non_assoc{T, op}(rp:*void, xp:*void, len:usz, wid:usz) : void = {
   }
 }
 
+# Integer addition: result type is twice as wide as argument type
+def mzip{a:V, b:V if w256{V}} = {
+  def z = mzip128{a, b}
+  each{vec_select{128, z, .}, table{+, iota{2}, tup{0,2}}}
+}
+def insert_generic{op, 0, r:*R, x0:*T, len, wid if width{R}==2*width{T}} = {
+  f := x0
+  x := x0 + wid
+  def pr = promote{R, .}
+  @for (r, f, x over wid) r = op{pr{f}, pr{x}}
+  @for (len - 2) {
+    x += wid
+    @for (r, x over wid) r = op{r, pr{x}}
+  }
+}
+fn insert_add_widen{T, R}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
+  assert{len > 1}
+  def op = +
+  def args = tup{*R~~r0, *T~~x0, len, wid}
+  insert_generic{op, 0, ...args}
+}
+
 def minvalue{(f64)} = -1/0
 def maxvalue{(f64)} =  1/0
 export_tab{'si_insert_minmax', flat_table{
   {{op, mv}, T} => insert_assoc{T, op, mv{T}},
   tup{tup{__min,maxvalue}, tup{__max,minvalue}}, tup{i8,i16,i32,f64}
 }}
+export_tab{'si_insert_add_widen',
+  each{insert_add_widen, tup{i16,i32}, tup{i32,f64}}
+}
 export{'si_insert_add_f64', insert_non_assoc{f64, +}}

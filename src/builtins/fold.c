@@ -512,6 +512,20 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       );
       decG(x); return taga(r);
     }
+    if ((xe==el_i16 || xe==el_i32) && rtid==n_add && len>2 && len <= 1ull<<(8<<(xe-el_i8)) && len<=1<<22) {
+      usz* xsh = SH(x);
+      usz c = shProd(xsh, 1, xr);
+      Arr* r; void* rp = m_tyarrp(&r,2*elWidth(xe),c,el2t(1+xe));
+      if (xr>2) {
+        ShArr* rsh = m_shArr(xr-1);
+        shcpy(rsh->a, xsh+1, xr-1);
+        arr_shSetUG(r, xr-1, rsh);
+      } else {
+        arr_shVec(r);
+      }
+      si_insert_add_widen[xe-el_i16](rp, tyany_ptr(x), len, c);
+      decG(x); return taga(r);
+    }
     #endif
     if (len>2 && HEURISTIC(xia<6*(u64)len)) {
       return insert_scal(f, c2fn(f), x, 0, m_f64(0), xia, xr-1);
