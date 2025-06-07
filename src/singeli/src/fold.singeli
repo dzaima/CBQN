@@ -809,11 +809,77 @@ def insert_generic{op, 0, r:*R, x0:*T, len, wid if width{R}==2*width{T}} = {
     @for (r, x over wid) r = op{r, pr{x}}
   }
 }
+def insert_add_wide{op, V=[vw]T, r:*R, x0:*T, len, wid} = {
+  s := x0; xc := s + wid
+  final_end := x0 + len*wid
+  def b = 32
+  end := x0 + (((len-2) & (b-1)) + 2)*wid
+  def {exp, corr} = {
+    def sh = width{T}/2
+    def m = V**(1<<sh - 1)
+    def exp{v} = tup{v, v>>sh}
+    def corr{{lo,hi}} = { hi = (hi + m&(lo>>sh - hi)) >> sh }
+    tup{exp, corr}
+  }
+  # To avoid interleaving after each row, we treat r as *T
+  # but stripe results as (lo, hi) in columns
+  ds:usz = 0  # Whether s is striped
+  while (1) {
+    iter_columns_4{vw,wid, {offset, each_i_g, get_cw} => {
+      def each_i = each_i_g{V, ...}
+      def cw = get_cw{}; def hi_off{p} = *V~~(*T~~p + cw)
+      def load_exp{...a} = exp{load{...a}}
+      # Fold using expanded form
+      rv := each_i{load_exp, offset{s}}; s += ds & cw
+      x := offset{xc}
+      do {
+        rv = each{each{op,...}, rv, each_i{load_exp, x}}
+        each{+={.,wid}, x}
+      } while (select{x,0} < end)
+      # Convert hi from overlapping with lo to separate
+      each{corr, rv}
+      # Add existing high part for row groups other than the first
+      # Can't interleave this with stores, as the pointers may overlap
+      if (ds!=0) {
+        def load_add{p,i,{_,hi}} = { hi += load{hi_off{p}, i} }
+        each_i{load_add, offset{T, r}, rv}
+      }
+      if (end != final_end) {
+        # Write both halves, type T (correct high half for lo signedness)
+        def st_h{p,i,{lo,hi}} = {
+          store{p, i, lo}
+          store{hi_off{p}, i, hi - V~~(lo < V**0)}
+        }
+        each_i{st_h, offset{T, r}, rv}
+      } else {
+        # Interleave to final format, type R
+        def st_z{p,i,lh} = each{store{p, ...}, 2*i+iota{2}, mzip{...lh}}
+        each_i_g{re_el{R,V}, st_z, offset{r}, rv}
+      }
+    }}
+    if (end == final_end) goto{'done'}
+    s = *T~~r; ds = maxvalue{usz}
+    xc = end; end += b*wid
+  }
+  setlabel{'done'}
+}
 fn insert_add_widen{T, R}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   assert{len > 1}
   def op = +
   def args = tup{*R~~r0, *T~~x0, len, wid}
-  insert_generic{op, 0, ...args}
+  if (not has_simd) {
+    insert_generic{op, 0, ...args}
+  } else {
+    def vw = arch_defvw{} / width{T}
+    if (wid < 4*vw) {
+      insert_generic{op, 0, ...args}
+    } else {
+      def I = w_d{T}
+      def {r,..._} = args; ri := *I~~r0
+      insert_add_wide{op, [vw]T, ri, ...slice{args,1}}
+      if (R != I) @for (r, ri over wid) r = cast_i{R, ri}
+    }
+  }
 }
 
 def minvalue{(f64)} = -1/0
