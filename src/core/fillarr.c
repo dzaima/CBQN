@@ -204,11 +204,18 @@ NOINLINE B m_vec1(B x) { return m_oneItemArr(x, 1); }
 
 
 NOINLINE Arr* emptyArr(B x, ur xr) {
+  assert(isArr(x));
+  u8 xe = TI(x,elType);
+  if (xr==1) {
+    if (elNum(xe)) goto numVec;
+    if (elChr(xe)) goto chrVec;
+    assert(xe == el_B);
+  }
   B xf = getFillR(x);
   if (xr==1) {
-    if (isF64(xf)) return a(emptyIVec());
-    if (noFill(xf)) return a(emptyHVec());
-    if (isC32(xf)) return a(emptyCVec());
+    if (isF64(xf)) numVec: return a(emptyIVec());
+    if (noFill(xf))        return a(emptyHVec());
+    if (isC32(xf)) chrVec: return a(emptyCVec());
   }
   Arr* r;
   if      (isF64(xf))  { u64* rp; r = m_bitarrp(&rp, 0); }
