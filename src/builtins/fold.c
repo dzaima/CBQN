@@ -43,6 +43,7 @@
 #include "../builtins.h"
 #include "../utils/mut.h"
 #include "../utils/calls.h"
+extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 static const usz sum_small_max = 1<<16;
 #if SINGELI
@@ -109,6 +110,57 @@ static f64 sum_f64(void* xv, usz i, f64 r) {
 }
 static i64 (*const sum_small_fns[])(void*, usz) = { sum_small_i8, sum_small_i16, sum_small_i32 };
 static f64 (*const sum_fns[])(void*, usz, f64) = { sum_i8, sum_i16, sum_i32, sum_f64 };
+
+#if SINGELI
+B add_c2(B, B, B);
+B take_c2(B, B, B);
+static B insert_sum(B f, B x, ur xr, u8 xe, usz len) {
+  // Singeli handles one level of widening; use BQN + for more if needed
+  assert(len > 1);
+  assert(el_i8<=xe && xe<=el_i32);
+  usz* xsh = SH(x);
+  usz c = shProd(xsh, 1, xr);
+  usz k = xe - el_i8;      // log of bytes in an element
+  Arr* ra; void* tp = m_tyarrp(&ra,2<<k,c,el2t(1+xe));
+  if (xr>2) {
+    ShArr* rsh = m_shArr(xr-1);
+    shcpy(rsh->a, xsh+1, xr-1);
+    arr_shSetUG(ra, xr-1, rsh);
+  } else {
+    arr_shVec(ra);
+  }
+  B r = taga(ra);
+  usz b = xe>=el_i32 ? 20 : 8<<k; // log of max block length
+  usz nb = (len-2) >> b;          // number of blocks excluding last
+  u8* x0 = tyany_ptr(x);
+  void (*sum_fn)(void*,void*,usz,usz) = si_insert_add_widen[xe-el_i16];
+  if (LIKELY(nb == 0)) {
+    sum_fn(tp, x0, len, c);
+  } else {
+    usz bl = 1ull << b;    // block length
+    usz bb = c << (b+k);   // block size in bytes
+    u8* xs = x0 + nb * bb; // start of next block
+    usz ll = nb << b;
+    sum_fn(tp, xs, len - ll, c); len = ll;
+    // Write sums to t and accumulate in r
+    B t; tp = m_tyarrc(&t,2<<k,r,el2t(1+xe));
+    i64 lim = (1ull<<53) - (1ull<<(b+(8<<k)));
+    RangeFn range = getRange_fns[el_f64-el_bit]; i64 rg[2];
+    while (xs != x0) {
+      // Switch to single-row if we can't safely sum a block
+      u8 re = TI(r,elType); assert(elNum(re));
+      if (re==el_f64 && !(range(tyany_ptr(r), rg, c) && -lim<=rg[0] && rg[1]<=lim)) {
+        decG(t); return insert_base(f, C2(take, m_f64(len), x), 1, r);
+      }
+      xs -= bb; len -= bl;
+      sum_fn(tp, xs, bl, c);
+      r = C2(add, r, incG(t));
+    }
+    decG(t);
+  }
+  decG(x); return r;
+}
+#endif
 
 B sum_c1(B t, B x) {
   if (isAtm(x) || RNK(x)!=1) thrF("•math.Sum 𝕩: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
@@ -388,7 +440,6 @@ static B m1c1(B t, B f, B x) { // consumes x
   decG(fn);
   return r;
 }
-extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 static bool fillNumeric(B x) {
   if (x.u==0) return true;
@@ -512,19 +563,8 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       );
       decG(x); return taga(r);
     }
-    if ((xe==el_i16 || xe==el_i32) && rtid==n_add && len>2 && len <= 1ull<<(8<<(xe-el_i8)) && len<=1<<22) {
-      usz* xsh = SH(x);
-      usz c = shProd(xsh, 1, xr);
-      Arr* r; void* rp = m_tyarrp(&r,2*elWidth(xe),c,el2t(1+xe));
-      if (xr>2) {
-        ShArr* rsh = m_shArr(xr-1);
-        shcpy(rsh->a, xsh+1, xr-1);
-        arr_shSetUG(r, xr-1, rsh);
-      } else {
-        arr_shVec(r);
-      }
-      si_insert_add_widen[xe-el_i16](rp, tyany_ptr(x), len, c);
-      decG(x); return taga(r);
+    if (rtid==n_add && (el_i16<=xe && xe<=el_i32) && len>2) {
+      return insert_sum(f, x, xr, xe, len);
     }
     #endif
     if (len>2 && HEURISTIC(xia<6*(u64)len)) {
