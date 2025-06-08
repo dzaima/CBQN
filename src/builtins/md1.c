@@ -84,9 +84,11 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     ra_nosh = reshape_one(ria, f);
     goto nosh;
   } else if (RTID(f) == n_ltack) {
+    w = squeeze_any(w);
     r = replicate_by(xia, wia, w);
     goto arith_finish;
   } else if (RTID(f) == n_rtack) {
+    x = squeeze_any(x);
     ux xia = IA(x);
     if (ria<=xia) ra_nosh = TI(x,slice)(incG(x), 0, ria); // ria==0 or ria==xia; necessary as reshape_cycle doesn't handle those
     else ra_nosh = reshape_cycle(ria, xia, incG(x));
@@ -94,7 +96,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   } else if (isPervasiveDyExt(f)) {
     if (ria == 0) goto arith_empty;
     if (!TI(w,arrD1)) goto generic;
-    if (TI(x,arrD1) && wia>=4 && xia<2560>>arrTypeBitsLog(TY(x))) {
+    if (TI(x,arrD1) && wia>=4 && xia<2560>>arrTypeBitsLog(TY(x))) { // arrD1 checks imply that squeeze won't change fill (and the arith call will squeeze anyway)
       B expW, expX;
       if (0) {
         arith_empty:;
@@ -110,11 +112,11 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
       ra_nosh = RARE(!reusable(r))? cpyWithShape(r) : a(r);
       arr_shErase(ra_nosh, 1);
       goto nosh;
-    } else if (xia>7) {
+    } else if (xia>3) {
       SGet(w)
       M_APD_TOT(rm, ria)
       incByG(x, wia);
-      for (usz wi = 0; wi < wia; wi++) APDD(rm, fc2(f, Get(w,wi), x));
+      for (usz wi = 0; wi < wia; wi++) APDD(rm, fc2(f, Get(w,wi), x)); // arith call will squeeze
       ra_nosh = APD_TOT_GET(rm);
       goto nosh;
     } else goto generic;
@@ -128,7 +130,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
       for (usz xi = 0; xi < xia; xi++) HARR_ADDA(r, fc2(f, cw, Get(x,xi)));
     }
     rsh = HARR_FA(r, rr);
-    r = HARR_O(r).b;
+    r = squeeze_any(HARR_O(r).b);
   }
   if (0) {
     nosh:
