@@ -165,7 +165,7 @@ typedef size_t ux;
 #if USZ_64
   typedef u64 usz;
   #define USZ_MAX ((u64)(1ULL<<48))
-  #define CHECK_IA(IA,W) if((IA) > USZ_MAX) thrOOM()
+  #define CHECK_IA(IA,W) if((IA) >= USZ_MAX) thrOOM()
 #else
   typedef u32 usz;
   #define USZ_MAX ((u32)((1LL<<32)-1))
