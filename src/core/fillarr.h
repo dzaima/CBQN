@@ -26,6 +26,8 @@ static bool fillEqual(B w, B x) {
   return fillEqualF(w, x);
 }
 
+static bool numFill(B x) { return x.u == m_f64(0).u; }
+static bool chrFill(B x) { return isC32(x); }
 
 static B getFillN(B x) { // doesn't consume, doesn't increment result; can return bi_noFill
   if (isArr(x)) {

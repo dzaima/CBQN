@@ -16,6 +16,7 @@ char* execAA_repr(u8 ex) {
 #endif
 
 NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
+  assert(isArr(w) && isArr(x));
   u8 we = TI(w, elType); if (we==el_B) goto rec;
   u8 xe = TI(x, elType); if (xe==el_B) goto rec;
   ur wr = RNK(w);
@@ -131,6 +132,7 @@ u8 const nextType[] = {
 };
 
 NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
+  assert(isArr(x));
   usz ia = IA(x);
   u8 xe = TI(x,elType);
   
@@ -146,9 +148,9 @@ NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
       charX = elChr(xe);
     } else {
       B xf = getFillQ(x);
-      if (isNum(xf)) charX=0;
-      else if (isC32(xf)) charX=1;
-      else if (noFill(xf)) { fillVal=0; goto fillSel; }
+      if      (numFill(xf)) charX=0;
+      else if (chrFill(xf)) charX=1;
+      else if ( noFill(xf)) { fillVal=0; goto fillSel; }
       else { dec(xf); goto rec; } // whatever
     }
     bool charW;

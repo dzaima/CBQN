@@ -152,7 +152,7 @@ static NOINLINE B select_list_cell(usz wi, B x) { // guarantees returning new ar
   B xf = getFillR(x);
   B xv = IGet(x, wi);
   B rb;
-  if (isNum(xf) || isC32(xf)) {
+  if (numFill(xf) || chrFill(xf)) {
     rb = m_unit(xv);
   } else if (noFill(xf)) {
     rb = m_hunit(xv);

@@ -115,7 +115,7 @@ B listVariations_c2(B t, B w, B x) {
        ac8=false, ac16=false, ac32=false, abit=false;
   usz xia = IA(x);
   SGetU(x)
-  if (isNum(xf)) {
+  if (numFill(xf)) {
     i32 min=I32_MAX, max=I32_MIN;
     if      (xe==el_i8 ) { i8*  xp = i8any_ptr (x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
     else if (xe==el_i16) { i16* xp = i16any_ptr(x); for (usz i = 0; i < xia; i++) { if (xp[i]>max) max=xp[i]; if (xp[i]<min) min=xp[i]; } }
@@ -142,7 +142,7 @@ B listVariations_c2(B t, B w, B x) {
     abit = min>=0 && max<=1;
     onlyF64:
     af64 = true;
-  } else if (isC32(xf)) {
+  } else if (chrFill(xf)) {
     u32 max = 0;
     if (xe!=el_c8) for (usz i = 0; i < xia; i++) {
       B c = GetU(x, i);

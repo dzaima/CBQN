@@ -114,8 +114,8 @@ B withFill(B x, B fill) { // consumes both
   if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
   switch(xt) {
     case t_f64arr: case t_f64slice: case t_bitarr:
-    case t_i32arr: case t_i32slice: case t_i16arr: case t_i16slice: case t_i8arr: case t_i8slice: if(fill.u == m_i32(0  ).u) return x; break;
-    case t_c32arr: case t_c32slice: case t_c16arr: case t_c16slice: case t_c8arr: case t_c8slice: if(fill.u == m_c32(' ').u) return x; break;
+    case t_i32arr: case t_i32slice: case t_i16arr: case t_i16slice: case t_i8arr: case t_i8slice: if(numFill(fill)) return x; break;
+    case t_c32arr: case t_c32slice: case t_c16arr: case t_c16slice: case t_c8arr: case t_c8slice: if(chrFill(fill)) return x; break;
     case t_fillslice: if (fillEqual(c(FillSlice,x)->fill, fill)) { dec(fill); return x; } break;
     case t_fillarr:   if (fillEqual(c(FillArr,  x)->fill, fill)) { dec(fill); return x; }
       if (reusable(x)) { // keeping flags is fine probably
@@ -128,10 +128,10 @@ B withFill(B x, B fill) { // consumes both
   usz ia = IA(x);
   if (!FL_HAS(x,fl_squoze)) {
     u8 xe;
-    if (isNum(fill)) {
+    if (numFill(fill)) {
       x = squeeze_numTry(x, &xe, SQ_ANY);
       if (elNum(xe)) return x;
-    } else if (isC32(fill)) {
+    } else if (chrFill(fill)) {
       x = squeeze_chrTry(x, &xe, SQ_ANY);
       if (elChr(xe)) return x;
     }
@@ -213,24 +213,24 @@ NOINLINE Arr* emptyArr(B x, ur xr) {
   }
   B xf = getFillR(x);
   if (xr==1) {
-    if (isF64(xf)) numVec: return a(emptyIVec());
-    if (noFill(xf))        return a(emptyHVec());
-    if (isC32(xf)) chrVec: return a(emptyCVec());
+    if (numFill(xf)) numVec: return a(emptyIVec());
+    if ( noFill(xf))         return a(emptyHVec());
+    if (chrFill(xf)) chrVec: return a(emptyCVec());
   }
   Arr* r;
-  if      (isF64(xf))  { u64* rp; r = m_bitarrp(&rp, 0); }
-  else if (noFill(xf)) { r = (Arr*) m_harrUp(0).c; }
-  else if (isC32(xf))  { u8*  rp; r = m_c8arrp(&rp, 0); }
-  else                 { r = m_fillarrpEmpty(xf); }
+  if      (numFill(xf)) { u64* rp; r = m_bitarrp(&rp, 0); }
+  else if ( noFill(xf)) { r = (Arr*) m_harrUp(0).c; }
+  else if (chrFill(xf)) { u8*  rp; r = m_c8arrp(&rp, 0); }
+  else                  { r = m_fillarrpEmpty(xf); }
   if (xr<=1) arr_rnk01(r, xr);
   return r;
 }
 
 NOINLINE Arr* emptyWithFill(B fill) {
   u8 type;
-  if (r_Bf(fill) == 0) { type = t_bitarr; goto tyarr; }
-  if (isC32(fill)) { type = t_c8arr; goto tyarr; }
-  if (noFill(fill)) return (Arr*) m_harrUp(0).c;
+  if (numFill(fill)) { type = t_bitarr; goto tyarr; }
+  if (chrFill(fill)) { type = t_c8arr; goto tyarr; }
+  if ( noFill(fill)) return (Arr*) m_harrUp(0).c;
   return m_fillarrpEmpty(fill);
   
   tyarr:;
