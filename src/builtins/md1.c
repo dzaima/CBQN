@@ -78,19 +78,19 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   usz* rsh;
   
   FC2 fc2 = c2fn(f);
+  Arr* ra_nosh;
   if (RARE(!isFun(f))) {
     if (isMd(f) && ria>0) thrM("Calling a modifier");
-    MAKE_MUT(rm, ria);
-    mut_fill(rm, 0, f, ria);
-    Arr* ra = mut_fp(rm);
-    rsh = arr_shAlloc(ra, rr);
-    r = taga(ra);
+    ra_nosh = reshape_one(ria, f);
+    goto nosh;
   } else if (RTID(f) == n_ltack) {
     r = replicate_by(xia, wia, w);
     goto arith_finish;
   } else if (RTID(f) == n_rtack) {
-    r = C2(shape, m_f64(ria), incG(x));
-    goto arith_finish;
+    ux xia = IA(x);
+    if (ria<=xia) ra_nosh = TI(x,slice)(incG(x), 0, ria); // ria==0 or ria==xia; necessary as reshape_cycle doesn't handle those
+    else ra_nosh = reshape_cycle(ria, xia, incG(x));
+    goto nosh;
   } else if (isPervasiveDyExt(f)) {
     if (ria == 0) goto arith_empty;
     if (!TI(w,arrD1)) goto generic;
@@ -107,16 +107,17 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
       }
       r = fc2(f, expW, expX);
       arith_finish:;
-      if(RARE(!reusable(r))) r = taga(cpyWithShape(r));
-      arr_shErase(a(r), 1);
+      ra_nosh = RARE(!reusable(r))? cpyWithShape(r) : a(r);
+      arr_shErase(ra_nosh, 1);
+      goto nosh;
     } else if (xia>7) {
       SGet(w)
       M_APD_TOT(rm, ria)
       incByG(x, wia);
       for (usz wi = 0; wi < wia; wi++) APDD(rm, fc2(f, Get(w,wi), x));
-      r = taga(arr_shVec(APD_TOT_GET(rm)));
+      ra_nosh = APD_TOT_GET(rm);
+      goto nosh;
     } else goto generic;
-    rsh = arr_shAlloc(a(r), rr);
   } else {
     generic:;
     SGetU(w) SGet(x)
@@ -129,6 +130,12 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
     rsh = HARR_FA(r, rr);
     r = HARR_O(r).b;
   }
+  if (0) {
+    nosh:
+    rsh = arr_shAlloc(ra_nosh, rr);
+    r = taga(ra_nosh);
+  }
+  
   if (rsh) {
     shcpy(rsh   , SH(w), wr);
     shcpy(rsh+wr, SH(x), xr);
