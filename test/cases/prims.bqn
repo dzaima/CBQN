@@ -606,6 +606,8 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 
 # ⌜
 !"𝕨𝔽⌜𝕩: Result rank too large (200≡=𝕨, 200≡=𝕩)" % +⌜˜(200⥊1)⥊1
+%USE eqvar ⋄ (! + ○•internal.Keep⌜ ≡ + ⌜)○↕⌜˜ ↕6 # TODO _eqvar once it's consistent
+%USE eqvar ⋄ (! -˜○•internal.Keep⌜ ≡ -˜⌜)○↕⌜˜ ↕6 # TODO _eqvar once it's consistent
 
 # ˜
 5˜˝ "ab" %% 5

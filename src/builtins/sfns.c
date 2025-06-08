@@ -312,7 +312,7 @@ NOINLINE B shape_c2_listw(B t, B w, B x) {
   return taga(arr_shSetUO(reshape_unshaped(nia, x), nr, sh));
 }
 
-Arr* reshape_cycle(usz nia, usz xia, B x) {
+Arr* reshape_cycle(usz nia, usz xia, B x) { // used directly by tbl_c2
   assert(nia > xia);
   Arr* r;
   if (xia <= 1) {
