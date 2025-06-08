@@ -855,7 +855,7 @@ static B readStruct(BQNFFIType* t, u8* ptr) {
   return HARR_FV(r);
 }
 
-static B readSimple(u8 resCType, u8* ptr) {
+static NOINLINE B readSimple(u8 resCType, u8* ptr) {
   switch(resCType) { default: UD; // thrM("FFI: Unimplemented type");
     case sty_void:return m_c32(0);
     case sty_a:   return getB(*(BQNV*)ptr);
@@ -884,21 +884,20 @@ static B readRe(BQNFFIType* t, u8* src) {
   return r;
 }
 
-static B readAny(B o, u8* ptr) { // doesn't consume
-  if (isC32(o)) {
-    return readSimple(styG(o), ptr);
-  } else {
-    BQNFFIType* t = c(BQNFFIType, o);
-    if (t->ty == cty_repr) { // cty_repr, scalar:x
-      return readRe(t, ptr);
-    } else if (t->ty==cty_struct || t->ty==cty_starr) { // {...}, [n]...
-      return readStruct(c(BQNFFIType, o), ptr);
-    } else if (t->ty==cty_ptr) { // *...
-      return m_ptrobj_s(*(void**)ptr, inc(t->a[0].o));
-    }
+static NOINLINE B readComplex(B o, u8* ptr) { // doesn't consume
+  BQNFFIType* t = c(BQNFFIType, o);
+  if (t->ty == cty_repr) { // cty_repr, scalar:x
+    return readRe(t, ptr);
+  } else if (t->ty==cty_struct || t->ty==cty_starr) { // {...}, [n]...
+    return readStruct(t, ptr);
+  } else if (t->ty==cty_ptr) { // *...
+    return m_ptrobj_s(*(void**)ptr, inc(t->a[0].o));
   }
-  
   thrM("FFI: Unimplemented in-memory type for reading");
+}
+
+static B readAny(B o, u8* ptr) { // doesn't consume
+  return isC32(o)? readSimple(styG(o), ptr) : readComplex(o, ptr);
 }
 
 B readUpdatedObj(BQNFFIEnt ent, bool anyMut, B** objs) {
