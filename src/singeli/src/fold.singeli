@@ -814,11 +814,17 @@ def insert_add_wide{op, V=[vw]T, r:*R, x0:*T, len, wid} = {
   final_end := x0 + len*wid
   def b = 32
   end := x0 + (((len-2) & (b-1)) + 2)*wid
-  def {exp, corr} = {
+  def {exp, corr} = if (width{T} == 8) {
+    def exp{v} = mzip128{v, V~~(v < V**0)}
+    def uz = if (hasarch{'X86_64'}) unzip128 else unzip
+    def ec{T,vs} = each{~~{T,.}, vs}
+    def corr{vs} = ec{V, uz{...ec{ty_u{V}, vs}}}
+    tup{exp, corr}
+  } else {
     def sh = width{T}/2
     def m = V**(1<<sh - 1)
     def exp{v} = tup{v, v>>sh}
-    def corr{{lo,hi}} = { hi = (hi + m&(lo>>sh - hi)) >> sh }
+    def corr{{lo,hi}} = tup{lo, (hi + m&(lo>>sh - hi)) >> sh}
     tup{exp, corr}
   }
   # To avoid interleaving after each row, we treat r as *T
@@ -837,12 +843,12 @@ def insert_add_wide{op, V=[vw]T, r:*R, x0:*T, len, wid} = {
         each{+={.,wid}, x}
       } while (select{x,0} < end)
       # Convert hi from overlapping with lo to separate
-      each{corr, rv}
+      rvc := each{corr, rv}
       # Add existing high part for row groups other than the first
       # Can't interleave this with stores, as the pointers may overlap
       if (ds!=0) {
         def load_add{p,i,{_,hi}} = { hi += load{hi_off{p}, i} }
-        each_i{load_add, offset{T, r}, rv}
+        each_i{load_add, offset{T, r}, rvc}
       }
       if (end != final_end) {
         # Write both halves, type T (correct high half for lo signedness)
@@ -850,11 +856,11 @@ def insert_add_wide{op, V=[vw]T, r:*R, x0:*T, len, wid} = {
           store{p, i, lo}
           store{hi_off{p}, i, hi - V~~(lo < V**0)}
         }
-        each_i{st_h, offset{T, r}, rv}
+        each_i{st_h, offset{T, r}, rvc}
       } else {
         # Interleave to final format, type R
         def st_z{p,i,lh} = each{store{p, ...}, 2*i+iota{2}, mzip{...lh}}
-        each_i_g{re_el{R,V}, st_z, offset{r}, rv}
+        each_i_g{re_el{R,V}, st_z, offset{r}, rvc}
       }
     }}
     if (end == final_end) goto{'done'}
@@ -889,6 +895,6 @@ export_tab{'si_insert_minmax', flat_table{
   tup{tup{__min,maxvalue}, tup{__max,minvalue}}, tup{i8,i16,i32,f64}
 }}
 export_tab{'si_insert_add_widen',
-  each{insert_add_widen, tup{i16,i32}, tup{i32,f64}}
+  each{insert_add_widen, tup{i8,i16,i32}, tup{i16,i32,f64}}
 }
 export{'si_insert_add_f64', insert_non_assoc{f64, +}}

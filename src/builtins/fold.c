@@ -133,7 +133,7 @@ static B insert_sum(B f, B x, ur xr, u8 xe, usz len) {
   usz b = xe>=el_i32 ? 20 : 8<<k; // log of max block length
   usz nb = (len-2) >> b;          // number of blocks excluding last
   u8* x0 = tyany_ptr(x);
-  void (*sum_fn)(void*,void*,usz,usz) = si_insert_add_widen[xe-el_i16];
+  void (*sum_fn)(void*,void*,usz,usz) = si_insert_add_widen[xe-el_i8];
   if (LIKELY(nb == 0)) {
     sum_fn(tp, x0, len, c);
   } else {
@@ -563,7 +563,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       );
       decG(x); return taga(r);
     }
-    if (rtid==n_add && (el_i16<=xe && xe<=el_i32) && len>2) {
+    if (rtid==n_add && (el_i8<=xe && xe<=el_i32) && len>2) {
       return insert_sum(f, x, xr, xe, len);
     }
     #endif
