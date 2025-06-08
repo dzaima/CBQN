@@ -213,7 +213,14 @@ void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam);
 
 Arr* customizeShape(B x); // consumes; returns new array with unset shape
 Arr* cpyWithShape(B x); // consumes; returns new array with the same shape as x (SH(x) will be dangling, PSH(result) must be used to access it)
-Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the same fill as x; if xr>1, shape must be set
+Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the same fill as x; if xr>1, shape must be set; else, x may have refc>1
+Arr* emptyVec(B x); // doesn't consume; emptyArr(x, 1)
+
+typedef struct { Arr* obj; void* data; } UntaggedArr;
+UntaggedArr  m_arrp_copyFill(B x, ux ia); // doesn't consume; create new array with the fill and eltype of x
+UntaggedArr m_barrp_copyFill(B x, ux ia); // doesn't consume; create new fillarr or harr with the fill of x
+static UntaggedArr m_barrp_withFill(ux ia, B fill); // doesn't consume; create new fillarr or harr with the specified fill
+
 NOINLINE Arr* emptyWithFill(B fill); // consumes; returns new array with unset shape and the specified fill
 B emptyNumsWithShape(B x); // consumes; empty bitarr with shape ≢x
 B emptyChrsWithShape(B x); // consumes; empty c8arr  with shape ≢x

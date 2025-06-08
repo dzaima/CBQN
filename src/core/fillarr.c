@@ -202,27 +202,27 @@ FORCE_INLINE B m_oneItemArr(B x, ur rr) {
 NOINLINE B m_unit(B x) { return m_oneItemArr(x, 0); }
 NOINLINE B m_vec1(B x) { return m_oneItemArr(x, 1); }
 
-
-NOINLINE Arr* emptyArr(B x, ur xr) {
+Arr* emptyVec(B x) {
   assert(isArr(x));
   u8 xe = TI(x,elType);
-  if (xr==1) {
-    if (elNum(xe)) goto numVec;
-    if (elChr(xe)) goto chrVec;
-    assert(xe == el_B);
-  }
+  if (elNum(xe)) num: return a(emptyIVec());
+  if (elChr(xe)) chr: return a(emptyCVec());
+  assert(xe == el_B);
   B xf = getFillR(x);
-  if (xr==1) {
-    if (numFill(xf)) numVec: return a(emptyIVec());
-    if ( noFill(xf))         return a(emptyHVec());
-    if (chrFill(xf)) chrVec: return a(emptyCVec());
-  }
+  if (numFill(xf)) goto num;
+  if (chrFill(xf)) goto chr;
+  if ( noFill(xf)) return a(emptyHVec());
+  return arr_shVec(m_fillarrpEmpty(xf));
+}
+
+NOINLINE Arr* emptyArr(B x, ur xr) {
+  assert(isArr(x) && xr>=1);
+  if (xr==1) return emptyVec(x);
+  B xf = getFillR(x);
   Arr* r;
   if      (numFill(xf)) { u64* rp; r = m_bitarrp(&rp, 0); }
-  else if ( noFill(xf)) { r = (Arr*) m_harrUp(0).c; }
   else if (chrFill(xf)) { u8*  rp; r = m_c8arrp(&rp, 0); }
-  else                  { r = m_fillarrpEmpty(xf); }
-  if (xr<=1) arr_rnk01(r, xr);
+  else { r = m_barrp_withFill(0, xf).obj; }
   return r;
 }
 
@@ -230,8 +230,7 @@ NOINLINE Arr* emptyWithFill(B fill) {
   u8 type;
   if (numFill(fill)) { type = t_bitarr; goto tyarr; }
   if (chrFill(fill)) { type = t_c8arr; goto tyarr; }
-  if ( noFill(fill)) return (Arr*) m_harrUp(0).c;
-  return m_fillarrpEmpty(fill);
+  return m_barrp_withFill(0, fill).obj;
   
   tyarr:;
   Arr* r;

@@ -105,6 +105,16 @@ static Arr* m_fillarr0p(usz ia) { // zero-initialized fillarr, with both fill & 
   return r;
 }
 
+static UntaggedArr m_barrp_withFill(ux ia, B fill) { // doesn't consume
+  CHECK_IA(ia, sizeof(B));
+  bool has = !noFill(fill);
+  Arr* r = m_arr(has? fsizeof(FillArr,a,B,ia) : fsizeof(HArr,a,B,ia), has? t_fillarr : t_harr, ia);
+  if (has) fillarr_setFill(r, fill);
+  if (ia) NOGC_S;
+  return (UntaggedArr){r, has? fillarrv_ptr(r) : harrv_ptr(r)};
+}
+
+
 B m_funit(B x); // consumes
 B m_unit(B x); // consumes
 

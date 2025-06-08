@@ -959,12 +959,12 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   assert(csz*cam == IA(x));
   if (csz==0) goto generic;
   if (cam<=1) {
-    if (cam==0) return taga(emptyArr(x, 1));
+    if (cam==0) return taga(emptyVec(x));
     return C2(select, inds, taga(arr_shVec(TI(x,slice)(x, 0, IA(x)))));
   }
   
   ux in = IA(inds);
-  if (in == 0) return taga(emptyArr(x, 1));
+  if (in == 0) return taga(emptyVec(x));
   if (in == 1) {
     B w = IGetU(inds,0); if (!isF64(w)) goto generic;
     B r = select_cells_single(WRAP_SELECT_ONE(o2i64(w), csz, "%R", w), x, cam, csz, 1);

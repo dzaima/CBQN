@@ -100,8 +100,8 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
       B expW, expX;
       if (0) {
         arith_empty:;
-        expW = taga(emptyArr(w, 1));
-        expX = taga(emptyArr(x, 1));
+        expW = taga(emptyVec(w));
+        expX = taga(emptyVec(x));
       } else {
         assert(wia>1); // implies ria > xia, a requirement of reshape_cycle
         expW = replicate_by(xia, wia, w);

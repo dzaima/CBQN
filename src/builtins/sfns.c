@@ -101,7 +101,7 @@ static Arr* take_head(usz ria, B x) { // consumes; returns ria↑x with unset sh
     
     try_copy:;
     // if (used > 64) goto base;
-    UntaggedArr r = m_arrp_fill(x, ria);
+    UntaggedArr r = m_arrp_copyFill(x, ria);
     COPY_TO(r.data, TI(x,elType), 0, x, 0, ria);
     NOGC_E;
     decG(x);
@@ -358,7 +358,7 @@ Arr* reshape_cycle(usz nia, usz xia, B x) { // used directly by tbl_c2
     if (bi == 1) { memset(rp, rp[0], bf); bi=bf; }
   } else {
     if (TI(x,elType) == el_B) {
-      UntaggedArr r = m_barrp_fill(x, nia);
+      UntaggedArr r = m_barrp_copyFill(x, nia);
       i64 div = nia/xia;
       i64 mod = nia%xia;
       for (i64 i = 0; i < div; i++) COPY_TO(r.data, el_B, i*xia, x, 0, xia);
