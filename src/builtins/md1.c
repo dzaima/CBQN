@@ -65,7 +65,11 @@ B tbl_c1(Md1D* d, B x) {
 B slash_c2(B t, B w, B x);
 B shape_c2(B t, B w, B x);
 Arr* reshape_cycle(usz nia, usz xia, B x); // from sfns.c
-static B replicate_by(usz rep, usz xia, B x) { return C2(slash, m_usz(rep), taga(arr_shVec(TI(x,slice)(incG(x), 0, xia)))); }
+static B replicate_by(usz rep, usz xia, B x) {
+  incG(x);
+  if (RNK(x) != 1) x = taga(arr_shVec(TI(x,slice)(x, 0, xia)));
+  return C2(slash, m_usz(rep), x);
+}
 B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(w)) w = m_unit(w);
   if (isAtm(x)) x = m_unit(x);
@@ -96,7 +100,7 @@ B tbl_c2(Md1D* d, B w, B x) { B f = d->f;
   } else if (isPervasiveDyExt(f)) {
     if (ria == 0) goto arith_empty;
     if (!TI(w,arrD1)) goto generic;
-    if (TI(x,arrD1) && wia>=4 && xia<2560>>arrTypeBitsLog(TY(x))) { // arrD1 checks imply that squeeze won't change fill (and the arith call will squeeze anyway)
+    if (TI(x,arrD1) && wia>=3 && xia<2560>>arrTypeBitsLog(TY(x))) { // arrD1 checks imply that squeeze won't change fill (and the arith call will squeeze anyway)
       B expW, expX;
       if (0) {
         arith_empty:;
