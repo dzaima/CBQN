@@ -11,8 +11,8 @@ static Arr* TP(m_,slice) (Arr* p, TEl* ptr, usz ia) {
 static Arr* TP(,arr_slice)   (B x, usz s, usz ia) { return TP(m_,slice) (a(x), ((TEl*)c(TyArr,x)->a)+s, ia); }
 static Arr* TP(,slice_slice) (B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = TP(m_,slice) (p, ((TEl*)c(TySlice,x)->a)+s, ia); decG(x); return r; }
 
-static B TP(,arr_get)   (Arr* x, usz n) { assert(PTY(x)==T_ARR  ); return TP(m_,) (((TEl*)((TyArr*  )x)->a)[n]); }
-static B TP(,slice_get) (Arr* x, usz n) { assert(PTY(x)==T_SLICE); return TP(m_,) (((TEl*)((TySlice*)x)->a)[n]); }
+static B TP(,arr_get)   (Arr* x, usz n) { assert(PTY(x)==T_ARR   && n<PIA(x)); return TP(m_,) (((TEl*)((TyArr*  )x)->a)[n]); }
+static B TP(,slice_get) (Arr* x, usz n) { assert(PTY(x)==T_SLICE && n<PIA(x)); return TP(m_,) (((TEl*)((TySlice*)x)->a)[n]); }
 static bool TP(,arr_canStore) (B x) { return TP(q_,) (x); }
 
 static void TP(,arr_init)() {

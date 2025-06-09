@@ -28,10 +28,10 @@ static Arr* m_hslice(Arr* p, B* ptr, usz ia) {
 static Arr* harr_slice  (B x, usz s, usz ia) { return m_hslice(a(x), c(HArr,x)->a+s, ia); }
 static Arr* hslice_slice(B x, usz s, usz ia) { Arr* p = ptr_inc(c(Slice,x)->p); Arr* r = m_hslice(p, c(HSlice,x)->a+s, ia); decG(x); return r; }
 
-static B harr_get   (Arr* x, usz n) { assert(PTY(x)==t_harr  ); return inc(harrv_ptr  (x)[n]); }
-static B hslice_get (Arr* x, usz n) { assert(PTY(x)==t_hslice); return inc(hslicev_ptr(x)[n]); }
-static B harr_getU  (Arr* x, usz n) { assert(PTY(x)==t_harr  ); return     harrv_ptr  (x)[n] ; }
-static B hslice_getU(Arr* x, usz n) { assert(PTY(x)==t_hslice); return     hslicev_ptr(x)[n] ; }
+static B harr_get   (Arr* x, usz n) { assert(PTY(x)==t_harr   && n<PIA(x)); return inc(harrv_ptr  (x)[n]); }
+static B hslice_get (Arr* x, usz n) { assert(PTY(x)==t_hslice && n<PIA(x)); return inc(hslicev_ptr(x)[n]); }
+static B harr_getU  (Arr* x, usz n) { assert(PTY(x)==t_harr   && n<PIA(x)); return     harrv_ptr  (x)[n] ; }
+static B hslice_getU(Arr* x, usz n) { assert(PTY(x)==t_hslice && n<PIA(x)); return     hslicev_ptr(x)[n] ; }
 DEF_FREE(harr) {
   decSh(x);
   B* p = ((HArr*)x)->a; // don't use harrv_ptr so type isn't checked

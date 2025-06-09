@@ -39,10 +39,10 @@ static Arr* m_fillslice(Arr* p, B* ptr, usz ia, B fill) {
 static Arr* fillarr_slice  (B x, usz s, usz ia) { FillArr*   a=c(FillArr  ,x); return m_fillslice((Arr*)a,       a->a+s, ia, inc(a->fill)); }
 static Arr* fillslice_slice(B x, usz s, usz ia) { FillSlice* a=c(FillSlice,x); Arr* r=m_fillslice(ptr_inc(a->p), a->a+s, ia, inc(a->fill)); decG(x); return r; }
 
-static B fillarr_get   (Arr* x, usz n) { assert(PTY(x)==t_fillarr  ); return inc(((FillArr*  )x)->a[n]); }
-static B fillslice_get (Arr* x, usz n) { assert(PTY(x)==t_fillslice); return inc(((FillSlice*)x)->a[n]); }
-static B fillarr_getU  (Arr* x, usz n) { assert(PTY(x)==t_fillarr  ); return     ((FillArr*  )x)->a[n] ; }
-static B fillslice_getU(Arr* x, usz n) { assert(PTY(x)==t_fillslice); return     ((FillSlice*)x)->a[n] ; }
+static B fillarr_get   (Arr* x, usz n) { assert(PTY(x)==t_fillarr   && n<PIA(x)); return inc(((FillArr*  )x)->a[n]); }
+static B fillslice_get (Arr* x, usz n) { assert(PTY(x)==t_fillslice && n<PIA(x)); return inc(((FillSlice*)x)->a[n]); }
+static B fillarr_getU  (Arr* x, usz n) { assert(PTY(x)==t_fillarr   && n<PIA(x)); return     ((FillArr*  )x)->a[n] ; }
+static B fillslice_getU(Arr* x, usz n) { assert(PTY(x)==t_fillslice && n<PIA(x)); return     ((FillSlice*)x)->a[n] ; }
 DEF_FREE(fillarr) {
   decSh(x);
   B* p = ((FillArr*)x)->a;
