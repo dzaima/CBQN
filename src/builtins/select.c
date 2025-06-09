@@ -134,7 +134,6 @@ FORCE_INLINE void cf_call(CFRes f, void* r, ux rs, void* x, ux xs) {
 
 
 
-extern GLOBAL B rt_select;
 B select_c1(B t, B x) {
   if (isAtm(x)) thrM("⊏𝕩: 𝕩 cannot be an atom");
   ur xr = RNK(x);
