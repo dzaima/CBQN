@@ -473,6 +473,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   // w = taga(cpyF64Arr(w)); we = el_f64; // test the float path
   DIRECTARR_COPY(r, re, x);
   B rb = r.obj;
+  SLOWIF(rb.u!=x.u && cam>100 && wia<cam/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
   
   if (we==el_f64) {
     f64* wp = f64any_ptr(w);
@@ -500,7 +501,6 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   w = toI32Any(w);
   i32* wp = i32any_ptr(w);
   SPARSE_INIT(wp[i])
-  SLOWIF(!reuse && cam>100 && wia<cam/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
   switch (re) { default: UD;
     case el_i8:  rep = toI8Any(rep);  goto do_u8;
     case el_c8:  rep = toC8Any(rep);  goto do_u8;
