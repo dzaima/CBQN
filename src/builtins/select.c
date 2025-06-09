@@ -243,7 +243,7 @@ B select_c2(B t, B w, B x) {
   
   B xf = getFillR(x);
   usz xn = *SH(x);
-  if (xn==0) goto def_xf_base;
+  if (xn==0) goto def_xf_base; // empty x, non-empty w; error
   usz csz = arr_csz(x);
   u8 xl = cellWidthLog(x);
   usz ria = wia * csz;
