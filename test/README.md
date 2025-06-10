@@ -1,6 +1,6 @@
 ## Tests
 
-All of the below must be ran from the project's root directory. Some tests require `-DTEST_UTILS` (enabled by default in debug builds)
+All of the below must be run from the project's root directory. Some tests require `-DTEST_UTILS` (enabled by default in debug builds)
 
 ``` C
 test/mainCfgs.sh path/to/mlochbaum/BQN // run the test suite for a couple primary configurations

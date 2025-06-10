@@ -884,7 +884,7 @@ static B readRe(BQNFFIType* t, u8* src) {
   return r;
 }
 
-static NOINLINE B readComplex(B o, u8* ptr) { // doesn't consume
+static NOINLINE B readCompound(B o, u8* ptr) { // doesn't consume
   BQNFFIType* t = c(BQNFFIType, o);
   if (t->ty == cty_repr) { // cty_repr, scalar:x
     return readRe(t, ptr);
@@ -897,7 +897,7 @@ static NOINLINE B readComplex(B o, u8* ptr) { // doesn't consume
 }
 
 static B readAny(B o, u8* ptr) { // doesn't consume
-  return isC32(o)? readSimple(styG(o), ptr) : readComplex(o, ptr);
+  return isC32(o)? readSimple(styG(o), ptr) : readCompound(o, ptr);
 }
 
 B readUpdatedObj(BQNFFIEnt ent, bool anyMut, B** objs) {
