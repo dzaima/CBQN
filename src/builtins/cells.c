@@ -836,7 +836,7 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w F⎉wcr�
   usz cam0 = 1;
   for (usz i = 0; i < k; i++) {
     usz wl = wsh[i], xl = xsh[i];
-    if (wl != xl) thrF("𝕨%c𝕩: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", chr, w, x, k);
+    if (wl != xl) thrF("𝕨%U𝕩: Argument frames don't agree (%H ≡ ≢𝕨, %H ≡ ≢𝕩, common frame of %i axes)", chr==U'˘'?"𝔽˘":"𝔽⎉𝕘", w, x, k);
     cam0*= wsh[i];
   }
   usz ext = shProd(zsh, k, zk);
