@@ -33,7 +33,7 @@ B fillBy_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B fillBy_c2(Md2D* d, B w, B x) { return c2(d->f, w,x); }
 #endif
 
-#if defined(SEMANTIC_CATCH_BI)? SEMANTIC_CATCH_BI : SEMANTIC_CATCH
+#if defined(SEMANTIC_CATCH_BI)? SEMANTIC_CATCH_BI : (SEMANTIC_CATCH && USE_SETJMP)
 extern GLOBAL B lastErrMsg; // sysfn.c
 typedef struct ReObj {
   struct CustomObj;
