@@ -368,10 +368,10 @@ B scan_c2(Md1D* d, B w, B x) { B f = d->f;
   if (ia==0) { dec(w); return x; }
   if (RARE(!isFun(f))) {
     if (isMd(f)) thrM("Calling a modifier");
+    Arr* ra = arr_shCopy(reshape_one(ia, inc(f)), x);
     B xf = getFillR(x);
-    MAKE_MUT(rm, ia);
-    mut_fill(rm, 0, f, ia);
-    return withFill(mut_fcd(rm, x), xf);
+    decG(x);
+    return withFill(taga(ra), xf);
   }
   u8 xe = TI(x,elType);
   if (RTID(f) != RTID_NONE) {
