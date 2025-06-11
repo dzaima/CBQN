@@ -705,27 +705,25 @@ static B c2(B f, B w, B x) { // BQN-call f dyadically; consumes w,x
   if (isFun(f)) return VALIDATE(VRES(c(Fun,f)->c2(f, VRES(w), VRES(x))));
   return c2F(f, w, x);
 }
-static void errMd(B x) { if(RARE(isMd(x))) thrM("Calling a modifier"); }
+static B errMd(B x) { if (RARE(isMd(x))) thrM("Calling a modifier"); return x; }
 // like c1/c2, but with less overhead on non-functions
 SHOULD_INLINE B c1I(B f, B x) {
   if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, x));
-  dec(x); errMd(f);
-  return inc(f);
+  dec(x);
+  return inc(errMd(f));
 }
 SHOULD_INLINE B c2I(B f, B w, B x) {
   if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, w, x));
-  dec(w); dec(x); errMd(f);
-  return inc(f);
+  dec(w); dec(x);
+  return inc(errMd(f));
 }
 static B c1iX(B f, B x) { // c1 with inc(x)
   if (isFun(f)) return VALIDATE(c(Fun,f)->c1(f, inc(x)));
-  errMd(f);
-  return inc(f);
+  return inc(errMd(f));
 }
 static B c2iWX(B f, B w, B x) { // c2 with inc(w), inc(x)
   if (isFun(f)) return VALIDATE(c(Fun,f)->c2(f, inc(w), inc(x)));
-  errMd(f);
-  return inc(f);
+  return inc(errMd(f));
 }
 
 static B c1G(B f,      B x) { assert(isFun(f)); return c(Fun,f)->c1(f,    x); }

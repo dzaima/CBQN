@@ -208,7 +208,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       thrM("𝔽´𝕩: Identity not found");
     }
   }
-  if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
+  if (RARE(!isFun(f))) { decG(x); return inc(errMd(f)); }
   u8 xe = TI(x,elType);
   if (RTID(f) != RTID_NONE) {
     u8 rtid = RTID(f);
@@ -279,7 +279,7 @@ B fold_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || RNK(x)!=1) thrF("𝕨𝔽´𝕩: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
   usz ia = IA(x);
   if (RARE(ia==0)) { decG(x); return w; }
-  if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
+  if (RARE(!isFun(f))) { dec(w); decG(x); return inc(errMd(f)); }
   
   u8 xe = TI(x,elType);
   if (RTID(f) != RTID_NONE) {
@@ -477,7 +477,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
     thrM("𝔽˝𝕩: Identity not found");
   }
   if (len==1) return C1(select, x);
-  if (RARE(!isFun(f))) { decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
+  if (RARE(!isFun(f))) { decG(x); return inc(errMd(f)); }
   if (isPervasiveDyExt(f)) {
     if (xr==1) return m_unit(fold_c1(d, x));
     usz xia = IA(x);
@@ -521,7 +521,7 @@ B insert_c2(Md1D* d, B w, B x) { B f = d->f;
   if (isAtm(x) || (xr=RNK(x))==0) thrM("𝕨˝𝕩: 𝕩 must have rank at least 1");
   usz len = *SH(x);
   if (len==0) { decG(x); return w; }
-  if (RARE(!isFun(f))) { dec(w); decG(x); if (isMd(f)) thrM("Calling a modifier"); return inc(f); }
+  if (RARE(!isFun(f))) { dec(w); decG(x); return inc(errMd(f)); }
   if (isPervasiveDyExt(f)) {
     usz xia = IA(x);
     ur rr = xr - 1;

@@ -40,12 +40,10 @@ NORETURN NOINLINE void fatal(char* s) {
   exit(1);
 }
 
-NOINLINE B c1F(B f, B x) { dec(x);
-  if (isMd(f)) thrM("Calling a modifier");
+NOINLINE B c1F(B f, B x) { dec(x); errMd(f);
   return inc(VALIDATE(f));
 }
-NOINLINE B c2F(B f, B w, B x) { dec(w); dec(x);
-  if (isMd(f)) thrM("Calling a modifier");
+NOINLINE B c2F(B f, B w, B x) { dec(w); dec(x); errMd(f);
   return inc(VALIDATE(f));
 }
 NOINLINE void value_freeF(Value* x) { value_free(x); }
