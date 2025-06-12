@@ -837,7 +837,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
         si_select_rows_8bit(inds, rindn, xp, rp, (ria0+7)/8);
         
         if (rindn!=8) {
-          SELECT_ROWS_PRINTF("8bit: narrow %zu → %zu\n", rcsz, csz);
+          SELECT_ROWS_PRINTF("8bit: narrow 8 → %zu<<%d\n", csz, exp);
           
           u64* rp2;
           B r2 = m_bitarrv(&rp2, 8*rcam);
