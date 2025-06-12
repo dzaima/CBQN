@@ -341,10 +341,14 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 
 !"•bit._cast: unsupported width 16 for type 'f'" % ⟨16‿'f',32⟩•bit._cast 128⥊0
 !"•bit._cast: unsupported width 32 for type 'f'" % ⟨32,32‿'f'⟩•bit._cast 128⥊0
-!"•bit._cast: unsupported width 0 for type 'u'" % ⟨0‿'u',32⟩•bit._cast 128⥊0
-!"•bit._cast: unsupported width 8 for type 'u'" % ⟨8‿'u',32⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 0 for type 'u'"  % ⟨0‿'u',32⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 8 for type 'u'"  % ⟨8‿'u',32⟩•bit._cast 128⥊0
 !"•bit._cast: unsupported width 32 for type 'u'" % ⟨8,32‿'u'⟩•bit._cast 128⥊0
-!"•bit._cast: unsupported width 1 for type 'i'" % ⟨8, 1‿'i'⟩•bit._cast 128⥊0
+!"•bit._cast: unsupported width 1 for type 'i'"  % ⟨8, 1‿'i'⟩•bit._cast 128⥊0
+
+%USE eqvar ⋄ {𝕊conv: {•internal.Keep 𝕩⍋1  ⋄ •internal.Validate conv •bit._cast 𝕩}_eqvar  ↕64}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64
+%USE eqvar ⋄ {𝕊conv: {•internal.Keep 𝕩⍒1  ⋄ •internal.Validate conv •bit._cast 𝕩}_eqvar ⌽↕64}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64
+%USE eqvar ⋄ {𝕊conv: {•internal.Squeeze 𝕩 ⋄ •internal.Validate conv •bit._cast 𝕩}_eqvar 64↑2}¨ ≠´¨⊸/ ⥊ ⟨8⟩ ⋈⌜ 1‿8‿16‿32‿64
 
 # •platform
 Str ← {!=𝕩 ⋄ !×≠𝕩 ⋄ ! ∧´2=•Type¨𝕩} ⋄ Str •platform.os ⋄ Str •platform.cpu.arch ⋄ Str •platform.bqn.impl_version ⋄ Str •platform.environment

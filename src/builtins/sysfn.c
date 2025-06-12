@@ -1512,13 +1512,14 @@ B bitcast_impl(B el0, B el1, B x) {
   if (rl>=USZ_MAX) thrM("•bit._cast: output too large");
   B r = convert(xct, x);
   u8 rt = typeOfCast(rct);
-  if (rt==t_bitarr && (v(r)->refc!=1 || IS_SLICE(TY(r)))) {
+  if (rt==t_bitarr && (!reusable(r) || IS_SLICE(TY(r)))) {
     r = taga(copy(xct, r));
-  } else if (v(r)->refc!=1) {
+  } else if (!reusable(r)) {
     B pr = r;
     Arr* r2 = TI(r,slice)(r, 0, IA(r));
     r = taga(arr_shSetI(r2, xr, shObj(pr))); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
   } else {
+    REUSE(r);
     #if VERIFY_TAIL
       if (xct.s==1 && rct.s!=1) {
         FINISH_OVERALLOC(a(r), offsetof(TyArr,a)+IA(r)/8, offsetof(TyArr,a) + (BIT_N(IA(r))<<3));
