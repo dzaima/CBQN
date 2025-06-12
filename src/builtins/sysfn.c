@@ -1580,7 +1580,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   u8 rt = typeOfCast((CastType){ rw, 0 });
   u64* xp = tyany_ptr(x);
   B r; u64* rp;
-  if (!reusable(x) || (rt==t_bitarr && IS_SLICE(TY(x)))) {
+  if (!reusable(x) || IS_SLICE(TY(x))) {
     Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
     arr_shCopyUnchecked(ra, x);
     r = taga(ra); rp = tyany_ptr(r);
