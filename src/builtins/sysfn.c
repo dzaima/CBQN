@@ -1487,11 +1487,12 @@ static B set_bit_result(B r, u8 rt, ur rr, usz rl, usz *sh) {
     a->ia = rl;
     a->sh = &a->ia;
   } else {
-    if (shObj(r)->refc>1) {
-      shObj(r)->refc--; // won't go to zero as refc>1; preparation for being overwritten by new shape
+    ShArr* old = shObj(r);
+    if (old->refc>1) {
       usz* rsh = a->sh = m_shArr(rr)->a;
       shcpy(rsh, sh, rr-1);
       sh = rsh;
+      ptr_decR(old); // shouldn't typically go to zero as refc>1 was just checked above, but can still happen if GC happens curing m_shArr; must be delayed to after m_shArr as sh==old->a for bitcast_impl
       SPRNK(a, rr);
     }
     sh[rr-1] = rl;
@@ -1515,9 +1516,10 @@ B bitcast_impl(B el0, B el1, B x) {
   if (rt==t_bitarr && (!reusable(r) || IS_SLICE(TY(r)))) {
     r = taga(copy(xct, r));
   } else if (!reusable(r)) {
-    B pr = r;
+    B r0 = incG(r);
     Arr* r2 = TI(r,slice)(r, 0, IA(r));
-    r = taga(arr_shSetI(r2, xr, shObj(pr))); // safe to use pr because r has refcount>1 and slice only consumes one, leaving some behind
+    r = taga(arr_shSetI(r2, xr, shObj(r0)));
+    decG(r0);
   } else {
     REUSE(r);
     #if VERIFY_TAIL
