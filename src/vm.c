@@ -1381,7 +1381,7 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     
     
     // want to try really hard to print errors
-    if (!cbqn_initialized) goto native_print;
+    if (!cbqn_initialized || gc_running) goto native_print;
     #if FORCE_NATIVE_ERROR_PRINT
       goto native_print;
     #endif
