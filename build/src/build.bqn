@@ -252,7 +252,7 @@ po ← { # parsed options
   o3 ⇐ (¬custom) DOpt "O3"
   
   allFlags ← GetOpt "CCFLAGS"
-  minCCFlags ← allFlags ∾ GetOpt "f"
+  minCCFlags ← ∾⟨allFlags, GetOpt "f", native/⟨"-march=native"⟩⟩
   ubsanFlags ← ubsan / ⟨"-fsanitize=undefined", "-fno-sanitize=float-cast-overflow", "-fno-sanitize=vla-bound"⟩
   
   CDefines ← {𝕊: cDefines ↩ (@+10) Split SH ⟨cc⟩ ∾ minCCFlags ∾ ⟨"-dM", "-E", "-"⟩}
@@ -288,7 +288,7 @@ po ← { # parsed options
     ¬singeli? @;
     UpdateSubmodule singeliDir
     SingeliUtil ← {𝕨 •Import AtRoot singeliDir •file.At 𝕩}
-    SingeliArchInfo ↩ {⟨{native? ⟨⟩; singeliArch}, 𝕩⟩ SingeliUtil "arch.bqn"}
+    SingeliArchInfo ↩ {⟨{native∧¬truecc? ⟨⟩; singeliArch}, 𝕩⟩ SingeliUtil "arch.bqn"}
     singeliArch ↩ {
       truecc ∧ @≡GetOpt"arch"?
         archutil ← SingeliUtil "archutil.bqn"
@@ -404,7 +404,7 @@ po ← { # parsed options
     args∾↩ (   @≢versionName) / ⟨"-DHAS_VERSION"⟩
     args∾↩ (          usz≡64) / ⟨"-DUSZ_64"⟩
     args∾↩ (⊑"slow-pdep"<⊸∊ has) / ⟨"-DSLOW_PDEP"⟩
-    args∾↩ {native? ⟨"-march=native"⟩; singeliCFlags}
+    args∾↩ (         ¬native) / singeliCFlags
     args ↩ args (¬∘∊/⊣) GetOpt "rm_f"
     {"CBQN C compiler: "∾•Repr 𝕩} _verboseLog args
     args
@@ -780,7 +780,7 @@ cachedBin‿linkerCache ← {
       po.singeliFlags
       ⟨"-l", "gen="∾AtRoot singeliCache.folder, "-c", "usz=u"∾•Repr po.usz⟩
       (⊑"slow-pdep"<⊸∊ po.has) / ⟨"-c", "SLOW_PDEP=1"⟩
-      {po.native? ⟨⟩; "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch}
+      {po.native∧¬po.truecc? ⟨⟩; "-a" ⋈ 1↓∾ ','⊸∾¨ po.singeliArch}
     ⟩
     clangd.SingeliInit po
     {𝕊: "Singeli args: "∾•Repr singeliArgs} _verboseLog @
