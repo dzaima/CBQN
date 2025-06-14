@@ -322,7 +322,6 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 %USE eqvar ⋄ {t←𝕩⊏1‿8‿16‿32‿64 ⋄       {t•bit._cast 𝕩}_eqvar 4=↕128}¨ ↕4‿4
 ! 10‿1 ≡ ≢8‿16•bit._cast c←0↓2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
 ! 10‿1 ≡ ≢8‿16•bit._cast c←  2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
-⊑ 8‿32•bit._cast 3↓↕7 %% 100992003
 !"•bit._cast: incompatible lengths" % 1‿8•bit._cast 1⥊0
 !"•bit._cast: incompatible lengths" % 8‿32•bit._cast 2⥊0
 !"•bit._cast: incompatible lengths" % 8‿32•bit._cast 10⥊0

@@ -1513,13 +1513,18 @@ B bitcast_impl(B el0, B el1, B x) {
   if (rl>=USZ_MAX) thrM("•bit._cast: output too large");
   B r = convert(xct, x);
   u8 rt = typeOfCast(rct);
-  if (rt==t_bitarr && (!reusable(r) || ARR_IS_SLICE(TY(r)))) {
-    r = taga(copy(xct, r));
+  if (rt==t_bitarr) {
+    if (reusable(r) && !ARR_IS_SLICE(TY(r))) {
+      REUSE(r);
+    } else {
+      r = taga(copy(xct, r));
+    }
   } else if (!reusable(r)) {
     B r0 = incG(r);
     Arr* r2 = TI(r,slice)(r, 0, IA(r));
     r = taga(arr_shSetI(r2, xr, shObj(r0)));
     decG(r0);
+    goto possibly_unaligned;
   } else {
     REUSE(r);
     #if VERIFY_TAIL
@@ -1527,7 +1532,28 @@ B bitcast_impl(B el0, B el1, B x) {
         FINISH_OVERALLOC(a(r), offsetof(TyArr,a)+IA(r)/8, offsetof(TyArr,a) + (BIT_N(IA(r))<<3));
       }
     #endif
+    goto possibly_unaligned;
   }
+  
+  if (0) {
+    possibly_unaligned:;
+    #if STRICT_ALIGN || FOR_BUILD
+    if (IS_TYSLICE(TY(r))) {
+      assert(rct.s != 1 && xct.s != 1); // rt==t_bitarr handles rct.s==1, and xct.s==1 never currently makes a slice (..though it could)
+      u8 arrt = SLICE_TO_ARR(TY(r));
+      void* r0p = tyslicev_ptr(a(r));
+      if (ptr2u64(r0p) & ((rct.s>>3) - 1)) {
+        Arr* r1;
+        void* r2p = m_tyarrp(&r1, xct.s>>3, IA(r), arrt);
+        memcpy(r2p, r0p, IA(r)*(xct.s>>3));
+        arr_shCopyUnchecked(r1, r);
+        decG(r);
+        r = taga(r1);
+      }
+    }
+    #endif
+  }
+  
   return set_bit_result(r, rt, xr, rl, sh);
 }
 
