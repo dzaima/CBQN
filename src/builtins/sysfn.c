@@ -1480,7 +1480,7 @@ static u8 typeOfCast(CastType t) {
 }
 static B set_bit_result(B r, u8 rt, ur rr, usz rl, usz *sh) {
   // Cast to output type
-  v(r)->type = IS_SLICE(v(r)->type) ? TO_SLICE(rt) : rt;
+  v(r)->type = ARR_IS_SLICE(v(r)->type) ? ARR_TO_SLICE(rt) : rt;
   // Adjust shape
   Arr* a = a(r);
   if (rr<=1) {
@@ -1513,7 +1513,7 @@ B bitcast_impl(B el0, B el1, B x) {
   if (rl>=USZ_MAX) thrM("•bit._cast: output too large");
   B r = convert(xct, x);
   u8 rt = typeOfCast(rct);
-  if (rt==t_bitarr && (!reusable(r) || IS_SLICE(TY(r)))) {
+  if (rt==t_bitarr && (!reusable(r) || ARR_IS_SLICE(TY(r)))) {
     r = taga(copy(xct, r));
   } else if (!reusable(r)) {
     B r0 = incG(r);
@@ -1580,7 +1580,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   u8 rt = typeOfCast((CastType){ rw, 0 });
   u64* xp = tyany_ptr(x);
   B r; u64* rp;
-  if (!reusable(x) || IS_SLICE(TY(x))) {
+  if (!reusable(x) || ARR_IS_SLICE(TY(x))) {
     Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
     arr_shCopyUnchecked(ra, x);
     r = taga(ra); rp = tyany_ptr(r);

@@ -267,10 +267,12 @@ enum Type {
   #undef F
   t_COUNT
 };
-#define IS_ANY_ARR(T) ((T)>=t_hslice & (T)<=t_bitarr)
-#define IS_DIRECT_TYARR(T) (((T)>=t_i8arr) & ((T)<=t_bitarr))
-#define IS_SLICE(T) ((T)<=t_f64slice)
-#define TO_SLICE(T) ((T) + t_hslice - t_harr) // Assumes T!=t_bitarr
+#define IS_ANY_ARR(T) ({ u8 ct_=(T); ct_>=t_hslice & ct_<=t_bitarr; })
+#define IS_DIRECT_TYARR(T) ({ u8 ct_=(T); ct_>=t_i8arr & ct_<=t_bitarr; })
+#define ARR_IS_SLICE(T) ((T)<=t_f64slice)
+#define IS_TYSLICE(T) ({ u8 ct_=(T); ct_>=t_i8slice & ct_<=t_f64slice; })
+#define ARR_TO_SLICE(T) ((T) + t_hslice - t_harr) // requires T!=t_bitarr
+#define SLICE_TO_ARR(T) ((T) + t_harr - t_hslice)
 
 enum ElType { // if X can store a superset of elements of Y, X > Y
   el_bit=0,

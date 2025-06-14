@@ -140,7 +140,7 @@ B withFill(B x, B fill) { // consumes both
   B* xbp = arr_bptr(x);
   if (xbp!=NULL) {
     Arr* xa = a(x);
-    if (IS_SLICE(PTY(xa))) xa = ptr_inc(((Slice*)xa)->p);
+    if (ARR_IS_SLICE(PTY(xa))) xa = ptr_inc(((Slice*)xa)->p);
     else ptr_inc(xa);
     r = m_fillslice(xa, xbp, ia, fill);
   } else {
