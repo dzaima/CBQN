@@ -36,6 +36,25 @@
   #define unlink _wunlink
 #endif
 
+typedef struct FileRef {
+  struct CustomObj;
+  FILE* file;
+} FileRef;
+void fileRef_freeO(Value* v) {
+  fclose(((FileRef*)v)->file);
+}
+NOINLINE FILE* fileRef_open(FILE* f) {
+  FileRef* fr = m_customObj(sizeof(FileRef), noop_visit, fileRef_freeO);
+  fr->file = f;
+  gsAdd(tag(fr, OBJ_TAG));
+  return f;
+}
+NOINLINE void fileRef_close(FILE* f) {
+  B v = gsPop();
+  debug_assert(f == c(FileRef,v)->file);
+  dec(v);
+}
+
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
 #if !defined(_WIN32)
   char* p = toCStr(path);
@@ -93,28 +112,20 @@ I8Arr* stream_bytes(FILE* f) {
 }
 
 I8Arr* path_bytes(B path) { // consumes
-  FILE* f = file_open(path, "read", "rb");
+  FILE* f = fileRef_open(file_open(path, "read", "rb"));
   int seekRes = fseek(f, 0, SEEK_END);
   I8Arr* src;
   if (seekRes==-1) {
     src = stream_bytes(f);
   } else {
     i64 len = ftell(f);
-    CHECK_IA(len, 1);
-    #if USZ_64
-      if(len > USZ_MAX) { fclose(f); thrOOM(); }
-    #else
-      if (len > ((1LL<<31) - 1000)) { fclose(f); thrOOM(); }
-    #endif
     fseek(f, 0, SEEK_SET);
-    src = m_arr(fsizeof(I8Arr,a,u8,len), t_i8arr, len); arr_shVec((Arr*)src); // TODO fclose file if allocation fails (+ elsewhere too)
-    if (fread((char*)src->a, 1, len, f)!=len) {
-      fclose(f);
-      thrF("Error reading file \"%R\"", path);
-    }
+    i8* rp;
+    src = (I8Arr*) a(m_i8arrv(&rp, len));
+    if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
   }
   dec(path);
-  fclose(f);
+  fileRef_close(f);
   return src;
 }
 B path_chars(B path) { // consumes
