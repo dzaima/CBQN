@@ -1,9 +1,7 @@
 #define MM_C 1
-#define ALLOC_PADDING 1024 // number of accessible padding bytes always required around an object
-
 #include "../core.h"
+#include "../utils/mem.h"
 
-ux getPageSize(void);
 static u64 prepAllocSize(u64 sz) {
   u64 psz = getPageSize();
   u64 minTotPad = ALLOC_PADDING*2 + 128;

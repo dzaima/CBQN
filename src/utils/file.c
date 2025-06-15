@@ -1,5 +1,6 @@
 #include "../core.h"
 #include "file.h"
+#include "mem.h"
 #include "talloc.h"
 #include "cstr.h"
 #include <dirent.h>
@@ -44,7 +45,7 @@ void fileRef_freeO(Value* v) {
   fclose(((FileRef*)v)->file);
 }
 NOINLINE FILE* fileRef_open(FILE* f) {
-  FileRef* fr = m_customObj(sizeof(FileRef), noop_visit, fileRef_freeO);
+  FileRef* fr = m_customObj(sizeof(FileRef), noop_visit, fileRef_freeO); // TODO uhh this could OOM
   fr->file = f;
   gsAdd(tag(fr, OBJ_TAG));
   return f;
@@ -315,7 +316,8 @@ typedef struct MmapHolder {
   struct Arr;
 #if !defined(_WIN32)
   int fd;
-  u64 size;
+  void* mmap_start;
+  u64 mmap_size;
 #else
   HANDLE hFile;
   HANDLE hMapFile;
@@ -327,7 +329,7 @@ void mmapH_visit(Value* v) { }
 DEF_FREE(mmapH) {
   MmapHolder* p = (MmapHolder*)x;
 #if !defined(_WIN32)
-  if (munmap(p->a, p->size)) thrF("Failed to unmap: %S", strerror(errno));
+  if (munmap(p->mmap_start, p->mmap_size)) thrF("Failed to unmap: %S", strerror(errno));
   if (close(p->fd)) thrF("Failed to close file: %S", strerror(errno));
 #else
   if (!UnmapViewOfFile(p->a)) thrF("Failed to unmap: %S", winError());
@@ -342,6 +344,7 @@ static NOINLINE Arr* mmapH_slice(B x, usz s, usz ia) {
 }
 
 B mmap_file(B path) {
+  // TODO count mapped memory in some memory usage counter
 #if !defined(_WIN32)
   char* p = toCStr(path);
   dec(path);
@@ -350,8 +353,18 @@ B mmap_file(B path) {
   if (fd==-1) thrF("Failed to open file: %S", strerror(errno));
   u64 len = lseek(fd, 0, SEEK_END);
   
-  u8* data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0); // TODO count in some memory usage counter
-  if (data==MAP_FAILED) {
+  u64 pgsz = getPageSize();
+  u64 head = pgsz;
+  PLAINLOOP while (head < ALLOC_PADDING) head+= pgsz;
+  u64 mmap_size = len+head*2;
+  u8* mmap_start = mmap(NULL, mmap_size, PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  if (mmap_start==MAP_FAILED) {
+    close(fd);
+    thrM("failed to pre-allocate mmap region");
+  }
+  u8* arr_data = mmap(mmap_start+head, len, PROT_READ, MAP_PRIVATE|MAP_FIXED, fd, 0);
+  if (arr_data==MAP_FAILED) {
+    munmap(mmap_start, mmap_size);
     close(fd);
     thrM("failed to mmap file");
   }
@@ -376,19 +389,21 @@ B mmap_file(B path) {
     CloseHandle(hFile);
     thrF("Failed to create file mapping: %S", winError());
   } 
-  u8* data = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, 0);
-  if (data==NULL) {
+  u8* arr_data = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, 0);
+  // TODO should ensure ALLOC_PADDING padding around allocated memory
+  if (arr_data==NULL) {
     CloseHandle(hFile);
     CloseHandle(hMapFile);
     thrF("Failed to map view of file: %S", winError());
   }
 #endif
 
-  MmapHolder* holder = m_arrUnchecked(sizeof(MmapHolder), t_mmapH, len);
-  holder->a = data;
+  MmapHolder* holder = m_arrUnchecked(sizeof(MmapHolder), t_mmapH, len); // TODO this can OOM
+  holder->a = arr_data;
 #if !defined(_WIN32)
   holder->fd = fd;
-  holder->size = len;
+  holder->mmap_start = mmap_start;
+  holder->mmap_size = mmap_size;
 #else
   holder->hFile = hFile;
   holder->hMapFile = hMapFile;
