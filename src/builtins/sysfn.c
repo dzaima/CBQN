@@ -801,12 +801,10 @@ B fchars_c2(B d, B w, B x) {
 }
 STATIC_GLOBAL NFnDesc* fBytesDesc;
 B fbytes_c1(B d, B x) {
-  I8Arr* tf = path_bytes(path_rel(nfn_objU(d), x, "•file.Bytes"));
-  usz ia = PIA(tf);
-  u8* rp; B r = m_c8arrv(&rp, ia);
-  COPY_TO(rp, el_i8, 0, taga(tf), 0, ia);
-  ptr_dec(tf);
-  return r;
+  TyArr* tf = path_bytes(path_rel(nfn_objU(d), x, "•file.Bytes"));
+  assert(tf->type == t_i8arr && reusable(taga(tf)));
+  tf->type = t_c8arr;
+  return taga(tf);
 }
 B fbytes_c2(B d, B w, B x) {
   if (isAtm(x) || RNK(x)!=1) thrM("𝕨 •file.Bytes 𝕩: 𝕩 must be a list");
