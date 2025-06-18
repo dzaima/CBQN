@@ -52,6 +52,10 @@
 // Boolean indices:
 //   Short inds and short cells: Widen to i8
 //   Otherwise: bitsel call per cell
+//   SHOULD specialize wider input/output:
+//     AVX2 extract 16 bits from 128: vbroadcasti128+vpshufb+vpmullw
+//     AVX-512 extract 64 bits from 64: vpmultishiftqb/vpshufbitqmb
+//     potentially better options via transposing to allow a shuffle to reorder multiple rows
 // 1, 2, 4 or 8-byte data elements & short cells & short index list:
 //   Split indices to available native shuffle width (e.g. 2‿1⊸⊏˘ n‿5⥊i16 → 2‿3‿0‿1⊸⊏˘ n‿10⥊i8)
 //   Repeat indices if using ≤0.5x of shuffle width (e.g. 0‿0‿2⊸⊏˘ n‿3⥊i8 → 0‿0‿2‿3‿3‿5⊸⊏˘ n‿6⥊i8)
