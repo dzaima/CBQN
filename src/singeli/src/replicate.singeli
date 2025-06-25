@@ -65,7 +65,13 @@ def basic_rep = incl{2, 7}
 if_inline (not (hasarch{'SSSE3'} or hasarch{'AARCH64'})) {
 
 fn rep_const{T}(wv:u64, x:*void, r:*void, n:u64) : void = {
-  rep_by_scan{T, cast_i{usz,wv}, x, r, cast_i{usz, wv*n}}
+  assert{wv>=2}
+  if (width{T} < 32 and wv < 128/width{T}) {
+    rep_by_scan{T, cast_i{usz, wv}, x, r, cast_i{usz, wv*n}}
+  } else {
+    rw := *T~~r
+    @for (v in *T~~x over n) { @for (rw over wv) rw = v; rw += wv }
+  }
 }
 
 } else {
