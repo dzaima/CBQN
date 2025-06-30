@@ -26,7 +26,7 @@ CMP_DEF(le, AS);
 #define CMP_AA_IMM(FN, ELT, WHERE, WP, XP, LEN) CMP_AA_CALL(CMP_AA_FN(FN, ELT), WHERE, WP, XP, LEN)
 #define CMP_AS_IMM(FN, ELT, WHERE, WP, X,  LEN) CMP_AS_CALL(CMP_AS_FN(FN, ELT), WHERE, WP, X, LEN)
 
-typedef bool (*MatchFn)(void* a, void* b, ux l, u64 data);
+typedef bool (*MatchFn)(void* a, void* b, u64 l, u64 data);
 extern INIT_GLOBAL MatchFn matchFns[];
 extern INIT_GLOBAL MatchFn matchFnsR[];
 extern u8 const matchFnData[];

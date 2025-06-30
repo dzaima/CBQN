@@ -11,7 +11,7 @@ def swap{w,x} = {
 }
 
 # width{W} ≤ width{X}
-fn equal{W, X}(w:*void, x:*void, l:ux, d:u64) : u1 = {
+fn equal{W, X}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   def vw = arch_defvw{}
   def bulk = vw / width{X}
   if (W!=X) if (d!=0) swap{w,x}
@@ -80,7 +80,7 @@ def any_ne_reflexive_qnan{M, a:V=[k](f64), b:V} = { # (a==b) | (isQNaN{a} & isQN
   ~andn_bit_none{M, t2, t1}
 }
 
-fn equal_reflexive{}(w:*void, x:*void, l:ux, d:u64) : u1 = {
+fn equal_reflexive{}(w:*void, x:*void, l:u64, d:u64) : u1 = {
   def w = *f64~~w
   def x = *f64~~x
   def bulk = arch_defvw{} / width{f64}
