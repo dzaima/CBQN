@@ -156,11 +156,11 @@ u8 const matchFnData[] = { // for the main diagonal, amount to shift length by; 
   #undef DEF_EQ_U1
 
   #define DEF_EQ_I(NAME, S, T, INIT) \
-    bool F(NAME)(void* w, void* x, ux l, u64 d) {             \
-      assert(l>0); INIT                                       \
-      S* wp = w; T* xp = x;                                   \
-      for (usz i=0; i<l; i++) if (wp[i]!=xp[i]) return false; \
-      return true;                                            \
+    bool F(NAME)(void* w, void* x, ux l, u64 d) {            \
+      assert(l>0); INIT                                      \
+      S* wp = w; T* xp = x;                                  \
+      for (ux i=0; i<l; i++) if (wp[i]!=xp[i]) return false; \
+      return true;                                           \
     }
   #define DEF_EQ(N,S,T) DEF_EQ_I(N,S,T, if (d!=0) { void* t=w; w=x; x=t; })
   DEF_EQ_I(8_8, u8, u8, l<<=d;)
