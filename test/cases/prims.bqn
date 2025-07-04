@@ -165,19 +165,18 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 )
 0‿0‿0 ⊏ 1‿3⥊↕10 %% 3‿3⥊0‿1‿2
 ≢¨ ⟨(2‿0‿3‿4‿5⥊1)⊏9‿8‿0‿7⥊0 ⋄ ⟨⟩⊏0‿8‿0‿7⥊0 ⋄ (2‿3‿0‿4⥊1)⊏↕10⟩ %% ⟨2‿0‿3‿4‿5‿8‿0‿7,0‿8‿0‿7,2‿3‿0‿4⟩
-!"𝕨⊏𝕩: Indices out of range" % %USE evar ⋄ 0‿0 ⊏_evar ↕0
-!"𝕨⊏𝕩: Indices out of range" % %USE evar ⋄ 0‿0 ⊏_evar 0‿2⥊1
-!"𝕨⊏𝕩: Indices out of range" % %USE evar ⋄ [0‿0,0‿0] ⊏_evar ↕0
-!"𝕨⊏𝕩: Indices out of range" % %USE evar ⋄ [0‿0,0‿0] ⊏_evar 0‿0⥊1
-!"𝕨⊏𝕩: Indices out of range" % %USE evar ⋄ ⟨0‿0⟩ ⊏_evar 0‿2⥊1
-!"𝕨⊏𝕩: Indices out of range" % %USE evar ⋄ ⟨0‿0⟩ ⊏_evar ↕0
-!"𝕨⊏𝕩: Indices out of range" % %USE evar ⋄ ⟨0‿0,0‿0⟩ ⊏_evar 2‿0⥊1
+!"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ 0‿0 ⊏_evar ↕0
+!"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ 0‿0 ⊏_evar 0‿2⥊1
+!"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ [0‿0,0‿0] ⊏_evar ↕0
+!"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ [0‿0,0‿0] ⊏_evar 0‿0⥊1
+!"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ ⟨0‿0⟩ ⊏_evar 0‿2⥊1
+!"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ ⟨0‿0⟩ ⊏_evar ↕0
+!"𝕨⊏𝕩: Indexing out-of-bounds along axis 1 (0 ∊ 1⊑𝕨, 2‿0≡≢𝕩)" % %USE evar ⋄ ⟨0‿0,0‿0⟩ ⊏_evar 2‿0⥊1
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ ⟨0⟩ ⊏_evar ↕0
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ ⟨⋈0⟩ ⊏_evar ↕0
 !"𝕨⊏𝕩: Indexing out-of-bounds (1∊𝕨, 1≡≠𝕩)" % ⊏˜(200⥊1)⥊1
 !"𝕨⊏𝕩: Indexing out-of-bounds (24∊𝕨, 4≡≠𝕩)" % %USE evar ⋄ 1‿24 ⊏_evar ↕4‿4
 !"𝕨⊏𝕩: Indexing out-of-bounds (¯24∊𝕨, 4≡≠𝕩)" % %USE evar ⋄ 1‿¯24 ⊏_evar ↕4‿4
-!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such arrays" % %USE evar ⋄ (1‿¯26∾@) ⊏_evar @∾↕5
 !"𝕨⊏𝕩: Indexing out-of-bounds (¯26∊𝕨, 5≡≠𝕩)" % %USE evar ⋄ ¯26⊸⊏_evar ↕5
 !"Expected integer, got ¯26.5" % %USE evar ⋄ ¯26.5⊸⊏_evar ↕5
 !"𝕨⊏𝕩: Indexing out-of-bounds (¯26∊𝕨, 5≡≠𝕩)" % %USE evar ⋄ 1‿¯26 ⊏_evar ↕5
@@ -190,24 +189,65 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"𝕨⊏𝕩: Indexing out-of-bounds (4000∊𝕨, 1001≡≠𝕩)" %  %USE evar ⋄ ( 1000×1‿4‿2‿0‿10‿5‿6) ⊏_evar 1001⥊1‿0‿1
 !"𝕨⊏𝕩: Indexing out-of-bounds (¯4000∊𝕨, 1001≡≠𝕩)" % %USE evar ⋄ (¯1000×1‿4‿2‿0‿10‿5‿6) ⊏_evar 1001⥊1‿0‿1
 !"𝕨⊏𝕩: Indexing out-of-bounds (3∊𝕨, 2≡≠𝕩)" % %USE evar ⋄ (⌽↕4) ⋈⊸⊏_evar "ab"
-!"Expected integer, got namespace" % %USE eqerr ⋄ ⟨{⇐}, <{⇐}⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
-!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such arrays" % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ ⟨⋈⋈{⇐}, <<<4, ⋈⋈⋈4, 1.5‿{⋈}⟩ ⊏_evar _eqerr ⟨↕10, 10‿10⥊↕100⟩
-!"𝕨⊏𝕩: Compound 𝕨 must have rank at most 1" % %USE eqerr ⋄ ⟨≍⋈↕5⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
-!"Expected integer, got namespace" % %USE eqerr ⋄ ⟨≍⋈{⇐}, ⋈{⇐}⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
-%USE eqvar ⋄ (⌽↕4) ⊏_eqvar 10×↕10 %% 30‿20‿10‿0
-%USE eqvar ⋄ (4⥊0) ⊏_eqvar 40‿30‿20 %% 4⥊40
-%USE eqvar ⋄ 1‿0‿0 ⊏_eqvar "ab"⌾(0‿1⊸⊏) ↕2 %% "baa"
-%USE eqvar ⋄ (⌽↕4) ⋈⊸⊏_eqvar "abcdefgh" %% "dcba"
-(<↕3) ⊏ "hello" %% "hel"
-(<<4) ⊏ "hello" %% <'o'
-!"𝕨⊏𝕩: Indexing out-of-bounds (1∊𝕨, 1≡≠𝕩)" % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ ⊏_evar´ _eqerr ⟨⟨0‿1, ⋈0⟩ ⋄ ⟨0‿1, "?"⟩ ⋄ ⟨0‿1, ≍0‿1⟩⟩
-a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ 𝕨⊏⎊"e"𝕩}⟨1‿2,3‿4⟩ ⋄ ! 0‿1 ≡ a
-%USE eqvar ⋄ {1‿¯1 {r←𝕨⊏𝕩 ⋄ ! 𝕩 ≥○•internal.ElType r ⋄ r}_eqvar 𝕩}¨ ⟨↕2, ↕4, "hello", ⟨"ab", "cd", "ef"⟩, ↕⋈4⟩
 !"𝕨⊏𝕩: 𝕩 cannot be a unit" % %USE eqerr ⋄ ⟨0, ⟨⟩⟩ ⊏_eqerr ⟨<"a", <5, <{⇐}⟩
 !"𝕨⊏𝕩: 𝕩 cannot be an atom" % %USE eqerr ⋄ ⟨0, ⟨⟩⟩ ⊏_eqerr ⟨5, {⇐}⟩
 !"Expected integer, got 1.5" % ⟨1.5⟩ ⊏ "ab"‿"cd"
 !"𝕨⊏𝕩: Indexing out-of-bounds (10∊𝕨, 2≡≠𝕩)" % ⟨10⟩ ⊏ "ab"‿"cd"
 {𝕩 ! ↕∘≠⊸⊏⊸≡ 20‿𝕩•rand.Range 2}¨ (↕70)∾⥊(64×1‿2‿3‿4‿5)+⌜¯1‿0‿1‿30‿60
+%USE eqvar ⋄ {1‿¯1 {r←𝕨⊏𝕩 ⋄ ! 𝕩 ≥○•internal.ElType r ⋄ r}_eqvar 𝕩}¨ ⟨↕2, ↕4, "hello", ⟨"ab", "cd", "ef"⟩, ↕⋈4⟩
+%USE tvar ⋄ !∘≡¨⟜⊏ ∾ {⥊𝕨 ⊏⎊{𝕊:•CurrentError@} _tvar 𝕩}´¨ ⟨⟨0‿1, ⋈0⟩ ⋄ ⟨0‿1, "?"⟩ ⋄ ⟨0‿1, ≍0‿1⟩⟩
+a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ 𝕨⊏⎊"e"𝕩}⟨1‿2,3‿4⟩ ⋄ ! 0‿1 ≡ a
+
+!"Expected integer, got character" % %USE eqerr ⋄ ⟨@, <@⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"Expected integer, got namespace" % %USE eqerr ⋄ ⟨{⇐}, <{⇐}⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"Expected integer, got namespace" % %USE eqerr ⋄ ⟨≍⋈{⇐}, ⋈{⇐}⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
+%USE eqvar ⋄ (⌽↕4) ⊏_eqvar 10×↕10 %% 30‿20‿10‿0
+%USE eqvar ⋄ (4⥊0) ⊏_eqvar 40‿30‿20 %% 4⥊40
+%USE eqvar ⋄ 1‿0‿0 ⊏_eqvar "ab"⌾(0‿1⊸⊏) ↕2 %% "baa"
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained character)"                % %USE evar ⋄ ⟨ 1,¯26,@⟩ ⊏_evar ↕5
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and number)" % %USE evar ⋄ ⟨⋈1,¯26,@⟩ ⊏_evar ↕5
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and number)" % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ (⋈⟜⌽ ⟨1,<1⟩) ⊏_evar _eqerr ⟨10‿10⥊↕100⟩
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained function)"                 % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ ⟨1.5‿{⋈}⟩ ⊏_evar _eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"𝕨⊏𝕩: Elements of compound 𝕨 must be arrays of numbers"                                     % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ ⟨<<<4⟩ ⊏_evar _eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"𝕨⊏𝕩: Elements of compound 𝕨 must be arrays of numbers"                                     % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ ⟨⋈⋈{⇐}⟩ ⊏_evar _eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"𝕨⊏𝕩: Elements of compound 𝕨 must be arrays of numbers"                                     % %USE eqerr ⋄ evar ← {%USE evar ⋄ evar} ⋄ ⟨⋈⋈⋈4⟩ ⊏_evar _eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained character)" % ⟨@,@,@⟩ ⊏ 3‿3⥊1
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and number)" % ⟨↕2,1⟩ ⊏ 10‿10⥊2
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and number)" % ⟨↕2,1,@⟩ ⊏ 3‿3⥊1
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and character)" % ⟨↕2,@,1⟩ ⊏ 3‿3⥊1
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and number)" % ⟨⋈99, 1⟩ ⊏ 10‿10⥊2
+!"𝕨⊏𝕩: Compound 𝕨 must have rank at most 1 (1‿1 ≡ ≢𝕨)" % %USE eqerr ⋄ ⟨≍⋈↕5⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
+!"𝕨⊏𝕩: Compound 𝕨 must have rank at most 1 (2‿2 ≡ ≢𝕨)" % [⟨1,↕2⟩, ⟨3,4⟩] ⊏ 10‿10⥊2
+!"𝕨⊏𝕩: Compound 𝕨 must not be longer than 𝕩 (2 ≡ ≠𝕨, ⟨10⟩ ≡ ≢𝕩)" % ⟨⟨⟩,⟨⟩⟩ ⊏ ↕10
+!"𝕨⊏𝕩: Compound 𝕨 must not be longer than 𝕩 (2 ≡ ≠𝕨, ⟨10⟩ ≡ ≢𝕩)" % ⟨↕2,↕2⟩ ⊏ ↕10
+!"𝕨⊏𝕩: Compound 𝕨 must not be longer than 𝕩 (2 ≡ ≠𝕨, ⟨4⟩ ≡ ≢𝕩)" % ⟨⋈⋈2,⋈⋈2⟩ ⊏ ↕4
+!"𝕨⊏𝕩: Indexing out-of-bounds (4∊𝕨, 4≡≠𝕩)" % ⟨⋈4⟩ ⊏ 4⥊1
+!"𝕨⊏𝕩: Indexing out-of-bounds (¯5∊𝕨, 4≡≠𝕩)" % ⟨⋈¯5⟩ ⊏ 4⥊1
+!"𝕨⊏𝕩: Indexing out-of-bounds along axis 0 (4 ∊ 0⊑𝕨, 4‿5≡≢𝕩)" % ⟨⋈4,⋈0⟩ ⊏ 4‿5⥊1
+!"𝕨⊏𝕩: Indexing out-of-bounds along axis 1 (¯6 ∊ 1⊑𝕨, 4‿5≡≢𝕩)" % ⟨⋈0,⋈¯6⟩ ⊏ 4‿5⥊1
+!"𝕨⊏𝕩: Bad index: 1.5 along axis 0" % ⟨⋈1.5,⋈¯6⟩ ⊏ 4‿5⥊1
+⟨1‿¯1, 2‿2⥊3‿2‿¯3‿¯4⟩ ⊏ 2‿4‿3⥊↕24 %% 2‿2‿2‿3⥊21‿22‿23‿18‿19‿20‿15‿16‿17‿12‿13‿14‿21‿22‿23‿18‿19‿20‿15‿16‿17‿12‿13‿14
+⟨⟨⟩⟩⊏2‿2⥊↕4 %% 0‿2⥊0
+⟨⟨⟩,⟨⟩⟩⊏2‿2⥊↕4 %% 0‿0⥊0
+⟨⟨⟩,"",<2⟩⊏2‿2‿3⥊↕12 %% 0‿0⥊0
+⟨3‿4⥊1‿0‿1⟩ ⊏ 2‿3⥊↕6 %% (3‿4‿3⥊↕3) + 3‿4⥊3‿0‿3
+⟨⟨⟩, 0‿3⥊1, 4‿0‿2⥊2⟩ ⊏ 2‿2‿2‿3‿4⥊3 %% 0‿0‿3‿4‿0‿2‿3‿4⥊0
+⟨⟨⟩, 0‿3⥊1, 4‿0‿2⥊2, <0⟩ ⊏ 1‿1‿2‿3‿4⥊3 %% 0‿0‿3‿4‿0‿2‿4⥊0
+⟨2‿3, 2‿2⥊4‿1‿2‿¯3, <2⟩ ⊏ 5‿7‿3‿3‿2⥊↕999 %% 2‿2‿2‿3‿2 ⥊ ⟨336, 282, 300, 336, 462, 408, 426, 462⟩ +⌜ ↕6
+⟨<0,<1,<0⟩ ⊏ 2‿3‿2‿5⥊↕99 %% 10‿11‿12‿13‿14
+⟨<0,<1,<0,4‿3‿2⟩ ⊏ 2‿3‿2‿5⥊↕99 %% 14‿13‿12
+⟨<1,<2,<0,<4⟩ ⊏ 2‿3‿2‿5⥊↕99 %% <54
+!"𝕨⊏𝕩: Indexing out-of-bounds along axis 3 (4 ∊ 3⊑𝕨, 2‿2‿2‿3‿4≡≢𝕩)" % ⟨⟨⟩, 0‿3⥊1, 4‿0‿2⥊2, <4, ⟨⟩⟩ ⊏ 2‿2‿2‿3‿4⥊3
+({(𝕩⥊1)⥊0}¨ 200‿55) ⊏ 2‿2  ⥊0 %% (   255⥊1)⥊0
+({(𝕩⥊1)⥊0}¨ 200‿54) ⊏ 2‿2‿4⥊0 %% (4∾˜254⥊1)⥊0
+!"𝕨⊏𝕩: Result rank too large" % ({(𝕩⥊1)⥊0}¨ 201‿55) ⊏ 2‿2⥊0
+!"𝕨⊏𝕩: Result rank too large" % ({(𝕩⥊1)⥊0}¨ 201‿54) ⊏ 2‿2‿4⥊0
+%USE eqvar ⋄ (⌽↕4) ⋈⊸⊏_eqvar "abcdefgh" %% "dcba"
+%USE eqvar ⋄ ⟨4+↕5, 2+↕4⟩ ⊏_eqvar 10‿10⥊↕100 %% 5‿4⥊42‿43‿44‿45‿52‿53‿54‿55‿62‿63‿64‿65‿72‿73‿74‿75‿82‿83‿84‿85
+%USE eqvar ⋄ ⟨4+↕5, 2+↕4⟩ ⊏_eqvar 10‿10⥊↕100 %% 5‿4⥊42‿43‿44‿45‿52‿53‿54‿55‿62‿63‿64‿65‿72‿73‿74‿75‿82‿83‿84‿85
+%USE eqvar ⋄ ⟨4+↕2, 2+↕5⟩ ⊏_eqvar 10‿10‿3⥊↕300 %% 2‿5‿3⥊126‿127‿128‿129‿130‿131‿132‿133‿134‿135‿136‿137‿138‿139‿140‿156‿157‿158‿159‿160‿161‿162‿163‿164‿165‿166‿167‿168‿169‿170
+(<↕3) ⊏ "hello" %% "hel"
+(<<4) ⊏ "hello" %% <'o'
 
 # 𝕨⊑𝕩
 !"𝕨⊑𝕩: 𝕨 contained a non-integer" % ⟨0.1⟩⊑↕3

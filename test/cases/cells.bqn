@@ -38,7 +38,7 @@
 !"𝕨/𝕩: Length of compound 𝕨 must be at most rank of 𝕩" % (<↕0)/˘○(5⊸⥊)<"ab"
 !"𝕨⊏𝕩: Indexing out-of-bounds (24∊𝕨, 4≡≠𝕩)" % 1‿24⊏⎉1↕4‿4
 !"𝕨⊏𝕩: Indexing out-of-bounds (4∊𝕨, 4≡≠𝕩)" % ⊏⎉1˜6‿4⥊↕24
-!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such arrays" % 0‿@‿¯1⊏⎉1 5‿2⥊0.5
+!"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained character)" % 0‿@‿¯1⊏⎉1 5‿2⥊0.5
 !"Expected integer, got ¯5.25" % ¯5.25⊏˘∘‿4⥊↕24
 !"𝕨⊏𝕩: Indexing out-of-bounds (1∊𝕨, 1≡≠𝕩)" % 0‿0‿1 ⊏˘○(≍˘) 10000×↕3
 !"𝕨⊏𝕩: 𝕩 cannot be a unit" % 0⊏˘5⥊<"a"

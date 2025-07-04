@@ -29,7 +29,10 @@
 // Generic cell size 𝕩:
 //   Computes a function that copies the necessary amount of bytes/bits
 //   Specializes over i8/i16/i32 𝕨
-// SHOULD implement nested 𝕨
+// Nested 𝕨:
+//   Recognizes a trailing element of a+↕b
+//   Converts remaining indices to single select indices via +⌜
+//   COULD have specialized select that skips OOB/negative checks
 
 // Under Select - F⌾(i⊸⊏) 𝕩
 // Specialized for rank-1 numeric 𝕩
@@ -172,7 +175,217 @@ static NOINLINE B select_list_cell(usz wi, B x) { // guarantees returning new ar
   return rb;
 }
 
+static NOINLINE void select_depth2_bad(B w, B x) {
+  usz wia = IA(w);
+  if (IA(x)==0 && wia>0) {
+    u8 we;
+    w = squeeze_numTry(w, &we, SQ_NUM);
+    if (elNum(we)) {
+      thrF("𝕨⊏𝕩: Indexing out-of-bounds (%B∊𝕨, %s≡≠𝕩)", IGetU(w,0), *SH(x));
+    }
+  }
+  if (RNK(w) > 1) thrF("𝕨⊏𝕩: Compound 𝕨 must have rank at most 1 (%H ≡ ≢𝕨)", w);
+  SGetU(w)
+  bool depth1 = depth(w)==1;
+  for (ux i = 0; i < wia; i++) {
+    B wc = GetU(w,i);
+    if (depth1) {
+      if (isAtm(wc) && !isNum(wc)) thrF("𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained %S)", genericDesc(wc));
+    } else {
+      if (isAtm(wc)) thrF("𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and %S)", genericDesc(wc));
+    }
+  }
+}
+static NOINLINE NORETURN void select_depth2_bad_inds(B cw, ux axis, B x) {
+  assert(axis < RNK(x) && isArr(cw));
+  SGetU(cw)
+  usz ia = IA(cw);
+  ux len = SH(x)[axis];
+  for (ux i = 0; i < ia; i++) {
+    f64 c = o2fG(GetU(cw,i));
+    if (!q_fi64(c)) thrF("𝕨⊏𝕩: Bad index: %f along axis %z", c, axis);
+    WRAP(c, len, thrF("𝕨⊏𝕩: Indexing out-of-bounds along axis %z (%f ∊ %z⊑𝕨, %H≡≢𝕩)", axis, c, axis, x));
+  }
+  fatal("select_depth2_bad_inds should've errored");
+}
+
+B add_c2(B,B,B);
+B mul_c2(B,B,B);
+B lt_c2(B,B,B);
+typedef struct {
+  B inds; // array (rank≤1) of elNum arrays
+  ux prod; // ×´⥊≠∘⥊¨inds
+  ux left; // (=x) - ≠𝕨
+  ux rank; // =w⊏x
+  bool lastMaybeRange; // whether ¯1⊑r may be an a+↕b
+} Depth2Inds;
+Depth2Inds select_depth2_parse_inds(B w, B x) { // consumes w; checks that w of w⊏x is valid, and, if so, returns a depth-2 array of number arrays (i.e. `squeeze_numTry¨ ((≠w)↑≢x) | w`)
+  assert(isArr(w) && isArr(x));
+  usz wia = IA(w);
+  assert(wia > 0);
+  if (RNK(w) > 1) { select_depth2_bad(w,x); fatal("should've errored"); }
+  SGetU(w)
+  if (wia > RNK(x)) { select_depth2_bad(w,x); thrF("𝕨⊏𝕩: Compound 𝕨 must not be longer than 𝕩 (%s ≡ ≠𝕨, %H ≡ ≢𝕩)", wia, x); }
+  
+  Depth2Inds r;
+  HArr_p inds = m_harr0v(wia);
+  r.inds = inds.b;
+  r.prod = 1;
+  r.rank = r.left = RNK(x) - wia;
+  usz* xsh = SH(x);
+  i64 bounds[2];
+  ux lastIA;
+  for (ux i = 0; i < wia; i++) {
+    B c = GetU(w, i);
+    if (!isArr(c)) { select_depth2_bad(w,x); thrF("𝕨⊏𝕩: Elements of compound 𝕨 must be arrays (encountered %S)", genericDesc(c)); }
+    r.rank+= RNK(c);
+    
+    u8 ce;
+    c = squeeze_numTry(incG(c), &ce, SQ_NUM);
+    lastIA = IA(c);
+    r.prod*= lastIA;
+    
+    if (lastIA>0) {
+      if (!elNum(ce)) { select_depth2_bad(w,x); thrM("𝕨⊏𝕩: Elements of compound 𝕨 must be arrays of numbers"); }
+      
+      if (!getRange_fns[ce](tyany_ptr(c), bounds, lastIA) || bounds[0] < -(i64)xsh[i] || bounds[1] >= xsh[i]) {
+        select_depth2_bad(w,x);
+        select_depth2_bad_inds(c, i, x);
+      }
+      if (bounds[0] < 0) {
+        c = C2(add, c, C2(mul, m_f64(xsh[i]), C2(lt, incG(c), m_f64(0))));
+      }
+    }
+    inds.a[i] = c;
+  }
+  decG(w);
+  
+  if (r.rank > UR_MAX) thrM("𝕨⊏𝕩: Result rank too large");
+  r.lastMaybeRange = lastIA!=0 && (bounds[0]<0 || bounds[1]+1-bounds[0] == lastIA);
+  return r;
+}
+
+B tbl_c2(Md1D* d, B w, B x);
+B mul_c2(B, B, B);
+B ud_c1(B, B);
+B shape_c1(B, B);
+typedef struct {
+  B starts; // unspecified shape
+  ux span, mul, add;
+} Spans;
+Spans select_depth2_inds(B w, B x, bool lastMaybeRange) { // doesn't consume; assumes w is a result of select_depth2_parse_inds; (⥊w⊏x) ≡ ⥊((mul×⥊starts)+⌜add+↕span)⊏x
+  ur xr = RNK(x);
+  usz wia = IA(w);
+  assert(xr>0 && wia>=2 && wia<=xr);
+  usz* xsh = SH(x);
+  
+  ux add = 0;
+  ux span = shProd(xsh, wia, xr);
+  ux mul = span;
+  
+  if (MAY_T(lastMaybeRange) && wia>=2) {
+    B l = IGetU(w, wia-1);
+    usz lia = IA(l);
+    assert(lia!=0);
+    if (HEURISTIC(lia <= 3)) goto lastNotRange; // TODO improve heuristic
+    SGetU(l)
+    usz l0 = o2sG(GetU(l,0));
+    for (ux i = 1; i < lia; i++) if (o2sG(GetU(l,i)) != l0+i) goto lastNotRange; // TODO do in a less bad way
+    add = l0*mul;
+    span*= lia;
+    mul*= xsh[wia-1];
+    wia--;
+  }
+  lastNotRange:;
+  
+  SGet(w)
+  B c = Get(w, 0);
+  for (ux i = 1; i < wia; i++) {
+    c = C2(mul, c, m_f64(xsh[i]));
+    c = M1C2(tbl, add, c, Get(w, i));
+  }
+  return (Spans) {c, span, mul, add};
+}
+
 #define WRAP_SELECT_ONE(VAL, LEN, FMT, ARG) WRAP(VAL, LEN, thrF("𝕨⊏𝕩: Indexing out-of-bounds (" FMT "∊𝕨, %s≡≠𝕩)", ARG, LEN))
+
+static NOINLINE B select_depth2_select(Spans ws, B x) { // consumes ws.starts
+  B wst = ws.starts;
+  ux span = ws.span;
+  B r0;
+  
+  if (span != 1) {
+    u8 xe = TI(x,elType);
+    ux sia = IA(wst);
+    UntaggedArr r = m_arrp_copyFill(x, sia*span);
+    SGetU(wst)
+    ux ro = 0;
+    if (xe != el_B) {
+      void* xp = tyany_ptr(x);
+      u8 ewb = elwBitLog(xe);
+      CFRes f = cf_get(span, 1<<ewb);
+      for (ux i = 0; i < sia; i++) {
+        ux xi = ws.add + ws.mul*o2sG(GetU(wst,i));
+        cf_call(f, r.data, ro, xp, xi*f.mul);
+        ro+= span*f.mul;
+      }
+    } else {
+      for (ux i = 0; i < sia; i++) {
+        ux xi = ws.add + ws.mul*o2sG(GetU(wst,i));
+        COPY_TO(r.data, xe, ro, x, xi, span);
+        ro+= span;
+      }
+      NOGC_E;
+    }
+    decG(wst);
+    r0 = taga(r.obj);
+  } else {
+    if (ws.mul  != 1) wst = C2(mul, wst, m_f64(ws.mul));
+    // if (span != 1) wst = M1C2(tbl, add, wst, C1(ud, m_f64(span)));
+    if (ws.add  != 0) wst = C2(add, wst, m_f64(ws.add));
+    r0 = C2(select, wst, C1(shape, incG(x)));
+  }
+  
+  assert(reusable(r0));
+  return r0;
+}
+
+static B select_depth2_impl(ux wia, B w, B x) { // wia<=1 only if invalid; or if x is empty, w may also be a number list
+  Depth2Inds wi = select_depth2_parse_inds(w, x);
+  assert(IA(w)>=2); // invalid cases thrown out above
+  w = wi.inds;
+  ux rr = wi.rank;
+  
+  B r0;
+  if (wi.prod==0) {
+    r0 = taga(emptyArr(x, rr));
+  } else {
+    assert(IA(x)!=0);
+    Spans ws = select_depth2_inds(w, x, wi.lastMaybeRange);
+    r0 = select_depth2_select(ws, x);
+  }
+  
+  if (rr >= 2) {
+    ShArr* rsh = m_shArr(rr);
+    arr_shReplace(a(r0), rr, rsh);
+    
+    usz* rshc = rsh->a;
+    SGetU(w)
+    for (ux i = 0; i < wia; i++) {
+      B wc = GetU(w, i);
+      ur wcr = RNK(wc);
+      shcpy(rshc, SH(wc), wcr);
+      rshc+= wcr;
+    }
+    shcpy(rshc, SH(x)+wia, wi.left);
+    assert(rshc+wi.left == rsh->a+rr);
+  } else {
+    arr_shErase(a(r0), rr); // may re-write the rank of bi_emptyHVec/bi_emptyIVec/bi_emptyCVec/bi_emptySVec. ¯\_(ツ)_/¯
+  }
+  
+  decG(w); decG(x);
+  return r0;
+}
 
 B select_c2(B t, B w, B x) {
   if (isAtm(x)) thrM("𝕨⊏𝕩: 𝕩 cannot be an atom");
@@ -193,7 +406,7 @@ B select_c2(B t, B w, B x) {
   usz wia = IA(w);
   Arr* r;
   ur wr = RNK(w);
-  i32 rr = xr+wr-1;
+  i32 rr = xr+wr-1; // only for depth-1 w
   if (wia <= 1) {
     if (wia == 0) {
       emptyRes:
@@ -236,14 +449,14 @@ B select_c2(B t, B w, B x) {
       if (elNum(w0e)) return C2(select, w0, x);
       w0 = squeeze_numTry(w0, &w0e, SQ_MSGREQ(SQ_NUM));
       if (elNum(w0e)) return C2(select, w0, x);
-      w = m_vec1(w0);
+      w = m_vec1(w0); // erroneous, speed doesn't matter
     }
-    goto base;
+    goto depth2;
   }
   
   B xf = getFillR(x);
   usz xn = *SH(x);
-  if (xn==0) goto def_xf_base; // empty x, non-empty w; error
+  if (xn==0) goto error_dec_xf; // empty x, non-empty w; error
   usz csz = arr_csz(x);
   u8 xl = cellWidthLog(x);
   usz ria = wia * csz;
@@ -380,16 +593,15 @@ B select_c2(B t, B w, B x) {
       w = squeeze_numTry(w, &we, SQ_MSGREQ(SQ_NUM));
       if (RANDOMIZE_HEURISTICS && we==el_f64) goto generic_l; // avoid infinite loop
       if (elNum(we)) goto retry;
-      goto def_xf_base;
+      goto error_dec_xf; // erroneous input
     }
   }
   #undef CASE
   #undef CASEW
   
-  def_xf_base:;
+  error_dec_xf:;
   dec(xf);
-  base:;
-  return c2rt(select, w, x);
+  depth2: return select_depth2_impl(wia, w, x);
   
   generic_l: {
     if (xia==0) goto emptyRes;
