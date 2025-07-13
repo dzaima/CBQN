@@ -219,7 +219,7 @@ B fold_c1(Md1D* d, B x) { B f = d->f;
       u64* xp = bitany_ptr(x);
       f64 r;
       switch (rtid) { default: goto base;
-        case n_mul: 
+        case n_mul:
         case n_and:case n_floor: r = bit_has (xp, ia, 0) ^ 1;     break;
         case n_or: case n_ceil:  r = bit_has (xp, ia, 1);         break;
         case n_add:              r = bit_sum (xp, ia);            break;

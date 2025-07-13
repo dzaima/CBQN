@@ -188,7 +188,7 @@ def extract_column_modperm{x0, r0, nv, l, el, vl} = {
   if (p2 == 0) {
     loop{{r, i, write} => write{swap_ms{r}}}
   } else {
-    # Store results 
+    # Store results
     def add_res = {
       ra := V**0  # Accumulator
       i  := make{V, iota{vl}%16}
@@ -276,7 +276,7 @@ def fold_rows_bit_lt64{
       def ss = 1<<iota{5}
       def ms = tail{64} / (1 + 1<<ss)
       fold{step, ., each{tup, ms, ss}}
-    } 
+    }
     run_loop2{{op} => loop_T{u32, {x} => extract{op{x, x>>1}}}}
   } else if (l == 4) {
     m:u64 = 64w2b0001; t := m<<3

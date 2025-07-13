@@ -1219,12 +1219,12 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
   TSFREE(arg);
   if (dwResult != ERROR_SUCCESS) {
-    thrF("•SH: Failed to run command: %S", winErrorEx(dwResult)); 
+    thrF("•SH: Failed to run command: %S", winErrorEx(dwResult));
   }
 
   // prepare output
-  u8* op; *s_outp = m_c8arrv(&op, oLen); 
-  u8* ep; *s_errp = m_c8arrv(&ep, eLen); 
+  u8* op; *s_outp = m_c8arrv(&op, oLen);
+  u8* ep; *s_errp = m_c8arrv(&ep, eLen);
   if (oBuf!=NULL) { memcpy(op, oBuf, oLen*sizeof(char)); free(oBuf); }
   if (eBuf!=NULL) { memcpy(ep, eBuf, eLen*sizeof(char)); free(eBuf); }
   return (i32)code;

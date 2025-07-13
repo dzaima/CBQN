@@ -405,7 +405,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   #define COPY0_TO(WHERE, RE, MS, X, XE, LEN) copyFns[el_##RE](WHERE, MS, X, 0, LEN)
   
   void basic_copy_bit_bit(void* rp, void* xp, u64 len) { bit_cpyN(rp, 0, xp, 0, len); }
-  #define BASIC_COPY_BIT_NUM(XE) 
+  #define BASIC_COPY_BIT_NUM(XE)
   
   #define BASIC_COPY_NUM(RE, XE) void basic_copy_##XE##_##RE(void* rp, void* xp, u64 len) { vfor (ux i = 0; i < len; i++) ((RE*)rp)[i] = ((XE*)xp)[i]; }
   #define BASIC_COPY_NUM_ROW(RE) BASIC_COPY_NUM(RE, i8) BASIC_COPY_NUM(RE, i16) BASIC_COPY_NUM(RE, i32) BASIC_COPY_NUM(RE, f64)
@@ -585,7 +585,7 @@ ApdFn* const apd_tot_fns[];  ApdFn* const apd_sh0_fns[];  ApdFn* const apd_sh1_f
 #define APD_POS(EB) JOIN0(APD_POS_,EB)()
 
 #define APD_WIDEN(TY, A) do { apd_widen(m, A, apd_##TY##_fns); return; } while(0)
-#define APD_INC_POS(EB) 
+#define APD_INC_POS(EB)
 #define APD_MK0(E, FEB, EB, TY, TARR, CIA, T0, CS) \
   NOINLINE void apd_##TY##_##E(ApdMut* m, B x) { T0 \
     usz cia=CIA; CS; MAYBE_UNUSED u8 xe=TI(x,elType); \

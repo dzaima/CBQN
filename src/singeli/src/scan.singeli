@@ -775,6 +775,6 @@ fn scan_stride_bool_assoc{op}(x:*u64, r:*u64, nl:usz, l:usz) : void = {
   }
 }
 export_tab{
-  'si_scan_bool_stride', 
+  'si_scan_bool_stride',
   each{scan_stride_bool_assoc, tup{|, &, ^}}
 }

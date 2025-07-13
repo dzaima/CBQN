@@ -102,7 +102,7 @@ Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊�
   u8 xe = TI(x,elType);
   
   u8 re = we==xe? we : el_or(we, xe);
-  if (0) { goto to_equal_types; to_equal_types:; 
+  if (0) { goto to_equal_types; to_equal_types:;
     // delay doing this until it's known that there will be code that can utilize it
     if (re!=we) w = toEltypeArr(w, re).obj;
     if (re!=xe) x = toEltypeArr(x, re).obj;

@@ -20,7 +20,7 @@
   #define toOsStr     toCStr
   #define freeOsStr   freeCStr
   #define OsStrDecode0 utf8Decode0
-#else 
+#else
   typedef WCHAR* OsStr;
   #define OS_C(C) L##C
   #define toOsStr     toWStr
@@ -373,7 +373,7 @@ B mmap_file(B path) {
   WCHAR* p = toWStr(path);
   dec(path);
   HANDLE hFile = CreateFileW(
-    p, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, NULL, 
+    p, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, NULL,
     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   freeWStr(p);
   if (hFile==INVALID_HANDLE_VALUE) thrF("Failed to open file: %S", winError());
@@ -388,7 +388,7 @@ B mmap_file(B path) {
   if (hMapFile==INVALID_HANDLE_VALUE) {
     CloseHandle(hFile);
     thrF("Failed to create file mapping: %S", winError());
-  } 
+  }
   u8* arr_data = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, 0);
   // TODO should ensure ALLOC_PADDING padding around allocated memory
   if (arr_data==NULL) {

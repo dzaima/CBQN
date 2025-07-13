@@ -185,7 +185,7 @@ NOINLINE B toKCells(B x, ur k) {
   
   B r;
   if (cam==0) {
-    r = empty_frame(xsh, k); 
+    r = empty_frame(xsh, k);
   } else {
     S_KSLICES(x, xsh, k, cam, 1)
     M_HARR(r, cam)

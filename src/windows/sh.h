@@ -58,10 +58,10 @@ static unsigned int __stdcall winThreadRead(void* arg0) {
   return dwResult;
 }
 
-static DWORD winCmd(WCHAR* arg, 
-  u64 iLen, char* iBuf, 
-  DWORD* code, 
-  u64* oLen, char** oBuf, 
+static DWORD winCmd(WCHAR* arg,
+  u64 iLen, char* iBuf,
+  DWORD* code,
+  u64* oLen, char** oBuf,
   u64* eLen, char** eBuf) {
 
   DWORD dwResult = ERROR_SUCCESS;
@@ -69,7 +69,7 @@ static DWORD winCmd(WCHAR* arg,
   HANDLE hOutR, hOutW;
   HANDLE hErrR, hErrW;
 
-  // Create pipes 
+  // Create pipes
   SECURITY_ATTRIBUTES sa;
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
@@ -83,7 +83,7 @@ static DWORD winCmd(WCHAR* arg,
   SetHandleInformation(hOutR, HANDLE_FLAG_INHERIT, 0);
   SetHandleInformation(hErrR, HANDLE_FLAG_INHERIT, 0);
 
-  // Set up 
+  // Set up
   STARTUPINFOW si;
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);

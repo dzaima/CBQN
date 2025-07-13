@@ -725,7 +725,7 @@ static void genObj_writePtr(void* res, B c, B expEl, B* sourceObjs) {
     if (!ty_equal(ptrh_type(h), expEl)) thrF("FFI: Pointer object type isn't compatible with argument type");
   #endif
   *(void**)res = ptrh_ptr(h);
-  if (sourceObjs!=NULL) *sourceObjs = vec_addN(*sourceObjs, incG(c)); 
+  if (sourceObjs!=NULL) *sourceObjs = vec_addN(*sourceObjs, incG(c));
 }
 void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
   if (isC32(o)) { // scalar

@@ -50,7 +50,7 @@ static B utf16Decode(const WCHAR* s, i64 len) {
   u64 p = 0;
   for (i64 i = 0; i < len; ++i) {
     if (UTF16_IS_HI(s[i]) && i+1<len && UTF16_IS_LO(s[i+1])) {
-      rp[p++] = UTF16_SURROGATE(s[i], s[i+1]);  
+      rp[p++] = UTF16_SURROGATE(s[i], s[i+1]);
       ++i;
     } else {
       rp[p++] = s[i];
