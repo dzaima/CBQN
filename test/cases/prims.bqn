@@ -407,6 +407,12 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 !"↕𝕩: 𝕩 must be either an integer or integer list (had rank 2)" % ↕2‿2⥊1
 !"↕𝕩: Result rank too large (300≡≠𝕩)" % ↕300⥊1
 !"↕𝕩: Result too large" % ↕20⥊10
+!"Expected non-negative integer, got 3000.0000000000005" % ↕1e4×1.3-1
+!"Expected non-negative integer, got ¯3000.0000000000005" % ↕-1e4×1.3-1
+!"Expected non-negative integer, got ¯10000" % ↕-1e4
+!"Out of memory" % ↕2e9 %USZ32
+!"Out of memory" % ↕1e18 %USZ64
+!"Integer out of range: 1e20" % ↕1e20
 ↕⟨⟩ %% <↕0
 ≢↕↕100 %% ↕100
 ↕⋈10 %% ⋈¨ ↕10

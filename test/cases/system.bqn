@@ -328,8 +328,8 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 
 !"•bit._cast: unsupported width 1073741824" % (2⥊2⋆30)•bit._cast ⋈0
 !"•bit._cast: unsupported width 1125899906842624" % (2⥊2⋆50)•bit._cast ⋈0 %USZ64
-!"Integer out of range: 1125899906842624" % (2⥊2⋆50)•bit._cast ⋈0 %USZ32
-!"Integer out of range: 1.180591620717411e21" % (2⥊2⋆70)•bit._cast ⋈0
+!"Integer out of range: 1.125899906842624e15" % (2⥊2⋆50)•bit._cast ⋈0 %USZ32
+!"Integer out of range: 1.1805916207174113e21" % (2⥊2⋆70)•bit._cast ⋈0
 !"Integer out of range: ∞" % (2⥊∞)•bit._cast ⋈0
 
 !"•bit._cast: unsupported width 12" % 1‿12•bit._cast 11⥊0

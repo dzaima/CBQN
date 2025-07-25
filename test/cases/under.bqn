@@ -177,7 +177,7 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 %USE eqvar ⋄ <‿≥‿> {𝕨⌾(1‿0‿0‿1‿1⊸/) 𝕩}_eqvar +‿-‿×‿÷‿⋆ %% <‿-‿×‿≥‿>
 %USE eqvar ⋄ ["wx"‿"WX","yz"‿"YZ"] {𝕨⌾(1‿0‿0‿1⊸/) 𝕩}_eqvar (<"aA")+↕4‿2 %% 4‿2⥊⟨"wx","WX","bA","bB","cA","cB","yz","YZ"⟩
 {m←𝕩•rand.Range 2 ⋄ ! (m{𝕨?"huh";⥊'a'+𝕩}¨↕𝕩) ≡ "huh"¨⌾(m⊸/) 'a'+↕⋈𝕩}¨ ↕100
-!"Integer out of range: 3.68934881474191e19" % 1¨⌾(a⊸/) a←100⥊2⋆65
+!"Integer out of range: 3.6893488147419103e19" % 1¨⌾(a⊸/) a←100⥊2⋆65
 !"Expected non-negative integer, got ¯10" % %USE evar ⋄ 1¨⌾(a⊸/)_evar a←¯10⌾(50⊸⊑) 100⥊10
 
 # ↓ & ↑

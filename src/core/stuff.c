@@ -206,6 +206,9 @@ i32 num_fmt(char buf[30], f64 x) {
   return len;
 }
 
+#if !NO_RYU
+B ryu_d2s(double f);
+#endif
 static B appendRaw(B s, B x) { assert(isArr(x) && RNK(x)==1); // consumes x
   AJOIN(squeeze_chrOut(x));
   return s;
@@ -315,8 +318,13 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
         break;
       }
       case 'f': {
-        NUM_FMT_BUF(buf, va_arg(a, f64));
-        AU(buf);
+        f64 val = va_arg(a, f64);
+        #if NO_RYU
+          NUM_FMT_BUF(buf, val);
+          AU(buf);
+        #else
+          AJOIN(ryu_d2s(val));
+        #endif
         break;
       }
       case 'c': {
