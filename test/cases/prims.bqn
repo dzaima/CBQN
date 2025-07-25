@@ -120,10 +120,8 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"𝕨/𝕩: 𝕨 cannot be negative" % (<¯2)/↕3
 !"𝕨/𝕩: Lengths of components of 𝕨 must match 𝕩 (1 ≠ 3)" % ⟨¯2⟩/↕3
 !"Expected non-negative integer, got ¯2" % ⟨¯2⟩/↕1
-!"Integer out of range: 4.611686018427388e18" % ⟨1,2⋆62⟩ / 2‿2⥊<⋈0 %USZ32
-!"Integer out of range: 4.611686018427388e18" % ⟨1,2⋆62⟩ / 2⥊<⋈0 %USZ32
-!"Out of memory" % ⟨1,2⋆62⟩ / 2‿2⥊<⋈0 %USZ64
-!"Out of memory" % ⟨1,2⋆62⟩ / 2⥊<⋈0 %USZ64
+!"Out of memory" % ⟨1,2⋆62⟩ / 2‿2⥊<⋈0
+!"Out of memory" % ⟨1,2⋆62⟩ / 2⥊<⋈0
 !"Out of memory" % (1e13×↕1000) / ↕1000
 !"Out of memory" % (16 ⥊ ¯1e9 + 2⋆60) / ↕16
 !"Out of memory" % (4⥊2⋆60)/⟨4,2⋆8⟩⥊1
@@ -433,10 +431,12 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 
 # 𝕨⥊𝕩
 !"𝕨⥊𝕩: Result rank too large (301 ≡ ≠𝕨)" % (0∾300⥊2)⥊0
-!"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 1.1}¨_eqerr 63-↕10
-!"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 7⥊1.1}¨_eqerr 63-↕10
-1e8‿1e8‿⌊‿1e8‿1e8⥊↕5 %% 1e8‿1e8‿0‿1e8‿1e8⥊0
-⍷ {1e8‿1e8‿𝕩‿1e8‿1e8⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e8‿1e8‿0‿1e8‿1e8⥊0
+!"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 1.1}¨_eqerr 63-↕10 %USZ64
+!"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 7⥊1.1}¨_eqerr 63-↕10 %USZ64
+1e8‿1e8‿⌊‿1e8‿1e8⥊↕5 %% 1e8‿1e8‿0‿1e8‿1e8⥊0 %USZ64
+1e4‿1e4‿⌊‿1e4‿1e4⥊↕5 %% 1e4‿1e4‿0‿1e4‿1e4⥊0 %USZ32
+⍷ {1e8‿1e8‿𝕩‿1e8‿1e8⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e8‿1e8‿0‿1e8‿1e8⥊0 %USZ64
+⍷ {1e4‿1e4‿𝕩‿1e4‿1e4⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e4‿1e4‿0‿1e4‿1e4⥊0 %USZ32
 !"𝕨⥊𝕩: 𝕨 too large" % %USE eqerr ⋄ {1e8‿1e8‿𝕩‿1e8‿1e8⥊"foo"}_eqerr ∘‿⌽‿↑
 
 !"𝕨⥊𝕩: 𝕨 must be a list or unit (4 ≡ =𝕩)" % %USE eqerr ⋄ ⟨3‿1‿4‿1⥊2⟩ ⥊_eqerr ⟨↕10, ↕0, 4⟩
