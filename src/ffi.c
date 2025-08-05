@@ -225,7 +225,7 @@ DEF_FREE(ffiFn) { dec(((BoundFn*)x)->obj); }
     #error "Only FFI=0 and FFI=2 are supported"
   #endif
   #if !__has_include(<ffi.h>)
-    #error "<ffi.h> not found. Either install libffi, or add 'FFI=0' as a make argument to disable •FFI"
+    #error "<ffi.h> not found. Either install libffi and pkg-config, or add 'FFI=0' as a make argument to disable •FFI"
   #endif
   #include <dlfcn.h>
   #include <ffi.h>
