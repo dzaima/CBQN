@@ -188,6 +188,8 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 !"𝔽⌾(n⊸↓)𝕩: 𝔽 must return an array with the same shape as its input (5 ≡ n, ⟨1⟩ ≡ shape of result of 𝔽)" % ⟨1⟩⌾(5⊸↓) ↕4
 !"𝔽⌾(n⊸↓)𝕩: 𝔽 must return an array with the same shape as its input (1 ≡ n, 4‿5‿2 ≡ shape of result of 𝔽)" % ⍉⌾(1⊸↓) 3‿4‿5⥊↕60
 !"𝔽⌾(n⊸↑)𝕩: 𝔽 must return an array with the same shape as its input (¯2 ≡ n, 4‿5‿2 ≡ shape of result of 𝔽)" % ⍉⌾(¯2⊸↑) 3‿4‿5⥊↕60
+!"𝔽⌾(n⊸↑)𝕩: 𝔽 must return an array with the same shape as its input (5 ≡ n, 5‿2 ≡ shape of result of 𝔽)" % 5‿2⊸⥊⌾(5⊸↑)"abcdefg"
+!"𝔽⌾(n⊸↑)𝕩: 𝔽 must return an array with the same shape as its input (1 ≡ n, 1‿1 ≡ shape of result of 𝔽)" % 1‿1⊸⥊⌾(1⊸↑) 3
 !"𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (5 ≡ n, ⟨4⟩ ≡ ≢𝕩)" % ⊢⌾(5⊸↑) ↕4
 ⟨⟩⌾(4⊸↓) ↕4 %% ↕4
 ⟨⟩⌾(5⊸↓) ↕4 %% ↕4

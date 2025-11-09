@@ -1460,7 +1460,7 @@ static B takedrop_ucw(bool take, i64 wi, B o, u64 am, B x, ux xr) {
   B rep = c1(o, taga(arg));
   if (isAtm(rep)) thrF("𝔽⌾(n⊸%c): 𝔽 returned an atom", take?U'↑':U'↓');
   usz* repsh = SH(rep);
-  if (RNK(rep)==0 || !eqShPart(repsh+1, SH(x)+1, xr-1) || repsh[0]!=am) thrF("𝔽⌾(n⊸%c)𝕩: 𝔽 must return an array with the same shape as its input (%l ≡ n, %H ≡ shape of result of 𝔽)", take?U'↑':U'↓', take? wi : -wi, rep);
+  if (RNK(rep)!=xr || repsh[0]!=am || !eqShPart(repsh+1, SH(x)+1, xr-1)) thrF("𝔽⌾(n⊸%c)𝕩: 𝔽 must return an array with the same shape as its input (%l ≡ n, %H ≡ shape of result of 𝔽)", take?U'↑':U'↓', take? wi : -wi, rep);
   
   MAKE_MUT_INIT(r, xia, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
   if (wi<0) {
