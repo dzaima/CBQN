@@ -158,13 +158,21 @@ fn arithAAu{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : void = {
   arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
 }
 
+# mode:
+#  0: void return, no overflow check (also mode=3)
+#  1: on overflow, returns position
+#  2: on overflow, returns 1
 def arithAA{mode, F, W, X, R} = {
   def vw = arch_defvw{}
   if (mode==1 or mode==2) arithAAc{vw, mode, F, W, X, R}
   else arithAAu{vw, mode, F, W, X, R}
 }
 
-# mode: 0:overflow-checked, needed; 1:overflow-erroring; 2: overflow-checked, not needed; 3: overflow-erroring, not needed
+# mode:
+#  0: returns position on overflow
+#  1: returns 1 on overflow
+#  2: returns length (i.e. mode≡0 but known no overflow)
+#  3: returns 0      (i.e. mode≡1 but known no overflow)
 fn arithSAf{vw, mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
   # show{F, swap, mode, W, X, R}
   assert{len>0}
