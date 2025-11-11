@@ -57,7 +57,7 @@ opts ← ⟨
   ⟨1, "singeli",   0, "Enable Singeli usage"⟩
   ⟨1, "replxx",    0, "Enable REPLXX"∾@+10⟩
   
-  ⟨0, "usz", "64", "Size of array length fields in bits; 32 or 64 (default: 64)"⟩
+  ⟨0, "usz",    @, "Size of array length fields in bits; 32 or 64 (default: 64)"⟩
   ⟨1, "c",      0, "Disable some default flags"⟩
   ⟨1, "O3",     @, "Use '-O3'; On by default unless 'c=1'"⟩
   ⟨1, "native", @, "Use '-march=native'"⟩
@@ -228,11 +228,12 @@ po ← { # parsed options
   native ⇐ 0 DOpt "native"
   emcc ⇐ GetOpt "emcc"
   wasi ← GetOpt "wasi"
-  usz ⇐ •ParseFloat GetOpt "usz"
-  {𝕊: "Error: usz can only be 32 or 64"}_assert_⊢ ⊑usz∊32‿64
   versionName ← "0"⊸≡◶⊢‿@ GetOpt "v"
   wasm ⇐ wasi∨emcc
   "Error: Static linking for wasm is pointless"_assert_¬ staticBin ∧ wasm
+  
+  usz ⇐ •ParseFloat {wasm? "32"; "64"} DOpt "usz"
+  {𝕊: "Error: usz can only be 32 or 64"}_assert_⊢ ⊑usz∊32‿64
   
   cc ← {emcc? "emcc"; "clang"} DOpt "CC"
   ccClang ← {
