@@ -276,7 +276,11 @@ B find_c2(B t, B w, B x) {
   if (wr > xr) thrF("𝕨⍷𝕩: Rank of 𝕨 must be at most rank of 𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
   u8 xe, we ONLY_GCC(= 0);
   B r;
-  if (xr==1 && (xe=TI(x,elType))!=el_B && xe!=el_bit && (isAtm(w) || (we=TI(w,elType))!=el_B)) {
+  if (xr==1 && (xe=TI(x,elType))!=el_B && (isAtm(w) || (we=TI(w,elType))!=el_B)) {
+    if (xe == el_bit) {
+      x = taga(cpyI8Arr(x));
+      xe = el_i8;
+    }
     if (wr == 0) return C2(eq, w, x);
     usz wl = IA(w);
     usz xl = IA(x);
