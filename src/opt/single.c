@@ -41,6 +41,7 @@
 #include "../builtins/squeeze.c"
 #include "../builtins/compare.c"
 #include "../builtins/cells.c"
+#include "../builtins/bit.c"
 #include "../vm.c"
 #include "../ns.c"
 #include "../nfns.c"
