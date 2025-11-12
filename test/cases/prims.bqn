@@ -6,6 +6,7 @@
 %DEF eqerr %USE eqvar ⋄ _eqerr ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@}⌜ 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: case didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ (⊑r)!0}}
 %DEF eqall _eqall0 ← {r←⊑𝕩 ⋄ ("TEST FAIL: eqall failed" ! r⊸𝔽)¨ 𝕩 ⋄ r} ⋄ EqAll ← •internal.Indistinguishable _eqall0
 %DEF k _k ← {𝔽○•internal.Keep}
+%DEF rand r ← (⊑•args).GetRand@
 
 # batch checks
 {>0‿1‿3‿'a'‿{⇐} (≠𝕏`)⎊'e'⌜ ⟨10⥊0, 10⥊10, 10⥊1e4, 10⥊1e9, 10⥊1e20, "AAA", "⍉⍉⍉", "𝕨𝕨𝕨"⟩}¨ ⌊‿⌈‿+‿≠‿<  %%  ⟨5‿8⥊10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e',5‿8⥊10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e',5‿8⥊10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿10‿10‿10‿10‿10‿'e'‿'e'‿'e'‿10‿10‿10‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e',5‿8⥊10‿10‿10‿10‿10‿3‿3‿3‿10‿10‿10‿10‿10‿3‿3‿3‿10‿10‿10‿10‿10‿3‿3‿3‿10‿10‿10‿10‿10‿3‿3‿3‿10‿10‿10‿10‿10‿3‿3‿3,5‿8⥊10‿10‿10‿10‿10‿3‿3‿3‿10‿10‿10‿10‿10‿3‿3‿3‿10‿10‿10‿10‿10‿3‿3‿3‿10‿10‿10‿10‿10‿3‿3‿3‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'‿'e'⟩
@@ -191,7 +192,7 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"𝕨⊏𝕩: 𝕩 cannot be an atom" % %USE eqerr ⋄ ⟨0, ⟨⟩⟩ ⊏_eqerr ⟨5, {⇐}⟩
 !"Expected integer, got 1.5" % ⟨1.5⟩ ⊏ "ab"‿"cd"
 !"𝕨⊏𝕩: Indexing out-of-bounds (10∊𝕨, 2≡≠𝕩)" % ⟨10⟩ ⊏ "ab"‿"cd"
-{𝕩 ! ↕∘≠⊸⊏⊸≡ 20‿𝕩•rand.Range 2}¨ (↕70)∾⥊(64×1‿2‿3‿4‿5)+⌜¯1‿0‿1‿30‿60
+%USE rand ⋄ {𝕩 ! ↕∘≠⊸⊏⊸≡ 20‿𝕩 r.Range 2}¨ (↕70)∾⥊(64×1‿2‿3‿4‿5)+⌜¯1‿0‿1‿30‿60
 %USE eqvar ⋄ {1‿¯1 {r←𝕨⊏𝕩 ⋄ ! 𝕩 ≥○•internal.ElType r ⋄ r}_eqvar 𝕩}¨ ⟨↕2, ↕4, "hello", ⟨"ab", "cd", "ef"⟩, ↕⋈4⟩
 %USE tvar ⋄ !∘≡¨⟜⊏ ∾ {⥊𝕨 ⊏⎊{𝕊:•CurrentError@} _tvar 𝕩}´¨ ⟨⟨0‿1, ⋈0⟩ ⋄ ⟨0‿1, "?"⟩ ⋄ ⟨0‿1, ≍0‿1⟩⟩
 a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ 𝕨⊏⎊"e"𝕩}⟨1‿2,3‿4⟩ ⋄ ! 0‿1 ≡ a
@@ -345,12 +346,12 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 !"»𝕩: 𝕩 cannot be a scalar" % »<0
 
 # ⍉𝕩
-%USE eqvar ⋄ ⍉_eqvar 2‿3‿4•rand.Range 2
-%USE eqvar ⋄ ⍉_eqvar ⋈¨ 2‿3‿4•rand.Range 2
-%USE eqvar ⋄ ⍉_eqvar @+2‿3‿4•rand.Range 100
+%USE rand ⋄ %USE eqvar ⋄ ⍉_eqvar 2‿3‿4 r.Range 2
+%USE rand ⋄ %USE eqvar ⋄ ⍉_eqvar ⋈¨ 2‿3‿4 r.Range 2
+%USE rand ⋄ %USE eqvar ⋄ ⍉_eqvar @+2‿3‿4 r.Range 100
 
 # ⌽𝕩
-%USE var ⋄ {{! 𝕩 ≡ ⌽"Ai8"V⌽𝕩} 𝕩•rand.Range 2}¨ ↕1000
+%USE rand ⋄ %USE var ⋄ {{! 𝕩 ≡ ⌽"Ai8"V⌽𝕩} 𝕩 r.Range 2}¨ ↕1000
 
 # 𝕨⌽𝕩
 !"Integer out of range: 1e20" % %USE eqerr ⋄ ⟨1e20,⟨1e20⟩⟩ ⌽_eqerr ⟨↕10, ↕0, 0‿0⥊0, ⟨⟩⟩
@@ -524,7 +525,7 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 {! ∧´(𝕨⊒𝕩) = ↕∘≠⊸⌊⍟(𝕨≡○⊑𝕩) 𝕩 ⥊○≠ 𝕨}⌜˜ 3‿100 ⥊⌜ "a⍉𝕩"∾1‿10‿1e4‿1e9‿1e12∾⟨"a",{⇐}⟩
 
 # ⍋𝕩
-⟨100, 30000, 2e9, ¯100, ¯30000, ¯2e9, @+200, @+60000, @+1111111⟩ {! a ≡ ⍋ •internal.Keep ⍋ 𝕨 + a ← •rand.Deal 𝕩}⌜ 3‿10‿100‿1000
+%USE rand ⋄ ⟨100, 30000, 2e9, ¯100, ¯30000, ¯2e9, @+200, @+60000, @+1111111⟩ {! a ≡ ⍋ •internal.Keep ⍋ 𝕨 + a ← r.Deal 𝕩}⌜ 3‿10‿100‿1000
 
 # 𝕨⍋𝕩
 !"𝕨⍋𝕩: 𝕨 must be sorted" % a←-¨ ∧⋈¨ ↕10 ⋄ a⍋⋈¨↕10
@@ -572,8 +573,9 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
   }⌜˜ tests
 )
 (
+  %USE rand
   # 1|scalar vs 1|f64arr over float exponents %SLOW
-  {𝕩! (1⊸| •internal.EEqual 1|¨⊢) ∾⟜- (2⋆𝕩)×1‿1.5∾1000•rand.Range 0}¨ ¯1080+↕2110
+  {𝕩! (1⊸| •internal.EEqual 1|¨⊢) ∾⟜- (2⋆𝕩)×1‿1.5∾1000 r.Range 0}¨ ¯1080+↕2110
 )
 # 𝕨÷𝕩
 !"𝕨÷𝕩: Unexpected argument types" % ⟨1‿2, "ab"⟩÷2

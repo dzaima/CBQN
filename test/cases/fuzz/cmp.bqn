@@ -2,6 +2,7 @@
 # tests scalar comparison functions =≠<≤>≥
 helpers ← ⊑•args
 noerr ← helpers.shouldNotError # %ALLOW_CATCH
+r ← helpers.GetRand@
 fns ← =‿≠‿<‿≤‿>‿≥
 n ← 0÷0
 nn ← -n
@@ -16,10 +17,10 @@ arrs ← •internal.Squeeze¨ ⟨
   ¯32768‿¯1‿0‿1‿32767
   ¯2147483648‿¯1‿0‿1‿2147483647
   ¯2147483648‿¯1‿0‿1‿2147483648
-  63 (•MakeRand 2).Range 2
-  64 (•MakeRand 2).Range 2
-  65 (•MakeRand 2).Range 2
-  90 (•MakeRand 2).Range 2
+  63 r.Range 2
+  64 r.Range 2
+  65 r.Range 2
+  90 r.Range 2
 ⟩
 atms ← 1‿¯1‿0‿¯0‿∞‿¯∞‿n‿nn‿@‿'l'‿'⍉'‿'𝕩'‿{a⇐1}‿+‿{𝔽}
 atms∾↩ -⊸∾ 10⋆↕20

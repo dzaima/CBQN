@@ -2,10 +2,11 @@
 # generally unnecessary now that debug builds include heap corruption testing
 ⟨LV⇐ListVariations, V⇐Variation, ClearRefs⇐ClearRefs, I⇐Info, TY⇐Type, Refc⇐Refc, EEQ⇐EEqual⟩ ← •internal
 helpers ← ⊑•args
-R ← (helpers.GetRand@).Range
+r0 ← helpers.GetRand@
+R ← r0.Range
 RB2 ← {¬⍟(R 2) "Ab" V 𝕩 R 1+R 2⋆R 10} # random boolean array with random uniform probability
 
-rByteVals ← "Ai8"V {𝕩-256×𝕩>127} ∾{{2⊸×⊸+˜´ 8↑/⁼ 𝕩 •rand.Subset 8}¨ ↕9}¨↕20
+rByteVals ← "Ai8"V {𝕩-256×𝕩>127} ∾{{2⊸×⊸+˜´ 8↑/⁼ 𝕩 r0.Subset 8}¨ ↕9}¨↕20
 RByte ← (R (≠rByteVals)˙)⊸(⊑⟜rByteVals)
 
 RH ← "Ai8"⊸V¨ R⥊¨RByte # store to a variable to randomize heap by 𝕨 values, each up to 𝕩 bytes

@@ -1,4 +1,5 @@
 %DEF k _k ← {𝔽○•internal.Keep}
+%DEF rand r ← (⊑•args).GetRand@
 
 # weird "functions"
 4 10´⟨⟩ %% 4
@@ -28,21 +29,21 @@
 "ab"` "hello" %% 'h'∾4⥊<"ab"
 
 # ˝ plus ˘
-%USE k ⋄ (+˝˘ !∘≡ +˝_k˘) 1000000‿3•rand.Range 0
-%USE k ⋄ (-˜˝ !∘≡ -˜_k˝) 10 (•MakeRand 0).Range 1e5
-%USE k ⋄ (-˜˝˘ !∘≡ -˜_k˝˘) 3↕10 (•MakeRand 0).Range 1e5
+%USE rand ⋄ %USE k ⋄ (+˝˘ !∘≡ +˝_k˘) 1000000‿3 r.Range 0
+%USE rand ⋄ %USE k ⋄ (-˜˝ !∘≡ -˜_k˝) 10 r.Range 1e5
+%USE rand ⋄ %USE k ⋄ (-˜˝˘ !∘≡ -˜_k˝˘) 3↕10 r.Range 1e5
 
 # +`
-%USE k ⋄ {𝕊:                 (+` !∘≡ +_k`) 1e3•rand.Range 0}¨↕1000
-%USE k ⋄ {𝕊: (•rand.Range 0) (+` !∘≡ +_k`) 1e3•rand.Range 0}¨↕1000
+%USE rand ⋄ %USE k ⋄ {𝕊:                 (+` !∘≡ +_k`) 1e3 r.Range 0}¨↕1000
+%USE rand ⋄ %USE k ⋄ {𝕊: ( r.Range 0) (+` !∘≡ +_k`) 1e3 r.Range 0}¨↕1000
 
 # <`
 %USE k ⋄ (<` !∘≡ <_k`)¨ (1000⊸⥊)¨⊸∾ "Ab"⊸•internal.Variation¨ "111000"‿"1111000"‿"0111000"-'0'
 
 # ≠`
-{𝕤⋄b←"Ab"•internal.Variation a←"Ai32"•internal.Variation 1000 •rand.Range 2 ⋄ ! (≠`a)≡≠`b}¨↕1000
-{𝕤⋄b←"Ab"•internal.Variation a←"Ai32"•internal.Variation 1000 •rand.Range 2 ⋄ ! (0≠`a)≡0≠`b}¨↕1000
-{𝕤⋄b←"Ab"•internal.Variation a←"Ai32"•internal.Variation 1000 •rand.Range 2 ⋄ ! (1≠`a)≡1≠`b}¨↕1000
+%USE rand ⋄ {𝕤⋄b←"Ab"•internal.Variation a←"Ai32"•internal.Variation 1000 r.Range 2 ⋄ ! (≠`a)≡≠`b}¨↕1000
+%USE rand ⋄ {𝕤⋄b←"Ab"•internal.Variation a←"Ai32"•internal.Variation 1000 r.Range 2 ⋄ ! (0≠`a)≡0≠`b}¨↕1000
+%USE rand ⋄ {𝕤⋄b←"Ab"•internal.Variation a←"Ai32"•internal.Variation 1000 r.Range 2 ⋄ ! (1≠`a)≡1≠`b}¨↕1000
 
 # ∨´ & ∧´
 {n←𝕩 ⋄ ! (1+n) ≡ +´¬{∨´(-𝕩)↑1∾n↑0}¨↕400}¨↕200 # ∨´ with a single 1; %SLOW

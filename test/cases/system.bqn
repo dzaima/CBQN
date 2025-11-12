@@ -2,6 +2,7 @@
 %DEF tvar %USE var ⋄ _tvar ← {F _𝕣 x: (CLR@) ⊢ {F 𝕩 V x}¨ LV 𝕩; w F _𝕣 x: (CLR@) ⊢ (LV 𝕨) {(𝕨 V w) F 𝕩 V x}⌜ LV 𝕩}
 %DEF eqvar ⟨_eqvar⟩←⊑•args
 %DEF eqvarv ⟨_eqvarv_⟩←⊑•args
+%DEF rand r ← (⊑•args).GetRand@
 # not tested here: •Out •Show •Exit •GetLine •Cmp •CurrentError •FFI •internal.HeapDump
 
 
@@ -265,7 +266,7 @@ a←1 ⋄ a ⊣ {𝕊: a+↩𝕩}•_timed 10 %% 11
 a←3 ⋄ 12 {𝕊: a+↩𝕩}•_timed 10 ⋄ a %% 123
 
 # •math
-! ∧´0=⌊|1e10×{(+´𝕩)-•math.Sum 𝕩}¨ ↑1000•rand.Range 0
+%USE rand ⋄ ! ∧´0=⌊|1e10×{(+´𝕩)-•math.Sum 𝕩}¨ ↑1000 r.Range 0
 !"•math.Sum 𝕩: 𝕩 must be a list (⟨⟩ ≡ ≢𝕩)" % •math.Sum 2
 !"•math.Sum 𝕩: 𝕩 must be a list (2‿2 ≡ ≢𝕩)" % •math.Sum 2‿2⥊1
 !"•math.Sum 𝕩: 𝕩 elements must be numbers" % •math.Sum 1‿'a'
@@ -320,8 +321,8 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 (↕10) {! (𝕨⥊¯1) ≡ 1‿𝕩•bit._cast (𝕨×𝕩)⥊1}⌜ 8‿16‿32
 %USE eqvar ⋄ {t←𝕩⊏1‿8‿16‿32‿64 ⋄ 1≠⊑t? {t•bit._cast 𝕩}_eqvar   ↕128; @}¨ ↕4‿4
 %USE eqvar ⋄ {t←𝕩⊏1‿8‿16‿32‿64 ⋄       {t•bit._cast 𝕩}_eqvar 4=↕128}¨ ↕4‿4
-! 10‿1 ≡ ≢8‿16•bit._cast c←0↓2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
-! 10‿1 ≡ ≢8‿16•bit._cast c←  2↕'a'+11 •rand.Range 26 ⋄ ! 10‿2 ≡ ≢c
+%USE rand ⋄ ! 10‿1 ≡ ≢8‿16•bit._cast c←0↓2↕'a'+11 r.Range 26 ⋄ ! 10‿2 ≡ ≢c
+%USE rand ⋄ ! 10‿1 ≡ ≢8‿16•bit._cast c←  2↕'a'+11 r.Range 26 ⋄ ! 10‿2 ≡ ≢c
 !"•bit._cast: incompatible lengths" % 1‿8•bit._cast 1⥊0
 !"•bit._cast: incompatible lengths" % 8‿32•bit._cast 2⥊0
 !"•bit._cast: incompatible lengths" % 8‿32•bit._cast 10⥊0
