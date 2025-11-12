@@ -10,7 +10,7 @@ def store{ptr:*E, x:V=[_]E, vl if w128{V} and vl*width{E}==64} = emit{void, '_mm
 
 
 # integer arith
-def __mul{a:T,b:T if [4]i32==T} = {
+def __mul{a:T, b:T if w128i{T, 32}} = {
   def mu{x, y} = [4]i32 ~~ mul32{[2]u64~~x, [2]u64~~y}
   def sw{n, ...vs} = each{{c} => vec_shuffle{i32, c, n}, vs}
   lo:= mu{a, b}
