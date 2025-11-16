@@ -323,39 +323,39 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 %USE eqvar ⋄ {t←𝕩⊏1‿8‿16‿32‿64 ⋄       {t•bit._cast 𝕩}_eqvar 4=↕128}¨ ↕4‿4
 %USE rand ⋄ ! 10‿1 ≡ ≢8‿16•bit._cast c←0↓2↕'a'+11 r.Range 26 ⋄ ! 10‿2 ≡ ≢c
 %USE rand ⋄ ! 10‿1 ≡ ≢8‿16•bit._cast c←  2↕'a'+11 r.Range 26 ⋄ ! 10‿2 ≡ ≢c
-!"•bit._cast: incompatible lengths" % 1‿8•bit._cast 1⥊0
-!"•bit._cast: incompatible lengths" % 8‿32•bit._cast 2⥊0
-!"•bit._cast: incompatible lengths" % 8‿32•bit._cast 10⥊0
+!"•bit._cast: Incompatible lengths" % 1‿8•bit._cast 1⥊0
+!"•bit._cast: Incompatible lengths" % 8‿32•bit._cast 2⥊0
+!"•bit._cast: Incompatible lengths" % 8‿32•bit._cast 10⥊0
 
-!"•bit._cast: unsupported width 1073741824" % (2⥊2⋆30)•bit._cast ⋈0
-!"•bit._cast: unsupported width 1125899906842624" % (2⥊2⋆50)•bit._cast ⋈0 %USZ64
+!"•bit._cast: Unsupported width 1073741824" % (2⥊2⋆30)•bit._cast ⋈0
+!"•bit._cast: Unsupported width 1125899906842624" % (2⥊2⋆50)•bit._cast ⋈0 %USZ64
 !"Integer out of range: 1.125899906842624e15" % (2⥊2⋆50)•bit._cast ⋈0 %USZ32
 !"Integer out of range: 1.1805916207174113e21" % (2⥊2⋆70)•bit._cast ⋈0
 !"Integer out of range: ∞" % (2⥊∞)•bit._cast ⋈0
 
-!"•bit._cast: unsupported width 12" % 1‿12•bit._cast 11⥊0
-!"•bit._cast: unsupported width 12" % 12‿32•bit._cast (12×32)⥊0
-!"•bit._cast: unsupported width 12" % 8‿12•bit._cast (8×12)⥊0
-!"•bit._cast: unsupported width 0" % 0‿32•bit._cast 128⥊0
-!"•bit._cast: unsupported width 0" % 8‿0•bit._cast 128⥊0
+!"•bit._cast: Unsupported width 12" % 1‿12•bit._cast 11⥊0
+!"•bit._cast: Unsupported width 12" % 12‿32•bit._cast (12×32)⥊0
+!"•bit._cast: Unsupported width 12" % 8‿12•bit._cast (8×12)⥊0
+!"•bit._cast: Unsupported width 0" % 0‿32•bit._cast 128⥊0
+!"•bit._cast: Unsupported width 0" % 8‿0•bit._cast 128⥊0
 
-!"•bit._cast: unsupported width 16 for type 'f'" % ⟨16‿'f',32⟩•bit._cast 128⥊0
-!"•bit._cast: unsupported width 32 for type 'f'" % ⟨32,32‿'f'⟩•bit._cast 128⥊0
-!"•bit._cast: unsupported width 0 for type 'u'"  % ⟨0‿'u',32⟩•bit._cast 128⥊0
-!"•bit._cast: unsupported width 8 for type 'u'"  % ⟨8‿'u',32⟩•bit._cast 128⥊0
-!"•bit._cast: unsupported width 32 for type 'u'" % ⟨8,32‿'u'⟩•bit._cast 128⥊0
-!"•bit._cast: unsupported width 1 for type 'i'"  % ⟨8, 1‿'i'⟩•bit._cast 128⥊0
+!"•bit._cast: Unsupported width 16 for type 'f'" % ⟨16‿'f',32⟩•bit._cast 128⥊0
+!"•bit._cast: Unsupported width 32 for type 'f'" % ⟨32,32‿'f'⟩•bit._cast 128⥊0
+!"•bit._cast: Unsupported width 0 for type 'u'" % ⟨0‿'u',32⟩•bit._cast 128⥊0
+!"•bit._cast: Unsupported width 8 for type 'u'" % ⟨8‿'u',32⟩•bit._cast 128⥊0
+!"•bit._cast: Unsupported width 32 for type 'u'" % ⟨8,32‿'u'⟩•bit._cast 128⥊0
+!"•bit._cast: Unsupported width 1 for type 'i'" % ⟨8, 1‿'i'⟩•bit._cast 128⥊0
 
 !"•bit._add: Unsupported data width 2" % 8‿2•bit._add˜ 16⥊0
-!"•bit._add: sizes in 𝕗 must be powers of 2 (contained 12)" % 8‿12•bit._add˜ 16⥊0
-!"•bit._add: sizes in 𝕗 must be powers of 2 (contained 0)" % 8‿0•bit._add˜ 16⥊0
+!"•bit._add: Sizes in 𝕗 must be powers of 2 (contained 12)" % 8‿12•bit._add˜ 16⥊0
+!"•bit._add: Sizes in 𝕗 must be powers of 2 (contained 0)" % 8‿0•bit._add˜ 16⥊0
 !"•bit._add: Unsupported data width 128" % 8‿128•bit._add˜ 16⥊0
 
-!"•bit._add: unhandled width 1" % 1‿32•bit._add˜ 16⥊0
-!"•bit._add: unhandled width 2" % 2‿32•bit._add˜ 16⥊0
-!"•bit._add: sizes in 𝕗 must be powers of 2 (contained 3)" % 3‿32•bit._add˜ 16⥊0
-!"•bit._add: unhandled width 4" % 4‿32•bit._add˜ 16⥊0
-!"•bit._add: unhandled width 128" % 128‿32•bit._add˜ 16⥊0
+!"•bit._add: Unhandled operation width 1" % 1‿32•bit._add˜ 16⥊0
+!"•bit._add: Unhandled operation width 2" % 2‿32•bit._add˜ 16⥊0
+!"•bit._add: Sizes in 𝕗 must be powers of 2 (contained 3)" % 3‿32•bit._add˜ 16⥊0
+!"•bit._add: Unhandled operation width 4" % 4‿32•bit._add˜ 16⥊0
+!"•bit._add: Unhandled operation width 128" % 128‿32•bit._add˜ 16⥊0
 
 (¯3×↕32) 64‿32‿8‿8•bit._mul ↕32 %% ¯184745984‿1721813476‿¯331589824‿1537122403‿¯587748096‿1074686809‿¯919600832‿435498697
 ¯100‿¯30 64‿32‿8‿32•bit._mul 100-7×↕32 %% 37979376‿7727981‿¯130450736‿1422540730‿¯1983181648‿664605348‿2143355536‿2079418098
@@ -364,9 +364,9 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 1‿0 2‿1•bit._or 16⥊0‿0‿1‿1 %% 1‿0‿1‿1‿1‿0‿1‿1‿1‿0‿1‿1‿1‿0‿1‿1
 (16⥊1‿0‿0‿0‿0) 2‿1•bit._or 16⥊0‿0‿1‿0 %% 1‿0‿1‿0‿0‿1‿1‿0‿0‿0‿1‿0‿0‿0‿1‿1
 (256⥊1‿1‿0‿0) 128‿1•bit._or 256⥊1‿0 %% 256⥊1‿1‿1‿0
-!"•bit._or: scalar extension with width over 64 unhandled" % (128⥊1) 128‿1•bit._or 256⥊1
-!"•bit._neg: unhandled width 2" % 2‿1•bit._neg 0‿0‿1‿1‿0‿1‿1‿0
-!"•bit._add: unhandled width 4" % 1‿0‿0‿0 4‿1•bit._add 8⥊1
+!"•bit._or: Scalar extension with width over 64 not supported" % (128⥊1) 128‿1•bit._or 256⥊1
+!"•bit._neg: Unhandled operation width 2" % 2‿1•bit._neg 0‿0‿1‿1‿0‿1‿1‿0
+!"•bit._add: Unhandled operation width 4" % 1‿0‿0‿0 4‿1•bit._add 8⥊1
 
 %USE eqvar ⋄ {𝕊 f: {•internal.Keep 𝕩⍋1  ⋄ •internal.Validate F 𝕩}_eqvar  ↕64}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64
 %USE eqvar ⋄ {𝕊 f: {•internal.Keep 𝕩⍒1  ⋄ •internal.Validate F 𝕩}_eqvar ⌽↕64}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64

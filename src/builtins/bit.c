@@ -30,7 +30,7 @@ static CastType getCastType(B e, bool hasVal, B val) { // returns a valid type (
   usz s; bool c;
   if (isNum(e)) {
     s = o2s(e);
-    if (s!=1 && s!=8 && s!=16 && s!=32 && s!=64) thrF("•bit._cast: unsupported width %s", s);
+    if (s!=1 && s!=8 && s!=16 && s!=32 && s!=64) thrF("•bit._cast: Unsupported width %s", s);
     c = hasVal? isCharArr(val) : 0;
   } else {
     if (!isArr(e) || RNK(e)!=1 || IA(e)!=2) thrM("•bit._cast: 𝕗 elements must be numbers or two-element lists");
@@ -38,11 +38,11 @@ static CastType getCastType(B e, bool hasVal, B val) { // returns a valid type (
     s = o2s(GetU(e,0));
     u32 t = o2c(GetU(e,1));
     c = t=='c';
-    if      (c     ) { if (s!=8 && s!=16 && s!=32) { badWidth: thrF("•bit._cast: unsupported width %s for type '%c'", s, (char)t); } }
+    if      (c     ) { if (s!=8 && s!=16 && s!=32) { badWidth: thrF("•bit._cast: Unsupported width %s for type '%c'", s, (char)t); } }
     else if (t=='i') { if (s!=8 && s!=16 && s!=32) goto badWidth; }
     else if (t=='u') { if (s!=1) goto badWidth; }
     else if (t=='f') { if (s!=64) goto badWidth; }
-    else thrM("•bit._cast: type descriptor in 𝕗 must be one of \"iufnc\"");
+    else thrM("•bit._cast: Type descriptor in 𝕗 must be one of \"iufnc\"");
     
   }
   return (CastType) { s, c };
@@ -106,8 +106,8 @@ B bitcast_impl(B el0, B el1, B x) {
   CastType rct = getCastType(el1, false, m_f64(0));
   usz* sh = SH(x);
   u64 s=xct.s*(u64)sh[xr-1], rl=s/rct.s;
-  if (rl*rct.s != s) thrM("•bit._cast: incompatible lengths");
-  if (rl>=USZ_MAX) thrM("•bit._cast: output too large");
+  if (rl*rct.s != s) thrM("•bit._cast: Incompatible lengths");
+  if (rl>=USZ_MAX) thrM("•bit._cast: Output too large");
   B r = convert(xct, x, "cast");
   u8 rt = typeOfCast(rct);
   if (rt==t_bitarr) {
@@ -167,7 +167,7 @@ B bitcast_im(Md1D* d, B x) { B f = d->f;
 
 static usz req2(usz s, char* name) {
   usz top = 1ull << (8*sizeof(usz)-1); // Prevent 0 from passing
-  if ((top|s) & (s-1)) thrF("•bit._%U: sizes in 𝕗 must be powers of 2 (contained %s)", name, s);
+  if ((top|s) & (s-1)) thrF("•bit._%U: Sizes in 𝕗 must be powers of 2 (contained %s)", name, s);
   return s;
 }
 
@@ -196,8 +196,8 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   u64 n = IA(x) << xws;
   u64 s = (u64)sh[xr-1] << xws;
   u64 rl = s >> rws;
-  if ((s & (ow-1)) || (rl<<rws != s)) thrF("•bit._%U: incompatible lengths", name);
-  if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
+  if ((s & (ow-1)) || (rl<<rws != s)) thrF("•bit._%U: Incompatible lengths", name);
+  if (rl>=USZ_MAX) thrF("•bit._%U: Output too large", name);
   
   x = convert((CastType){ xw, isCharArr(x) }, x, name);
   u8 rt = typeOfCast((CastType){ rw, 0 });
@@ -216,7 +216,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
       usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^~xp[l]);
     } break;
     case op_neg: switch (ow) {
-      default: thrF("•bit._%U: unhandled width %s", name, ow);
+      default: thrF("•bit._%U: Unhandled operation width %s", name, ow);
       #define CASE(W) case W: \
         NOUNROLL vfor (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
         break;
@@ -253,7 +253,7 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   ur xr=RNK(x); usz*  sh = SH(x); u64 t = xr==0? xw : xw*(u64) sh[xr-1];
   bool negw = 0; // Negate 𝕨 to subtract from 𝕩
   bool noextend = wr == xr && s == t;
-  if (wr==xr && xr==0) thrF("•bit._%U: some argument must have rank at least 1", name);
+  if (wr==xr && xr==0) thrF("•bit._%U: Some argument must have rank at least 1", name);
   if (noextend) {
     for (usz i=0; i<xr-1; i++) if (sh[i]!=wsh[i]) thrF("•bit._%U: 𝕨 and 𝕩 leading shapes must match", name);
   } else {
@@ -271,8 +271,8 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   usz rws = CTZ(rw);
   u64 n = IA(x) << CTZ(xw);
   u64 rl = t >> rws;
-  if ((t & (ow-1)) || (rl<<rws != t)) thrF("•bit._%U: incompatible lengths", name);
-  if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
+  if ((t & (ow-1)) || (rl<<rws != t)) thrF("•bit._%U: Incompatible lengths", name);
+  if (rl>=USZ_MAX) thrF("•bit._%U: Output too large", name);
   
   w = convert((CastType){ ww, isCharArr(w) }, w, name);
   x = convert((CastType){ xw, isCharArr(x) }, x, name);
@@ -285,7 +285,7 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   u64* rp = tyany_ptr(r);
   
   #define CASES(O,Q,P) case op_##O: \
-    switch(ow) { default: thrF("•bit._%U: unhandled width %s", name, ow); \
+    switch(ow) { default: thrF("•bit._%U: Unhandled operation width %s", name, ow); \
       CASE(8,Q,P) CASE(16,Q,P) CASE(32,Q,P) CASE(64,Q,P)                  \
     } break;
   #define SWITCH \
@@ -308,7 +308,7 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   } else {
     u64 wn; if (negw) { wn=-*wp; wp=&wn; }
     #define BINOP(O,P) case op_##O: { \
-      if (ow>64) thrF("•bit._%U: scalar extension with width over 64 unhandled", name); \
+      if (ow>64) thrF("•bit._%U: Scalar extension with width over 64 not supported", name); \
       u64 wv = *wp & (~(u64)0>>(64-ow));                                      \
       for (usz tw=ow; tw<64; tw*=2) wv|=wv<<tw;                               \
       usz l = n/64; NOUNROLL vfor (usz i=0; i<l; i++) rp[i] = wv P xp[i];     \
