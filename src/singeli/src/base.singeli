@@ -26,7 +26,7 @@ def elwidth{T} = width{eltype{T}}
 def make_cycle{V=[k]_, ...elts} = make{V, cycle{k, match (...elts) { {{...es}}=>es; {...es}=>es }}}
 
 def reinterpret{T, x:T} = x
-def export_tab{name, fs} = { v:*one_type{fs} = fs; export{name, v} }
+def export_tab{name, fs} = { fntab:*one_type{fs} = fs; export{name, fntab} }
 
 oper &~ andnot infix none 35
 def andnot{a, b:T if any_int{a} and primt{T}} = a & ~b
