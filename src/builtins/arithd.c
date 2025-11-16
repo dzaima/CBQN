@@ -20,22 +20,13 @@ B floor_c2(B, B, B);
 B atan2_c2(B, B, B);
 
 
-typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
 B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
+
+typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
+extern const AndBytesFn andBytes_fn;
 
 #if SINGELI_SIMD
   #include "../singeli/c/arithdDispatch.c"
-  static const AndBytesFn andBytes_fn = simd_andBytes;
-#else
-  static void base_andBytes(u8* r, u8* x, u64 repeatedMask, u64 numBytes) {
-    u64* x64 = (u64*)x; usz i;
-    vfor (i = 0; i < numBytes/8; i++) ((u64*)r)[i] = x64[i] & repeatedMask;
-    if (i*8 != numBytes) {
-      u64 v = x64[i]&repeatedMask;
-      for (usz j = 0; j < (numBytes&7); j++) r[i*8 + j] = v>>(j*8);
-    }
-  }
-  static const AndBytesFn andBytes_fn = base_andBytes;
 #endif
 
 B floor_c1(B t, B x);

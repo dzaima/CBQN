@@ -1,0 +1,17 @@
+include './base'
+include './cbqnDefs'
+include './f64'
+include './bitops'
+include './mask'
+
+fn bit_dy_as{F}(r: *u8, w: *u8, x_splat:u64, len:u64) : void = {
+  def vw = arch_defvw{}
+  assert{vw>=64}
+  def bulk = vw / width{u8}
+  def T8 = [bulk]u8
+  def T64 = [bulk/8]u64
+  x:= T8~~T64**x_splat
+  @for_masked{bulk}(sr in tup{'g',r}, cw in tup{T8,w} over len) sr{F{cw, x}}
+}
+
+export{'simd_andBytes', bit_dy_as{&}} # for andBytes_fn

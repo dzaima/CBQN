@@ -5,17 +5,7 @@ include './bitops'
 include './mask'
 include './dyarith_common'
 
-fn andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
-  assert{vw>=64}
-  def bulk = vw / width{u8}
-  def T8 = [bulk]u8
-  def T64 = [bulk/8]u64
-  maskFull:= T8~~T64**maskU64
-  @for_masked{bulk}(sr in tup{'g',r}, cx in tup{T8,x} over len) sr{cx & maskFull}
-}
-
 def bqn_or{a, b} = (a+b)-(a*b)
 
-export{'simd_andBytes', andBytes{arch_defvw{}}}
 export{'orSAc_f64_f64_f64', arith_sa{2,bqn_or,0,f64,f64,f64}}
 include 'gen/arDefs'

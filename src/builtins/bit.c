@@ -2,6 +2,26 @@
 #include "../builtins.h"
 #include "../ns.h"
 
+typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
+#if SINGELI_SIMD
+  extern uint64_t* const si_spaced_masks;
+  #define SINGELI_FILE bit_arith
+  #include "../utils/includeSingeli.h"
+  const AndBytesFn andBytes_fn = simd_andBytes;
+#else
+  static void base_andBytes(u8* r, u8* x, u64 repeatedMask, u64 numBytes) {
+    u64* x64 = (u64*)x; usz i;
+    vfor (i = 0; i < numBytes/8; i++) ((u64*)r)[i] = x64[i] & repeatedMask;
+    if (i*8 != numBytes) {
+      u64 v = x64[i]&repeatedMask;
+      for (usz j = 0; j < (numBytes&7); j++) r[i*8 + j] = v>>(j*8);
+    }
+  }
+  const AndBytesFn andBytes_fn = base_andBytes;
+#endif
+
+
+
 typedef struct CastType { usz s; bool c; } CastType;
 static bool isCharArr(B x) {
   return elChr(TI(x,elType));
