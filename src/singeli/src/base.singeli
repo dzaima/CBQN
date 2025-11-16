@@ -18,11 +18,12 @@ def isunsigned{T} = isint{T} and not issigned{T}
 def vect {T} = ktyp{T} and same{typekind{T}, 'vector'}
 def primt{T} = ktyp{T} and same{typekind{T}, 'primitive'}
 def any_num = match { {x:T}=>primt{T}; {x} => knum{x} }
-def any_int = match { {x:T}=>isint{T};  {x} => knum{x} and (x>>0) == x }
+def any_int = match { {x:T}=>isint{T}; {x} => knum{x} and (x>>0) == x }
 def int_idx{_, _} = 0
 def int_idx{k if knum{k}, l} = (k>>0)==k and k>=0 and k<l
 def is_pow2{i if any_int{i}} = (i & (i-1)) == 0
 def elwidth{T} = width{eltype{T}}
+def make_cycle{V=[k]_, ...elts} = make{V, cycle{k, match (...elts) { {{...es}}=>es; {...es}=>es }}}
 
 def reinterpret{T, x:T} = x
 def export_tab{name, fs} = { v:*one_type{fs} = fs; export{name, v} }
