@@ -28,8 +28,8 @@ static CastType getCastType(B e, bool hasVal, B val) { // returns a valid type (
   return (CastType) { s, c };
   
 }
-static B convert(CastType t, B x) {
-  switch (t.s) { default: UD;
+static B convert(CastType t, B x, char* name) {
+  switch (t.s) { default: thrF("•bit._%U: Unsupported data width %i", name, t.s);
     case  1: return taga(toBitArr(x));
     case  8: return t.c ? toC8Any (x) : toI8Any (x);
     case 16: return t.c ? toC16Any(x) : toI16Any(x);
@@ -88,7 +88,7 @@ B bitcast_impl(B el0, B el1, B x) {
   u64 s=xct.s*(u64)sh[xr-1], rl=s/rct.s;
   if (rl*rct.s != s) thrM("•bit._cast: incompatible lengths");
   if (rl>=USZ_MAX) thrM("•bit._cast: output too large");
-  B r = convert(xct, x);
+  B r = convert(xct, x, "cast");
   u8 rt = typeOfCast(rct);
   if (rt==t_bitarr) {
     if (reusable(r) && !ARR_IS_SLICE(TY(r))) {
@@ -179,7 +179,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   if ((s & (ow-1)) || (rl<<rws != s)) thrF("•bit._%U: incompatible lengths", name);
   if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
   
-  x = convert((CastType){ xw, isCharArr(x) }, x);
+  x = convert((CastType){ xw, isCharArr(x) }, x, name);
   u8 rt = typeOfCast((CastType){ rw, 0 });
   u64* xp = tyany_ptr(x);
   B r; u64* rp;
@@ -254,8 +254,8 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   if ((t & (ow-1)) || (rl<<rws != t)) thrF("•bit._%U: incompatible lengths", name);
   if (rl>=USZ_MAX) thrF("•bit._%U: output too large", name);
   
-  w = convert((CastType){ ww, isCharArr(w) }, w);
-  x = convert((CastType){ xw, isCharArr(x) }, x);
+  w = convert((CastType){ ww, isCharArr(w) }, w, name);
+  x = convert((CastType){ xw, isCharArr(x) }, x, name);
   u8 rt = typeOfCast((CastType){ rw, 0 });
   Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
   arr_shCopyUnchecked(ra, x);

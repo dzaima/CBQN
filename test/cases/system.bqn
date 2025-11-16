@@ -346,6 +346,17 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 !"•bit._cast: unsupported width 32 for type 'u'" % ⟨8,32‿'u'⟩•bit._cast 128⥊0
 !"•bit._cast: unsupported width 1 for type 'i'"  % ⟨8, 1‿'i'⟩•bit._cast 128⥊0
 
+!"•bit._add: Unsupported data width 2" % 8‿2•bit._add˜ 16⥊0
+!"•bit._add: sizes in 𝕗 must be powers of 2 (contained 12)" % 8‿12•bit._add˜ 16⥊0
+!"•bit._add: sizes in 𝕗 must be powers of 2 (contained 0)" % 8‿0•bit._add˜ 16⥊0
+!"•bit._add: Unsupported data width 128" % 8‿128•bit._add˜ 16⥊0
+
+!"•bit._add: unhandled width 1" % 1‿32•bit._add˜ 16⥊0
+!"•bit._add: unhandled width 2" % 2‿32•bit._add˜ 16⥊0
+!"•bit._add: sizes in 𝕗 must be powers of 2 (contained 3)" % 3‿32•bit._add˜ 16⥊0
+!"•bit._add: unhandled width 4" % 4‿32•bit._add˜ 16⥊0
+!"•bit._add: unhandled width 128" % 128‿32•bit._add˜ 16⥊0
+
 %USE eqvar ⋄ {𝕊 f: {•internal.Keep 𝕩⍋1  ⋄ •internal.Validate F 𝕩}_eqvar  ↕64}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64
 %USE eqvar ⋄ {𝕊 f: {•internal.Keep 𝕩⍒1  ⋄ •internal.Validate F 𝕩}_eqvar ⌽↕64}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64
 %USE eqvar ⋄ {𝕊 f: {•internal.Squeeze 𝕩 ⋄ •internal.Validate F 𝕩}_eqvar 64↑2}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ ⟨8⟩ ⋈⌜ 1‿8‿16‿32‿64
