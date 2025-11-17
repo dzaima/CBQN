@@ -166,7 +166,8 @@ fn arith_aa{mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : tern{mode==1
 #  1: returns 1 on overflow
 #  2: returns length (i.e. mode≡0 but known no overflow)
 #  3: returns 0      (i.e. mode≡1 but known no overflow)
-fn arith_sa{mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
+#  4: void return, no overflow check
+fn arith_sa{mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : tern{mode==4, void, u64} = {
   def vw = arch_defvw{}
   # show{F, swap, mode, W, X, R}
   assert{len>0}
@@ -175,9 +176,7 @@ fn arith_sa{mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
   def overflow = tern{mode==1, {i}=>return{1}, {i}=>return{i}}
   
   def run = runner{(R==f64) | (mode>=2), R, F}
-  def getW{v} = trunc{W, v}
-  def getW{v if W==f64} = interp_f64{v}
-  cw:= ty_sc{W, TY}**getW{w}
+  cw:= ty_sc{W, TY}**get_packed_scal{W, w}
   
   def unr = tern{mode>=2, 2, 1} # same as in arithAAimpl
   @for_mu{bulk, unr}(sr in tup{'g',*R~~r}, cx in tup{ty_sc{X,TY},*X~~x}, M in 'm' over is to len) {
@@ -188,3 +187,6 @@ fn arith_sa{mode, F, swap, W, X, R}(r:*void, w:u64, x:*void, len:u64) : u64 = {
   if (mode==1 or mode==3) 0
   else len
 }
+
+def get_packed_scal{T, v:(u64)} = trunc{T, v}
+def get_packed_scal{T, v:(u64) if T==f64} = interp_f64{v}

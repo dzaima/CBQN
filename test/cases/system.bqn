@@ -351,11 +351,11 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 !"•bit._add: Sizes in 𝕗 must be powers of 2 (contained 0)" % 8‿0•bit._add˜ 16⥊0
 !"•bit._add: Unsupported data width 128" % 8‿128•bit._add˜ 16⥊0
 
-!"•bit._add: Unhandled operation width 1" % 1‿32•bit._add˜ 16⥊0
-!"•bit._add: Unhandled operation width 2" % 2‿32•bit._add˜ 16⥊0
+!"•bit._add: Operation width 1 too small" % 1‿32•bit._add˜ 16⥊0
+!"•bit._add: Operation width 2 too small" % 2‿32•bit._add˜ 16⥊0
 !"•bit._add: Sizes in 𝕗 must be powers of 2 (contained 3)" % 3‿32•bit._add˜ 16⥊0
-!"•bit._add: Unhandled operation width 4" % 4‿32•bit._add˜ 16⥊0
-!"•bit._add: Unhandled operation width 128" % 128‿32•bit._add˜ 16⥊0
+!"•bit._add: Operation width 4 too small" % 4‿32•bit._add˜ 16⥊0
+!"•bit._add: Operation width 128 too large" % 128‿32•bit._add˜ 16⥊0
 
 (¯3×↕32) 64‿32‿8‿8•bit._mul ↕32 %% ¯184745984‿1721813476‿¯331589824‿1537122403‿¯587748096‿1074686809‿¯919600832‿435498697
 ¯100‿¯30 64‿32‿8‿32•bit._mul 100-7×↕32 %% 37979376‿7727981‿¯130450736‿1422540730‿¯1983181648‿664605348‿2143355536‿2079418098
@@ -365,8 +365,8 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 (16⥊1‿0‿0‿0‿0) 2‿1•bit._or 16⥊0‿0‿1‿0 %% 1‿0‿1‿0‿0‿1‿1‿0‿0‿0‿1‿0‿0‿0‿1‿1
 (256⥊1‿1‿0‿0) 128‿1•bit._or 256⥊1‿0 %% 256⥊1‿1‿1‿0
 !"•bit._or: Scalar extension with width over 64 not supported" % (128⥊1) 128‿1•bit._or 256⥊1
-!"•bit._neg: Unhandled operation width 2" % 2‿1•bit._neg 0‿0‿1‿1‿0‿1‿1‿0
-!"•bit._add: Unhandled operation width 4" % 1‿0‿0‿0 4‿1•bit._add 8⥊1
+!"•bit._neg: Operation width 2 too small" % 2‿1•bit._neg 0‿0‿1‿1‿0‿1‿1‿0
+!"•bit._add: Operation width 4 too small" % 1‿0‿0‿0 4‿1•bit._add 8⥊1
 
 %USE eqvar ⋄ {𝕊 f: {•internal.Keep 𝕩⍋1  ⋄ •internal.Validate F 𝕩}_eqvar  ↕64}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64
 %USE eqvar ⋄ {𝕊 f: {•internal.Keep 𝕩⍒1  ⋄ •internal.Validate F 𝕩}_eqvar ⌽↕64}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64

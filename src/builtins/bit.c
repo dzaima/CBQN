@@ -8,6 +8,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
   #define SINGELI_FILE bit_arith
   #include "../utils/includeSingeli.h"
   const AndBytesFn andBytes_fn = si_andBytes;
+  #define BITARITH_IDX(OP) (OP-op_add)*4 + owl-3
 #else
   static void base_andBytes(u8* r, u8* x, u64 repeatedMask, u64 numBytes) {
     u64* x64 = (u64*)x; usz i;
@@ -172,7 +173,13 @@ static usz req2(usz s, char* name) {
 }
 
 enum BitOp1 { op_not, op_neg };
-B bitop1(B f, B x, enum BitOp1 op, char* name) {
+enum BitOp2 { // sync with tables in bit_arith.singeli
+  op_and, op_or, op_xor, // bitwise ops; must end with op_xor
+  op_add, op_sub, op_mul, // elementwise ops; must start with op_add
+};
+#define OWL_8_64 if (!(owl>=3 && owl<=6)) thrF("•bit._%U: Operation width %i %S", name, ow, owl<3?"too small":"too large")
+
+static B bitop1(B f, B x, enum BitOp1 op, char* name) {
   usz ow, rw, xw; // Operation width, result width, x width
   if (isAtm(f)) {
     ow = rw = xw = req2(o2s(f), name);
@@ -210,20 +217,31 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
   } else {
     r = incG(REUSE(x)); rp = xp;
   }
+  
   switch (op) { default: UD;
     case op_not: {
       usz l = n/64; bit_negatePtr(rp, xp, l);
       usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^~xp[l]);
     } break;
-    case op_neg: switch (ow) {
-      default: thrF("•bit._%U: Unhandled operation width %s", name, ow);
-      #define CASE(W) case W: \
-        NOUNROLL vfor (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
-        break;
-      CASE(8) CASE(16) CASE(32) CASE(64)
-      #undef CASE
+    
+    case op_neg: {
+    #if SINGELI
+      u8 owl = CTZ(ow);
+      OWL_8_64;
+      if (n>0) si_bitarith_sa[BITARITH_IDX(op_sub)](rp, 0, xp, n >> owl);
+    #else
+      switch (ow) {
+        default: thrF("•bit._%U: Unhandled operation width %s", name, ow);
+        #define CASE(W) case W: \
+          NOUNROLL vfor (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
+          break;
+        CASE(8) CASE(16) CASE(32) CASE(64)
+        #undef CASE
+      }
+    #endif
     } break;
   }
+  
   set_bit_result(r, rt, xr, rl, sh);
   decG(x);
   return r;
@@ -231,8 +249,7 @@ B bitop1(B f, B x, enum BitOp1 op, char* name) {
 B bitnot_c1(Md1D* d, B x) { return bitop1(d->f, x, op_not, "not"); }
 B bitneg_c1(Md1D* d, B x) { return bitop1(d->f, x, op_neg, "neg"); }
 
-enum BitOp2 { op_and, op_or, op_xor, op_add, op_sub, op_mul };
-B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
+static B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   usz ow, rw, xw, ww; // Operation width, result width, x width, w width
   if (isAtm(f)) {
     ow = rw = xw = ww = req2(o2s(f), name);
@@ -284,47 +301,72 @@ B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   u64* xp = tyany_ptr(x);
   u64* rp = tyany_ptr(r);
   
-  #define CASES(O,Q,P) case op_##O: \
-    switch(ow) { default: thrF("•bit._%U: Unhandled operation width %s", name, ow); \
-      CASE(8,Q,P) CASE(16,Q,P) CASE(32,Q,P) CASE(64,Q,P)                  \
-    } break;
-  #define SWITCH \
-    switch (op) { default: UD;                     \
-      BINOP(and,&) BINOP(or,|) BINOP(xor,^)        \
-      CASES(add,u,+) CASES(sub,u,-) CASES(mul,i,*) \
+  #if SINGELI
+    u8 owl = CTZ(ow);
+    if (noextend) {
+      if (op <= op_xor) {
+        if (n>0) si_bitwise_aa[op](rp, wp, xp, (n+7)/8);
+      } else {
+        OWL_8_64;
+        if (n>0) si_bitarith_aa[BITARITH_IDX(op)](rp, wp, xp, n >> owl);
+      }
+    } else {
+      if (owl > 6) thrF("•bit._%U: Scalar extension with width over 64 not supported", name, ow);
+      u64 mul = si_spaced_masks[ow-1];
+      u64 wv = loadu_u64(wp);
+      if (op <= op_xor) {
+        wv = (wv & ((1ULL<<ow)-1)) * mul;
+        if (n>0) si_bitwise_as[op]((void*)rp, (void*)xp, wv, (n+7)/8);
+      } else {
+        OWL_8_64;
+        if (negw) wv = -wv;
+        if (n>0) si_bitarith_sa[BITARITH_IDX(op)](rp, wv, xp, n >> owl);
+      }
     }
-  if (noextend) {
-    #define BINOP(O,P) case op_##O: { \
-      usz l = n/64; NOUNROLL vfor (usz i=0; i<l; i++) rp[i] = wp[i] P xp[i];     \
-      usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^(wp[l] P xp[l])); \
+  #else
+    #define CASES(O,Q,P) case op_##O: \
+      switch(ow) { default: thrF("•bit._%U: Unhandled operation width %s", name, ow); \
+        CASE(8,Q,P) CASE(16,Q,P) CASE(32,Q,P) CASE(64,Q,P)                  \
       } break;
-    #define CASE(W, Q, P) case W: \
-      NOUNROLL vfor (usz i=0; i<n/W; i++)                 \
-        ((Q##W*)rp)[i] = ((Q##W*)wp)[i] P ((Q##W*)xp)[i]; \
-      break;
-    SWITCH
-    #undef BINOP
-    #undef CASE
-  } else {
-    u64 wn; if (negw) { wn=-*wp; wp=&wn; }
-    #define BINOP(O,P) case op_##O: { \
-      if (ow>64) thrF("•bit._%U: Scalar extension with width over 64 not supported", name); \
-      u64 wv = *wp & (~(u64)0>>(64-ow));                                      \
-      for (usz tw=ow; tw<64; tw*=2) wv|=wv<<tw;                               \
-      usz l = n/64; NOUNROLL vfor (usz i=0; i<l; i++) rp[i] = wv P xp[i];     \
-      usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^(wv P xp[l])); \
-      } break;
-    #define CASE(W, Q, P) case W: { \
-      Q##W wv = *(Q##W*)wp;                   \
-      NOUNROLL vfor (usz i=0; i<n/W; i++)     \
-        ((Q##W*)rp)[i] = wv P ((Q##W*)xp)[i]; \
-      } break;
-    SWITCH
-    #undef BINOP
-    #undef CASE
-  }
-  #undef CASES
-  #undef SWITCH
+    #define SWITCH \
+      switch (op) { default: UD;                     \
+        BINOP(and,&) BINOP(or,|) BINOP(xor,^)        \
+        CASES(add,u,+) CASES(sub,u,-) CASES(mul,i,*) \
+      }
+    if (noextend) {
+      #define BINOP(O,P) case op_##O: { \
+        usz l = n/64; NOUNROLL vfor (usz i=0; i<l; i++) rp[i] = wp[i] P xp[i];     \
+        usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^(wp[l] P xp[l])); \
+        } break;
+      #define CASE(W, Q, P) case W: \
+        NOUNROLL vfor (usz i=0; i<n/W; i++)                 \
+          ((Q##W*)rp)[i] = ((Q##W*)wp)[i] P ((Q##W*)xp)[i]; \
+        break;
+      SWITCH
+      #undef BINOP
+      #undef CASE
+    } else {
+      u64 wn; if (negw) { wn=-*wp; wp=&wn; }
+      #define BINOP(O,P) case op_##O: { \
+        if (ow>64) thrF("•bit._%U: Scalar extension with width over 64 not supported", name); \
+        u64 wv = *wp & (~(u64)0>>(64-ow));                                      \
+        for (usz tw=ow; tw<64; tw*=2) wv|=wv<<tw;                               \
+        usz l = n/64; NOUNROLL vfor (usz i=0; i<l; i++) rp[i] = wv P xp[i];     \
+        usz q = (-n)%64; if (q) rp[l] ^= (~(u64)0 >> q) & (rp[l]^(wv P xp[l])); \
+        } break;
+      #define CASE(W, Q, P) case W: { \
+        Q##W wv = *(Q##W*)wp;                   \
+        NOUNROLL vfor (usz i=0; i<n/W; i++)     \
+          ((Q##W*)rp)[i] = wv P ((Q##W*)xp)[i]; \
+        } break;
+      SWITCH
+      #undef BINOP
+      #undef CASE
+    }
+    #undef CASES
+    #undef SWITCH
+  #endif
+  
   set_bit_result(r, rt, xr, rl, sh);
   decG(w); decG(x);
   return r;

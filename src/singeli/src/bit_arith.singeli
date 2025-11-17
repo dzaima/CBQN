@@ -3,6 +3,41 @@ include './cbqnDefs'
 include './f64'
 include './bitops'
 include './mask'
+include './dyarith_common'
+
+def __mul{a:(u16), b:(u16)} = trunc{u16, promote{u32,a} * promote{u32,b}}
+
+if_inline (hasarch{'X86_64'}) {
+  def __mul{a:V=[k](u8), b:V if k==32 or k==64} = {
+    def VI8 = [k]i8
+    def m = make_cycle{VI8, -1,0}
+    def lo = mul_sum_sat{2, a, VI8~~b & m}
+    def hi = mul_sum_sat{2, a, VI8~~b &~ m}
+    V~~((lo&re_el{i16,m}) | (hi<<8))
+  }
+  def __mul{a:V=[k](u64), b:V if not hasarch{'AVX512DQ'}} = {
+    def h = mul32{a, b>>32} + mul32{a>>32, b}
+    mul32{a, b} + (h<<32)
+  }
+}
+
+
+
+
+
+fn arith_aa{'s', F, T, T, T}(r:*void, w:*void, x:*void, len:u64) : void = {
+  assert{len != 0}
+  @for (r in *T~~r, w in *T~~w, x in *T~~x over len) r = F{w, x}
+}
+fn arith_sa{'s', F, swap, T, T, T}(r:*void, w:u64, x:*void, len:u64) : void = {
+  assert{len != 0}
+  def w = get_packed_scal{T, w}
+  @for (r in *T~~r, x in *T~~x over len) {
+    r = (if (swap) F{x, w} else F{w, x})
+  }
+}
+
+
 
 fn bit_dy_as{F}(r: *u8, w: *u8, x_splat:u64, len:u64) : void = {
   if (has_simd) {
@@ -27,5 +62,39 @@ fn bit_dy_as{F}(r: *u8, w: *u8, x_splat:u64, len:u64) : void = {
     }
   }
 }
+
+def bit_dy_aa{F} = arith_aa{if (has_simd) 0 else 's', F, u8, u8, u8}
+
+
+
+def arith_op{F, class} = {
+  def ts = tup{u8, u16, u32, u64}
+  
+  def vec{..._} = has_simd
+  def vec{(u64), ..._ if hasarch{'AARCH64'} and same{F,__mul}} = 0
+  def vec{E, ..._ if same{F,__mul} and hasarch{'X86_64'} and ((E==u8 and not hasarch{'SSSE3'}) or (E==u32 and not hasarch{'AVX2'}) or (E==u64 and not hasarch{'AVX2'}))} = 0
+  def vec{..._ if hasarch{'X86_64'} and class==1} = 0
+  
+  def sa_impl{swap}{T} = arith_sa{if (vec{T,swap}) 4 else 's', F, swap, T, T, T}
+  def aa_impl{T} = arith_aa{if (vec{T}) 0 else 's', F, T, T, T}
+  
+  def me{'sa'} = each{sa_impl{0}, ts}
+  def me{'as'} = each{sa_impl{1}, ts}
+  def me{'aa'} = each{aa_impl, ts}
+}
+
+def bit_ops = tup{&, |, ^}
+
+def arith_ops = tup{
+  arith_op{+, 0},
+  arith_op{-, 0},
+  arith_op{*, 0},
+}
+
+export_tab{'si_bitwise_aa', each{bit_dy_aa, bit_ops}}
+export_tab{'si_bitwise_as', each{bit_dy_as, bit_ops}}
+
+export_tab{'si_bitarith_aa', join{each{{c} => c{'aa'}, arith_ops}}}
+export_tab{'si_bitarith_sa', join{each{{c} => c{'sa'}, arith_ops}}}
 
 export{'si_andBytes', bit_dy_as{&}} # for andBytes_fn
