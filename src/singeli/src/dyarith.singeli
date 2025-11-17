@@ -14,6 +14,8 @@ fn andBytes{vw}(r: *u8, x: *u8, maskU64:u64, len:u64) : void = {
   @for_masked{bulk}(sr in tup{'g',r}, cx in tup{T8,x} over len) sr{cx & maskFull}
 }
 
+def bqn_or{a, b} = (a+b)-(a*b)
+
 export{'simd_andBytes', andBytes{arch_defvw{}}}
-export{'orSAc_f64_f64_f64', arithSA{2,bqn_or,0,f64,f64,f64}}
+export{'orSAc_f64_f64_f64', arith_sa{2,bqn_or,0,f64,f64,f64}}
 include 'gen/arDefs'
