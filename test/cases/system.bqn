@@ -367,6 +367,16 @@ r←•MakeRand 1 ⋄ ! 1¨⊸≡ ∊{𝕊: 500 r.Deal 1000}¨ ↕4
 !"•bit._or: Scalar extension with width over 64 not supported" % (128⥊1) 128‿1•bit._or 256⥊1
 !"•bit._neg: Operation width 2 too small" % 2‿1•bit._neg 0‿0‿1‿1‿0‿1‿1‿0
 !"•bit._add: Operation width 4 too small" % 1‿0‿0‿0 4‿1•bit._add 8⥊1
+0‿123 16‿16‿16‿8•bit._add -⊸∾ 4000×↕8 %% 31488‿27488‿23488‿19488‿15488‿11488‿7488‿3488‿31488‿¯30048‿¯26048‿¯22048‿¯18048‿¯14048‿¯10048‿¯6048
+3141592 32•bit._mul 10⋆↕10 %% 3141592‿31415920‿314159200‿¯1153375296‿1351148928‿626587392‿1970906624‿¯1765770240‿¯477833216‿¯483364864
+
+!"•bit._add: 𝕨 or 𝕩 1-cell width must equal operation width if extended" % 8‿8‿2‿8•bit._add˜ ↕32
+!"•bit._add: 𝕨 or 𝕩 1-cell width must equal operation width if extended" % 8‿8‿8‿2•bit._add˜ ↕32
+!"•bit._add: Unsupported data width 2" % 8‿2‿8‿8•bit._add˜ ↕32
+!"•bit._add: Unsupported data width 2" %  8 8‿8‿2‿8•bit._add○↕ 32
+!"•bit._add: Unsupported data width 2" % 32 8‿8‿8‿2•bit._add○↕ 8
+!"•bit._not: Unsupported data width 2" % 8‿2‿8•bit._not ↕32
+!"•bit._not: Unsupported data width 2" % 8‿8‿2•bit._not ↕32
 
 %USE eqvar ⋄ {𝕊 f: {•internal.Keep 𝕩⍋1  ⋄ •internal.Validate F 𝕩}_eqvar  ↕64}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64
 %USE eqvar ⋄ {𝕊 f: {•internal.Keep 𝕩⍒1  ⋄ •internal.Validate F 𝕩}_eqvar ⌽↕64}¨ ({𝕩•bit._neg}¨ 8‿16‿32‿64) ∾ {𝕩 •bit._cast}¨ ≠´¨⊸/ ⥊ 8‿16‿32‿64 ⋈⌜ 1‿8‿16‿32‿64

@@ -67,8 +67,8 @@ static TyArr* copy(CastType t, B x) {
     case 64: return (TyArr*) (cpyF64Arr(x));
   }
 }
-static u8 typeOfCast(CastType t) {
-  switch (t.s) { default: UD;
+static u8 typeOfCast(CastType t, char* name) {
+  switch (t.s) { default: thrF("•bit._%U: Unsupported data width %i", name, t.s);
     case  1: return t_bitarr;
     case  8: return t.c ? t_c8arr  : t_i8arr ;
     case 16: return t.c ? t_c16arr : t_i16arr;
@@ -110,7 +110,7 @@ B bitcast_impl(B el0, B el1, B x) {
   if (rl*rct.s != s) thrM("•bit._cast: Incompatible lengths");
   if (rl>=USZ_MAX) thrM("•bit._cast: Output too large");
   B r = convert(xct, x, "cast");
-  u8 rt = typeOfCast(rct);
+  u8 rt = typeOfCast(rct, "cast");
   if (rt==t_bitarr) {
     if (reusable(r) && !ARR_IS_SLICE(TY(r))) {
       REUSE(r);
@@ -207,7 +207,7 @@ static B bitop1(B f, B x, enum BitOp1 op, char* name) {
   if (rl>=USZ_MAX) thrF("•bit._%U: Output too large", name);
   
   x = convert((CastType){ xw, isCharArr(x) }, x, name);
-  u8 rt = typeOfCast((CastType){ rw, 0 });
+  u8 rt = typeOfCast((CastType){ rw, 0 }, name);
   u64* xp = tyany_ptr(x);
   B r; u64* rp;
   if (!reusable(x) || ARR_IS_SLICE(TY(x))) {
@@ -293,7 +293,7 @@ static B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
   
   w = convert((CastType){ ww, isCharArr(w) }, w, name);
   x = convert((CastType){ xw, isCharArr(x) }, x, name);
-  u8 rt = typeOfCast((CastType){ rw, 0 });
+  u8 rt = typeOfCast((CastType){ rw, 0 }, name);
   Arr* ra = m_arr(offsetof(TyArr,a) + (n+7)/8, rt, n>>rws);
   arr_shCopyUnchecked(ra, x);
   B r = taga(ra);
