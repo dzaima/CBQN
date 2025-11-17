@@ -441,7 +441,7 @@ fn xor_rows_bit(xp:*u64, rp:*u64, n:usz, l:usz, eq:u1) : void = {
     if (l <= 64) {
       bm:= u64~~2<<(l-1) - 1
       k:= l/8
-      @for (i to n) add_bit{i, popc{bm & loadu{*u64~~(*u8~~xp + k*i)}}}
+      @for (i to n) add_bit{i, popc{bm & loadu{u64, *u8~~xp + k*i}}}
     } else if (l < 128) xor_loop{1}
     else if (l%64==0) {
       @for (i to n) add_bit{i, popc{xor_words(0, xp+ll*i, ll)}}

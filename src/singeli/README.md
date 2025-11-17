@@ -176,12 +176,12 @@ Homogeneous definitions (i.e. ones with `hom` in their name) assume that each el
 
 ## Load/store
 
-Alignment requirements are target-specific, but at most one element.
+Alignment requirements for vector `load`/`store` are target-specific, but at most one element.
 
 For unaligned scalar loads & stores, `loadu` & `storeu` should be used.
 
-- `loadu{p:*E} : E` - load scalar from unaligned memory
-- `storeu{p:*E, a:E} : void` - store scalar to unaligned memory
+- `loadu{E, p:*_} : E` - load scalar from unaligned memory
+- `storeu{E, p:*_, a:E} : void` - store scalar to unaligned memory
 - `load{[k]E, p:*E} : [k]E` - load full vector
 - `store{p:*E, a:[k]E} : void` - store full vector
 - `load{[k]E, p:*E, vl} : [k]E` - load first `vl` elements of vector (memory of upper ones won't be touched, and their values are unspecified)

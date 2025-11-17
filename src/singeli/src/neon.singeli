@@ -64,8 +64,8 @@ def vfold{(__max), x:T if nvec{T} and ~nveci{T,64}} = fold_max{x}
 def vfold{(__add), x:T if nvec{T}} = fold_add{x}
 
 def store{ptr:*E, x:V=[_]E, vl if nvec{V} and vl*width{E}<=64} = {
-  def E=ty_u{vl*width{E}}
-  storeu{*E~~ptr, extract{re_el{E,V}~~x, 0}}
+  def E = ty_u{vl*width{E}}
+  storeu{E, ptr, extract{re_el{E,V}~~x, 0}}
 }
 
 def load{V=[_]E, ptr:*E, vl if nvec{V} and vl*width{E}<=64} = { # implemented via a broadcast load

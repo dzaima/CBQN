@@ -56,14 +56,12 @@ def load {...args if match (...args) { {ptr:*E, idx      if not vect{E}}=>0; {..
 def store{...args if match (...args) { {ptr:*E, idx, val if not vect{E}}=>0; {..._}=>1 } } = assert{0, 'bad store', ...args}
 def load{p:*_} = load{p, 0}
 # def store{p:*_, v} = store{p, 0, v}
-def loadu {p:*T      if isunsigned{T}} = emit{T,    merge{'loadu_u', fmtnat{width{T}}}, p}
-def storeu{p:*T, v:T if isunsigned{T}} = emit{void, merge{'storeu_u',fmtnat{width{T}}}, p, v}
-def loadu {p:*T      if issigned{T}} = loadu {*ty_u{T} ~~ p}
-def storeu{p:*T, v:T if issigned{T}} = storeu{*ty_u{T} ~~ p, ty_u{v}}
-def loadu {p:*T      if width{T}==8} = load{p}
-def storeu{p:*T, v:T if width{T}==8} = store{p, v}
-
-
+def loadu {T, p:*_      if isunsigned{T}} = emit{T,    merge{'loadu_u', fmtnat{width{T}}}, p}
+def storeu{T, p:*_, v:T if isunsigned{T}} = emit{void, merge{'storeu_u',fmtnat{width{T}}}, p, v}
+def loadu {T, p:*_      if issigned{T}} = loadu {T, p}
+def storeu{T, p:*_, v:T if issigned{T}} = storeu{T, p, ty_u{v}}
+def loadu {T, p:*_      if width{T}==8} = load {*T~~p}
+def storeu{T, p:*_, v:T if width{T}==8} = store{*T~~p, v}
 
 # hints
 def rare{x if knum{x}} = x

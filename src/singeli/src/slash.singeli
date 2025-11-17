@@ -123,7 +123,7 @@ fn slash{c==0, T if T<=i16}(w:*u64, x:arg{c,T}, r:*T, l:u64, sum:u64) : void = {
     def rn = if (has_popc) r+popc{w} else 0
     def step{w} = {
       i := load{tab, w}
-      storeu{*u64~~r, j + i}
+      storeu{u64, r, j + i}
       r += popc_alt{w, i, tw}
       j += inc
     }

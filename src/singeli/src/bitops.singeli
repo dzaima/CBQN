@@ -88,7 +88,7 @@ def load_expand_bits{V=[k]T, x:(*u64), n:(ux)} = {
 
 # load bits starting at bit i, leaving garbage at the top. Only the bottom 57 bits are guaranteed correct; 58 and 60 will be correct if `i` is a multiple of it
 def loadu_bits_raw{x:(*u64), i} = {
-  loadu{*u64~~((*u8~~x) + (i>>3))} >> (i&7)
+  loadu{u64, (*u8~~x) + (i>>3)} >> (i&7)
 }
 def loadu_bits{x:(*u64), i, n} = {
   assert{n<58 or ((n==58 or n==60) and (i%n == 0))}
