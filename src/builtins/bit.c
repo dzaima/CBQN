@@ -3,11 +3,11 @@
 #include "../ns.h"
 
 typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
-#if SINGELI_SIMD
+#if SINGELI
   extern uint64_t* const si_spaced_masks;
   #define SINGELI_FILE bit_arith
   #include "../utils/includeSingeli.h"
-  const AndBytesFn andBytes_fn = simd_andBytes;
+  const AndBytesFn andBytes_fn = si_andBytes;
 #else
   static void base_andBytes(u8* r, u8* x, u64 repeatedMask, u64 numBytes) {
     u64* x64 = (u64*)x; usz i;

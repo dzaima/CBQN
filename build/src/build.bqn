@@ -746,7 +746,7 @@ cachedBin‿linkerCache ← {
     "xag"‿"src/builtins/slash.c"‿"slash",     "xag"‿"src/builtins/slash.c"‿"replicate",
     "xag"‿"src/builtins/sort.c"‿"bins",       "xa."‿"src/builtins/slash.c"‿"count"
     "xag"‿"src/builtins/select.c"‿"select",   "xag"‿"src/builtins/group.c"‿"group"
-    "xa."‿"src/builtins/bit.c"‿"bit_arith"
+    "xag"‿"src/builtins/bit.c"‿"bit_arith"
   ⟩
   objs ← ⟨⟩
   

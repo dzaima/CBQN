@@ -5,13 +5,27 @@ include './bitops'
 include './mask'
 
 fn bit_dy_as{F}(r: *u8, w: *u8, x_splat:u64, len:u64) : void = {
-  def vw = arch_defvw{}
-  assert{vw>=64}
-  def bulk = vw / width{u8}
-  def T8 = [bulk]u8
-  def T64 = [bulk/8]u64
-  x:= T8~~T64**x_splat
-  @for_masked{bulk}(sr in tup{'g',r}, cw in tup{T8,w} over len) sr{F{cw, x}}
+  if (has_simd) {
+    def vw = arch_defvw{}
+    assert{vw>=64}
+    def bulk = vw / width{u8}
+    def T8 = [bulk]u8
+    def T64 = [bulk/8]u64
+    x:= T8~~T64**x_splat
+    @for_mu{bulk, 2}(sr in tup{'g',r}, cw in tup{T8,w} over len) sr{eachx{F, cw, x}}
+  } else {
+    def val{o} = F{loadu{u64, w+o}, x_splat}
+    @for (i to len/8) {
+      def o = i*8
+      storeu{u64, r+o, val{o}}
+    }
+    def o = len&~7
+    if (o != len) {
+      def b = loadu{u64, r+o}
+      def m = tail{u64, (len&7)*8}
+      storeu{u64, r+o, (val{o} & m) | (b &~ m)}
+    }
+  }
 }
 
-export{'simd_andBytes', bit_dy_as{&}} # for andBytes_fn
+export{'si_andBytes', bit_dy_as{&}} # for andBytes_fn
