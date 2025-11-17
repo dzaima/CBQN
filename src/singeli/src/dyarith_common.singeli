@@ -149,23 +149,18 @@ def arithAAimpl{vw, mode, F, W, X, R, w, x, r, len} = {
   }
 }
 
-fn arithAAc{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : u64 = {
-  arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
-  if (mode==1) len
-  else 0
-}
-fn arithAAu{vw, mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : void = {
-  arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
-}
-
 # mode:
 #  0: void return, no overflow check (also mode=3)
 #  1: on overflow, returns position
 #  2: on overflow, returns 1
-def arithAA{mode, F, W, X, R} = {
+fn arithAA{mode, F, W, X, R}(r:*void, w:*void, x:*void, len:u64) : tern{mode==1 or mode==2, u64, void} = {
   def vw = arch_defvw{}
-  if (mode==1 or mode==2) arithAAc{vw, mode, F, W, X, R}
-  else arithAAu{vw, mode, F, W, X, R}
+  arithAAimpl{vw, mode, F, W, X, R, w, x, r, len}
+  match (mode) {
+    {0} => {}; {3} => {}
+    {1} => len
+    {2} => 0
+  }
 }
 
 # mode:
