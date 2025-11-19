@@ -6,7 +6,6 @@ local {
   def intrin_i = x86_intrin_i
   def mt{k} = merge{'mask', fmtnat{__max{k,8}}}
   def mr{s} = merge{s, '_mask'}
-  def hasmask{k} = hasarch{if (k<=8) 'AVX512DQ' else if (k==16) 'AVX512F' else 'AVX512DQ'}
 }
 
 def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
@@ -17,8 +16,9 @@ def store_masked_hom{p:*E, m:[l](u1), v:V=[l]E if has512e{V}} = {
 
 # mask conversions
 local def mask_int_ty{k} = ty_u{__max{k,8}}
-def hom_to_int{x:[k](u1)} = emit{mask_int_ty{k}, if (hasmask{k}) merge{'_cvt',mt{k},'_u',fmtnat{__max{k,32}}} else '', x}
-def int_to_mask{[k](u1), x:T if isunsigned{T} and width{T}>=k} = emit{[k]u1, if (hasmask{k}) merge{'_cvtu',fmtnat{__max{k,32}},'_',mt{k}} else '', x}
+local def mask_int_op{k, s} = if (hasarch{if (k<=8) 'AVX512DQ' else if (k==16) 'AVX512F' else 'AVX512BW'}) s else ''
+def hom_to_int{x:[k](u1)} = emit{mask_int_ty{k}, mask_int_op{k, merge{'_cvt',mt{k},'_u',fmtnat{__max{k,32}}}}, x}
+def int_to_mask{[k](u1), x:T if isunsigned{T} and width{T}>=k} = emit{[k]u1, mask_int_op{k, merge{'_cvtu',fmtnat{__max{k,32}},'_',mt{k}}}, x}
 
 def reinterpret{T, a:M=[l](u1) if isint{T} and l==width{T}} = T~~hom_to_int{a}
 def reinterpret{M=[l](u1), a:T if isint{T} and l==width{T}} = int_to_mask{M, a}
@@ -27,7 +27,8 @@ def top_to_mask{x:V=[k]E if E!=u1 and veci{V}} = emit{[k]u1, mr{intrin{V,'mov',x
 def top_to_int{x:V=[_]_ if w512i{V}} = hom_to_int{top_to_mask{x}}
 def hom_to_int{x:V=[_]_ if w512i{V}} = top_to_int{x}
 
-def mask_to_hom{V=[l]_, x:[l](u1)} = emit{V, intrin_i{V,'movm'}, x}
+def mask_to_hom{V=[l]_, x:[l](u1)} = masked_mov{hom_ones{V}, x, 0}
+def mask_to_hom{V=[l]E, x:[l](u1) if hasarch{if (width{E}>=32) 'AVX512DQ' else 'AVX512BW'}} = emit{V, intrin_i{V,'movm'}, x}
 
 def lowelt_mask{[k](u1), n if any_int{n}} = int_to_mask{[k]u1, bzhi{hom_ones{u64}, n}}
 
