@@ -8,7 +8,7 @@ include './dyarith_common'
 def __mul{a:(u16), b:(u16)} = trunc{u16, promote{u32,a} * promote{u32,b}}
 
 if_inline (hasarch{'X86_64'}) {
-  def __mul{a:V=[k](u8), b:V if k==32 or k==64} = {
+  def __mul{a:V=[k](u8), b:V if hasarch{'SSSE3'}} = {
     def VI8 = [k]i8
     def m = make_cycle{VI8, -1,0}
     def lo = mul_sum_sat{2, a, VI8~~b & m}
