@@ -9,6 +9,20 @@
 //   COULD implement fast numeric -´
 // ∨ on boolean-valued integers, stopping at 1
 
+// Insert (˝):
+// Arithmetic, small cells:
+//   Empty: take first cell
+//   Single-element cells: use Fold
+//   Non-specialized with <6 element rows: do scalar-wise, not row-wise
+// +⌈⌊ on integers and floats: SIMD tiled reduction
+//   SHOULD optimize dyadic +⌈⌊ insert
+//   Short-row ⌈⌊: widen to a virtual row of up to 6 vectors
+//   SHOULD optimize +˝ for short rows
+//   Long rows: split into columns 32 rows tall and 2 or 4 vectors wide
+//     Halves of a column may overlap to deal with odd lengths
+//     +: widen once in SIMD, do BQN add and range check in an outer loop
+// ⊣⊢∾: select or reshape
+
 // •math.Sum: +´ with faster and more precise SIMD code for i32, f64
 
 // Insert with rank (˝˘ or ˝⎉k), or fold on flat array
