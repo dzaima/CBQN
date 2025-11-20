@@ -11,9 +11,9 @@
 
 // Insert (˝):
 // Arithmetic, small cells:
-//   Empty: take first cell
 //   Single-element cells: use Fold
 //   Non-specialized with <6 element rows: do scalar-wise, not row-wise
+//     Computes fill in constant time so empty rows are fast
 // +⌈⌊ on integers and floats: SIMD tiled reduction
 //   SHOULD optimize dyadic +⌈⌊ insert
 //   Short-row ⌈⌊: widen to a virtual row of up to 6 vectors
@@ -546,7 +546,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isPervasiveDyExt(f)) {
     if (xr==1) return m_unit(fold_c1(d, x));
     usz xia = IA(x);
-    if (xia==0) { assert(len!=0); return C1(select, x); }
+    if (xia==0) { assert(len!=0); goto empty; }
     if (len==xia) {
       B r = m_vec1(fold_c1(d, C1(shape, x)));
       ur rr = xr - 1;
@@ -581,6 +581,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       return insert_sum(f, x, xr, xe, len);
     }
     #endif
+    empty:;
     if (len>2 && HEURISTIC(xia<6*(u64)len)) {
       return insert_scal(f, c2fn(f), x, 0, m_f64(0), xia, xr-1);
     }
