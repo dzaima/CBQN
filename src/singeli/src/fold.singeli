@@ -604,87 +604,6 @@ def insert_assoc_finish{op, idv:V=[_]T, rv, set, ws} = {
   }
   mem  # Caller copies
 }
-def insert_assoc_finish{op, idv:V, rv, set, ws if hasarch{'SSSE3'} or hasarch{'AARCH64'}} = {
-  # In-vector reduction on shape set,wid
-  def n = length{rv}
-  def I = re_el{i8,V}; def [ns]_ = I
-  def ls = 16; def has_lanes = ns > ls
-
-  def done = makelabel{}
-  if (set > 1) {
-    vms := I**(ls-1)
-    hiota := make{I, iota{ns} % ls}
-    ko := set*ws           # Number of bytes
-    s := (set+1)/2         # Number of rows after halving
-    k := s*ws              # Corresponding number of bytes
-    def finish_step{} = {
-      if (s==1) goto{done}
-      ko = k
-      s = (s+1)/2
-      k = s*ws
-    }
-    while (k >= ls) {
-      kc := ko - k  # Bytes on left hand side
-      km := kc/ns; o := kc%ns
-      kmask := mask_of_first{I, o}
-      vo := I**cast_i{i8, o%ls}
-      selmask := hiota < vo
-      selind  := (hiota + vo) & vms
-      def do_offset{m} = {
-        def i = iota{__min{2*(m+1), n-m}}  # Vectors to change
-        {a, b} := select{tup{...rv, idv}, table{+, iota{2}, i+m}}
-        if (has_lanes) {
-          h := each{vec_select{128, ., tup{1,2}}, each{tup, a,b}}
-          if (o<ls) b = h; else a = h
-        }
-        def shift_op{r, a,b, i} = {
-          t := shuf{[ls]i8, blend_hom{a, b, selmask}, selind}
-          r = (if (i<=m) op{r, t} else t)
-          if (i==m) r = blend_hom{t, r, kmask}
-        }
-        each{shift_op, select{rv,i}, a,b, i}
-      }
-      def do_offset{m==n/2} = {
-        each{{r,t}=>{r = op{r,t}}, slice{rv,0,m}, slice{rv,m}}
-      }
-      def rec{m, max} = {
-        if (km==m) do_offset{m}; else if (m<max) rec{m+1, max}
-      }
-      rec{0, cdiv{n,2}}
-      finish_step{}
-    }
-    # Now fits in two lanes
-    def v = select{rv, 0}
-    while (1) {
-      mk:= mask_of_first{I, k}
-      t := blend_hom{v, if (has_lanes) vec_select{128, v, 1,0} else select{rv,1}, mk}
-      o := op{v, shuf{[ls]i8, t, (hiota + I**cast_i{i8, k}) & vms}}
-      v = blend_hom{v, o, mk}
-      finish_step{}
-    }
-  }
-  setlabel{done}
-  rv  # Caller writes
-}
-
-def write_reg{r0, rv={_:V, ..._}, bytes} = {
-  def I = re_el{i8, V}
-  write_reg_fn{length{rv}, I}(*I~~r0, each{~~{I,.}, rv}, bytes)
-}
-fn write_reg_fn{n,I=[ns](i8)}(rp:*I, rv:n**I, bytes:usz) = {
-  lastv := select{rv, 0}
-  i:usz = 0
-  each{
-    {v} => {
-      if ((i+1)*ns >= bytes) goto{'last'}
-      store{rp, i, lastv}
-      ++i; lastv = v
-    },
-    slice{rv, 1}
-  }
-  setlabel{'last'}
-  store_blended_hom{rp+i, mask_of_first{I, bytes-i*ns}, lastv}
-}
 
 def insert_generic{op, rev, r:*T, x0:*T, len, wid} = {
   x := x0; if (rev) x += wid*(len-1)
@@ -749,7 +668,6 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
       def wb = wid*(width{T}/8)
       match (insert_assoc_reg{T, op, T~~id0, x0, len, wid}) {
         {mem:*T} => emit{void, 'memcpy', r0, mem, wb}
-        {{...rv}} => write_reg{r0, rv, wb}
       }
     } else {
       r := *T~~r0; s := *T~~x0; x := s + wid
