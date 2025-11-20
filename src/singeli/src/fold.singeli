@@ -546,15 +546,15 @@ each{{w} => export{merge{'sum_small_i', fmtnat{w}}, sum_small{primtype{'i', w}}}
 def assoc_num_reg = 6
 def insert_assoc_reg{T, op, id:T, x0:(*void), len:(usz), wid:(usz)} = {
   def n = assoc_num_reg
-  def vw = arch_defvw{} / width{T}
-  def V = [vw]T
+  def vl = arch_defvw{} / width{T}
+  def V = [vl]T
   total := len*wid             # Total elements
   set := len; step := total; numr:usz = 0
-  if (total > n*vw) {
-    set  = n*vw / wid          # Rows in one set of vectors
+  if (total > n*vl) {
+    set  = n*vl / wid          # Rows in one set of vectors
     assert{set > 0}
     step = set * wid           # Elements in one set
-    numr = cdiv{total-n*vw, step} * step # Elements handled by main loop
+    numr = cdiv{total-n*vl, step} * step # Elements handled by main loop
   }
 
   # rv: masked load of up to n vectors starting at end (rem elements)
@@ -563,8 +563,8 @@ def insert_assoc_reg{T, op, id:T, x0:(*void), len:(usz), wid:(usz)} = {
   rv  := undef{V, n}
   idv := V**id
   # Last index and corresponding masked vector
-  li  := (rem-1)/vw
-  last:= blend_hom{idv, load{*V~~end, li}, mask_of_first{V, rem-li*vw}}
+  li  := (rem-1)/vl
+  last:= blend_hom{idv, load{*V~~end, li}, mask_of_first{V, rem-li*vl}}
   def id_labels = @collect (n) makelabel{}
   each{each{., iota{n}, rv, id_labels}, tup{
     # Read or use last vector
@@ -616,35 +616,35 @@ def insert_generic{op, rev, r:*T, x0:*T, len, wid} = {
 }
 
 # Break into columns of 4 and maybe one of 2
-def iter_columns_4{vw, wid, on_col} = {
+def iter_columns_4{vl, wid, on_col} = {
   def run_col{c, j, o} = {
     def h = c/2; def ih = iota{h}
-    assert{o <= h*vw}
+    assert{o <= h*vl}
     def offset{   p} = { def pj =      p + j ; tup{pj, pj + o} }
     def offset{T, p} = { def pj = *T~~(p + j); tup{pj, pj + o} }
     def each_i{V, f, p, ...a} = {
       def pis = flat_table{tup, each{~~{*V,.},p}, ih}
       each{{pi,...v} => f{...pi,...v}, pis, ...a}
     }
-    on_col{offset, each_i, {} => h*vw + o}
+    on_col{offset, each_i, {} => h*vl + o}
   }
-  j:usz = 0; o:usz = 2*vw
+  j:usz = 0; o:usz = 2*vl
   def break = makelabel{}; while (1) {
     rem := wid - j
-    if (rem < 5*vw) {  # 5*vw is full 4 plus squashed 2
-      if (rem <= 2*vw) {
-        if (rem > 0) run_col{2, j, rem - vw}
+    if (rem < 5*vl) {  # 5*vl is full 4 plus squashed 2
+      if (rem <= 2*vl) {
+        if (rem > 0) run_col{2, j, rem - vl}
         goto{break}
       }
-      o = (rem-1)%(2*vw) + 1  # Leave a full 2 if rem > 4*vw
+      o = (rem-1)%(2*vl) + 1  # Leave a full 2 if rem > 4*vl
     }
     run_col{4, j, o}
-    j += o + 2*vw
+    j += o + 2*vl
   }
   setlabel{break}
 }
-def fold_columns_4{inc,lt, op,V=[vw]_, s,x0,xend,r, wid} = {
-  iter_columns_4{vw,wid, {offset, each_i_g, _} => {
+def fold_columns_4{inc,lt, op,V=[vl]_, s,x0,xend,r, wid} = {
+  iter_columns_4{vl,wid, {offset, each_i_g, _} => {
     # Reduce one (multi-vector) column
     def each_i = each_i_g{V, ...}
     rv := each_i{load, offset{s}}
@@ -662,9 +662,9 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   if (not has_simd) {
     insert_generic{op, 0, *T~~r0, *T~~x0, len, wid}
   } else {
-    def vw = arch_defvw{} / width{T}
-    def V = [vw]T
-    if (wid <= assoc_num_reg * vw) {
+    def vl = arch_defvw{} / width{T}
+    def V = [vl]T
+    if (wid <= assoc_num_reg * vl) {
       def wb = wid*(width{T}/8)
       match (insert_assoc_reg{T, op, T~~id0, x0, len, wid}) {
         {mem:*T} => emit{void, 'memcpy', r0, mem, wb}
@@ -690,9 +690,9 @@ fn insert_non_assoc{T, op}(rp:*void, xp:*void, len:usz, wid:usz) : void = {
   if (not has_simd) {
     insert_generic{op, 1, r, x0, len, wid}
   } else {
-    def vw = arch_defvw{} / width{T}; def V = [vw]T
+    def vl = arch_defvw{} / width{T}; def V = [vl]T
     s := x0 + (len-1)*wid
-    if (wid <= vw) {
+    if (wid <= vl) {
       x := s
       rv := load{*V~~x}; x -= wid
       while (x >= x0) { rv = op{rv, load{*V~~x}}; x -= wid }
@@ -700,7 +700,7 @@ fn insert_non_assoc{T, op}(rp:*void, xp:*void, len:usz, wid:usz) : void = {
     } else {
       x := s - wid; end := x0
       # Group rows only if there will be multiple columns
-      def b = 32; if (wid > 4*vw) end += ((len-2) &~ (b-1))*wid
+      def b = 32; if (wid > 4*vl) end += ((len-2) &~ (b-1))*wid
       while (1) {
         fold_columns_4{-=,>=, op,V, s,x,end,r, wid}
         if (end == x0) return{}
@@ -727,7 +727,7 @@ def insert_generic{op, 0, r:*R, x0:*T, len, wid if width{R}==2*width{T}} = {
     @for (r, x over wid) r = op{r, pr{x}}
   }
 }
-def insert_add_wide{op, V=[vw]T, r:*R, x0:*T, len, wid} = {
+def insert_add_wide{op, V=[vl]T, r:*R, x0:*T, len, wid} = {
   s := x0; xc := s + wid
   final_end := x0 + len*wid
   def b = 32
@@ -749,7 +749,7 @@ def insert_add_wide{op, V=[vw]T, r:*R, x0:*T, len, wid} = {
   # but stripe results as (lo, hi) in columns
   ds:usz = 0  # Whether s is striped
   while (1) {
-    iter_columns_4{vw,wid, {offset, each_i_g, get_cw} => {
+    iter_columns_4{vl,wid, {offset, each_i_g, get_cw} => {
       def each_i = each_i_g{V, ...}
       def cw = get_cw{}; def hi_off{p} = *V~~(*T~~p + cw)
       def load_exp{...a} = exp{load{...a}}
@@ -794,13 +794,13 @@ fn insert_add_widen{T, R}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   if (not has_simd) {
     insert_generic{op, 0, ...args}
   } else {
-    def vw = arch_defvw{} / width{T}
-    if (wid < 4*vw) {
+    def vl = arch_defvw{} / width{T}
+    if (wid < 4*vl) {
       insert_generic{op, 0, ...args}
     } else {
       def I = w_d{T}
       def {r,..._} = args; ri := *I~~r0
-      insert_add_wide{op, [vw]T, ri, ...slice{args,1}}
+      insert_add_wide{op, [vl]T, ri, ...slice{args,1}}
       if (R != I) @for (r, ri over wid) r = cast_i{R, ri}
     }
   }
