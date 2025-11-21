@@ -615,13 +615,13 @@ def insert_generic{op, rev, r:*T, x0:*T, len, wid} = {
   }
 }
 
-# Break into columns of 4 and maybe one of 2
+# Break into columns of 4 vectors and maybe one of 2; a c-vector column is composed of two potentially-overlapping c/2-vector parts, each fully in-bounds
 def iter_columns_4{vl, wid, on_col} = {
-  def run_col{c, j, o} = {
+  def run_col{c, j, o} = { # c: column count; j: first element offset; o: additional offset of second half, giving o + (c/2)*vl total elements
     def h = c/2; def ih = iota{h}
     assert{o <= h*vl}
-    def offset{   p} = { def pj =      p + j ; tup{pj, pj + o} }
-    def offset{T, p} = { def pj = *T~~(p + j); tup{pj, pj + o} }
+    def offset{   p:*E} = { def pj =      p + j ; tup{pj, pj + o} } # Start pointers to the c/2-vector parts
+    def offset{T, p:*E} = { def pj = *T~~(p + j); tup{pj, pj + o} } # Used with width{T}==width{E}/2 for interleaved data
     def each_i{V, f, p, ...a} = {
       def pis = flat_table{tup, each{~~{*V,.},p}, ih}
       each{{pi,...v} => f{...pi,...v}, pis, ...a}
@@ -643,6 +643,7 @@ def iter_columns_4{vl, wid, on_col} = {
   }
   setlabel{break}
 }
+# Accumulates from s..s+wid to r..r+wid with rows from x0..xend
 def fold_columns_4{inc,lt, op,V=[vl]_, s,x0,xend,r, wid} = {
   iter_columns_4{vl,wid, {offset, each_i_g, _} => {
     # Reduce one (multi-vector) column

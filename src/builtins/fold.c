@@ -145,6 +145,7 @@ static B insert_sum(B f, B x, ur xr, u8 xe, usz len) {
   }
   B r = taga(ra);
   usz b = xe>=el_i32 ? 20 : 8<<k; // log of max block length
+  if (HEURISTIC(false)) b = 6;
   usz nb = (len-2) >> b;          // number of blocks excluding last
   u8* x0 = tyany_ptr(x);
   void (*sum_fn)(void*,void*,usz,usz) = si_insert_add_widen[xe-el_i8];
@@ -154,12 +155,13 @@ static B insert_sum(B f, B x, ur xr, u8 xe, usz len) {
     usz bl = 1ull << b;    // block length
     usz bb = c << (b+k);   // block size in bytes
     u8* xs = x0 + nb * bb; // start of next block
-    usz ll = nb << b;
-    sum_fn(tp, xs, len - ll, c); len = ll;
+    usz ll = nb << b;      // length without last block
+    sum_fn(tp, xs, len - ll, c); len = ll; // last block
     // Write sums to t and accumulate in r
     B t; tp = m_tyarrc(&t,2<<k,r,el2t(1+xe));
     i64 lim = (1ull<<53) - (1ull<<(b+(8<<k)));
-    RangeFn range = getRange_fns[el_f64-el_bit]; i64 rg[2];
+    if (HEURISTIC(false)) lim = HEURISTIC(false) ? 1<<10 : 1;
+    RangeFn range = getRange_fns[el_f64]; i64 rg[2];
     while (xs != x0) {
       // Switch to single-row if we can't safely sum a block
       u8 re = TI(r,elType); assert(elNum(re));
