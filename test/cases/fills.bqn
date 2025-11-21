@@ -46,6 +46,13 @@
 %USE fill ⋄ Fill (↕ 4) ≠˝ 4‿4⥊'a' %% 0
 %USE fill ⋄ Fill (↕⋈4) ≠˝ 4‿4⥊'a' %% ⋈0 %!HEAPVERIFY
 
+%USE fill ⋄ Fill +˝10‿0⥊<0‿0‿0 %% 0‿0‿0
+%USE fill ⋄ Fill ⌊˝10‿0⥊<0‿0‿0 %% 0‿0‿0
+%USE fill ⋄ Fill ⌈˝10‿0⥊<0‿0‿0 %% 0‿0‿0
+%USE fill ⋄ Fill +˝10‿0⥊<"abc" %% 'e'
+%USE fill ⋄ Fill ⌊˝10‿0⥊<"abc" %% 'e'
+%USE fill ⋄ Fill ⌈˝10‿0⥊<"abc" %% 'e'
+
 %DEF sqfill SqFill ← {•internal.Squeeze "Ah"•internal.Variation 𝕩}
 %USE fill ⋄ %USE eqall ⋄ %USE sqfill ⋄ F←•internal.Keep∘⊢ ⋄ {EqAll Fill¨ ⟨SqFill ⟨𝕩⟩, F¨<𝕩, @F¨<𝕩, @F¨⋈𝕩⟩}¨ ⟨"abc", 4, 'a', {⇐}⟩
 %USE fill ⋄ %USE eqall ⋄ %USE sqfill ⋄ F←•internal.Keep∘⊢ ⋄ {EqAll Fill¨ ⟨SqFill ⥊𝕩,  F¨ 𝕩, @F¨ 𝕩       ⟩}¨ ⟨"abc", 4, 'a', {⇐}⟩

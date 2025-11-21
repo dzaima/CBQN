@@ -9,6 +9,20 @@
 //   COULD implement fast numeric -´
 // ∨ on boolean-valued integers, stopping at 1
 
+// Insert (˝):
+// Arithmetic, small cells:
+//   Single-element cells: use Fold
+//   Non-specialized with <6 element rows: do scalar-wise, not row-wise
+//     Computes fill in constant time so empty rows are fast
+// +⌈⌊ on integers and floats: SIMD tiled reduction
+//   SHOULD optimize dyadic +⌈⌊ insert
+//   Short-row ⌈⌊: widen to a virtual row of up to 6 vectors
+//   SHOULD optimize +˝ for short rows
+//   Long rows: split into columns 32 rows tall and 2 or 4 vectors wide
+//     Halves of a column may overlap to deal with odd lengths
+//     +: widen once in SIMD, do BQN add and range check in an outer loop
+// ⊣⊢∾: select or reshape
+
 // •math.Sum: +´ with faster and more precise SIMD code for i32, f64
 
 // Insert with rank (˝˘ or ˝⎉k), or fold on flat array
@@ -43,6 +57,7 @@
 #include "../builtins.h"
 #include "../utils/mut.h"
 #include "../utils/calls.h"
+extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 static const usz sum_small_max = 1<<16;
 #if SINGELI
@@ -109,6 +124,59 @@ static f64 sum_f64(void* xv, usz i, f64 r) {
 }
 static i64 (*const sum_small_fns[])(void*, usz) = { sum_small_i8, sum_small_i16, sum_small_i32 };
 static f64 (*const sum_fns[])(void*, usz, f64) = { sum_i8, sum_i16, sum_i32, sum_f64 };
+
+#if SINGELI
+B add_c2(B, B, B);
+B take_c2(B, B, B);
+static B insert_sum(B f, B x, ur xr, u8 xe, usz len) {
+  // Singeli handles one level of widening; use BQN + for more if needed
+  assert(len > 1);
+  assert(el_i8<=xe && xe<=el_i32);
+  usz* xsh = SH(x);
+  usz c = shProd(xsh, 1, xr);
+  usz k = xe - el_i8;      // log of bytes in an element
+  Arr* ra; void* tp = m_tyarrp(&ra,2<<k,c,el2t(1+xe));
+  if (xr>2) {
+    ShArr* rsh = m_shArr(xr-1);
+    shcpy(rsh->a, xsh+1, xr-1);
+    arr_shSetUG(ra, xr-1, rsh);
+  } else {
+    arr_shVec(ra);
+  }
+  B r = taga(ra);
+  usz b = xe>=el_i32 ? 20 : 8<<k; // log of max block length
+  if (HEURISTIC(false)) b = 6;
+  usz nb = (len-2) >> b;          // number of blocks excluding last
+  u8* x0 = tyany_ptr(x);
+  void (*sum_fn)(void*,void*,usz,usz) = si_insert_add_widen[xe-el_i8];
+  if (LIKELY(nb == 0)) {
+    sum_fn(tp, x0, len, c);
+  } else {
+    usz bl = 1ull << b;    // block length
+    usz bb = c << (b+k);   // block size in bytes
+    u8* xs = x0 + nb * bb; // start of next block
+    usz ll = nb << b;      // length without last block
+    sum_fn(tp, xs, len - ll, c); len = ll; // last block
+    // Write sums to t and accumulate in r
+    B t; tp = m_tyarrc(&t,2<<k,r,el2t(1+xe));
+    i64 lim = (1ull<<53) - (1ull<<(b+(8<<k)));
+    if (HEURISTIC(false)) lim = HEURISTIC(false) ? 1<<10 : 1;
+    RangeFn range = getRange_fns[el_f64]; i64 rg[2];
+    while (xs != x0) {
+      // Switch to single-row if we can't safely sum a block
+      u8 re = TI(r,elType); assert(elNum(re));
+      if (re==el_f64 && !(range(tyany_ptr(r), rg, c) && -lim<=rg[0] && rg[1]<=lim)) {
+        decG(t); return insert_base(f, C2(take, m_f64(len), x), 1, r);
+      }
+      xs -= bb; len -= bl;
+      sum_fn(tp, xs, bl, c);
+      r = C2(add, r, incG(t));
+    }
+    decG(t);
+  }
+  decG(x); return r;
+}
+#endif
 
 B sum_c1(B t, B x) {
   if (isAtm(x) || RNK(x)!=1) thrF("•math.Sum 𝕩: 𝕩 must be a list (%H ≡ ≢𝕩)", x);
@@ -388,7 +456,6 @@ static B m1c1(B t, B f, B x) { // consumes x
   decG(fn);
   return r;
 }
-extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 static bool fillNumeric(B x) {
   if (x.u==0) return true;
@@ -481,6 +548,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
   if (isPervasiveDyExt(f)) {
     if (xr==1) return m_unit(fold_c1(d, x));
     usz xia = IA(x);
+    if (xia==0) { assert(len!=0); goto empty; }
     if (len==xia) {
       B r = m_vec1(fold_c1(d, C1(shape, x)));
       ur rr = xr - 1;
@@ -491,6 +559,31 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
       }
       return r;
     }
+    #if SINGELI
+    u8 xe = TI(x,elType);
+    u8 rtid = RTID(f);
+    if (elNum(xe) && xe!=el_bit && (rtid==n_floor || rtid==n_ceil || (rtid==n_add && xe==el_f64))) {
+      usz* xsh = SH(x);
+      usz c = shProd(xsh, 1, xr);
+      Arr* r; void* rp = m_tyarrp(&r,elWidth(xe),c,el2t(xe));
+      if (xr>2) {
+        ShArr* rsh = m_shArr(xr-1);
+        shcpy(rsh->a, xsh+1, xr-1);
+        arr_shSetUG(r, xr-1, rsh);
+      } else {
+        arr_shVec(r);
+      }
+      (rtid==n_add ? si_insert_add_f64
+                   : si_insert_minmax[4*(rtid==n_ceil) + xe-el_i8])(
+        rp, tyany_ptr(x), len, c
+      );
+      decG(x); return taga(r);
+    }
+    if (rtid==n_add && (el_i8<=xe && xe<=el_i32) && len>2) {
+      return insert_sum(f, x, xr, xe, len);
+    }
+    #endif
+    empty:;
     if (len>2 && HEURISTIC(xia<6*(u64)len)) {
       return insert_scal(f, c2fn(f), x, 0, m_f64(0), xia, xr-1);
     }

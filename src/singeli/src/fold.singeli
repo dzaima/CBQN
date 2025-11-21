@@ -540,3 +540,280 @@ fn sum_small{T if has_simd}(xv:*void, ia:usz) : i64 = {
 }
 
 each{{w} => export{merge{'sum_small_i', fmtnat{w}}, sum_small{primtype{'i', w}}}, tup{8, 16, 32}}
+
+
+# Insert
+def assoc_num_reg = 6
+def insert_assoc_reg{T, op, id:T, x0:(*void), len:(usz), wid:(usz)} = {
+  def n = assoc_num_reg
+  def vl = arch_defvw{} / width{T}
+  def V = [vl]T
+  total := len*wid             # Total elements
+  set := len; step := total; numr:usz = 0
+  if (total > n*vl) {
+    set  = n*vl / wid          # Rows in one set of vectors
+    assert{set > 0}
+    step = set * wid           # Elements in one set
+    numr = cdiv{total-n*vl, step} * step # Elements handled by main loop
+  }
+
+  # rv: masked load of up to n vectors starting at end (rem elements)
+  x := *T~~x0; end := x + numr
+  rem := total - numr
+  rv  := undef{V, n}
+  idv := V**id
+  # Last index and corresponding masked vector
+  li  := (rem-1)/vl
+  last:= blend_hom{idv, load{*V~~end, li}, mask_of_first{V, rem-li*vl}}
+  def id_labels = @collect (n) makelabel{}
+  each{each{., iota{n}, rv, id_labels}, tup{
+    # Read or use last vector
+    {i, v, lbl} => {
+      if (i<n-1 and i<li) { v = load{*V~~end, i} }
+      else                { v = last; goto{lbl} }
+    },
+    # Set to identity
+    {i,v,lbl} => { if (i>0) v=idv; setlabel{lbl} }
+  }}
+
+  while (x < end) {
+    rv = each{{v,i} => op{v, load{*V~~x, i}}, rv, iota{n}}
+    x += step
+  }
+
+  insert_assoc_finish{op, idv, rv, set, wid*(width{T}/8)}
+}
+
+def insert_assoc_finish{op, idv:V=[_]T, rv, set, ws} = {
+  # Reduction on shape set,wid using scratch space
+  # Assumes idempotent op{}
+  def n = length{rv}
+  mem := undefined{u8, (n+1)*width{V} / 8}
+  def on_first{l, f} = each{f, iota{l}, slice{rv,0,l}}
+  def store_vec = store{*V~~mem, ., .}
+
+  on_first{n, store_vec}
+  if (set > 1) {
+    nr:= set              # Number of active rows
+    def nv = cdiv{2*n, 3} # Number of vectors to be updated
+    while (nr > 1) {
+      k:= nr / 2; nr-= k
+      def load_hi = load{*V~~(mem + ws*k), .}
+      on_first{nv, {i,a} => store_vec{i, a = op{a, load_hi{i}}}}
+    }
+  }
+  mem  # Caller copies
+}
+
+def insert_generic{op, rev, r:*T, x0:*T, len, wid} = {
+  x := x0; if (rev) x += wid*(len-1)
+  s := x  # Source; don't copy initial row
+  @for (len - 1) {
+    if (not rev) x += wid else x -= wid
+    @for (r, s, x over wid) r = (if (rev) op{x, s} else op{s, x})
+    s = r
+  }
+}
+
+# Break into columns of 4 vectors and maybe one of 2; a c-vector column is composed of two potentially-overlapping c/2-vector parts, each fully in-bounds
+def iter_columns_4{vl, wid, on_col} = {
+  def run_col{c, j, o} = { # c: column count; j: first element offset; o: additional offset of second half, giving o + (c/2)*vl total elements
+    def h = c/2; def ih = iota{h}
+    assert{o <= h*vl}
+    def offset{   p:*E} = { def pj =      p + j ; tup{pj, pj + o} } # Start pointers to the c/2-vector parts
+    def offset{T, p:*E} = { def pj = *T~~(p + j); tup{pj, pj + o} } # Used with width{T}==width{E}/2 for interleaved data
+    def each_i{V, f, p, ...a} = {
+      def pis = flat_table{tup, each{~~{*V,.},p}, ih}
+      each{{pi,...v} => f{...pi,...v}, pis, ...a}
+    }
+    on_col{offset, each_i, {} => h*vl + o}
+  }
+  j:usz = 0; o:usz = 2*vl
+  def break = makelabel{}; while (1) {
+    rem := wid - j
+    if (rem < 5*vl) {  # 5*vl is full 4 plus squashed 2
+      if (rem <= 2*vl) {
+        if (rem > 0) run_col{2, j, rem - vl}
+        goto{break}
+      }
+      o = (rem-1)%(2*vl) + 1  # Leave a full 2 if rem > 4*vl
+    }
+    run_col{4, j, o}
+    j += o + 2*vl
+  }
+  setlabel{break}
+}
+# Accumulates from s..s+wid to r..r+wid with rows from x0..xend
+def fold_columns_4{inc,lt, op,V=[vl]_, s,x0,xend,r, wid} = {
+  iter_columns_4{vl,wid, {offset, each_i_g, _} => {
+    # Reduce one (multi-vector) column
+    def each_i = each_i_g{V, ...}
+    rv := each_i{load, offset{s}}
+    x := offset{x0}
+    do {
+      rv = each{op, each_i{load, x}, rv}
+      each{inc{.,wid}, x}
+    } while (lt{select{x,0}, xend})
+    each_i{store, offset{r}, rv}
+  }}
+}
+
+fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
+  assert{len > 1}
+  if (not has_simd) {
+    insert_generic{op, 0, *T~~r0, *T~~x0, len, wid}
+  } else {
+    def vl = arch_defvw{} / width{T}
+    def V = [vl]T
+    if (wid <= assoc_num_reg * vl) {
+      def wb = wid*(width{T}/8)
+      match (insert_assoc_reg{T, op, T~~id0, x0, len, wid}) {
+        {mem:*T} => emit{void, 'memcpy', r0, mem, wb}
+      }
+    } else {
+      r := *T~~r0; s := *T~~x0; x := s + wid
+      final_end := s + len*wid
+      def b = 32  # Maximum rows at a time, for cache reuse between columns
+      end := s + (((len-2) & (b-1)) + 2)*wid
+      while (1) {
+        fold_columns_4{+=,<, op,V, s,x,end,r, wid}
+        if (end == final_end) return{}
+        s = r
+        x = end; end += b*wid
+      }
+    }
+  }
+}
+
+fn insert_non_assoc{T, op}(rp:*void, xp:*void, len:usz, wid:usz) : void = {
+  assert{len > 1}
+  r := *T~~rp; x0 := *T~~xp
+  if (not has_simd) {
+    insert_generic{op, 1, r, x0, len, wid}
+  } else {
+    def vl = arch_defvw{} / width{T}; def V = [vl]T
+    s := x0 + (len-1)*wid
+    if (wid <= vl) {
+      x := s
+      rv := load{*V~~x}; x -= wid
+      while (x >= x0) { rv = op{rv, load{*V~~x}}; x -= wid }
+      store_blended_hom{*V~~r, mask_of_first{V, wid}, rv}
+    } else {
+      x := s - wid; end := x0
+      # Group rows only if there will be multiple columns
+      def b = 32; if (wid > 4*vl) end += ((len-2) &~ (b-1))*wid
+      while (1) {
+        fold_columns_4{-=,>=, op,V, s,x,end,r, wid}
+        if (end == x0) return{}
+        s = r
+        x = end - wid
+        end -= b*wid
+      }
+    }
+  }
+}
+
+# Integer addition: result type is twice as wide as argument type
+def mzip{a:V, b:V if w256{V}} = {
+  def z = mzip128{a, b}
+  each{vec_select{128, z, .}, table{+, iota{2}, tup{0,2}}}
+}
+def insert_generic{op, 0, r:*R, x0:*T, len, wid if width{R}==2*width{T}} = {
+  f := x0
+  x := x0 + wid
+  def pr = promote{R, .}
+  @for (r, f, x over wid) r = op{pr{f}, pr{x}}
+  @for (len - 2) {
+    x += wid
+    @for (r, x over wid) r = op{r, pr{x}}
+  }
+}
+def insert_add_wide{op, V=[vl]T, r:*R, x0:*T, len, wid} = {
+  s := x0; xc := s + wid
+  final_end := x0 + len*wid
+  def b = 32
+  end := x0 + (((len-2) & (b-1)) + 2)*wid
+  def {exp, corr} = if (width{T} == 8) {
+    def exp{v} = mzip128{v, V~~(v < V**0)}
+    def uz = if (hasarch{'X86_64'}) unzip128 else unzip
+    def ec{T,vs} = each{~~{T,.}, vs}
+    def corr{vs} = ec{V, uz{...ec{ty_u{V}, vs}}}
+    tup{exp, corr}
+  } else {
+    def sh = width{T}/2
+    def m = V**(1<<sh - 1)
+    def exp{v} = tup{v, v>>sh}
+    def corr{{lo,hi}} = tup{lo, (hi + m&(lo>>sh - hi)) >> sh}
+    tup{exp, corr}
+  }
+  # To avoid interleaving after each row, we treat r as *T
+  # but stripe results as (lo, hi) in columns
+  ds:usz = 0  # Whether s is striped
+  while (1) {
+    iter_columns_4{vl,wid, {offset, each_i_g, get_cw} => {
+      def each_i = each_i_g{V, ...}
+      def cw = get_cw{}; def hi_off{p} = *V~~(*T~~p + cw)
+      def load_exp{...a} = exp{load{...a}}
+      # Fold using expanded form
+      rv := each_i{load_exp, offset{s}}; s += ds & cw
+      x := offset{xc}
+      do {
+        rv = each{each{op,...}, rv, each_i{load_exp, x}}
+        each{+={.,wid}, x}
+      } while (select{x,0} < end)
+      # Convert hi from overlapping with lo to separate
+      rvc := each{corr, rv}
+      # Add existing high part for row groups other than the first
+      # Can't interleave this with stores, as the pointers may overlap
+      if (ds!=0) {
+        def load_add{p,i,{_,hi}} = { hi += load{hi_off{p}, i} }
+        each_i{load_add, offset{T, r}, rvc}
+      }
+      if (end != final_end) {
+        # Write both halves, type T (correct high half for lo signedness)
+        def st_h{p,i,{lo,hi}} = {
+          store{p, i, lo}
+          store{hi_off{p}, i, hi - V~~(lo < V**0)}
+        }
+        each_i{st_h, offset{T, r}, rvc}
+      } else {
+        # Interleave to final format, type R
+        def st_z{p,i,lh} = each{store{p, ...}, 2*i+iota{2}, mzip{...lh}}
+        each_i_g{re_el{R,V}, st_z, offset{r}, rvc}
+      }
+    }}
+    if (end == final_end) goto{'done'}
+    s = *T~~r; ds = maxvalue{usz}
+    xc = end; end += b*wid
+  }
+  setlabel{'done'}
+}
+fn insert_add_widen{T, R}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
+  assert{len > 1}
+  def op = +
+  def args = tup{*R~~r0, *T~~x0, len, wid}
+  if (not has_simd) {
+    insert_generic{op, 0, ...args}
+  } else {
+    def vl = arch_defvw{} / width{T}
+    if (wid < 4*vl) {
+      insert_generic{op, 0, ...args}
+    } else {
+      def I = w_d{T}
+      def {r,..._} = args; ri := *I~~r0
+      insert_add_wide{op, [vl]T, ri, ...slice{args,1}}
+      if (R != I) @for (r, ri over wid) r = cast_i{R, ri}
+    }
+  }
+}
+
+def minvalue{(f64)} = -1/0
+def maxvalue{(f64)} =  1/0
+export_tab{'si_insert_minmax', flat_table{
+  {{op, mv}, T} => insert_assoc{T, op, mv{T}},
+  tup{tup{__min,maxvalue}, tup{__max,minvalue}}, tup{i8,i16,i32,f64}
+}}
+export_tab{'si_insert_add_widen',
+  each{insert_add_widen, tup{i8,i16,i32}, tup{i16,i32,f64}}
+}
+export{'si_insert_add_f64', insert_non_assoc{f64, +}}
