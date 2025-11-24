@@ -231,7 +231,7 @@ static B bitop1(B f, B x, enum BitOp1 op, char* name) {
       if (n>0) si_bitarith_sa[BITARITH_IDX(op_sub)](rp, 0, xp, n >> owl);
     #else
       switch (ow) {
-        default: thrF("•bit._%U: Unhandled operation width %s", name, ow);
+        default: { ux owl=CTZ(ow); OWL_8_64; UD; }
         #define CASE(W) case W: \
           NOUNROLL vfor (usz i=0; i<n/W; i++) ((u##W*)rp)[i] = -((u##W*)xp)[i]; \
           break;
@@ -325,8 +325,8 @@ static B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
     }
   #else
     #define CASES(O,Q,P) case op_##O: \
-      switch(ow) { default: thrF("•bit._%U: Unhandled operation width %s", name, ow); \
-        CASE(8,Q,P) CASE(16,Q,P) CASE(32,Q,P) CASE(64,Q,P)                  \
+      switch(ow) { default: { ux owl=CTZ(ow); OWL_8_64; UD; } \
+        CASE(8,Q,P) CASE(16,Q,P) CASE(32,Q,P) CASE(64,Q,P)    \
       } break;
     #define SWITCH \
       switch (op) { default: UD;                     \
