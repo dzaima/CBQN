@@ -99,6 +99,7 @@ def shift_first{c:V=[l]_, p:V} = {
 }
 
 
+def __add{a:T, b:T if issigned{T}} = T ~~ (ty_u{a}+ty_u{b})
 # Strided scans
 fn scan_stride_assoc{op, T, Ret, check_over}(xv:*void, rv:*void, ia:usz, l:usz) : Ret = {
   def minvalue{(f64)} = -1/0; def maxvalue{(f64)} = 1/0
