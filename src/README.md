@@ -446,7 +446,8 @@ Most toggles require a value of `1` to be enabled.
 
 // debugging stuff:
 #define DEBUG           0 // the regular debug build
-#define HEAP_VERIFY     0 // heapverify
+#define TEST_UTILS  DEBUG // enable test utilities in •internal.Temp
+#define HEAP_VERIFY     0 // verify that reference counts are correct
 #define RT_VERIFY       0 // compare native and runtime versions of primitives
 #define WARN_SLOW       0 // log on various slow operations
 #define USE_PERF        0 // write a /tmp/perf-<pid>.map for JITted things for linux perf
