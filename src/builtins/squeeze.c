@@ -213,12 +213,12 @@ SqueezeFn squeeze_chrFns[el_MAX] = {squeeze_smallest, squeeze_nope, squeeze_nope
 SqueezeFn squeeze_anyFns[el_MAX] = {squeeze_smallest, squeeze_i8,   squeeze_i16,  squeeze_i32,  squeeze_f64,  squeeze_smallest, squeeze_c16,  squeeze_c32,  squeeze_B};
 
 NOINLINE B int_squeeze_sorted(B x, Arr* xa, u8 type, ux ia) {
-  SQFN_START;
   assert(elInt(TI(x,elType)));
   if (ia==0) {
     squeezed:
     return FL_SET(x, fl_squoze);
   }
+  SQFN_START; // checks ia>0 so must be done after ia==0 path
   u8 xe = TI(x,elType);
   i32 x0v, x1v;
   void* xp = tyanyv_ptr(xa);
