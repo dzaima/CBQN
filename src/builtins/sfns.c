@@ -222,7 +222,7 @@ B shape_c2_01(usz wia, B w, B x) {
       decG(w);
       if (isAtm(x)) return m_unit(x);
       if (RARE(IA(x) == 0)) thrM("𝕨⥊𝕩: Empty 𝕩 and non-empty result");
-      return taga(arr_rnk01(take_impl(1, x), 0));
+      return taga(arr_rnk01(take_head(1, x), 0));
     
     case 1: // ⟨x⟩⥊1
       w = TO_GET(w,0);
