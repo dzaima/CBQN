@@ -320,7 +320,7 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
       case n_le:  return bit_negate(scan_lt(bit_negate(x), 0, ia));            // ≤
       case n_gt:  x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_and(x, ia); // >
       case n_ge:  x=bit_negate(x); *bitarr_ptr(x)^= 1; return scan_or (x, ia); // ≥
-      case n_sub: return C2(sub, m_f64(2 * (*bitarr_ptr(x) & 1)), scan_add_bool(x, ia)); // -
+      case n_sub:{B t=m_f64(2 * (*bitarr_ptr(x) & 1)); return C2(sub, t, scan_add_bool(x, ia)); } // -
     }
     if (rtid==n_add) return scan_plus(0, x, xe, ia); // +
     if (rtid==n_floor) return scan_min_num(x, xe, ia); // ⌊
