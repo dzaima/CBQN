@@ -254,3 +254,6 @@ NOINLINE B emptyChrsWithShape(B x) {
   decG(x);
   return r;
 }
+NORETURN void getFillE_err(B x, char* msg) {
+  thrM(msg);
+}

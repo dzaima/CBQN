@@ -68,10 +68,12 @@ static B getFillQ(B x) { // doesn't consume; returns 0 if !SEMANTIC_CATCH
   #endif
   return noFill(r)? m_f64(0) : r;
 }
-static B getFillE(B x) { // errors if there's no fill
+NORETURN void getFillE_err(B x, char* msg);
+static B getFillE(B x, char* msg) { // errors if there's no fill
+  NOGC_CHECK("cannot use getFillE during noAlloc");
   B xf = getFillQ(x);
   if (noFill(xf)) {
-    if (PROPER_FILLS) thrM("No fill found");
+    if (PROPER_FILLS) getFillE_err(x, msg);
     else return m_f64(0);
   }
   return xf;

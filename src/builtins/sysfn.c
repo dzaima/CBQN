@@ -141,7 +141,7 @@ B parseFloat_c1(B t, B x) {
 #endif
 
 B fill_c1(B t, B x) {
-  B r = getFillE(x);
+  B r = getFillE(x, "Fill element not known");
   dec(x);
   return r;
 }

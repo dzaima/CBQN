@@ -111,10 +111,10 @@ static Arr* take_head(usz ria, B x) { // consumes; returns ria↑x with unset sh
   return TI(x,slice)(x,0,ria);
 }
 
-static Arr* take_impl(usz ria, B x) { // consumes x; returns v↑⥊𝕩 with unset shape; v is non-negative
+static Arr* take_impl(usz ria, B x, char* msg) { // consumes x; returns v↑⥊𝕩 with unset shape; v is non-negative
   usz xia = IA(x);
   if (ria>xia) {
-    B xf = getFillE(x);
+    B xf = getFillE(x, msg);
     MAKE_MUT_INIT(r, ria, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
     mut_copyG(r, 0, x, 0, xia);
     mut_fillG(r, xia, xf, ria-xia);
@@ -303,7 +303,7 @@ NOINLINE B shape_c2_listw(B t, B w, B x) {
     nia = uszMul(nia, item);
     if (fill) {
       if (!isArr(x)) x = m_unit(x);
-      x = taga(arr_shVec(take_impl(nia, x)));
+      x = taga(arr_shVec(take_impl(nia, x, "𝕨⥊𝕩: Fill element of 𝕩 needed for overtaking")));
       decG(w);
       return truncReshape(x, nia, nia, nr, sh); // could be improved
     }
@@ -595,7 +595,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
       B xf = getFillR(x);
       if (anyFill && noFill(xf)) {
         #if PROPER_FILLS
-          thrM("𝕨↑𝕩: fill element required for overtaking, but 𝕩 doesn't have one");
+          thrM("𝕨↑𝕩: Fill element of 𝕩 needed for overtaking");
         #else
           xf = m_f64(0);
         #endif
@@ -714,14 +714,14 @@ B take_c2(B t, B w, B x) {
   
   if (n>=0) {
     if (n != (usz)n) thrOOM();
-    a = take_impl(n, x);
+    a = take_impl(n, x, "𝕨↑𝕩: Fill element of 𝕩 needed for overtaking");
     if (xr==1) return taga(arr_shVec(a));
   } else {
     n = -n;
     if (n != (usz)n) thrOOM();
     usz xia = IA(x);
     if (n>xia) {
-      B xf = getFillE(x);
+      B xf = getFillE(x, "𝕨↑𝕩: Fill element of 𝕩 needed for overtaking");
       MAKE_MUT_INIT(r, n, el_or(TI(x,elType), selfElType(xf))); MUTG_INIT(r);
       mut_fillG(r, 0, xf, n-xia);
       mut_copyG(r, n-xia, x, 0, xia);
@@ -1102,7 +1102,7 @@ B shiftb_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("»𝕩: 𝕩 cannot be a scalar");
   usz ia = IA(x);
   if (ia==0) return x;
-  B xf = getFillE(x);
+  B xf = getFillE(x, "»𝕩: Fill element of 𝕩 not known");
   usz csz = arr_csz(x);
   if (ia==csz) { // length 1
     Arr* r = arr_shCopy(reshape_one(ia, xf), x);
@@ -1132,7 +1132,7 @@ B shifta_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("«𝕩: 𝕩 cannot be a scalar");
   usz ia = IA(x);
   if (ia==0) return x;
-  B xf = getFillE(x);
+  B xf = getFillE(x, "«𝕩: Fill element of 𝕩 not known");
   usz csz = arr_csz(x);
   if (ia==csz) { // length 1
     Arr* r = arr_shCopy(reshape_one(ia, xf), x);

@@ -474,13 +474,14 @@ bool isPureFn(B x) { // doesn't consume
   rett: decG(xd); return true;
 }
 
-B bqn_merge(B x, u32 type) {
+B bqn_merge(B x, u32 type) { // type: 0: expected valid; 1: >𝕩; 2: [a,b,c]
   assert(isArr(x));
+  if (type!=1) assert(IA(x)!=0);
   if (TI(x,arrD1)) return x;
   usz xia = IA(x);
   ur xr = RNK(x);
   if (xia==0) {
-    B xf = getFillE(x);
+    B xf = getFillE(x, ">𝕩: Fill element of empty 𝕩 not known");
     if (isAtm(xf)) { dec(xf); return x; }
     i32 xfr = RNK(xf);
     Arr* r = emptyWithFill(getFillR(xf));
