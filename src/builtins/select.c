@@ -818,7 +818,7 @@ static void* m_arrv_same_t(B* r, B** rbp, usz ia, u8 ty, B src) {
   assert(isArr(src));
   u8 se = TIi(ty,elType);
   if (se==el_B) {
-    B fill = getFillQ(src);
+    B fill = getFillR(src);
     if (noFill(fill)) {
       HArr_p p = m_harrUv(ia);
       *rbp = p.a;
@@ -901,7 +901,7 @@ B select_cells_single(usz ind, B x, usz cam, usz l, usz csz) { // ⥊ ind ⊏˘ 
   return taga(ra);
   
   copyFill:
-  return withFill(taga(ra), getFillQ(x));
+  return withFill(taga(ra), getFillR(x));
 }
 
 #define CLZC(X) (64-(CLZ((u64)(X))))

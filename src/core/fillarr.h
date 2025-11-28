@@ -127,7 +127,7 @@ static bool fillEqualsGetFill(B fill, B obj) { // returns whether `fill` equals 
 static B fill_both(B w, B x) { // doesn't consume
   B wf = getFillN(w);
   if (noFill(wf)) return bi_noFill;
-  B xf = getFillQ(x);
+  B xf = getFillR(x);
   if (fillEqual(wf, xf)) return xf;
   dec(xf);
   return bi_noFill;

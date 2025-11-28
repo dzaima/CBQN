@@ -331,22 +331,14 @@ static NOINLINE bool groups_lt(u64* wp, usz len, usz max) {
 }
 
 static NOINLINE B reshapeToEmpty(B x, usz leading) { // doesn't consume; changes leading axis to the given one, assumes result is empty
-  u8 xe = TI(x,elType);
-  B r; ur xr = RNK(x);
-  if (xr==1) {
-    if (xe==el_B) { B xf = getFillR(x); r = noFill(xf)? emptyHVec() : taga(arr_shVec(m_fillarrpEmpty(xf))); }
-    else r = elNum(xe)? emptyIVec() : emptyCVec();
-  } else {
-    assert(xr > 1);
-    Arr* ra;
-    if (xe==el_B) { B xf = getFillR(x); ra = noFill(xf)? (Arr*)m_harrUp(0).c : m_fillarrpEmpty(xf); }
-    else m_tyarrp(&ra, 1, 0, elNum(xe)? t_bitarr : t_c8arr);
+  ur xr = RNK(x);
+  Arr* ra = emptyArr(x, xr);
+  if (xr > 1) {
     usz* rsh = arr_shAlloc(ra, xr);
     shcpy(rsh+1, SH(x)+1, xr-1);
     rsh[0] = leading;
-    r = taga(ra);
   }
-  return r;
+  return taga(ra);
 }
 static B zeroCells(B x) { // doesn't consume
   return reshapeToEmpty(x, 0);

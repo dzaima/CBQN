@@ -476,11 +476,9 @@ B iObjFlags_c2(B t, B w, B x) {
 }
 
 B iHasFill_c1(B t, B x) {
-  B f = getFillR(x);
+  bool ret = !noFill(getFillN(x));
   dec(x);
-  if (noFill(f)) return m_f64(0);
-  dec(f);
-  return m_f64(1);
+  return m_f64(ret);
 }
 
 B iPureKeep_c1(B t, B x) { return x; }

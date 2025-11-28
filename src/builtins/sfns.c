@@ -846,7 +846,7 @@ B join_c1(B t, B x) {
     decG(x);
     return SFNS_FILLS? qWithFill(taga(ra), rf) : taga(ra);
   } else if (xr==0) {
-    return bqn_merge(x, 1);
+    return bqn_merge(x, 0);
   } else {
     SGetU(x)
     B x0 = GetU(x,0);
@@ -1310,7 +1310,7 @@ NOINLINE B rotate_highrank(bool inv, B w, B x) {
   endCopy:;
   
   TFREE(tmp);
-  B xf = getFillE(x);
+  B xf = getFillR(x);
   r = withFill(mut_fcd(rm, x), xf);
   
   decW_ret: decG(w);
