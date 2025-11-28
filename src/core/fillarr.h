@@ -29,7 +29,7 @@ static bool fillEqual(B w, B x) {
 static bool numFill(B x) { return x.u == m_f64(0).u; }
 static bool chrFill(B x) { return isC32(x); }
 
-static B getFillN(B x) { // doesn't consume, doesn't increment result; can return bi_noFill
+static B getFillN(B x) { // doesn't consume, returns unowned value; will return bi_noFill if fill is unknown
   if (isArr(x)) {
     switch(TI(x,elType)) { default: UD;
       case el_i8: case el_i16: case el_i32: case el_f64: case el_bit: return m_i32(0);
@@ -45,7 +45,7 @@ static B getFillN(B x) { // doesn't consume, doesn't increment result; can retur
   if (isC32(x)) return m_c32(' ');
   return bi_noFill;
 }
-static B getFillR(B x) { // doesn't consume; can return bi_noFill
+static B getFillR(B x) { // doesn't consume; will return bi_noFill if fill is unknown
   if (isArr(x)) {
     switch(TI(x,elType)) { default: UD;
       case el_i8: case el_i16: case el_i32: case el_f64: case el_bit: return m_i32(0);
@@ -69,7 +69,7 @@ static B getFillQ(B x) { // doesn't consume; returns 0 if !SEMANTIC_CATCH
   return noFill(r)? m_f64(0) : r;
 }
 NORETURN void getFillE_err(B x, char* msg);
-static B getFillE(B x, char* msg) { // errors if there's no fill
+static B getFillE(B x, char* msg) { // doesn't consume; errors if there's no fill
   NOGC_CHECK("cannot use getFillE during noAlloc");
   B xf = getFillQ(x);
   if (noFill(xf)) {

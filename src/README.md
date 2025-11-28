@@ -13,7 +13,7 @@ Functions ending with `R` are either supposed to be called rarely, or the caller
 Functions ending with `N` are non-inlined versions of another function.  
 Functions ending with `F` are infrequently needed fallback parts of a function.  
 Functions ending with `P` (or sometimes containing `p` or `P` or `v` or `V`) take a direct pointer argument (as opposed to a tagged `B`).  
-Functions ending with `U` return (or take) a non-owned object (`U` = "unincremented").  
+Functions ending with `U` return (or take) an unowned object.  
 Functions ending with `_c1` are monadic implementations, `_c2` are dyadic (see [builtin implementations](#builtin-implementations))  
 Functions ending with `G` can only be called with some guarantee (e.g. argument is heap-allocated, or fits in some type, etc).  
 Variables starting with `bi_` are builtins (primitives or special values).  
@@ -342,6 +342,18 @@ B a = toI8Any(x); // get an object which be a valid argument to i8any_ptr
 // toBitArr/toI8Arr/toI16Arr/toI32Arr/toF64Arr/toC8Arr/toC16Arr/toC32Arr/toHArr
 // cpyBitArr/cpyI8Arr/cpyI16Arr/cpyI32Arr/cpyF64Arr/cpyC8Arr/cpyC16Arr/cpyC32Arr/cpyHArr
 // toI8Any/toI16Any/toI32Any/toF64Any/toC8Any/toC16Any/toC32Any
+```
+
+Getting array fill element:
+```C
+B f = getFillR(x); // fill of x, or bi_noFill if unknown (should generally only be used for computing the fill of another array)
+B f = getFillN(x); // getFillR(x) but doesn't increment result refcount
+B f = getFillQ(x); // getFillR(x) but, if !SEMANTIC_CATCH, returns 0, i.e. "quiets" a missing fill (typically used when the fill may affect something other than more arrays' fills, but can reasonably proceed even if fill is unknown)
+B f = getFillE(x, "msg"); // getFillQ(x) but throws on missing fill; also returns 0 if !PROPER_FILLS. (typically used when the fill element is strictly necessary for further computation)
+
+// getFillQ is the "true" semantic array fill value
+// getFillR exists just to preserve internal state for !SEMANTIC_CATCH closer to what it'd be in a proper build (allows testing more realistic code paths)
+// getFillE does the additional return-0 for !PROPER_FILLS just as a last-ditch attempt of making things not break
 ```
 
 ## Errors
