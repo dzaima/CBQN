@@ -20,7 +20,7 @@ static inline HArr_p harr_parts(B b) {
 static inline HArr_p harrP_parts(HArr* p) {
   return (HArr_p){.b = taga(p), .a = p->a, .c = p};
 }
-NOINLINE void harr_pfree(B x, usz am); // am - item after last written
+NOINLINE void barr_pfree(B x, usz am); // either harr or fillarr; frees first am elements
 
 
 #define M_HARR(N, IA) usz N##_len = (IA); HArr_p N##_v = m_harr_impl(N##_len); usz* N##_ia = &N##_v.c->ia; usz N##_i = 0;

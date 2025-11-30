@@ -9,11 +9,17 @@ NOINLINE B m_caB(usz ia, B* a) {
   return r.b;
 }
 
-NOINLINE void harr_pfree(B x, usz am) { // am - item after last written
-  assert(TY(x)==t_harr);
-  B* p = harr_ptr(x);
-  for (usz i = 0; i < am; i++) dec(p[i]);
-  if (RNK(x)>1) ptr_dec(shObj(x));
+NOINLINE void barr_pfree(B x, usz am) {
+  B* p;
+  if (TY(x)==t_harr) {
+    p = harr_ptr(x);
+  } else if (TY(x)==t_fillarr) {
+    dec(((FillArr*)a(x))->fill);
+    p = fillarrv_ptr(a(x));
+  } else UD;
+  
+  for (ux i = 0; i < am; i++) dec(p[i]);
+  decSh(v(x));
   mm_free(v(x));
 }
 
