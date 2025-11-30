@@ -142,6 +142,10 @@ a←0 ⋄ 0◶{𝕊: a↩1}‿0⌜˜   ↕0 ⋄ a %% 0
 »⟨⟩ %% ⟨⟩
 «4‿0⥊⟨⟩ %% 4‿0⥊⟨⟩
 »0‿9999⥊⟨⟩ %% 0‿9999⥊⟨⟩
+%USE fill ⋄ »˘ 0⥊<"hi" %%% ⟨⟩
+%USE fill ⋄ «˘ ↕0 %%% ⟨⟩
+%USE fill ⋄ «⎉0 0‿2‿3⥊0 %%% 0‿2‿3⥊⟨⟩
+
 
 %USE fill ⋄ Fill¨ ⟨"abcd" » ↕2, (↕4) « "ab"⟩ %% "ee"
 %USE fill ⋄ %USE eqall ⋄ EqAll Fill¨ "ab" {⟨𝕨 «⍟4 𝕩, 𝕨 •internal.Keep∘«⍟4 𝕩⟩} ↕4 %% 'e'

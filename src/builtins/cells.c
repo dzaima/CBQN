@@ -469,7 +469,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
         return taga(arr_shReplace(r, k+1, rsh));
       }
       case n_shifta: case n_shiftb: {
-        if (IA(x)==0) return x;
+        if (IA(x)==0) { if (cr==0) goto noSpecial; else return x; }
         if (cr!=1) {
           if (cr==0) goto base;
           if (!(xsh[k]==1 // handled by fill case
