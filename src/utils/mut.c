@@ -1,8 +1,7 @@
 #include "../core.h"
 #include "mut.h"
 
-typedef struct { Arr* arr; void* els; } MadeArr;
-FORCE_INLINE MadeArr mut_make_arr(u64 ia, u8 type, u8 el) {
+FORCE_INLINE UntaggedArr mut_make_arr(u64 ia, u8 type, u8 el) {
   u64 sz;
   switch(el) { default: UD;
     case el_bit:              sz = BITARR_SZ(   ia); CHECK_BITARR_IA(ia); break;
@@ -12,17 +11,17 @@ FORCE_INLINE MadeArr mut_make_arr(u64 ia, u8 type, u8 el) {
     case el_f64:              sz = TYARR_SZ(F64,ia); break;
     case el_B:;
       HArr_p t = m_harrUp(ia);
-      return (MadeArr){(Arr*)t.c, t.c->a};
+      return (UntaggedArr){(Arr*)t.c, t.c->a};
   }
   Arr* a = m_arr(sz, type, ia);
-  return (MadeArr){a, tyarrv_ptr((TyArr*)a)};
+  return (UntaggedArr){a, tyarrv_ptr((TyArr*)a)};
 }
 
 FORCE_INLINE void mut_init(Mut* m, u8 el) {
   m->fns = &mutFns[el];
-  MadeArr a = mut_make_arr(m->ia, m->fns->valType, el);
-  m->val = a.arr;
-  m->a = a.els;
+  UntaggedArr a = mut_make_arr(m->ia, m->fns->valType, el);
+  m->val = a.obj;
+  m->a = a.data;
 }
 
 #if __clang__
@@ -639,9 +638,9 @@ NOINLINE Arr* apd_fill_end(ApdMut* m, u32 ty) {
 }
 
 SHOULD_INLINE Arr* apd_setArr(ApdMut* m, u64 ia, u8 xe) {
-  MadeArr a = mut_make_arr(ia, el2t(xe), xe);
-  m->obj = a.arr;
-  m->a = a.els;
+  UntaggedArr a = mut_make_arr(ia, el2t(xe), xe);
+  m->obj = a.obj;
+  m->a = a.data;
   return m->obj;
 }
 NOINLINE void apd_tot_init(ApdMut* m, B x) {
