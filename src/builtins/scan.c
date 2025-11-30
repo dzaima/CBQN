@@ -246,16 +246,16 @@ B scan_c1(Md1D* d, B x) { B f = d->f;
   if (isAtm(x)) { unit: thrM("𝔽`𝕩: 𝕩 cannot have rank 0"); }
   usz ia = IA(x); if (ia <= 1) { if (ia==1 && RNK(x)==0) goto unit; return x; }
   usz n = *SH(x); if (n  <= 1) return x;
+  u8 xe = TI(x,elType);
   if (RARE(!isFun(f))) {
     errMd(f);
     B xf = getFillR(x);
-    MAKE_MUT(rm, ia);
+    MAKE_MUT_INIT(rm, ia, el_or(xe, selfElType(f))); MUTG_INIT(rm);
     usz csz = arr_csz(x);
-    mut_copy(rm, 0, x, 0, csz);
-    mut_fill(rm, csz, f, ia-csz);
+    mut_copyG(rm, 0, x, 0, csz);
+    mut_fillG(rm, csz, f, ia-csz);
     return withFill(mut_fcd(rm, x), xf);
   }
-  u8 xe = TI(x,elType);
   if (RTID(f) != RTID_NONE) {
     u8 rtid = RTID(f);
     if (rtid==n_rtack) return x;
