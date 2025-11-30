@@ -35,13 +35,10 @@ struct Mut {
 };
 
 void mut_to(Mut* m, u8 n);
-#if __clang__ && __has_attribute(noescape) // workaround for clang not realizing that stack-returned structs aren't captured
-  void make_mut_init(__attribute__((noescape)) Mut* rp, u64 ia, u8 el);
-  #define MAKE_MUT_INIT(N, IA, EL) Mut N##_val; Mut* N = &N##_val; make_mut_init(N, IA, EL);
-#else
-  Mut make_mut_init(u64 ia, u8 el);
-  #define MAKE_MUT_INIT(N, IA, EL) Mut N##_val = make_mut_init(IA, EL); Mut* N = &N##_val;
-#endif
+
+SRET_DEF(Mut, make_mut_init, u64 ia, u8 el);
+#define MAKE_MUT_INIT(N, IA, EL) Mut N##_val = SRET_CALL(Mut, make_mut_init, IA, EL); Mut* N = &N##_val;
+
 #define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
 
 static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);

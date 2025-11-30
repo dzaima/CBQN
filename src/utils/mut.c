@@ -24,19 +24,11 @@ FORCE_INLINE void mut_init(Mut* m, u8 el) {
   m->a = a.data;
 }
 
-#if __clang__
-NOINLINE void make_mut_init(Mut* rp, u64 ia, u8 el) {
+NOINLINE SRET_DEF(Mut, make_mut_init, u64 ia, u8 el) {
   MAKE_MUT(r, ia)
   mut_init(r, el);
-  *rp = r_val;
+  SRET_RET(r_val);
 }
-#else
-NOINLINE Mut make_mut_init(u64 ia, u8 el) {
-  MAKE_MUT(r, ia)
-  mut_init(r, el);
-  return r_val;
-}
-#endif
 
 static void* harr_tyarr_ptr(Arr* t, u8 el) {
   return el==el_B? (void*)harrv_ptr(t) : tyarrv_ptr((TyArr*)t);

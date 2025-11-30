@@ -145,6 +145,17 @@ typedef size_t ux;
 #else
   #define ONLY_GCC(X)
 #endif
+#if __clang__ && __has_attribute(noescape) // workaround for clang not realizing that stack-returned structs aren't captured
+  #define NOESCAPE __attribute__((noescape))
+  #define SRET_DEF(RET, NAME, ...) void NAME( RET* ret_val_, __VA_ARGS__)
+  #define SRET_CALL(RET, NAME, ...) ({ RET sret_; NAME(&sret_, __VA_ARGS__); sret_; })
+  #define SRET_RET(VAL) do { *ret_val_ = VAL; return; } while(0)
+#else
+  #define NOESCAPE
+  #define SRET_DEF(RET, NAME, ...) RET NAME(__VA_ARGS__)
+  #define SRET_CALL(RET, NAME, ...) NAME(__VA_ARGS__)
+  #define SRET_RET(VAL) return VAL
+#endif
 
 #define JOIN0(A,B) A##B
 #define JOIN(A,B) JOIN0(A,B)
