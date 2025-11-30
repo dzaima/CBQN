@@ -80,12 +80,7 @@ static B getFillE(B x, char* msg) { // doesn't consume; errors if there's no fil
 }
 
 
-static Arr* m_fillarrp(usz ia) { // needs a NOGC_E after fill & all elements are initialized
-  CHECK_IA(ia, sizeof(B));
-  Arr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
-  NOGC_S;
-  return r;
-}
+
 static void fillarr_setFill(Arr* x, B fill) { // consumes fill
   assert(PTY(x)==t_fillarr);
   if (DEBUG) validateFill(fill);
@@ -93,29 +88,46 @@ static void fillarr_setFill(Arr* x, B fill) { // consumes fill
 }
 static B* fillarrv_ptr  (Arr* x) { assert(PTY(x)==t_fillarr);   return ((FillArr*)x)->a; }
 static B* fillslicev_ptr(Arr* x) { assert(PTY(x)==t_fillslice); return ((FillSlice*)x)->a; }
-static Arr* m_fillarrpEmpty(B fill) {
-  Arr* r = m_fillarrp(0);
-  fillarr_setFill(r, fill);
-  NOGC_E;
-  return r;
-}
-static Arr* m_fillarr0p(usz ia) { // zero-initialized fillarr, with both fill & elements set to m_f64(0)
-  Arr* r = arr_shVec(m_fillarrp(ia));
-  fillarr_setFill(r, m_f64(0));
-  FILL_TO(fillarrv_ptr(r), el_B, 0, m_f64(0), ia);
-  NOGC_E;
-  return r;
-}
 
-static UntaggedArr m_barrp_withFill(ux ia, B fill) { // doesn't consume
+
+
+SHOULD_INLINE UntaggedArr m_barrUpCore(ux ia, u8 fillarr, B fill) {
   CHECK_IA(ia, sizeof(B));
-  bool has = !noFill(fill);
+  bool has = fillarr==2? !noFill(fill) : fillarr;
   Arr* r = m_arr(has? fsizeof(FillArr,a,B,ia) : fsizeof(HArr,a,B,ia), has? t_fillarr : t_harr, ia);
   if (has) fillarr_setFill(r, fill);
   if (ia) NOGC_S;
   return (UntaggedArr){r, has? fillarrv_ptr(r) : harrv_ptr(r)};
 }
 
+SHOULD_INLINE UntaggedArr m_barrUvCore(ux ia, u8 fillarr, B fill) {
+  UntaggedArr r = m_barrUpCore(ia, fillarr, fill);
+  arr_shVec(r.obj);
+  return r;
+}
+SHOULD_INLINE UntaggedArr m_barrUcCore(B x, u8 fillarr, B fill) { assert(isArr(x));
+  UntaggedArr r = m_barrUpCore(IA(x), fillarr, fill);
+  arr_shCopy(r.obj, x);
+  return r;
+}
+
+
+
+static UntaggedArr m_barrp_withFill(ux ia, B fill) { // doesn't consume
+  return m_barrUpCore(ia, 2, fill);
+}
+
+
+static Arr* m_fillarrp(usz ia) { // needs a NOGC_E after fill & all elements are initialized
+  CHECK_IA(ia, sizeof(B));
+  Arr* r = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
+  NOGC_S;
+  return r;
+}
+static Arr* m_fillarrpEmpty(B fill) {
+  return m_barrUpCore(0, true, fill).obj;
+}
+Arr* m_fillarr0p(usz ia); // zero-initialized fillarr, with both fill & elements set to m_f64(0)
 
 B m_funit(B x); // consumes
 B m_unit(B x); // consumes

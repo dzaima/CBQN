@@ -13,13 +13,18 @@ typedef struct HArr_p {
   B* a;
   HArr* c;
 } HArr_p;
-static inline HArr_p harr_parts(B b) {
+
+SHOULD_INLINE HArr_p harr_parts(B b) {
   HArr* p = c(HArr,b);
   return (HArr_p){.b = b, .a = p->a, .c = p};
 }
-static inline HArr_p harrP_parts(HArr* p) {
+SHOULD_INLINE HArr_p harrP_parts(HArr* p) {
   return (HArr_p){.b = taga(p), .a = p->a, .c = p};
 }
+SHOULD_INLINE HArr_p harr_untagged(UntaggedArr a) {
+  return (HArr_p){.b=taga(a.obj), .a=a.data, .c=(HArr*)a.obj};
+}
+
 NOINLINE void barr_pfree(B x, usz am); // either harr or fillarr; frees first am elements
 
 
@@ -67,29 +72,24 @@ SHOULD_INLINE usz* harr_fa_impl(HArr_p p, ur r) { VTY(p.b, t_harr);
 }
 void harr_abandon_impl(HArr* p);
 
-// unsafe-ish things - don't allocate/GC anything before having written to all items
 
-#define m_harr0v(N) ({ usz n_ = (N); HArr_p r_ = m_harrUv(n_);                for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
-#define m_harr0c(X) ({ B x_ = (X); usz n_ = IA(x_); HArr_p r_ = m_harrUc(x_); for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
-#define m_harr0p(N) ({ usz n_ = (N); HArr_p r_ = m_harrUp(n_);                for(usz i=0;i<n_;i++)r_.a[i]=m_f64(0); NOGC_E; r_; })
-SHOULD_INLINE HArr_p m_harrUv(usz ia) {
-  CHECK_IA(ia, sizeof(B));
-  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
-  arr_shVec((Arr*)r);
-  return harrP_parts(r);
-}
-SHOULD_INLINE HArr_p m_harrUc(B x) { assert(isArr(x));
-  usz ia = IA(x);
-  CHECK_IA(ia, sizeof(B));
-  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
-  arr_shCopy((Arr*)r, x);
-  return harrP_parts(r);
-}
-SHOULD_INLINE HArr_p m_harrUp(usz ia) {
-  CHECK_IA(ia, sizeof(B));
-  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harr, ia); if(ia) NOGC_S;
-  return harrP_parts(r);
-}
+
+// see src/README.md for what these all are
+
+SHOULD_INLINE UntaggedArr m_barrUpCore(ux ia, u8 fillarr, B fill);
+SHOULD_INLINE UntaggedArr m_barrUvCore(ux ia, u8 fillarr, B fill);
+SHOULD_INLINE UntaggedArr m_barrUcCore(B x,   u8 fillarr, B fill);
+
+SHOULD_INLINE HArr_p m_harrUp(usz ia) { return harr_untagged(m_barrUpCore(ia, false, bi_noFill)); }
+SHOULD_INLINE HArr_p m_harrUv(usz ia) { return harr_untagged(m_barrUvCore(ia, false, bi_noFill)); }
+SHOULD_INLINE HArr_p m_harrUc(B x)    { return harr_untagged(m_barrUcCore(x,  false, bi_noFill)); }
+
+HArr* m_harr0pN(usz ia);
+HArr* m_harr0vN(usz ia);
+HArr* m_harr0cN(B x);
+SHOULD_INLINE HArr_p m_harr0p(usz ia) { return harrP_parts(m_harr0pN(ia)); }
+SHOULD_INLINE HArr_p m_harr0v(usz ia) { return harrP_parts(m_harr0vN(ia)); }
+SHOULD_INLINE HArr_p m_harr0c(B x   ) { return harrP_parts(m_harr0cN(x));  }
 
 static B m_hunit(B x) { // consumes
   HArr_p r = m_harrUp(1);

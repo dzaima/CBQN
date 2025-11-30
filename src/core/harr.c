@@ -23,6 +23,33 @@ NOINLINE void barr_pfree(B x, usz am) {
   mm_free(v(x));
 }
 
+HArr* m_harr0pN(usz ia) {
+  HArr_p r = m_harrUp(ia);
+  FILL_TO(r.a, el_B, 0, m_f64(0), ia);
+  NOGC_E;
+  return r.c;
+}
+HArr* m_harr0vN(usz ia) {
+  HArr_p r = m_harrUv(ia);
+  FILL_TO(r.a, el_B, 0, m_f64(0), ia);
+  NOGC_E;
+  return r.c;
+}
+HArr* m_harr0cN(B x) {
+  usz ia = IA(x);
+  HArr_p r = m_harrUc(x);
+  FILL_TO(r.a, el_B, 0, m_f64(0), ia);
+  NOGC_E;
+  return r.c;
+}
+
+Arr* m_fillarr0p(usz ia) {
+  Arr* r = arr_shVec(m_fillarrp(ia));
+  fillarr_setFill(r, m_f64(0));
+  FILL_TO(fillarrv_ptr(r), el_B, 0, m_f64(0), ia);
+  NOGC_E;
+  return r;
+}
 
 
 static Arr* m_hslice(Arr* p, B* ptr, usz ia) {
