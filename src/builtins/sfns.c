@@ -116,6 +116,7 @@ static Arr* take_head(usz ria, B x) { // consumes; returns ria↑x with unset sh
 }
 
 static Arr* take_impl(usz ria, B x, char* msg) { // consumes x; returns v↑⥊𝕩 with unset shape; v is non-negative
+  assert(isArr(x));
   usz xia = IA(x);
   if (ria>xia) {
     B xf = getFillE(x, msg);
@@ -692,7 +693,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
 }
 
 #define TAKEDROP_INIT(TAKE) \
-  if (!isArr(x)) x = m_unit(x); \
+  if (!isArr(x)) { x = m_unit(x); } assert(isArr(x)); \
   if (!isNum(w)) return takedrop_highrank(TAKE, w, x); \
   Arr* a;                 \
   i64 wv = o2i64(w);      \
