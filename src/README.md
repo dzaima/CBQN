@@ -80,7 +80,7 @@ Type checks (all are safe to execute on any B object):
   isFun(x)     FUN_TAG  a function      yes
   isMd1(x)     MD1_TAG  a 1-modifier    yes
   isMd2(x)     MD2_TAG  a 2-modifier    yes
-  isMd (x)      [many]  any modifier    yes
+  isMd (x)      [many]  isMd1|isMd2     yes
   isCallable(x) [many]  isFun|isMd      yes
   isNsp(x)     NSP_TAG  a namespace     yes
   isObj(x)     OBJ_TAG  internal        yes
@@ -116,8 +116,8 @@ Functions for converting/using atom types:
   q_fu64 (&v,x) q_u64 (&v,x) // ↑ except x≡2⋆64 & v→¯1+2⋆64
   q_fusz (&v,x) q_usz (&v,x) // also here, though the problematic case doesn't exist on usz=32
   
-  q_N(x)    // query if x is · (≡ bi_N)
-  noFill(x) // query if x represents undefined fill (which returned by getFill*; aka test if equal to bi_noFill)
+  q_N(x)    // query if x is · (i.e. x≡bi_N)
+  noFill(x) // query if x represents unknown fill (i.e. x≡bi_noFill; see getFill*)
 
 type field for heap-allocated objects:
   // note that this is distinct from the tag; use TY(x) / PTY(x) to read this field
@@ -136,8 +136,8 @@ type field for heap-allocated objects:
   
   t_mmapH // mmap-ped data; MmapHolder
   t_harrPartial // partially-written HArr
-  t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks // various compiled object things; see vm.h/vm.c
-  t_fldAlias, t_arrMerge, t_vfyObj // various mutation target data holders; see vm.h/vm.c
+  t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks // various compiled object things; see vm.h & vm.c
+  t_fldAlias, t_arrMerge, t_vfyObj // various mutation target data holders; see vm.h & vm.c
   t_ns, t_nsDesc // namespace, namespace descriptor; NS, NSDesc
   t_nfn, t_nfnDesc // native function, native function descriptor; NFn, NFnDesc
   t_ffiType, t_bvwArena // ffi.c things; BQNFFIType, BVWArena
