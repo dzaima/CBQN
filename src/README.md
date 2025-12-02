@@ -135,7 +135,6 @@ type field for heap-allocated objects:
   t_hslice, t_fillslice, t_i8slice, t_i16slice, t_i32slice, t_c8slice, t_c16slice, t_c32slice, t_f64slice // slice types of the above (except bitarr!); Slice, TySlice, HSlice, FillSlice
   
   t_mmapH // mmap-ped data; MmapHolder
-  t_harrPartial // partially-written HArr
   t_comp, t_block, t_body, t_scope, t_scopeExt, t_blBlocks // various compiled object things; see vm.h & vm.c
   t_fldAlias, t_arrMerge, t_vfyObj // various mutation target data holders; see vm.h & vm.c
   t_ns, t_nsDesc // namespace, namespace descriptor; NS, NSDesc

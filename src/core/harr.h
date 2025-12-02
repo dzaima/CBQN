@@ -30,12 +30,9 @@ NOINLINE void harr_pfree(B x, usz am); // am - item after last written
 #define HARR_I(N) N##_i
 SHOULD_INLINE HArr_p m_harr_impl(usz ia) {
   CHECK_IA(ia, sizeof(B));
-  HArr* r = m_arr(fsizeof(HArr,a,B,ia), t_harrPartial, ia);
-  r->ia = 0;
-  // don't need to initialize r->sh or rank at all i guess
-  HArr_p rp = harrP_parts(r);
-  gsAdd(rp.b);
-  return rp;
+  ux sz = fsizeof(HArr,a,B,ia);
+  arr_check_size(sz, t_harr, ia);
+  return harrP_parts(m_arr(sz, t_harr, 0));
 }
 
 #define HARR_FV(N) ({ assert(N##_v.c->ia == N##_len); harr_fv_impl(N##_v); })
@@ -44,34 +41,28 @@ SHOULD_INLINE HArr_p m_harr_impl(usz ia) {
 #define HARR_FA(N, R) ({ assert(N##_v.c->ia == N##_len); harr_fa_impl(N##_v, R); })
 #define HARR_FP(N, R) ({ assert(N##_v.c->ia == N##_len); harr_fp_impl(N##_v, R); })
 #define HARR_ABANDON(N) harr_abandon_impl(N##_v.c)
-SHOULD_INLINE B harr_fv_impl(HArr_p p) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE B harr_fv_impl(HArr_p p) { VTY(p.b, t_harr);
   p.c->type = t_harr;
-  p.c->sh = &p.c->ia;
-  SRNK(p.b, 1);
-  gsPop();
+  arr_shVec((Arr*) p.c);
   return p.b;
 }
-SHOULD_INLINE B harr_fc_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE B harr_fc_impl(HArr_p p, B x) { VTY(p.b, t_harr);
   p.c->type = t_harr;
   arr_shCopy((Arr*)p.c, x);
-  gsPop();
   return p.b;
 }
-SHOULD_INLINE B harr_fcd_impl(HArr_p p, B x) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE B harr_fcd_impl(HArr_p p, B x) { VTY(p.b, t_harr);
   p.c->type = t_harr;
   arr_shCopy((Arr*)p.c, x);
   decG(x);
-  gsPop();
   return p.b;
 }
-SHOULD_INLINE Arr* harr_fp_impl(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE Arr* harr_fp_impl(HArr_p p, ur r) { VTY(p.b, t_harr);
   p.c->type = t_harr;
-  gsPop();
   return (Arr*)p.c;
 }
-SHOULD_INLINE usz* harr_fa_impl(HArr_p p, ur r) { VTY(p.b, t_harrPartial);
+SHOULD_INLINE usz* harr_fa_impl(HArr_p p, ur r) { VTY(p.b, t_harr);
   p.c->type = t_harr;
-  gsPop();
   return arr_shAlloc((Arr*)p.c, r);
 }
 void harr_abandon_impl(HArr* p);
@@ -108,7 +99,7 @@ static B m_hunit(B x) { // consumes
   return r.b;
 }
 
-static B* harrv_ptr(void* x) { u8 t = PTY((Value*)x); assert(t==t_harr || t==t_harrPartial); return ((HArr*)x)->a; }
+static B* harrv_ptr(void* x) { VTY(taga(x),t_harr); return ((HArr*)x)->a; }
 static B* hslicev_ptr(void* x) { VTY(taga(x),t_hslice); return ((HSlice*)x)->a; }
 static B* harr_ptr(B x) { return harrv_ptr(a(x)); }
 static B* hslice_ptr(B x) { return hslicev_ptr(a(x)); }

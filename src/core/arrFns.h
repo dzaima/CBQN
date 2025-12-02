@@ -73,9 +73,9 @@ extern INIT_GLOBAL u8 const arrTypeBitsLog[];
 
 SHOULD_INLINE void arr_check_size(u64 sz, u8 type, u64 ia) {
   if (DEBUG) {
-    assert(IS_ANY_ARR(type) || type==t_harrPartial);
+    assert(IS_ANY_ARR(type));
     if (!ARR_IS_SLICE(type)) {
-      if (type==t_harr || type==t_harrPartial) assert(sz >= fsizeof(HArr,a,B,ia));
+      if (type==t_harr) assert(sz >= fsizeof(HArr,a,B,ia));
       else assert(sz >= offsetof(TyArr,a) + (((ia<<arrTypeBitsLog(type))+7)>>3));
     }
   }

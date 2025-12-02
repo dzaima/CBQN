@@ -85,6 +85,8 @@ static void tyarrv_free(B x) { tyarrv_freeP(a(x)); }
 static inline void* m_arrUnchecked(u64 sz, u8 type, u64 ia) {
   Arr* r = mm_alloc(sz, type);
   r->ia = ia;
+  // rank is implicitly initialized to 0 by mm_alloc, but sh is left uninitialized
+  // free & visit functions will gracefully handle such state, so it's safe for an object to stay this way through GCs (amount of freed/checked elements only depends on ia, never rank)
   return r;
 }
 SHOULD_INLINE void arr_check_size(u64 sz, u8 type, u64 ia);

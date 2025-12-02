@@ -522,8 +522,6 @@ NOINLINE void print_allocStats() {
     printf("total ever allocated: "N64u"\n", talloc);
     printf("allocated heap size:  "N64u"\n", mm_heapAlloc);
     printf("used heap size:       "N64u"\n", tot_heapUsed());
-    ctr_a[t_harr]+= ctr_a[t_harrPartial];
-    ctr_a[t_harrPartial] = 0;
     printf("ctrA←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf(N64u, ctr_a[i]); } printf("\n");
     printf("ctrF←"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf("‿"); printf(N64u, ctr_f[i]); } printf("\n");
     printf("names←⟨"); for (i64 i = 0; i < t_COUNT; i++) { if(i)printf(","); printf("\"%s\"", type_repr(i)); } printf("⟩\n");
@@ -593,7 +591,7 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   NOINLINE B VALIDATE(B x) {
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
-    if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_harrPartial && !ignore_bad_tag) {
+    if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && !ignore_bad_tag) {
       fprintf(stderr, "bad array tag/type: type=%d, obj=%p\n", v(x)->type, TOPTR(void, x.u));
       PRINT_ID(v(x));
       fprintI(stderr, x);
