@@ -679,26 +679,23 @@ B slash_c2(B t, B w, B x) {
     if (RARE(TI(x,elType)==el_B)) { // Slow case
       arrW_base:
       SLOW2("𝕨/𝕩", w, x);
-      B xf = getFillR(x);
       ux ria = s;
       usz csz = arr_csz(x);
       mulOn(ria, csz);
       if (s>=USZ_MAX) thrOOM();
-      MAKE_MUT_INIT(r0, ria, TI(x,elType)); MUTG_INIT(r0);
+      MAKE_MUT_INIT_COPYFILL(r0, ria, TI(x,elType), x); MUTG_INIT(r0);
       SGetU(w)
       B wc; usz ri=0, wcu;
       if (csz!=1) {   for (ux i=0; i<wia; i++) { if (!q_usz(&wcu, wc=GetU(w,i))) goto pfree; for(ux j=0;j<wcu;j++) { mut_copyG(r0, ri, x, i*csz, csz);   ri+= csz; } } }
       else { SGetU(x) for (ux i=0; i<wia; i++) { if (!q_usz(&wcu, wc=GetU(w,i))) goto pfree; if (wcu)              { mut_fillG(r0, ri, GetU(x, i), wcu); ri+= wcu; } } }
       if (0) { pfree: mut_pfree(r0, ri); expI_B(wc); }
       Arr* ra = mut_fp(r0);
-      if (xr == 1) {
-        arr_shVec(ra);
-      } else {
-        usz* rsh = arr_shAlloc(ra, xr);
+      usz* rsh = arr_shAlloc(ra, xr);
+      if (rsh) {
         rsh[0] = s;
         shcpy(rsh+1, SH(x)+1, xr-1);
       }
-      r = withFill(taga(ra), xf);
+      r = taga(ra);
       decWX_ret: decG(w);
       decX_ret: decG(x);
       return r;

@@ -197,7 +197,7 @@ B ud_c2(B t, B w, B x) {
   usz ria=cia;
   for (usz i=0;  i<fr; i++) if (mulOn(ria, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
   TALLOC(usz, ri, fr-1);
-  MAKE_MUT_INIT(r, ria, TI(x,elType));
+  MAKE_MUT_INIT_COPYFILL(r, ria, TI(x,elType), x);
   MUTG_INIT(r);
   usz k = cia*rsh[fr-1];
   if (wr==1) {
@@ -220,9 +220,8 @@ B ud_c2(B t, B w, B x) {
     }
   }
   TFREE(ri);
-  B xf = getFillR(x);
   decG(x);
-  return withFill(taga(arr_shSetUG(mut_fp(r), rr, sh)), xf);
+  return taga(arr_shSetUG(mut_fp(r), rr, sh));
 }
 
 B ltack_c1(B t,      B x) {         return x; }

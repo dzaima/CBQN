@@ -625,7 +625,7 @@ B select_c2(B t, B w, B x) {
     usz csz = arr_csz(x);
     CFRes f = cf_get(1, csz<<elwBitLog(xe));
     
-    MAKE_MUT_INIT(rm, ria, xe);
+    MAKE_MUT_INIT_WITHFILL(rm, ria, xe, xf);
     usz i = 0;
     if (xe<el_B && elInt(we)) {
       void* wp = tyany_ptr(w);
@@ -637,9 +637,6 @@ B select_c2(B t, B w, B x) {
         case el_i16: { i16* w0=wp; for (i16* wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } } break;
         case el_i32: { i32* w0=wp; for (i32* wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } } break;
       }
-      
-      assert(!isVal(xf));
-      r = a(mut_fv(rm));
     } else {
       MUTG_INIT(rm);
       for (; i < wia; i++) {
@@ -649,8 +646,8 @@ B select_c2(B t, B w, B x) {
         usz c = WRAP(cwi, xn, goto bad_cw; );
         mut_copyG(rm, i*csz, x, csz*c, csz);
       }
-      r = a(withFill(mut_fv(rm), xf));
     }
+    r = mut_fp(rm);
     goto setsh;
     
     bad1:;

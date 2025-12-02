@@ -243,12 +243,11 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
 }
 
 static B scan_c1_const(B f, B x, usz ia, u8 xe) {
-  B xf = getFillR(x);
-  MAKE_MUT_INIT(rm, ia, el_orSelf(xe, f)); MUTG_INIT(rm);
+  MAKE_MUT_INIT_COPYFILL(rm, ia, el_orSelf(xe, f), x); MUTG_INIT(rm);
   usz csz = arr_csz(x);
   mut_copyG(rm, 0, x, 0, csz);
   mut_fillG(rm, csz, f, ia-csz);
-  return withFill(mut_fcd(rm, x), xf);
+  return mut_fcd(rm, x);
 }
 static B scan_c2_const(B f, B x, usz ia) {
   Arr* ra = arr_shCopy(reshape_one(ia, inc(f)), x);

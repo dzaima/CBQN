@@ -1,18 +1,5 @@
 #pragma once
 
-/* Usage:
-
-Start with MAKE_MUT(name, itemAmount) or MAKE_MUT_INIT(name, itemAmount, elType).
-Those allocate the Mut instance on the stack, so it must be finished before the scope ends.
-MAKE_MUT doesn't allocate any backing array, and will do so during mut_(set|fill|copy) (one of which must be the next operation on the Mut).
-MAKE_MUT_INIT makes a backing array with the specified element type; mut_(set|fill|copy) can still widen it, but the primary use-case is for the G-postfixed functions.
-
-End with mut_f(v|c|cd|p);.
-
-There must be no allocations while a mut object is being built so GC doesn't read the partially-initialized object.
-mut_pfree must be used to free a partially filled `mut` instance safely (e.g. before throwing an error).
-
-*/
 typedef struct Mut Mut;
 typedef struct MutFns MutFns;
 typedef void (*M_SetF)(void*, usz, B);
@@ -34,12 +21,17 @@ struct Mut {
   void* a;
 };
 
-void mut_to(Mut* m, u8 n);
+#define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
+
+SRET_DEF(Mut, make_mut_init_withFill, u64 ia, u8 el, B fillSource);
+SRET_DEF(Mut, make_mut_init_copyFill, u64 ia, u8 el, B fillSource);
+#define MAKE_MUT_INIT_COPYFILL(N, IA, EL, FILL_SOURCE) Mut N##_val = SRET_CALL(Mut, make_mut_init_copyFill, IA, EL, FILL_SOURCE); Mut* N = &N##_val;
+#define MAKE_MUT_INIT_WITHFILL(N, IA, EL, FILL_SOURCE) Mut N##_val = SRET_CALL(Mut, make_mut_init_withFill, IA, EL, FILL_SOURCE); Mut* N = &N##_val;
 
 SRET_DEF(Mut, make_mut_init, u64 ia, u8 el);
 #define MAKE_MUT_INIT(N, IA, EL) Mut N##_val = SRET_CALL(Mut, make_mut_init, IA, EL); Mut* N = &N##_val;
 
-#define MAKE_MUT(N, IA) Mut N##_val; N##_val.fns = &mutFns[el_MAX]; N##_val.ia = (IA); Mut* N = &N##_val;
+void mut_to(Mut* m, u8 n);
 
 static B mut_fv(Mut* m) { assert(m->fns->elType!=el_MAX);
   NOGC_E; assert(m->ia == m->val->ia);
@@ -68,16 +60,9 @@ static Arr* mut_fp(Mut* m) { assert(m->fns->elType!=el_MAX);
 
 void mut_pfree(Mut* m, usz n);
 
-// consumes x; sets m[ms] to x
 static void mut_set(Mut* m, usz ms, B x) { m->fns->m_set(m, ms, x); }
-
-// clears the object (decrements its refcount) at position ms
 static void mut_rm(Mut* m, usz ms) { if (m->fns->elType == el_B) dec(((B*)m->a)[ms]); }
-
-// doesn't consume; fills m[ms…ms+l] with x
 static void mut_fill(Mut* m, usz ms, B x, usz l) { m->fns->m_fill(m, ms, x, l); }
-
-// doesn't consume; expects x to be an array, each position must be written to precisely once
 static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->fns->m_copy(m, ms, x, xs, l); }
 
 // MUT_APPEND_INIT must be called immediately after MAKE_MUT or MAKE_MUT_INIT
@@ -91,8 +76,6 @@ static void mut_copy(Mut* m, usz ms, B x, usz xs, usz l) { assert(isArr(x)); m->
 })
 
 #define MUTG_INIT(N) MutFns N##_mutfns = *N->fns; void* N##_mutarr = N->a
-// these methods function as the non-G-postfixed ones, except that
-// the MAKE_MUT_INIT must have been used, MUTG_INIT called, and x must fit into the array type initialized to
 #define mut_setG(N, ms, x) N##_mutfns.m_setG(N##_mutarr, ms, x)
 #define mut_fillG(N, ms, x, l) N##_mutfns.m_fillG(N##_mutarr, ms, x, l)
 #define mut_copyG(N, ms, x, xs, l) N##_mutfns.m_copyG(N##_mutarr, ms, x, xs, l)

@@ -296,8 +296,6 @@ B r = utf8Decode0("⟨1⋄2⋄3⟩") // ..or with implicit length
 #include "utils/utf.h"
 u64 sz = utf8lenB(x); TALLOC(char, buf, sz+1); toUTF8(x, buf); buf[sz]=0; /*use buf as a C-string*/ TFREE(buf);
 
-// src/utils/mut.h provides a way to build an array by copying parts of other arrays
-
 // some functions for making specific arrays:
 B r = m_unit(x); // equivalent to <𝕩
 B r = m_hunit(x); // like the above, except no fill is set
@@ -310,6 +308,43 @@ B r = emptyHVec(); // an empty vector with no fill
 B r = emptyIVec(); // an empty integer vector
 B r = emptyCVec(); // an empty character vector
 B r = emptySVec(); // an empty string vector
+```
+
+Building arrays:
+```C
+
+// start with one of:
+MAKE_MUT(name, ux ia);
+MAKE_MUT_INIT(name, ux ia, u8 elType);
+MAKE_MUT_INIT_WITHFILL(name, ux ia, u8 elType, B fill); // consumes fill & uses it as result fill
+MAKE_MUT_INIT_COPYFILL(name, ux ia, u8 elType, B arr); // doesn't consume arr; result fill will be the fill of arr
+// these allocate a Mut object on the stack (`name##_val` is the `Mut`; `name` becomes a `Mut*` to it), so usage must end at the end of the scope
+// MAKE_MUT doesn't initially allocate any backing array
+// MAKE_MUT_INIT* initialize the array with the given initial type, and fill element where applicable
+// MAKE_MUT_INIT_*FILL, when elType!=el_B, MUST be given the expected matching `m_c32(' ')`/`m_f64(0)` fill
+
+// these will initialize/widen the backing array type as needed:
+mut_set(name, usz ms, B x); // consumes x; sets m[ms] to x
+mut_fill(name, usz ms, B x, usz l); // doesn't consume; sets each element of m[ms…ms+l] to the same x
+mut_copy(name, usz ms, B x, usz xs, usz l); // doesn't consume; copies x[xs..xs+l] into m[ms…ms+l]; expects x to be an array
+mut_rm(name, usz ms); // clears the object (decrementing/freeing it as needed) at m[ms]
+// for MAKE_MUT, at least one mut_(set|fill|copy) must be called before end
+
+// for doing multiple operations with data known to fit in the initialized eltype:
+MUTG_INIT(name); // before all the below
+mut_setG(name, usz ms, B x);
+mut_fillG(name, usz ms, B x, usz l);
+mut_copyG(name, usz ms, B x, usz xs, usz l);
+
+// multiple element setting operations must not overlap unless appropriate mut_rm is used in between
+// there must be no allocations while a mut object is being built (GC mustn't get to read the partially-initialized object)
+// mut_pfree must be used to free a partially-filled instance safely (e.g. before throwing an error)
+
+// end with:
+B r = mut_fv(name); // sets shape to a list
+B r = mut_fc(r, x); // copies the shape of x, doesn't consume x
+B r = mut_fcd(r, x); // copies the shape of x and consumes it
+Arr* r = mut_fp(r); // don't allocate/set any shape
 ```
 
 

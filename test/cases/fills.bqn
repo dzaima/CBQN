@@ -152,8 +152,8 @@ a←0 ⋄ 0◶{𝕊: a↩1}‿0⌜˜   ↕0 ⋄ a %% 0
 %USE fill ⋄ %USE eqall ⋄ EqAll Fill¨ "ab" {⟨𝕨 «⍟4 𝕩, 𝕨 •internal.Keep∘«⍟4 𝕩⟩} ↕4 %% 'e'
 
 
-%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"¨⌾(    2⊸↑) 𝕩}_eqvarv_"i" ↕⋈3 %%% 'e'
-%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"¨⌾(    2⊸⥊) 𝕩}_eqvarv_"i" ↕⋈3 %%% 'e'
+%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"¨⌾(    2⊸↑) 𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
+%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"¨⌾(    2⊸⥊) 𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
 %USE fill ⋄ %USE eqvarv ⋄ {Fill "hi" ⌾(    2⊸⊑) 𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
 %USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"¨⌾((↕⋈2)⊸⊑) 𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
 %USE fill ⋄ %USE eqvarv ⋄ {Fill  4↑𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
