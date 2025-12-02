@@ -1,5 +1,6 @@
 %DEF fill Fill←•internal.HasFill◶'e'‿{⊑1↑0⥊𝕩}
 %DEF eqall EqAll ← {!∘≡⟜(⊑𝕩)¨ 𝕩 ⋄ ⊑𝕩}
+%DEF eqvarv ⟨_eqvarv_⟩←⊑•args
 
 %USE fill ⋄ F←+ ⋄ a←⟨"",↕0,↕0‿0⟩ ⋄ ⟨Fill F 0⥊<a, Fill¨ F a, Fill∘F¨ ⟨⟨⟩, ↕0‿0, ↕0, 0‿2⥊↕0, "", 2‿0⥊""⟩⟩  %%%  ⟨⟨⟨⟩,↕0,0‿0⥊<0‿0⟩, ⟨'e',0,0‿0⟩, ⟨'e',0‿0,0,0,'e','e'⟩⟩
 %USE fill ⋄ F←¬ ⋄ a←⟨"",↕0,↕0‿0⟩ ⋄ ⟨Fill F 0⥊<a, Fill¨ F a, Fill∘F¨ ⟨⟨⟩, ↕0‿0, ↕0, 0‿2⥊↕0, "", 2‿0⥊""⟩⟩  %%%  ⟨⟨⟨⟩,↕0,0‿0⥊<0‿0⟩, ⟨'e',0,0‿0⟩, ⟨'e',0‿0,0,0,'e','e'⟩⟩
@@ -149,6 +150,18 @@ a←0 ⋄ 0◶{𝕊: a↩1}‿0⌜˜   ↕0 ⋄ a %% 0
 
 %USE fill ⋄ Fill¨ ⟨"abcd" » ↕2, (↕4) « "ab"⟩ %% "ee"
 %USE fill ⋄ %USE eqall ⋄ EqAll Fill¨ "ab" {⟨𝕨 «⍟4 𝕩, 𝕨 •internal.Keep∘«⍟4 𝕩⟩} ↕4 %% 'e'
+
+
+%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"¨⌾(    2⊸↑) 𝕩}_eqvarv_"i" ↕⋈3 %%% 'e'
+%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"¨⌾(    2⊸⥊) 𝕩}_eqvarv_"i" ↕⋈3 %%% 'e'
+%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi" ⌾(    2⊸⊑) 𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
+%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"¨⌾((↕⋈2)⊸⊑) 𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
+%USE fill ⋄ %USE eqvarv ⋄ {Fill  4↑𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
+%USE fill ⋄ %USE eqvarv ⋄ {Fill ¯4↑𝕩}_eqvarv_"i" ↕⋈3 %%% ⋈0
+%USE fill ⋄ %USE eqvarv ⋄ {Fill "hi"` 𝕩}_eqvarv_"i" 5+↕⋈3 %%% ⋈0
+4↑'!'` 5+↕3 %% 5‿'!'‿'!'‿0
+4↑9` "abc" %% 'a'‿9‿9‿' '
+
 
 # TODO:
 # ⟨↑‿3⥊↕10 ⋄ ↑‿3⥊<¨↕10 ⋄ ↑‿3⥊<˘↕10⟩
