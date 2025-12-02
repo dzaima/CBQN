@@ -372,7 +372,7 @@ bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
   #define CASE(T) case el_##T: { \
     T* xp = T##any_ptr(x); CMP(xp[i-1] GRADE_UD(>,<) xp[i]) }
   switch (TI(x,elType)) { default: UD;
-    CASE(i8) CASE(i16) CASE(i32) CASE(f64)
+    CASE(i8) CASE(i16) CASE(i32)
     CASE(c8) CASE(c16) CASE(c32)
     case el_bit: {
       #define HI GRADE_UD(1,0)
@@ -387,6 +387,10 @@ bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
       usz l = xia - 64*o;
       return (bit_find(xp+o, l, !HI) == l);
       #undef HI
+    }
+    case el_f64: {
+      f64* xp = f64any_ptr(x);
+      CMP(floatCompare(xp[i-1], xp[i]) GRADE_UD(>,<) 0);
     }
     case el_B: {
       B* xp = arr_bptr(x);
