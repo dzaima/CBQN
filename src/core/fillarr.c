@@ -169,10 +169,10 @@ B withFill(B x, B fill) { // consumes both
     if (ARR_IS_SLICE(PTY(arr))) arr = ((Slice*)arr)->p;
     r = m_fillslice(ptr_inc(arr), xbp, ia, fill);
   } else {
-    FillArr* rf = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
-    rf->fill = fill;
-    COPY_TO(rf->a, el_B, 0, x, 0, ia);
-    r = (Arr*)rf;
+    UntaggedArr ra = m_barrp_withFill(ia, fill);
+    COPY_TO(ra.data, el_B, 0, x, 0, ia);
+    NOGC_E;
+    r = ra.obj;
   }
   arr_shCopy(r, x);
   decG(x);

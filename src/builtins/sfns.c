@@ -174,11 +174,10 @@ NOINLINE Arr* reshape_one(usz nia, B x) {
     else                { FILL(c32,u32,c*0x0000000100000001U) }
   } else {
     incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
-    B rf = asFill(x);
-    r = m_fillarrp(nia);
-    if (sizeof(B)==8) fill_words(fillarrv_ptr(r), x.u, (u64)nia*8);
-    else for (usz i = 0; i < nia; i++) fillarrv_ptr(r)[i] = x;
-    fillarr_setFill(r, rf);
+    UntaggedArr ra = m_barrp_withFill(nia, asFill(x));
+    if (sizeof(B)==8) fill_words(ra.data, x.u, (u64)nia*8);
+    else for (usz i = 0; i < nia; i++) ((B*)ra.data)[i] = x;
+    r = ra.obj;
     NOGC_E;
   }
   #undef FILL
