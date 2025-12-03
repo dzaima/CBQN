@@ -360,7 +360,6 @@ B GRADE_CAT(c1)(B t, B x) {
   return r;
 }
 
-
 bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
   assert(isArr(x) && RNK(x)==1); // TODO extend to >=1
   usz xia = IA(x);
@@ -369,40 +368,34 @@ bool CAT(isSorted,GRADE_UD(Up,Down))(B x) {
   #define CMP(TEST) \
     for (usz i=1; i<xia; i++) if (TEST) return 0; \
     return 1;
-  #define CASE(T) case el_##T: { \
-    T* xp = T##any_ptr(x); CMP(xp[i-1] GRADE_UD(>,<) xp[i]) }
-  switch (TI(x,elType)) { default: UD;
-    CASE(i8) CASE(i16) CASE(i32)
-    CASE(c8) CASE(c16) CASE(c32)
-    case el_bit: {
-      #define HI GRADE_UD(1,0)
-      u64* xp = bitany_ptr(x);
-      u64 i = bit_find(xp, xia, HI);
-      usz iw = i/64;
-      u64 m = ~(u64)0;
-      u64 d = GRADE_UD(,~)xp[iw] ^ (m<<(i%64));
-      if (iw == xia/64) return (d &~ (m<<(xia%64))) == 0;
-      if (d) return 0;
-      usz o = iw + 1;
-      usz l = xia - 64*o;
-      return (bit_find(xp+o, l, !HI) == l);
-      #undef HI
-    }
-    case el_f64: {
-      f64* xp = f64any_ptr(x);
-      CMP(floatCompare(xp[i-1], xp[i]) GRADE_UD(>,<) 0);
-    }
-    case el_B: {
-      B* xp = arr_bptr(x);
-      if (xp!=NULL) {
-        CMP(compare(xp[i-1], xp[i]) GRADE_UD(>,<) 0)
-      } else {
-        SGetU(x)
-        CMP(compare(GetU(x,i-1), GetU(x,i)) GRADE_UD(>,<) 0)
-      }
+  if (0) { elB:;
+    B* xp = arr_bptr(x);
+    if (xp!=NULL) {
+      CMP(compare(xp[i-1], xp[i]) GRADE_UD(>,<) 0)
+    } else {
+      SGetU(x)
+      CMP(compare(GetU(x,i-1), GetU(x,i)) GRADE_UD(>,<) 0)
     }
   }
-  #undef CASE
+  #if SINGELI_SIMD
+    u8 xe = TI(x,elType);
+    if (xe == el_B) goto elB;
+    return is_sorted[xe](tyany_ptr(x), GRADE_UD(0,1), xia-1);
+  #else
+    #define CASE(T) case el_##T: { \
+      T* xp = T##any_ptr(x); CMP(xp[i-1] GRADE_UD(>,<) xp[i]) }
+    switch (TI(x,elType)) { default: UD;
+      CASE(i8) CASE(i16) CASE(i32)
+      CASE(c8) CASE(c16) CASE(c32)
+      case el_bit: return bit_isSorted(bitany_ptr(x), GRADE_UD(0,1), xia-1);
+      case el_f64: {
+        f64* xp = f64any_ptr(x);
+        CMP(floatCompare(xp[i-1], xp[i]) GRADE_UD(>,<) 0);
+      }
+      case el_B: goto elB;
+    }
+    #undef CASE
+  #endif
   #undef CMP
 }
 

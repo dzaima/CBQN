@@ -1,0 +1,21 @@
+include './base'
+include './cbqnDefs'
+include './mask'
+
+fn is_sorted{E}(x:*void, down:u64, n:usz) : u1 = { # TODO: both down and n should be ux when Singeli can handle that
+  assert{n > 0}
+  def x = *E~~x
+  def a = x + down
+  def b = x + 1 - down
+  def bulk = arch_defvw{} / width{E}
+  def V = [bulk]E
+  @for_mu{bulk, 1}(a in tup{V,a}, b in tup{V,b}, M in 'm' over n) {
+    if (any_hom{M, ...each{tot_gt, a, b}}) return{0}
+  }
+  1
+}
+
+export_tab{'si_is_sorted', each{is_sorted, tup{
+  i8,i16,i32,f64,
+  u8,u16,i32 # reuse i32 for 32-bit char
+}}}

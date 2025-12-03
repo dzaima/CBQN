@@ -12,7 +12,7 @@
 #define PRECOMPILED_FILE(END) STR1(../build/BYTECODE_DIR/gen/END)
 
 #define FOR_INIT(F) \
-/* initialize primary things */ F(base) F(harr) F(mutF) F(cmpA) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arithm) F(arithd) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(slash) F(search) F(transp) F(ryu) F(ffi) F(mmap) \
+/* initialize primary things */ F(base) F(harr) F(mutF) F(cmpA) F(fillarr) F(tyarr) F(hash) F(sfns) F(fns) F(arithm) F(arithd) F(md1) F(md2) F(derv) F(comp) F(rtWrap) F(ns) F(nfn) F(sysfn) F(inverse) F(slash) F(search) F(transp) F(ryu) F(ffi) F(mmap) F(sort) \
 /* first thing that executes BQN code (the precompiled stuff) */ F(load) \
 /* precompiled stuff loaded; init things that need it */ F(sysfnPost) F(dervPost) F(typesFinished)
 
