@@ -97,9 +97,12 @@ def store{ptr:*E, x:V=[k]E, vl if low_vl{vl, V}} = store{ptr, x86_low_elts{vl, x
 
 
 # float stuff
-local def avx_cmp{a:V, b:V, imm} = ty_u{emit{V, intrin_t{V, 'cmp'}, a, b, imm}}
-def unord{a:V, b:V if w256f{V} and hasarch{'AVX'}} = avx_cmp{a,b,3}
-def unord{a:V, b:V if w128f{V}} = ty_u{emit{V, intrin_t{V, 'cmpunord'}, a, b}}
+local def cmp_flt{name, num}{a:V, b:V if w128f{V} or w256f{V}} = {
+  if (w128f{V}) ty_u{emit{V, intrin_t{V, name}, a, b}}
+  else          ty_u{emit{V, intrin_t{V, 'cmp'}, a, b, num}}
+}
+def unord{...} = cmp_flt{'cmpunord', 3}
+def   ord{...} = cmp_flt{'cmpord', 7}
 
 def cvt{RE, x:V=[k]E if isfloat{RE} and vecs{V,32} and hase{V}} = {
   def RV = [k]RE
