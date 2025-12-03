@@ -59,3 +59,20 @@ def get_range{data:*E, len} = get_range{match(E) {
   {(f64)} => el_f64
 }, data, len}
 def get_range{data:*E, s, e} = get_range{data+s, e-s}
+
+
+local def root{G, T} = G{T}
+local def root{G, [_]E} = G{E}
+
+# total comparisons
+def tot_gt{a:T, b:T if root{isfloat,T}} = (b==b) &~ (a<=b)
+def tot_ge{a:T, b:T if root{isfloat,T}} = (a!=a) |  (a>=b)
+
+def tot_gt{a:V=[_]E, b:V if isfloat{E} and hasarch{'X86_64'} and width{V}<=256} =   ord{V~~(a<=b), b}
+def tot_ge{a:V=[_]E, b:V if isfloat{E} and hasarch{'X86_64'} and width{V}<=256} = unord{V~~(a>=b), a}
+
+def tot_gt{a:T, b:T if root{isint,T}} = a > b
+def tot_ge{a:T, b:T if root{isint,T}} = a >= b
+
+def tot_lt{a, b} = tot_gt{b, a}
+def tot_le{a, b} = tot_ge{b, a}
