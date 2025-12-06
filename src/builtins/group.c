@@ -189,7 +189,9 @@ static B group_simple(B w, B x, ur xr, usz wia, usz xn, usz* xsh, u8 we) {
     if (wia>xn) w = C2(take, m_f64(xn), w);
     B m = C2(ne, m_f64(-1), incG(w));
     w = C2(slash, incG(m), w);
-    x = C2(slash, m, x); xn = *SH(x);
+    x = C2(slash, m, x);
+    xsh = SH(x);
+    xn = *xsh;
     neg = 0;
   }
   w = toI32Any(w);
