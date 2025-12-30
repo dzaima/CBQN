@@ -49,6 +49,7 @@ typedef struct DyTableAA {
   EntAA entsAA[el_B*el_B]; // one for each instruction
   FC2 mainFn;
   char* repr;
+  u32 fillFlags;
 } DyTableAA;
 
 
@@ -70,6 +71,7 @@ struct DyTableSA {
   EntSA ents[el_B];
   FC2 mainFn;
   char* repr;
+  u32 fillFlags;
   u8 fill[2][2]; // 0:none 1:int 2:char
   DyTableSA* chrAtom;
 };

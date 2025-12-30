@@ -107,7 +107,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
   }
   
   rec:
-  return arith_recd(table->mainFn, w, x);
+  return arith_recd(table->mainFn, w, x, table->fillFlags);
   decG_ret:
   decG(w); decG(x);
   return r;
@@ -118,7 +118,7 @@ NOINLINE B dyArith_AA(DyTableAA* table, B w, B x) {
 bool bad_forBitselNN_SA(DyTableSA* table, B w, B* r) { return false; }
 #define bad_forBitselCN_SA bad_forBitselNN_SA
 
-B bad_chrAtomSA(DyTableSA* table, B w, B x, usz ia, u8 xe) { return arith_recd(table->mainFn, w, x); }
+B bad_chrAtomSA(DyTableSA* table, B w, B x, usz ia, u8 xe) { return arith_recd(table->mainFn, w, x, table->fillFlags); }
 #define bad_chrAtomAS bad_chrAtomSA
 
 u64 failAtomArr1(void* r, u64 w, void* x, u64 len) { return 0; }
@@ -253,7 +253,7 @@ NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
   
   decG_ret: decG(x); return r;
   
-  rec: return arith_recd(table->mainFn, w, x);
+  rec: return arith_recd(table->mainFn, w, x, table->fillFlags);
   
   bitsel: {
     B opts[2];
@@ -283,7 +283,7 @@ bool sub_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cG(w); if(wc  !=
 B sub_c2R(B t, B w, B x) { return sub_c2(t, x, w); }
 
 static NOINLINE B or_SA(B t, B w, B x) {
-  if (!isF64(w)) return arith_recd(or_c2, w, x);
+  if (!isF64(w)) return arith_recd(or_c2, w, x, A_B);
   u8 xe = TI(x,elType);
   if (LIKELY(xe==el_bit)) {
     bitsel:;
@@ -292,7 +292,7 @@ static NOINLINE B or_SA(B t, B w, B x) {
   }
   x = squeeze_numTry(x, &xe, SQ_NUM | SQ_EMPTY);
   if (xe==el_bit) goto bitsel;
-  if (!elNum(xe)) return arith_recd(or_c2, w, x);
+  if (!elNum(xe)) return arith_recd(or_c2, w, x, A_B);
   x = toF64Any(x);
   
   f64* rp;

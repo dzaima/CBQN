@@ -2,6 +2,8 @@
 #include "../utils/each.h"
 #include "../utils/calls.h"
 
+#define cmp_fillFlags A_B | A_CN(A_NUM) | A_NC(A_NUM) | A_CC(A_NUM)
+
 static NOINLINE void fillBits(u64* dst, u64 sz, bool v) {
   memset((u8*)dst, v?0xff:0, BIT_N(sz)*8);
 }
@@ -37,7 +39,7 @@ B eq_c2(B, B, B); B ne_c2(B, B, B);
 
 #define CMP_REC(NAME, RNAME, PRE) NOINLINE B NAME##_rec(i32 swapped, B w, B x) { PRE \
   SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("recursive cmp " #NAME, w, x); \
-  return swapped? arith_recd(RNAME##_c2, x, w) : arith_recd(NAME##_c2, w, x); \
+  return swapped? arith_recd(RNAME##_c2, x, w, cmp_fillFlags) : arith_recd(NAME##_c2, w, x, cmp_fillFlags); \
 }
 CMP_REC(le, ge, )
 CMP_REC(lt, gt, )

@@ -125,6 +125,7 @@ Make ← {𝕊ns:
     }¨ ⥊T ⟨instrs ⋄ ↕8‿8⟩
     "  },", nl
     "  .mainFn = ", cbqn, "_c2,", nl
+    "  .fillFlags = ", cbqn, "_fillFlags,", nl
     "  .repr = """, repr, """", nl
     "};", nl
   ⟩
@@ -178,6 +179,7 @@ Make ← {𝕊ns:
         "  },", nl
         "  .chrAtom = ", hadChrArr◶"NULL"‿{𝕊: ∾⟨"&",cbqn,"DyTable", ⌽⍟swap "CA"⟩} @, ",", nl
         "  .mainFn = ", cbqn, "_c2", swap/"R", ",", nl
+        "  .fillFlags = ", cbqn, swap/"R", "_fillFlags,", nl
         "  .fill = ", P P¨ <˘ '0'+@‿0‿1⊐ResMap choices, ",", nl
         "  .repr = """, repr, """", nl
         "};", nl

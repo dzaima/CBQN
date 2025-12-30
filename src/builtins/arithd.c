@@ -3,6 +3,15 @@
 #include "../builtins.h"
 #include <math.h>
 
+#define mul_fillFlags A_B
+#define and_fillFlags A_B
+#define or_fillFlags A_B
+#define floor_fillFlags A_B
+#define ceil_fillFlags A_B
+#define add_fillFlags  A_B | A_CN(A_CHR) | A_NC(A_CHR)
+#define sub_fillFlags  A_B | A_CN(A_CHR) | A_CC(A_NUM)
+#define subR_fillFlags A_B | A_NC(A_CHR) | A_CC(A_NUM)
+
 static f64 pfmod(f64 a, f64 b) {
   f64 r = fmod(a, b);
   if (a<0 != b<0 && r!=0) r+= b;
@@ -95,10 +104,10 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
 
 
 #define ARITH_SLOW(N) SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
-#define P2(N) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); return arith_recd(N##_c2, w, x); }}
+#define P2(N, FILL_FLAGS) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); return arith_recd(N##_c2, w, x, FILL_FLAGS); }}
 
 #if defined(TYPED_ARITH) && !TYPED_ARITH
-  #define AR_I_TO_ARR(NAME) P2(NAME)
+  #define AR_I_TO_ARR(NAME) P2(NAME, NAME##_fillFlags)
   #define AR_F_TO_ARR AR_I_TO_ARR
 #else
   static NOINLINE u8 iMakeEq(B* w, B* x, u8 we, u8 xe) {
@@ -157,7 +166,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
         if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
         if (we==el_f64){       Rf64(w);         PF(w)          DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
       }                                                           \
-      P2(NAME)                                                    \
+      P2(NAME, A_B)                                               \
     }                                                             \
     thrM("𝕨" SYMB "𝕩: Unexpected argument types");                \
   }
@@ -309,9 +318,10 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
       if(we==el_i32 & xe==el_i16) { PI32(w) PI16(x) DOI32(EXPR,w,wp[i],xp[i],bad) } \
       if(we==el_i16 & xe==el_i8 ) { PI16(w) PI8 (x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
       if(we==el_i8  & xe==el_i16) { PI8 (w) PI16(x) DOI16(EXPR,w,wp[i],xp[i],bad) } \
-      bad: ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x);  \
+      bad: ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x, NAME##_fillFlags);   \
       dec_ret: decG(w); decG(x); return r; \
     }
+    
     AR_I_AA("×", mul, wv*xv, 2, {})
     AR_I_AA("∧", and, wv*xv, 2, {})
     AR_I_AA("∨", or , bqn_or(wv, xv), 1, {})
@@ -335,14 +345,14 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     #define AR_I_AS(CHR, NAME, EXPR, DO_AS, EXTRA) NOINLINE B NAME##_AS(B t, B w, B x) { \
       B r; u8 we=TI(w,elType); EXTRA                       \
       if (isF64(x)) { usz ia=IA(w); DO_AS(NAME,EXPR) }     \
-      ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x); \
+      ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x, NAME##_fillFlags); \
       dec_ret: decG(w); return r;                          \
     }
     
     #define AR_I_SA(CHR, NAME, EXPR, DO_SA, EXTRA) NOINLINE B NAME##_SA(B t, B w, B x) { \
       B r; u8 xe=TI(x,elType); EXTRA                       \
       if (isF64(w)) { usz ia=IA(x); DO_SA(NAME,EXPR) }     \
-      ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x); \
+      ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x, NAME##_fillFlags); \
       dec_ret: decG(x); return r;                          \
     }
     
@@ -468,7 +478,7 @@ static f64 bqn_atan2iw(f64 x, f64 w) { return w / (tan(x)+0); }
 
 #define MATH(n,N,I) B n##_c2(B t, B w, B x) {          \
   if (isNum(w) && isNum(x)) return m_f64(I(x.f, w.f)); \
-  P2(n)                                                \
+  P2(n, A_B)                                           \
   thrM("𝕨 •math." N " 𝕩: Unexpected argument types");  \
 }
 MATH(atan2,"Atan2",bqn_atan2)
@@ -505,7 +515,7 @@ B gcd_c2(B t, B w, B x) {
     if (!q_u64(&wu, w) || !q_u64(&xu, x)) thrM("𝕨 •math.GCD 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(gcd_u64(wu, xu));
   }
-  P2(gcd)
+  P2(gcd, A_B)
   thrM("𝕨 •math.GCD 𝕩: Unexpected argument types");
 }
 B lcm_c2(B t, B w, B x) {
@@ -514,7 +524,7 @@ B lcm_c2(B t, B w, B x) {
     if (!q_u64(&wu, w) || !q_u64(&xu, x)) thrM("𝕨 •math.LCM 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(lcm_u64(wu, xu));
   }
-  P2(lcm)
+  P2(lcm, A_B)
   thrM("𝕨 •math.LCM 𝕩: Unexpected argument types");
 }
 

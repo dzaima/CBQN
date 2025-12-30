@@ -462,7 +462,7 @@ static B m1c1(B t, B f, B x) { // consumes x
 }
 
 static bool fillNumeric(B x) {
-  if (x.u==0) return true;
+  if (numFill(x)) return true;
   if (isAtm(x)) return false;
   u8 xe = TI(x,elType);
   usz ia = IA(x);
