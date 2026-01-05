@@ -244,7 +244,7 @@ static B scan_plus(f64 r0, B x, u8 xe, usz ia) {
 
 static B scan_c1_const(B f, B x, usz ia, u8 xe) {
   B xf = getFillR(x);
-  MAKE_MUT_INIT(rm, ia, el_or(xe, selfElType(f))); MUTG_INIT(rm);
+  MAKE_MUT_INIT(rm, ia, el_orSelf(xe, f)); MUTG_INIT(rm);
   usz csz = arr_csz(x);
   mut_copyG(rm, 0, x, 0, csz);
   mut_fillG(rm, csz, f, ia-csz);

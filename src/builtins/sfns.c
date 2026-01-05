@@ -1415,7 +1415,7 @@ static B pick_replaceOne(B fn, usz pos, B x, usz xia) {
       case t_c32arr: ((u32*)xp)[pos] = o2cG(rep); return x;
     }
   }
-  MAKE_MUT_INIT(r, xia, el_or(TI(x,elType), selfElType(rep))); MUTG_INIT(r);
+  MAKE_MUT_INIT(r, xia, el_orSelf(TI(x,elType), rep)); MUTG_INIT(r);
   mut_setG(r, pos, rep);
   mut_copyG(r, 0, x, 0, pos);
   mut_copyG(r, pos+1, x, pos+1, xia-pos-1);

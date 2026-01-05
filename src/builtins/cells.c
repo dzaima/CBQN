@@ -764,7 +764,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
           dec(w);
           return x;
         }
-        return shift_cells(w, x, cam, xsh[xk], el_or(TI(x,elType), selfElType(w)), rtid);
+        return shift_cells(w, x, cam, xsh[xk], el_orSelf(TI(x,elType), w), rtid);
         break;
       case n_take: case n_drop: {
         bool take = rtid==n_take;

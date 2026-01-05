@@ -1101,8 +1101,7 @@ B slash_ucw(B t, B o, B w, B x) {
       we = el_bit;
     }
     
-    u8 ce = selfElType(c);
-    u8 re = el_or(ce,xe);
+    u8 re = el_orSelf(xe, c);
     
     u64 sum = U64_MAX;
     if (isVal(c)) {

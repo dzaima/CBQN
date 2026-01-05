@@ -1297,9 +1297,8 @@ B select_ucw(B t, B o, B w, B x) {
     B c;
     if (!toConstant(od->f, &c)) goto notConstEach;
     
-    u8 ce = selfElType(c);
     u8 xe = TI(x,elType);
-    u8 re = el_or(ce,xe);
+    u8 re = el_orSelf(xe, c);
     
     DirectArr r = toEltypeArr(x, re);
     if (isVal(c)) {

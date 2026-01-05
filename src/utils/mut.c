@@ -76,7 +76,7 @@ NOINLINE void mut_to(Mut* m, u8 n) {
 
 NOINLINE B vec_addF(B w, B x) {
   usz wia = IA(w);
-  MAKE_MUT_INIT(r, wia+1, el_or(TI(w,elType), selfElType(x))); MUTG_INIT(r);
+  MAKE_MUT_INIT(r, wia+1, el_orSelf(TI(w,elType), x)); MUTG_INIT(r);
   mut_copyG(r, 0, w, 0, wia);
   mut_setG(r, wia, x);
   decG(w);
@@ -134,7 +134,7 @@ NOINLINE JoinFillslice fillslice_getJoin(B w, usz ria) {
 
 
 #define CHK(REQ,NEL,N,...) if (!(REQ)) mut_to(m, NEL); m->fns->m_##N##G(m, __VA_ARGS__);
-#define CHK_S(REQ,X,N,...) CHK(REQ, el_or(m->fns->elType, selfElType(X)), N, __VA_ARGS__)
+#define CHK_S(REQ,X,N,...) CHK(REQ, el_orSelf(m->fns->elType, X), N, __VA_ARGS__)
 
 
 #define DEF0(RT, N, TY, INIT, CHK, EL, ARGS, ...) \
@@ -153,7 +153,7 @@ NOINLINE JoinFillslice fillslice_getJoin(B w, usz ria) {
   DEF0(RT, N, TY, INIT, CHK, EL, ARGS, __VA_ARGS__) \
   static RT m_##N##G_##TY ARGS
 
-#define DEF_S( RT, N, TY, CHK, X, ARGS, ...) DEF(RT, N, TY, , CHK, el_or(el_##TY, selfElType(X)), ARGS, __VA_ARGS__)
+#define DEF_S( RT, N, TY, CHK, X, ARGS, ...) DEF(RT, N, TY, , CHK, el_orSelf(el_##TY, X), ARGS, __VA_ARGS__)
 #define DEF_E( RT, N, TY, CHK, X, ARGS, ...) DEF(RT, N, TY, , CHK, TI(X,elType),  ARGS, __VA_ARGS__)
 #define DEF_G( RT, N, TY,         ARGS, ...)  \
   static RT m_##N##G_##TY ARGS;               \
@@ -755,9 +755,8 @@ NOINLINE void apd_reshape(ApdMut* m, B x) {
 }
 
 NOINLINE void apd_widen(ApdMut* m, B x, ApdFn* const* fns) {
-  u8 xe = isArr(x)? TI(x,elType) : selfElType(x);
   u8 pe = TIv(m->obj,elType);
-  u8 re = el_or(xe, pe);
+  u8 re = isArr(x)? el_or(pe, TI(x,elType)) : el_orSelf(pe, x);
   assert(pe!=re && pe<el_B);
   if (re==el_B) {
     B cf = elNum(pe)? m_f64(0) : m_c32(' ');
