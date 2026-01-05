@@ -13,18 +13,18 @@
 4 {∘}`↕0 %% ↕0
 {∘}¨↕0 %% ⟨⟩
 {˜}¨˜↕0 %% ⟨⟩
-!"Calling a modifier" % 4 {˜}´↕1
-!"Calling a modifier" % 4 {˜}˝↕1
-!"Calling a modifier" % 4 {∘}`↕1
-!"Calling a modifier" % {∘}¨↕1
-!"Calling a modifier" % {˜}¨˜↕1
+!"Cannot call a 1-modifier as a function" % 4 {˜}´↕1
+!"Cannot call a 1-modifier as a function" % 4 {˜}˝↕1
+!"Cannot call a 2-modifier as a function" % 4 {∘}`↕1
+!"Cannot call a 2-modifier as a function" % {∘}¨↕1
+!"Cannot call a 1-modifier as a function" % {˜}¨˜↕1
 4 {˜}˙´↕1 %% ˜
 4 {˜}˙˝↕1 %% ˜
 4 {∘}˙`↕1 %% ⟨∘⟩
 {∘}˙¨↕1 %% ⟨∘⟩
 {˜}˙¨˜↕1 %% ⟨˜⟩
 4 "ab"`↕4 %% 4⥊<"ab"
-!"Calling a modifier" % {∘}⌜˜ ↕10
+!"Cannot call a 2-modifier as a function" % {∘}⌜˜ ↕10
 {∘}˙⌜˜ ↕10 %% 10‿10⥊⟨∘⟩
 "ab"` "hello" %% 'h'∾4⥊<"ab"
 "ab"˙` "hello" %% 'h'∾4⥊<"ab"

@@ -629,7 +629,7 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 %USE eqvar ⋄ a←¯5+↕10 ⋄ {1+⍟𝕩 ⋈10}_eqvar a %% ⋈¨ 5+↕10
 %USE eqvar ⋄ a←¯5+↕10 ⋄ {1+⍟(𝕩{!𝕩≡⋈10 ⋄ 𝕗}) ⋈10}_eqvar a %% ⋈¨ 5+↕10
 !∘0⍟⟨↕0, ⟨⟩, ""⟩ 0 %% ⟨⟨⟩,⟨⟩,⟨⟩⟩
-!"Calling a modifier" % 1⊸+⍟{∘} 0
+!"Cannot call a 2-modifier as a function" % 1⊸+⍟{∘} 0
 !"⍟: 𝔾 contained non-number" % 1⊸+⍟⟨1,∘,3⟩ 0
 !"Expected integer, got 1.5" % 1⊸+⍟1.5 0
 !"Integer out of range: 1e20" % 1⊸+⍟1e20 0

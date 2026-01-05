@@ -410,6 +410,12 @@ NOINLINE NORETURN void expU_f64(f64 what) {
   thrF("Integer out of range: %f", what);
 }
 
+NOINLINE NORETURN void callMd(B x) {
+  debug_assert(isMd(x));
+  thrF("Cannot call a %i-modifier as a function", isMd1(x)? 1 : 2);
+}
+
+
 
 
 usz depthF(B x) { // doesn't consume

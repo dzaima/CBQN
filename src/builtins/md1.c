@@ -6,8 +6,6 @@
 
 
 
-#define callMd errMd  // TODO make it an h.h function that doesn't check type
-
 SHOULD_INLINE Arr* reshape_one_eachfill(usz ia, B x) { // doesn't consume x
   if (EACH_FILLS) {
     return reshape_one(ia, inc(x));
