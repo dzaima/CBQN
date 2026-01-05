@@ -3,6 +3,10 @@
  #define MAP_NORESERVE 0 // apparently needed for freebsd or something
 #endif
 
+#define IMAX(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ > b_? a_ : b_; })
+#define IMIN(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ < b_? a_ : b_; })
+#define ICMP(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); (a_>b_?1:0)-(a_<b_?1:0); })
+
 static void storeu_u64(void* p, u64 v) { memcpy(p, &v, 8); }  static u64 loadu_u64(void* p) { u64 v; memcpy(&v, p, 8); return v; }
 static void storeu_u32(void* p, u32 v) { memcpy(p, &v, 4); }  static u32 loadu_u32(void* p) { u32 v; memcpy(&v, p, 4); return v; }
 static void storeu_u16(void* p, u16 v) { memcpy(p, &v, 2); }  static u16 loadu_u16(void* p) { u16 v; memcpy(&v, p, 2); return v; }
@@ -347,7 +351,6 @@ void noop_visit(Value* x);
 
 
 
-#define ICMP(W,X) ({ AUTO wt = (W); AUTO xt = (X); (wt>xt?1:0)-(wt<xt?1:0); })
 SHOULD_INLINE i32 floatCompare(f64 w, f64 x) { // w •Cmp x
   if (RARE(w!=w || x!=x)) return (w!=w) - (x!=x);
   #if __x86_64__
