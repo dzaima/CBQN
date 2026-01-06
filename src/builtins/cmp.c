@@ -15,7 +15,7 @@ static NOINLINE void fillBitsDec(u64* dst, u64 sz, bool v, u64 x) {
 static NOINLINE u8 aMakeEq(B* w, B* x, u8 we, u8 xe) { // returns el_MAX if failed
   B* p = we<xe?w:x;
   B s = *p;
-  u8 me = we>xe?we:xe;
+  u8 me = IMAX(we,xe);
   if (elNum(we) & elNum(xe)) {
     switch(me) { default: UD;
       case el_i8:  s = taga(cpyI8Arr (s)); break;
@@ -144,7 +144,7 @@ B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr);
   ur wr=RNK(w); usz* wsh=SH(w);         \
   ur xr=RNK(x); usz* xsh=SH(x);         \
   if (wr!=xr) {                         \
-    ur mr = wr<xr? wr : xr;             \
+    ur mr = IMIN(wr, xr);               \
     if (IA(w)==0 || IA(x)==0) goto base;\
     if (!eqShPart(wsh, xsh, mr)) goto badShape; \
     return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \

@@ -223,7 +223,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     while (true) {
       i32 curr1 = bodyPs[pos1];
       i32 curr2 = bodyPs[pos2];
-      i32 currBody = curr1<curr2? curr1 : curr2;
+      i32 currBody = IMIN(curr1, curr2);
       if (currBody==I32_MAX) break;
       // printf("step %d %d:  %d %d %d\n", pos1, pos2, curr1, curr2, currBody);
       bool is1 = curr1==currBody; if (is1) pos1++;
@@ -1340,7 +1340,7 @@ GLOBAL CatchFrame* cfEnd;
 jmp_buf* prepareCatch() {
   if (cf==cfEnd) {
     u64 n = cfEnd-cfStart;
-    n = n<8? 8 : n*2;
+    n = IMAX(n*2, 8);
     u64 d = cf-cfStart;
     cfStart = realloc(cfStart, n*sizeof(CatchFrame));
     cf    = cfStart+d;

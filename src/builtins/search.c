@@ -93,7 +93,7 @@ static u64 elRange(u8 eltype) { return 1ull<<(1<<elwBitLog(eltype)); }
 #define TABLE(IN, FOR, TY, INIT, SET) \
   usz it = elRange(IN##e);   /* Range of writes        */                    \
   usz ft = elRange(FOR##e);  /* Range of lookups       */                    \
-  usz t = it>ft? it : ft;    /* Table allocation width */                    \
+  usz t = IMAX(it, ft);      /* Table allocation width */                    \
   TALLOC(TY, tab0, t); TY* tab = tab0 + t/2;                                 \
   usz m=IN##ia, n=FOR##ia;                                                   \
   void* ip = tyany_ptr(IN);                                                  \
@@ -167,7 +167,7 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
       usz csz = arr_csz(p);
       u8 neb = elwBitLog(ne);
       u8 peb = elwBitLog(pe);
-      u8 meb = neb>peb? neb : peb;
+      u8 meb = IMAX(neb, peb);
       ux rb = csz<<meb;
       if (rb!=0 && rb<=62) {
         if (n.u == p.u) { decG(p); n=toIntCell(n,rb,1); return (B2){.n=n, .p=incG(n)}; }
@@ -488,9 +488,9 @@ B count_c2(B t, B w, B x) {
     if (we<=el_i16 && xe<=el_i16) {
       if (we==el_bit) { w = toI8Any(w); we = el_i8; }
       if (xe==el_bit) { x = toI8Any(x); xe = el_i8; }
-      usz it = elRange(we);    // Range of writes
-      usz ft = elRange(xe);    // Range of lookups
-      usz t = it>ft? it : ft;  // Table allocation width
+      usz it = elRange(we); // Range of writes
+      usz ft = elRange(xe); // Range of lookups
+      usz t = IMAX(it, ft); // Table allocation width
       TALLOC(i32, tab0, t); i32* tab = tab0 + t/2;
       usz m=wia, n=xia;
       void* ip = tyany_ptr(w);

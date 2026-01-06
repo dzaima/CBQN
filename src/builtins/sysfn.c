@@ -155,7 +155,7 @@ B grLen_both(i64 ria, B x) { // assumes integer x
   B r;
   usz ia = IA(x);
   if (ia==0) {
-    r = taga(arr_shVec(allZeroes(ria<=0? 0 : ria)));
+    r = taga(arr_shVec(allZeroes(IMAX(0, ria))));
     goto r_r;
   }
   SGetU(x)

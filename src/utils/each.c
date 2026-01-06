@@ -344,7 +344,7 @@ static FillRes fill_evalDy(B w, B x, u32 cfg) { // doesn't consume; result FI_UP
   
   ux wia = IA(w);
   ux xia = IA(x);
-  ux ria = wia>xia? wia : xia;
+  ux ria = IMAX(wia, xia);
   Arr* r = m_fillarr0p(ria);
   B oM = wg? w : x;
   arr_shCopy(r, oM);

@@ -197,7 +197,7 @@ B sum_c1(B t, B x) {
     i64 m = 1ull<<48;
     usz b = sum_small_max;
     for (usz i=0; i<ia; i+=b) {
-      s += sum_small_fns[sel]((u8*)xv + (i<<sel), ia-i<b? ia-i : b);
+      s += sum_small_fns[sel]((u8*)xv + (i<<sel), IMIN(ia-i, b));
       if (s >=  m) { r+=m; s-=m; }
       if (s <= -m) { r-=m; s+=m; }
     }

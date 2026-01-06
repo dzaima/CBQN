@@ -548,7 +548,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
     // return take? c2rt(take, w, x) : c2rt(drop, w, x);
     
     ur xr = RNK(x);
-    ur rr = xr>wia? xr : wia;
+    ur rr = IMAX(xr, wia);
     assert(rr>=2);
     ShArr* rsh = m_shArr(rr);
     
@@ -1020,7 +1020,7 @@ B join_c2(B t, B w, B x) {
   ur xr = RNK(x);
   B f = fill_both(w, x);
   
-  ur c = wr>xr?wr:xr;
+  ur c = IMAX(wr, xr);
   if (c==0) {
     HArr_p r = m_harrUv(2);
     r.a[0] = TO_GET(w, 0);
@@ -1138,7 +1138,7 @@ B shiftb_c2(B t, B w, B x) {
   usz wia = IA(w);
   usz xia = IA(x);
   MAKE_MUT_INIT(r, xia, el_or(TI(w,elType), TI(x,elType))); MUTG_INIT(r);
-  int mid = wia<xia? wia : xia;
+  int mid = IMIN(wia, xia);
   mut_copyG(r, 0  , w, 0, mid);
   mut_copyG(r, mid, x, 0, xia-mid);
   decG(w);
@@ -1618,7 +1618,7 @@ B drop_powd(i64 am, B w, B x) {
     usz wia = IA(w);
     if (wia >= UR_MAX) thrM("𝕨↓𝕩: Result rank too large");
     ur xr = RNK(x);
-    ur rr = xr>wia? xr : wia;
+    ur rr = IMAX(xr, wia);
     if (rr==1) { dec(w); return x; } // shape is ⟨0⟩
     ShArr* sh = m_shArr(rr);
     usz* rsh = sh->a;
@@ -1747,7 +1747,7 @@ B join_powd(bool aft, i64 am, B w, B x) {
   assert(am > 0);
   ur wr = isArr(w)? RNK(w) : 0;
   ur xr = isArr(x)? RNK(x) : 0;
-  ur rr = wr>xr?wr:xr; if (rr==0) rr=1;
+  ur rr = IMAX(1, IMAX(wr,xr));
   ur cr = rr - 1;
   if (cr>wr || cr>xr || (cr>0 && !eqShPart(SH(w)+wr-cr, SH(x)+xr-cr, cr))) {
     if (aft) { B t=w; w=x; x=t; }

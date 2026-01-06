@@ -1160,7 +1160,7 @@ B libffiFn_c1(B t, B x) { return libffiFn_c2(t, bi_N, x); }
 
 
 static u64 calcAtomSize(B chr) {
-  return styG(chr)==sty_a? sizeof(BQNV) : sizeof(ffi_arg)>8? sizeof(ffi_arg) : 8;
+  return styG(chr)==sty_a? sizeof(BQNV) : IMAX(sizeof(ffi_arg), 8);
 }
 static u64 calcMemSize(B o);
 static NOINLINE u64 calcMemSizeCompound(B o) {

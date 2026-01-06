@@ -151,7 +151,7 @@ static void bsp_block_u32(u64* src, u32* dst, usz len, usz sum, usz off) {
 }
 static void bsp_u16(u64* src, u16* dst, usz len, usz sum) {
   usz b = bsp_max;
-  usz bufsize = b<sum? b : sum;
+  usz bufsize = IMIN(b, sum);
   TALLOC(u32, buf, bufsize+1);
   for (usz j=0; j<bufsize; j++) buf[j]=0;
   for (usz i=0; i<len; i+=b) {
@@ -384,7 +384,7 @@ B grade_bool(B x, usz xia, bool up) {
     u64* xp1 = xp;
     for (usz i=0; i<xia; i+=b) {
       vfor (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
-      usz b2 = b>xia-i? xia-i : b;
+      usz b2 = IMIN(b, xia-i);
       if (b2<b) { u64 q=b2%64; usz e=b2/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
       usz s0=bit_sum(xp0,b2); si_1slash32(xp0, i, rp0, b2, s0); rp0+=s0;
       usz s1=b2-s0;           si_1slash32(xp1, i, rp1, b2, s1); rp1+=s1;

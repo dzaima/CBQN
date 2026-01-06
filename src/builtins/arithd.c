@@ -283,7 +283,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
     
     #define AR_I_AA(CHR, NAME, EXPR, BIT, EXTRA) NOINLINE B NAME##_AA(B t, B w, B x) { \
       ur wr=RNK(w); usz* xsh=SH(x);                              \
-      ur xr=RNK(x); usz* wsh=SH(w); ur mr=wr<xr?wr:xr;           \
+      ur xr=RNK(x); usz* wsh=SH(w); ur mr=IMIN(wr,xr);           \
       if (!eqShPart(wsh, xsh, mr)) thrF("𝕨"CHR "𝕩: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
       if (wr!=xr) {                                              \
         if (TI(w,elType)!=el_B && TI(x,elType)!=el_B && IA(w)!=0 && IA(x)!=0) return leading_axis_arith(NAME##_c2, w, x, wsh, xsh, mr); \
@@ -492,7 +492,7 @@ static u64 gcd_u64(u64 a, u64 b) {
   if (b == 0) return a;
   u8 az = CTZ(a);
   u8 bz = CTZ(b);
-  u8 sh = az<bz? az : bz;
+  u8 sh = IMIN(az, bz);
   
   b >>= bz;
   while (1) {

@@ -939,9 +939,9 @@ void mutF_init(void) {
   for (u8 i = 0; i <= el_MAX; i++) {
     for (u8 j = 0; j <= el_MAX; j++) {
       u8 el;
-      if (i==el_MAX|j==el_MAX) el = i>j?j:i;
-      else if (elNum(i) && elNum(j)) el = i>j?i:j;
-      else if (elChr(i) && elChr(j)) el = i>j?i:j;
+      if (i==el_MAX|j==el_MAX) el = IMIN(i,j);
+      else if (elNum(i) && elNum(j)) el = IMAX(i,j);
+      else if (elChr(i) && elChr(j)) el = IMAX(i,j);
       else el = el_B;
       el_orArr[i*16 + j] = el;
     }

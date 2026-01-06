@@ -580,7 +580,6 @@ static NOINLINE void print_jit_line(Body* body, usz* bc, usz bcpos) {
 }
 #endif
 typedef B JITFn(B* cStack, Scope* sc);
-static inline i32 maxi32(i32 a, i32 b) { return a>b?a:b; }
 Nvm_res m_nvm(Body* body) {
   #if ASM_TEST
     asm_test();
@@ -643,7 +642,7 @@ Nvm_res m_nvm(Body* body) {
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     // #define LEA0(O,I,OFF) { MOV(O,I); ADDI(O,OFF); }
     #define LEA0(O,I,OFF,Q) ({ i32 o=(OFF); if (Q||o) LEAi(O,I,o); o?O:I; })
-    #define SPOSq(N) (maxi32(0, depth+(N)-1) * sizeof(B))
+    #define SPOSq(N) (IMAX(0, depth+(N)-1) * sizeof(B))
     #define SPOS(R,N,Q) LEA0(R, r_CS, SPOSq(N), Q) // load stack position N in register R; if Q==0, then might not write and instead return another register which will have the wanted value
     #define INV(N,D,F) SPOS(R_A##N, D, 1); CCALL(F)
     #define TOPpR(R) MOV(R,R_RES)

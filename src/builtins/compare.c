@@ -23,7 +23,7 @@ NOINLINE i32 compareF(B w, B x) {
   ur xr=RNK(x); usz* xsh=SH(x);
   
   i32 rc = ICMP(wr, xr);
-  ur rr = wr<xr? wr : xr;
+  ur rr = IMIN(wr, xr);
   i32 ri = 0; // matching shape tail
   usz rm = 1;
   while (ri<rr  &&  wsh[wr-1-ri] == xsh[xr-1-ri]) {
@@ -34,7 +34,7 @@ NOINLINE i32 compareF(B w, B x) {
     usz wm = wsh[wr-1-ri];
     usz xm = xsh[xr-1-ri];
     rc = ICMP(wm, xm);
-    rm*= wm<xm? wm : xm;
+    rm*= IMIN(wm, xm);
   }
   
   usz wia = IA(w);

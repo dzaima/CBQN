@@ -140,11 +140,11 @@ B repeat_c1(Md2D* d, B x) {
         am = 0; break;
       case n_stile: case n_shape:
       case n_indexOf: case n_find: case n_and: case n_or:
-        if (am > 1) { am = 1; } break;
+        am = IMIN(1, am); break;
       case n_eq: case n_ne: case n_feq:
-        if (am > 2) { am = 2; } break;
+        am = IMIN(2, am); break;
       case n_fne:
-        if (am > 3) { am = 3; } break;
+        am = IMIN(3, am); break;
       case n_reverse:
         am &= 1;
         if (am==0 && (isAtm(x) || RNK(x)==0)) thrM("⌽𝕩: 𝕩 cannot be a unit");
@@ -195,13 +195,13 @@ B repeat_c2(Md2D* d, B w, B x) {
       case n_rtack: am = 0; break;
       case n_ltack: am = am<0 ? -1 : 1; break;
       case n_floor: case n_ceil: case n_shape: case n_take:
-        if (am > 1) { am = 1; } break;
+        am = IMIN(1, am); break;
       // For comparisons, first application returns a boolean
       // Then for atom e in w, e⊸Cmp is a monadic boolean function 01⊢¬
       // All these repeat at 2 iterations; all but ¬ are idempotent
       // For < and ≤, ¬ is not possible because e.g. (e<0) ≤ (e<1)
       case n_le: case n_lt:
-        if (am > 2) { am = 2; } break;
+        am = IMIN(2, am); break;
       case n_gt: case n_ge: case n_eq: case n_ne: case n_feq: case n_fne:
         if (am<0) goto gen; // else fallthrough
       case n_sub: // 2 or 3 times needed, checked by bqn-smt

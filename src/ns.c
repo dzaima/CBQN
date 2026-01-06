@@ -10,7 +10,7 @@ void m_nsDesc(Body* body, bool imm, u8 ty, i32 actualVam, B nameList, B varIDs, 
   i32 off = (ty==0?0:ty==1?2:3) + (imm?0:3);
   i32 vam = ia+off;
   
-  NSDesc* r = mm_alloc(fsizeof(NSDesc, expGIDs, i32, actualVam<2?2:actualVam), t_nsDesc);
+  NSDesc* r = mm_alloc(fsizeof(NSDesc, expGIDs, i32, IMAX(actualVam,2)), t_nsDesc);
   r->varAm = vam;
   SGetU(varIDs)
   SGetU(exported)
@@ -125,7 +125,7 @@ Body* m_nnsDescF(i32 n, char** names) {
   bl->bodyCount = 0;
   gc_add(tag(bl, OBJ_TAG));
   
-  NSDesc* nd = mm_alloc(fsizeof(NSDesc, expGIDs, i32, n<2?2:n), t_nsDesc);
+  NSDesc* nd = mm_alloc(fsizeof(NSDesc, expGIDs, i32, IMAX(n,2)), t_nsDesc);
   nd->varAm = n;
   for (usz i = 0; i < n; i++) nd->expGIDs[i] = str2gid(HARR_O(nl).a[i]);
   

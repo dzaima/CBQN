@@ -230,7 +230,7 @@ NOINLINE B int_squeeze_sorted(B x, Arr* xa, u8 type, ux ia) {
   }
   u8 x0e = selfElType_i32(x0v);
   u8 x1e = selfElType_i32(x1v);
-  u8 re = x0e>x1e? x0e : x1e;
+  u8 re = IMAX(x0e, x1e);
   if (xe == re) goto squeezed;
   u8 flags = FLV_GET(xa) | fl_squoze;
   Arr* ra;

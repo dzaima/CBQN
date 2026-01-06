@@ -288,7 +288,7 @@ B transp_c2(B t, B w, B x) {
     usz xl=xsh[i], l=rsh[j];
     dup += l!=no_sh;
     id += i==j;
-    max = j>max? j : max;
+    max = IMAX(j, max);
     if (xl<l) rsh[j]=xl;
   }
   if (id == wia) { r = x; goto ret; }
@@ -539,7 +539,7 @@ static B invert_transp_w(B w, ur xr) {
       usz a=o2s(GetU(w, i));
       if (a>=xr) thrF("𝕨⍉⁼𝕩: Axis %s does not exist (%i≡=𝕩)", a, xr);
       dup |= p[a]!=xr;
-      max = a>max? a : max;
+      max = IMAX(a, max);
       p[a] = i;
     }
     if (dup) { TFREE(p); decG(w); return bi_N; } // Handled by caller
@@ -598,7 +598,7 @@ B transp_powd(i64 am, B w, B x) {
       if (a>=xr) thrF("𝕨⍉%U𝕩: Axis %s does not exist (%i≡=𝕩)", mod, a, xr);
       dup += pi[a]!=xr;
       id += i==a;
-      max = a>max? a : max;
+      max = IMAX(a, max);
       p[i] = a; pi[a] = i;
     }
     if (dup) {

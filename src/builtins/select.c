@@ -155,7 +155,7 @@ B select_powm(i64 am, B x) {
   ur xr = RNK(x);
   usz* xsh = SH(x);
   if (RARE(IA(x)==0)) {
-    ur dr = xr<am ? xr : am;
+    ur dr = IMIN(xr, am);
     for (ur i=0; i<dr; i++) if (xsh[i]==0) thrF("⊏𝕩: 𝕩 shape cannot start with 0 (%2H ≡ ≢𝕩)", xr-i, xsh+i);
   }
   if (xr < am) thrM("⊏𝕩: 𝕩 cannot be rank 0");
@@ -1040,7 +1040,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
         assert(ie==el_i8 && csz<=8 && indn<=8 && csz>=2 && indn>=1);
         // TODO si_select_cells_bit_lt64 for indn==1
         static const u8 rep_lut[9] = {0,3,2,1,1,0,0,0,0};
-        u8 exp = rep_lut[csz>indn? csz : indn];
+        u8 exp = rep_lut[IMAX(csz, indn)];
         ux rindn = indn<<exp;
         ux rcsz = csz<<exp;
         assert(rcsz<=8 && rindn<=8);
@@ -1125,7 +1125,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
         
       } else {
         rep = 1;
-        used_lnt = lnt<min_lnt? min_lnt : lnt;
+        used_lnt = IMAX(lnt, min_lnt);
       }
       
       assert(indn*rep <= max_indn);

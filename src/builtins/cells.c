@@ -209,7 +209,7 @@ NOINLINE B leading_axis_arith(FC2 fc2, B w, B x, usz* wsh, usz* xsh, ur mr) { //
   
   B b = mr==wr? x : w; // bigger argument
   usz* bsh = mr==wr? xsh : wsh;
-  ur br = wr>xr? wr : xr;
+  ur br = IMAX(wr, xr);
   
   usz csz = shProd(bsh, mr, br);
   if (HEURISTIC(csz<5120>>arrTypeBitsLog(TY(b)))) {
@@ -862,8 +862,8 @@ NOINLINE B for_cells_AA(B f, B w, B x, ur wcr, ur xcr, u32 chr) { // w FâŽ‰wcrâ€
     }
     if (isPervasiveDy(f)) {
       if (TI(w,elType)==el_B || TI(x,elType)==el_B) goto generic;
-      ur mr = xr<wr? xr : wr;
-      if ((wk>mr?mr:wk) != (xk>mr?mr:xk) || !eqShPart(wsh, xsh, mr)) goto generic;
+      ur mr = IMIN(xr, wr);
+      if (IMIN(wk,mr) != IMIN(xk,mr) || !eqShPart(wsh, xsh, mr)) goto generic;
       return c2(f, w, x);
     }
   } else if (!isMd(f)) {
