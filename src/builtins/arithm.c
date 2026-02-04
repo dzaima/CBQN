@@ -5,8 +5,9 @@
 #include <math.h>
 
 static inline B arith_recm(FC1 f, B x) {
-  B fx = getFillR(x);
-  B r = eachm_fn(bi_N, x, f);
+  B fx = getFillN(x);
+  if (!noFill(fx)) fx = fill_charToErrOwned(fx);
+  B r = eachm_fn(bi_z, x, f);
   return withFill(r, fx);
 }
 
@@ -25,8 +26,7 @@ B add_c1(B t, B x) {
   if (isF64(x)) return x;
   if (!isArr(x)) thrM("+𝕩: Argument must consist of numbers");
   if (elNum(TI(x,elType))) return x;
-  decG(eachm_fn(bi_z, incG(x), add_c1));
-  return x;
+  return arith_recm(add_c1, x);
 }
 #if SINGELI_SIMD
   #define SINGELI_FILE monarith

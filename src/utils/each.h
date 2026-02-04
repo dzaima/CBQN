@@ -20,3 +20,4 @@ static inline B squeezed_unit(B x) { // same fill as squeeze_any(m_hunit(x))
 // cfg: A_B | ...A_[NC][NC](A_NUM or A_CHR)
 // A_WX(V) specifies that, for 𝕨 of type W and 𝕩 of type X, the expected fill is V; unspecified/V≡0 cases are errors
 NOINLINE B arith_recd(FC2 f, B w, B x, u32 cfg);
+B fill_charToErrOwned(B x); // doesn't consume

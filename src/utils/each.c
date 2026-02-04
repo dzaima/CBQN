@@ -120,7 +120,7 @@ B eachm_fn(B fo, B x, FC1 f) {
 
 
 #define FI_REF 1 // whether incG is needed to get an owned copy
-#define FI_NEW 2 // whteher decG is needed in case the result is unneeded; implies FI_UPD
+#define FI_NEW 2 // whether decG is needed in case the result is unneeded; implies FI_UPD
 #define FI_UPD 4 // whether this is different from the input
 typedef struct {
   B r;
@@ -381,4 +381,9 @@ B arith_recd(FC2 f, B w, B x, u32 cfg) {
   B fill = fill_own(fill_evalDy(fw, fx, cfg));
   B r = eachd_fn(bi_z, w, x, f);
   return withFill(r, fill);
+}
+
+B fill_charToErrOwned(B x) {
+  assert(!noFill(x));
+  return fill_own(fill_charToErr(x));
 }
