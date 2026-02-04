@@ -136,9 +136,7 @@ NOINLINE bool fillEqualF(B w, B x) { // doesn't consume; both args must be array
 B withFill(B x, B fill) { // consumes both
   assert(isArr(x));
   if (DEBUG) validateFill(fill);
-  u8 xt = TY(x);
-  if (noFill(fill) && xt!=t_fillarr && xt!=t_fillslice) return x;
-  switch(xt) {
+  switch(TY(x)) {
     case t_f64arr: case t_f64slice: case t_bitarr:
     case t_i32arr: case t_i32slice: case t_i16arr: case t_i16slice: case t_i8arr: case t_i8slice: if(numFill(fill)) return x; break;
     case t_c32arr: case t_c32slice: case t_c16arr: case t_c16slice: case t_c8arr: case t_c8slice: if(chrFill(fill)) return x; break;
@@ -151,7 +149,7 @@ B withFill(B x, B fill) { // consumes both
       }
       break;
   }
-  usz ia = IA(x);
+  
   if (!FL_HAS(x,fl_squoze)) {
     u8 xe;
     if (numFill(fill)) {
@@ -162,13 +160,14 @@ B withFill(B x, B fill) { // consumes both
       if (elChr(xe)) return x;
     }
   }
+  
   Arr* r;
+  usz ia = IA(x);
   B* xbp = arr_bptr(x);
   if (xbp!=NULL) {
-    Arr* xa = a(x);
-    if (ARR_IS_SLICE(PTY(xa))) xa = ptr_inc(((Slice*)xa)->p);
-    else ptr_inc(xa);
-    r = m_fillslice(xa, xbp, ia, fill);
+    Arr* arr = a(x);
+    if (ARR_IS_SLICE(PTY(arr))) arr = ((Slice*)arr)->p;
+    r = m_fillslice(ptr_inc(arr), xbp, ia, fill);
   } else {
     FillArr* rf = m_arr(fsizeof(FillArr,a,B,ia), t_fillarr, ia);
     rf->fill = fill;
