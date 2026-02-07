@@ -481,6 +481,10 @@ B iHasFill_c1(B t, B x) {
   dec(x);
   return m_f64(ret);
 }
+B iWithFill_c2(B t, B w, B x) {
+  if (isAtm(x)) thrM("𝕨 •internal.WithFill 𝕩: 𝕩 must be an array");
+  return withFill(x, asFill(w));
+}
 
 B iPureKeep_c1(B t, B x) { return x; }
 B iKeep_c1(B t, B x) { return x; }
@@ -564,8 +568,8 @@ B getInternalNS(void) {
     #undef F
     
     #define F(X) incG(bi_##X),
-    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep", "purekeep","listvariations","variation","clearrefs", "hasfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats", "objflags", "properties", "validate", "indistinguishable");
-    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(iPureKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats)F(iObjFlags)F(iProperties)F(iValidate)F( indistinguishable));
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep", "purekeep","listvariations","variation","clearrefs", "hasfill", "withfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats", "objflags", "properties", "validate", "indistinguishable");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(iPureKeep)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(iWithFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats)F(iObjFlags)F(iProperties)F(iValidate)F( indistinguishable));
     #undef F
     gc_add(internalNS);
   }
