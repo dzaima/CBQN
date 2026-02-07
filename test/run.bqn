@@ -21,6 +21,8 @@ Trim ← {((∨`⌾⌽∧∨`)𝕩≠' ')/𝕩}
   •Exit 0
 }⍟⊢ (0=≠•args) ∨´ "help"‿"h"‿"?"∊'-'⊸≠⊸/¨•args
 
+indistinguishable ← {⟨I⇐Indistinguishable⟩: I; EEqual} •internal
+⟨EEqual, HasFill⟩←•internal
 o ← {
   args ← •args
   search ⇐ @
@@ -145,7 +147,7 @@ Run ← { 𝕊 testname:
     idx ← ⊑str⊐'%'
     {
       idx ≡ ≠str? ⟨ns, "eval", str⟩;
-      (i2←idx+1)<≠str? '%'≡i2⊑str? ⟨ns, "equal", idx↑str, (2+idx)↓str⟩;
+      (i2←idx+1)<≠str? '%'≡i2⊑str? id←'%'≡(i2+1)⊑str ⋄ ⟨ns, {id? "indistinguishable"; "equal"}, idx↑str, ({id? 3; 2}+idx)↓str⟩;
       {𝕊: Fail (Pos ln)∾": Unknown test format"}⍟⊢ '!'≢⊑str
       ⟨ns, "error", (idx+1)↓str, 1↓idx↑str⟩
     }
@@ -206,12 +208,13 @@ Run ← { 𝕊 testname:
           1‿got
         }
       };
-      ns‿"equal"‿str‿exp: {
+      ns‿kind‿str‿exp: ∨´md←kind⊸≡¨"indistinguishable"‿"equal"? {
         ok‿got ← (1⋈Eval)_catch_(0⋈ErrMsg) str
         exp ↩ EvalS exp
+        eq ← {md≡0‿1? EEqual; Indistinguishable}
         {
           ¬ok? Bad "Expected value, but got error: "∾got ⋄ @;
-          got •internal.EEqual exp? @;
+          got Eq exp? @;
           ⟨"Expected: "∾•Repr exp ⋄ "Got:      "∾•Repr⎊•Show got⟩ Bad "Wrong value"
           2‿got
         }
@@ -232,6 +235,7 @@ Run ← { 𝕊 testname:
           [idxs, upd] ← ⍉>res {
             1‿new 𝕊 ⟨⟨ln⟩, "error", str, ·⟩: ln ⋈ ∾⟨"!", •Repr new, " ", ⊑∘⊐⟜'%'⊸↓ ln⊑lns⟩;
             2‿new 𝕊 ⟨⟨ln⟩, "equal", str, ·⟩: ln ⋈ ∾⟨{⋈⁼/" %% "⍷𝕩}⊸↑ ln⊑lns, " %% ", •Repr new⟩;
+            2‿new 𝕊 ⟨⟨ln⟩, "indistinguishable", str, ·⟩: ln ⋈ ∾⟨{⋈⁼/" %%% "⍷𝕩}⊸↑ ln⊑lns, " %%% ", IRepr new⟩;
             !𝕨⋈𝕩
           }¨ desc
           
@@ -259,8 +263,7 @@ GetTestState ← @⊸≡◶⊢‿{ 𝕊:
 } {𝕊: currTestState}
 
 helpers ← {
-  ⟨TV⇐Variation, CLR⇐ClearRefs, HasFill, EEqual, ListVariations⟩ ← •internal
-  indistinguishable ← {⟨I⇐Indistinguishable⟩: I; EEqual} •internal
+  ⟨TV⇐Variation, CLR⇐ClearRefs, ListVariations⟩ ← •internal
   _tvar0_ ⇐ {
       F _𝕣_ LV x: (CLR@) ⊢        {         F 𝕩 TV x}¨ LV 𝕩;
     w F _𝕣_ LV x: (CLR@) ⊢ (LV 𝕨) {(𝕨 TV w) F 𝕩 TV x}⌜ LV 𝕩
@@ -269,8 +272,8 @@ helpers ← {
   shouldNotError ⇐ o.noerr
   slow ⇐ o.slow
   
-  {o.heapverify? Indistinguishable↩EEqual; @}
-  Classify ← {(≢𝕩)⥊ ⊐Indistinguishable⌜˜ ⥊𝕩}
+  eqvarEq ← {o.heapverify? EEqual; Indistinguishable}
+  Classify ← {(≢𝕩)⥊ ⊐EqvarEq⌜˜ ⥊𝕩}
   
   _eqvar0_ ⇐ { LV ← 𝔾
     r ← 𝕨 𝔽 _tvar0_ 𝔾 𝕩
@@ -279,7 +282,7 @@ helpers ← {
     {
       r0 ← ⊑𝕩
       {
-        r0 Indistinguishable 𝕩?
+        r0 EqvarEq 𝕩?
           1;
         
         classes ← {
