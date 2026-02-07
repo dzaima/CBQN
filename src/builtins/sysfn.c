@@ -145,12 +145,8 @@ B fill_c1(B t, B x) {
   dec(x);
   return r;
 }
-B fill_c2(B t, B w, B x) { // TODO not set fill for typed arrays
-  if (isArr(x)) {
-    B fill = asFill(w);
-    if (noFill(fill)) return x;
-    return withFill(x, fill);
-  }
+B fill_c2(B t, B w, B x) {
+  if (isArr(x)) return withFill(x, asFill(w));
   dec(w);
   return x;
 }
