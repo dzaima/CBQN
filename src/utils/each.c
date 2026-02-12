@@ -148,6 +148,10 @@ static NOINLINE FillRes asChrFill(B x) {
 static NOINLINE FillRes asNumFill(B x) {
   RET_FILL(taga(arr_shCopy(allZeroesFl(IA(x)), x)), FI_NEW|FI_UPD);
 }
+static NOINLINE FillRes asNoFill(B x) { // semantically, replace fill and elements of x with bi_noFill
+  if (IA(x) == 0) RET_FILL(RNK(x)==1? emptyHVec() : m_harrUc(x).b, FI_NEW|FI_UPD);
+  RET_FILL(bi_noFill, FI_UPD);
+}
 
 static FillRes fill_updateCore(B x, FillRes (*fn)(B x)) {
   debug_assert(TI(x,elType)==el_B); // not strictly required by any code here, but if this weren't the case the squeeze_any's would benefit from an elType quick path
@@ -199,7 +203,7 @@ static FillRes fill_charToErr(B x) { // doesn't consume; num→num, char→bi_no
   
   u8 xe = TI(x,elType);
   if (elNum(xe)) RET_FILL(x, FI_REF);
-  if (elChr(xe)) RET_FILL(bi_noFill, FI_UPD);
+  if (elChr(xe)) return asNoFill(x);
   
   return fill_updateCore(x, fill_charToErr);
 }
@@ -227,7 +231,7 @@ static FillRes fill_charOnlyToNum(B x) { // doesn't consume; num→bi_noFill, ch
   
   u8 xe = TI(x,elType);
   if (elChr(xe)) return asNumFill(x);
-  if (elNum(xe)) RET_FILL(bi_noFill, FI_UPD);
+  if (elNum(xe)) return asNoFill(x);
   
   return fill_updateCore(x, fill_charOnlyToNum);
 }
@@ -241,7 +245,7 @@ static FillRes fill_numOnlyToChar(B x) { // doesn't consume; num→char, char→
   }
   u8 xe = TI(x,elType);
   if (elNum(xe)) return asChrFill(x);
-  if (elChr(xe)) RET_FILL(bi_noFill, FI_UPD);
+  if (elChr(xe)) return asNoFill(x);
   
   return fill_updateCore(x, fill_numOnlyToChar);
 }
@@ -260,6 +264,13 @@ static FillRes fill_swapNumChar(B x) { // doesn't consume; num→char, char→nu
   return fill_updateCore(x, fill_swapNumChar);
 }
 
+static FillRes fill_allToNone(B x) { // doesn't consume; changes both nums and chars to bi_noFill, but preserves the structure of empty arrays
+  if (!isArr(x)) RET_FILL(bi_noFill, FI_UPD);
+  u8 xe = TI(x,elType);
+  if (xe != el_B) return asNoFill(x);
+  return fill_updateCore(x, fill_allToNone);
+}
+
 static NOINLINE FillRes fill_fixedNum(ux mixed, B arr, u32 cfg) {
   // printf("fill_fixedNum: %zu\n", mixed&3);
   switch (mixed & 3) { default: UD;
@@ -272,7 +283,7 @@ static NOINLINE FillRes fill_fixedChr(ux mixed, B arr, u32 cfg) {
   // printf("fill_fixedChr: %zu %d\n", mixed&3, (cfg>>6) & 3);
   switch ((mixed&3) | ((cfg>>6) & 3)<<2) { default: UD;
     //   numarr|chrarr<<2
-    case 0               : RET_FILL(bi_noFill, FI_UPD);
+    case 0               : return fill_allToNone(arr);
     case A_CHR           : return fill_numOnlyToChar(arr);
     case         A_NUM<<2: return fill_charOnlyToNum(arr);
     case A_NUM | A_NUM<<2: return fill_charToNum(arr);
@@ -320,7 +331,7 @@ static FillRes fill_evalDy(B w, B x, u32 cfg) { // doesn't consume; result FI_UP
     if (we!=el_B) {
       if (xe!=el_B) {
         switch (fill_case(cfg, elNum(we), elNum(xe))) { default: UD;
-          case 0: RET_FILL(bi_noFill, FI_UPD);
+          case 0: return asNoFill(w);
           case A_NUM: if (elNum(we)) RET_FILL(w, FI_REF); if (elNum(xe)) RET_FILL(x, FI_REF); return asNumFill(w);
           case A_CHR: if (elChr(we)) RET_FILL(w, FI_REF); if (elChr(xe)) RET_FILL(x, FI_REF); UD;
         }
