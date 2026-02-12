@@ -119,16 +119,16 @@ void validateFill(B x) {
 
 NOINLINE bool fillEqualF(B w, B x) { // doesn't consume; both args must be arrays
   if (!eqShape(w, x)) return false;
-  usz ia = IA(w);
-  if (ia==0) return true;
-  
   u8 we = TI(w,elType);
   u8 xe = TI(x,elType);
   if (we!=el_B && xe!=el_B) return elNum(we) == elNum(xe);
   
-  SGetU(x) SGetU(w)
-  for (usz i = 0; i < ia; i++) if(!fillEqual(GetU(w,i),GetU(x,i))) return false;
-  return true;
+  usz ia = IA(w);
+  if (ia > 0) {
+    SGetU(x) SGetU(w)
+    for (ux i = 0; i < ia; i++) if(!fillEqual(GetU(w,i),GetU(x,i))) return false;
+  }
+  return fillEqualsGetFill(getFillN(w), x);
 }
 
 
