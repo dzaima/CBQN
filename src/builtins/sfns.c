@@ -713,7 +713,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
   FLV_SET(a, fl);               \
   if (xr>1) {                   \
     usz* rsh=arr_shAlloc(a,xr); \
-    u64 wva = wv<0? -wv : wv;   \
+    u64 wva = IABS(wv);         \
     rsh[0] = SH0;               \
     shcpy(rsh+1, xsh+1, xr-1);  \
     ptr_dec(shObjS(xsh));       \
@@ -751,7 +751,7 @@ B drop_c2(B t, B w, B x) {
   
   usz xia = IA(x);
   if (n<0) {
-    if (RARE(-n >= xia)) { empty:;
+    if (RARE(-(u64)n >= xia)) { empty:;
       a = emptyArr(x, xr);
       decG(x);
       goto res;
@@ -1471,17 +1471,17 @@ static B takedrop_ucw(bool take, i64 wi, B o, u64 am, B x, ux xr) {
   usz tk = csz*am; // taken element count
   usz lv = xia-tk; // elements left alone
   
-  Arr* arg = TI(x,slice)(incG(x), wi<0? lv : 0, tk);
+  Arr* arg = TI(x,slice)(incG(x), (wi>=0) ^ take? lv : 0, tk);
   usz* ash = arr_shAlloc(arg, xr);
   if (ash) { ash[0] = am; shcpy(ash+1, SH(x)+1, xr-1); }
   
   B rep = c1(o, taga(arg));
   if (isAtm(rep)) thrF("𝔽⌾(n⊸%c): 𝔽 returned an atom", take?U'↑':U'↓');
   usz* repsh = SH(rep);
-  if (RNK(rep)!=xr || repsh[0]!=am || !eqShPart(repsh+1, SH(x)+1, xr-1)) thrF("𝔽⌾(n⊸%c)𝕩: 𝔽 must return an array with the same shape as its input (%l ≡ n, %H ≡ shape of result of 𝔽)", take?U'↑':U'↓', take? wi : -wi, rep);
+  if (RNK(rep)!=xr || repsh[0]!=am || !eqShPart(repsh+1, SH(x)+1, xr-1)) thrF("𝔽⌾(n⊸%c)𝕩: 𝔽 must return an array with the same shape as its input (%l ≡ n, %H ≡ shape of result of 𝔽)", take?U'↑':U'↓', wi, rep);
   
   MAKE_MUT_INIT(r, xia, el_or(TI(x,elType), TI(rep,elType))); MUTG_INIT(r);
-  if (wi<0) {
+  if ((wi>=0) ^ take) {
     mut_copyG(r, 0, x, 0, lv);
     mut_copyG(r, lv, rep, 0, tk);
   } else {
@@ -1496,7 +1496,7 @@ static B takedrop_ucw(bool take, i64 wi, B o, u64 am, B x, ux xr) {
 B take_ucw(B t, B o, B w, B x) {
   if (!isF64(w)) return def_fn_ucw(t, o, w, x);
   i64 wi = o2i64(w);
-  u64 am = wi<0? -wi : wi;
+  u64 am = IABS(wi);
   if (isAtm(x)) x = m_vec1(x);
   ur xr = RNK(x); if (xr==0) xr = 1;
   if (am>SH(x)[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ n, %H ≡ ≢𝕩)", wi, x);
@@ -1506,12 +1506,12 @@ B take_ucw(B t, B o, B w, B x) {
 B drop_ucw(B t, B o, B w, B x) {
   if (!isF64(w)) return def_fn_ucw(t, o, w, x);
   i64 wi = o2i64(w);
-  u64 am = wi<0? -wi : wi;
+  u64 am = IABS(wi);
   if (isAtm(x)) x = m_vec1(x);
   ur xr = RNK(x); if (xr==0) xr = 1;
   usz cam = SH(x)[0];
   if (am>cam) am = cam;
-  return takedrop_ucw(0, -wi, o, cam-am, x, xr);
+  return takedrop_ucw(0, wi, o, cam-am, x, xr);
 }
 
 static B shape_uc1_t(B r, usz ia) {

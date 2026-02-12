@@ -739,8 +739,6 @@ static NOINLINE B toW(u8 reT, u8 reW, B x) {
   }
 }
 
-FORCE_INLINE u64 i64abs(i64 x) { return x<0?-x:x; }
-
 #define CPY_UNSIGNED(REL, DIRECT, WIDEN, WEL, NARROW) \
   if (TI(x,elType)<=el_##REL) return taga(DIRECT(x)); \
   B t = WIDEN(x); WEL* tp = WEL##any_ptr(t);      \
@@ -965,8 +963,8 @@ static NOINLINE B readSimple(u8 resCType, u8* ptr) {
     case sty_i8:  return m_i32(*( i8*)ptr);  case sty_u8:  return m_i32(*( u8*)ptr);
     case sty_i16: return m_i32(*(i16*)ptr);  case sty_u16: return m_i32(*(u16*)ptr);
     case sty_i32: return m_i32(*(i32*)ptr);  case sty_u32: return m_f64(*(u32*)ptr);
-    case sty_i64: { i64 v = *(i64*)ptr; if (i64abs(v)>=(1ULL<<53)) thrM("FFI: i64 result absolute value ≥ 2⋆53"); return m_f64(v); }
-    case sty_u64: { u64 v = *(u64*)ptr; if (       v >=(1ULL<<53)) thrM("FFI: u64 result ≥ 2⋆53");                return m_f64(v); }
+    case sty_i64: { i64 v = *(i64*)ptr; if (IABS(v)>=(1ULL<<53)) thrM("FFI: i64 result absolute value ≥ 2⋆53"); return m_f64(v); }
+    case sty_u64: { u64 v = *(u64*)ptr; if (     v >=(1ULL<<53)) thrM("FFI: u64 result ≥ 2⋆53");                return m_f64(v); }
     case sty_f32: return m_f64(*(float* )ptr);
     case sty_f64: return m_f64(*(double*)ptr);
   }
