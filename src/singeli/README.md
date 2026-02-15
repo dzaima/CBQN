@@ -76,7 +76,7 @@ The SIMD operations listed aren't guaranteed to be supported on all targets, nor
 
 Of the below functions which take & return vector types of the same width, they can instead take a vector value & reinterpret it to the result type.
 
-- `w_n{E, w} == E2` - a scalar type with the quality of `E` and width `w`
+- `to_w{E, w} == E2` - a scalar type with the quality of `E` and width `w`
 - `w_d{E} == E2`, `w_h{E} == E2` - double/halve the width of a scalar type
 - `n_d{V} == V2`, `n_h{V} == V2` - double/halve element count in vector (keeps the same element width)
 - `el_d{V} == V2`, `el_h{V} == V2` - double/halve element width in vector (keeps the same count)
