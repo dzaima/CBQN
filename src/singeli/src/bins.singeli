@@ -329,7 +329,7 @@ def bin_search_branchless{up, w, wn, x, n, res, rtype} = {
       each{bin1, ss, xs, each{bind{+,h}, ss}}
       l -= h
     }
-    each{{s} => u64~~(s - ws), ss}
+    each{{s} => cast_size{u64, s - ws}, ss}
   }
   # Unroll by 4 then 1
   def search{i, k} = search{each{bind{+,i}, iota{k}}}

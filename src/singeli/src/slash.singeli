@@ -65,7 +65,7 @@ def for_special_buffered{r:*T, write_len}{vars,begin,sum,iter} = {
       assert{bufw % width{R} == 0} # to make sure the below doesn't read out-of-bounds on the stack
       store_blended_hom{r0, mask_of_first{R, end-buf}, load{R, buf}}
     } else {
-      @for (r0, buf over u64~~(end-buf)) r0 = buf
+      @for (r0, buf over cast_size{end-buf}) r0 = buf
     }
   }
 }

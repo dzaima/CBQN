@@ -98,9 +98,9 @@ local def ml_exec{i, iter, vars0, bulk, M} = {
 
 # i0 - initial batch index; not used as begin because it's in a different scale compared to end
 def for_masked{bulk, i0}{vars,begin==0,end,iter} = {
-  l:u64 = promote{u64, end}
+  l:ux = cast_size{end}
   
-  m:u64 = l / bulk
+  m:ux = l / bulk
   @for (i from i0 to m) ml_exec{i, iter, vars, bulk, mask_none}
   
   left:= l & (bulk-1)
@@ -137,15 +137,15 @@ def for_mu{bulk, unr, extra}{vars,begin==0,end,iter} = {
     {{a, b, c}} => tup{a, b, c}
   }
   
-  l:u64 = promote{u64, end}
+  l:ux = cast_size{end}
   
-  m:u64 = l / bulk
+  m:ux = l / bulk
   if (unr==1) {
     if (same{flush_max, 1/0}) {
       @for (i from 0 to m) ml_exec{tup{i}, iter, vars, bulk, mask_none}
     } else if (m > 0) {
       def done = makelabel{}
-      cs:u64 = 0
+      cs:ux = 0
       while (1) {
         def ce = __min{m, cs + flush_max-1}
         @for (i from cs to ce) ml_exec{tup{i}, iter, vars, bulk, mask_none}
@@ -157,7 +157,7 @@ def for_mu{bulk, unr, extra}{vars,begin==0,end,iter} = {
     }
   } else {
     if (m > 0) {
-      i:u64 = 0
+      i:ux = 0
       if (m >= unr) {
         def unr_iter{} = {
           def is = each{{j}=>i+j, iota{unr}}

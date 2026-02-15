@@ -5,6 +5,8 @@ include 'util/kind'
 include 'util/tup'
 
 def ux = u64
+def cast_size{x:X} = cast_size{ux, x}
+def cast_size{R, x:X if R==u64 or R==ux and isint{X}} = cast_i{R, x}
 config usz = u32
 config SLOW_PDEP = 0
 
