@@ -255,7 +255,6 @@ if_inline (hasarch{'X86_64'}) {
   include 'arch/neon_intrin/basic'
   include 'arch/neon_intrin/select'
   include './neon'
-  def {vec_shuffle16_lo}
 } else {
   def {
     __adds,__subs,__sqrt,vec_broadcast,vec_make,
@@ -263,8 +262,14 @@ if_inline (hasarch{'X86_64'}) {
     vec_shift_right,vec_shift_right_128,
     vec_merge_shift_left,vec_merge_shift_left_128,
     vec_merge_shift_right,vec_merge_shift_right_128,
-    vec_shuffle16_lo
   }
+}
+if_inline (not hasarch{'X86_64'}) {
+  def vec_shuffle16_half{h, x:V, {...is} if int_idx{h,2} and length{is}==4 and all{int_idx{.,4}, is}} = {
+    vec_shuffle{[8]u16, x, if (h) merge{range{4},is+4} else merge{is,range{4}+4}}
+  }
+  def vec_shuffle16_lo{...} = vec_shuffle16_half{0, ...}
+  def vec_shuffle16_hi{...} = vec_shuffle16_half{1, ...}
 }
 
 def mzip   {a:T, b:T, k} = el_m{T} ~~ zip   {a, b, k}
