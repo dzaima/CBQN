@@ -40,7 +40,7 @@ fn arith_sa{'s', F, swap, T, T, T}(r:*void, w:u64, x:*void, len:u64) : void = {
 
 
 fn bit_dy_as{F}(r: *u8, w: *u8, x_splat:u64, len:u64) : void = {
-  if (has_simd) {
+  if (has_simd{}) {
     def vw = arch_defvw{}
     assert{vw>=64}
     def bulk = vw / width{u8}
@@ -63,14 +63,14 @@ fn bit_dy_as{F}(r: *u8, w: *u8, x_splat:u64, len:u64) : void = {
   }
 }
 
-def bit_dy_aa{F} = arith_aa{if (has_simd) 0 else 's', F, u8, u8, u8}
+def bit_dy_aa{F} = arith_aa{if (has_simd{}) 0 else 's', F, u8, u8, u8}
 
 
 
 def arith_op{F, class} = {
   def ts = tup{u8, u16, u32, u64}
   
-  def vec{..._} = has_simd
+  def vec{..._} = has_simd{}
   def vec{(u64), ..._ if hasarch{'AARCH64'} and same{F,__mul}} = 0
   def vec{E, ..._ if same{F,__mul} and hasarch{'X86_64'} and ((E==u8 and not hasarch{'SSSE3'}) or (E==u32 and not hasarch{'AVX2'}) or (E==u64 and not hasarch{'AVX2'}))} = 0
   def vec{..._ if hasarch{'X86_64'} and class==1} = 0

@@ -18,7 +18,7 @@ def spread{a:[_]T, ...up} = {
 }
 
 # Set all elements with the last element of the input
-def broadcast_last{n:VT, up if has_simd and w128{VT}} = {
+def broadcast_last{n:VT, up if has_simd{} and w128{VT}} = {
   def l{v, w} = l{zip{up,v}, 2*w}
   def l{v, w if has_sel8} = sel8{v, up*(16-w/8)+iota{16}%(w/8)}
   def l{v, w==32} = shuf{[4]i32, v, 4**(up*3)}

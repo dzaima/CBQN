@@ -57,7 +57,7 @@ def for_special_buffered{r:*T, write_len}{vars,begin,sum,iter} = {
       buf_used = 1; goto{restart}
     }
   } else {
-    if (has_simd) {
+    if (has_simd{}) {
       def bufw = bufn * tw
       def vc = tern{hasarch{'X86_64'} and bufw==128, 128, arch_defvw{}} / tw;
       def R = [vc]T
@@ -265,7 +265,7 @@ export{'si_2slash64', slash{1, i64}}; export{'si_thresh_2slash64', u64~~thresh{1
 def scalwidth{T} = if (vect{T}) elwidth{T} else width{T}
 
 # pext, or boolean compress
-def pext_width{}  = if (has_simd) 2 else 1
+def pext_width{}  = if (has_simd{}) 2 else 1
 def thresh_bool{} = 16
 def pext_popc{x:T, m:T} = {
   def scal{v} = if (vect{T}) T**v else v

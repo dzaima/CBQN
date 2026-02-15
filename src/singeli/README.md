@@ -20,12 +20,12 @@ The SIMD operations listed aren't guaranteed to be supported on all targets, nor
 
 ## General definitons
 
-- `has_simd`  
+- `has_simd{}`  
   `0` or `1` depending on whether SIMD types are available.
 
 - `arch_defvw`  
   Target vector width for the current target architecture.  
-  If `has_simd==0`, should not be used. Otherwise, vectors of all element types (except `u1`) whose width is this must be supported, but other widths (both larger and smaller) may be too.
+  If `has_simd{}==0`, should not be used. Otherwise, vectors of all element types (except `u1`) whose width is this must be supported, but other widths (both larger and smaller) may be too.
 
 - `reinterpret` is available as `~~`
 <!-- -->

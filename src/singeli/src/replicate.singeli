@@ -412,7 +412,7 @@ def get_boolvec_writer{T==u64, r:*T, nw} = {
   tup{output, {}=>{}, flush}
 }
 
-def rep_const_bool_div8{wv, x, r, nw if has_simd} = {
+def rep_const_bool_div8{wv, x, r, nw if has_simd{}} = {
   def avx2 = hasarch{'AVX2'}
   def vl = if (avx2) 32 else 16
   def V = [vl]u8
@@ -587,7 +587,7 @@ def proc_mod_dat{swap_data:W} = {
   tup{partperm, get_mod_permuter}
 }
 
-def MP = if (has_simd) [if (hasarch{'AVX2'}) 4 else 2]u64 else u64
+def MP = if (has_simd{}) [if (hasarch{'AVX2'}) 4 else 2]u64 else u64
 swtab:*u64 = join{each{modperm_dat{MP, .}, 1+2*iota{32}}}
 
 def rep_const_bool_odd{k, x, r, nw} = {

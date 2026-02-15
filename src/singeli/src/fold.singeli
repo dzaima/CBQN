@@ -28,7 +28,7 @@ fn fold_idem{T, op}(x:*T, len:u64) : T = {
   @for (x over _ from 1 to len) a = op{a, x}
   a
 }
-fn fold_idem{T==f64, op if has_simd}(x:*T, len:u64) : T = {
+fn fold_idem{T==f64, op if has_simd{}}(x:*T, len:u64) : T = {
   def bulk = arch_defvw{}/width{T}
   def V = [bulk]T
   xv:= *V ~~ x
@@ -61,7 +61,7 @@ fn fold_assoc_0{T, op}(x:*T, len:u64) : T = {
   @for (x over len) a = op{a, x}
   a
 }
-fn fold_assoc_0{T==f64, op if has_simd}(x:*T, len:u64) : T = {
+fn fold_assoc_0{T==f64, op if has_simd{}}(x:*T, len:u64) : T = {
   def bulk = arch_defvw{}/width{T}
   def V = [bulk]T
   xv:= *V ~~ x
@@ -236,9 +236,9 @@ fn extract_column(x0:*void, r0:*void, n:usz, l:usz, el:u8) : usz = {
   n <<= el
   def vl = arch_defvw{} / 8
   def thr = __min{vl+2, 20}
-  if ((not has_simd) or n < vl or l > usz~~thr>>el or l<<el >= thr) return{0}
+  if ((not has_simd{}) or n < vl or l > usz~~thr>>el or l<<el >= thr) return{0}
   nv := n / vl
-  if (has_simd and is_pow2{l}) {
+  if (has_simd{} and is_pow2{l}) {
     def try_unzip{T, k} = if (k < thr and l == k) {
       extract_column_pow2{T, x0, r0, nv, k}
       goto{'ret'}
@@ -525,7 +525,7 @@ fn sum_small{T}(xv:*void, ia:usz) : i64 = {
 }
 
 include './accumulator'
-fn sum_small{T if has_simd}(xv:*void, ia:usz) : i64 = {
+fn sum_small{T if has_simd{}}(xv:*void, ia:usz) : i64 = {
   def A = if (width{T}<=16) i32 else i64
   xv:= *T~~xv
   def unr = 4
@@ -660,7 +660,7 @@ def fold_columns_4{inc,lt, op,V=[vl]_, s,x0,xend,r, wid} = {
 
 fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   assert{len > 1}
-  if (not has_simd) {
+  if (not has_simd{}) {
     insert_generic{op, 0, *T~~r0, *T~~x0, len, wid}
   } else {
     def vl = arch_defvw{} / width{T}
@@ -688,7 +688,7 @@ fn insert_assoc{T, op, id0}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
 fn insert_non_assoc{T, op}(rp:*void, xp:*void, len:usz, wid:usz) : void = {
   assert{len > 1}
   r := *T~~rp; x0 := *T~~xp
-  if (not has_simd) {
+  if (not has_simd{}) {
     insert_generic{op, 1, r, x0, len, wid}
   } else {
     def vl = arch_defvw{} / width{T}; def V = [vl]T
@@ -792,7 +792,7 @@ fn insert_add_widen{T, R}(r0:*void, x0:*void, len:usz, wid:usz) : void = {
   assert{len > 1}
   def op = +
   def args = tup{*R~~r0, *T~~x0, len, wid}
-  if (not has_simd) {
+  if (not has_simd{}) {
     insert_generic{op, 0, ...args}
   } else {
     def vl = arch_defvw{} / width{T}

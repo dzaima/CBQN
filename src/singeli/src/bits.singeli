@@ -39,7 +39,7 @@ fn blend_arr_scalar{E}(rp:*void, zero:*void, one0:u64, mask:*void, len:u64) : vo
 
 export_tab{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u16, u32, u64}}}
 
-(if (has_sel) {
+(if (has_sel{}) {
   fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
     assert{cam>0}
     assert{(csz>1) & (csz<8)}

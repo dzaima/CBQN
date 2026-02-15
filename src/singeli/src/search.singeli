@@ -62,7 +62,7 @@ fn copyOrdered{}(r:*f64, x:*f64, len:u64) : u1 = {
   0
 }
 
-(if (has_simd) {
+(if (has_simd{}) {
   export{'simd_search_u8',  searchOne{u64, u8}}
   export{'simd_search_u16', searchOne{u64, u16}}
   export{'simd_search_u32', searchOne{u64, u32}}
@@ -311,9 +311,9 @@ def bad_float_i64{if hasarch{'AARCH64'}} = tup{1, {x:T=[_](f64)} => x != cvt{f64
 fn getRange{E}(x0:*void, res:*i64, n:u64) : u1 = {
   assert{n>0}
   x:= *E~~x0
-  min1:= if (E!=f64) E~~maxvalue{E} else (if (has_simd)  f64~~(1<<62) else i64~~maxvalue{i64})
-  max1:= if (E!=f64) E~~minvalue{E} else (if (has_simd) -f64~~(1<<62) else i64~~minvalue{i64})
-  def extra_check = if (has_simd) {
+  min1:= if (E!=f64) E~~maxvalue{E} else (if (has_simd{})  f64~~(1<<62) else i64~~maxvalue{i64})
+  max1:= if (E!=f64) E~~minvalue{E} else (if (has_simd{}) -f64~~(1<<62) else i64~~minvalue{i64})
+  def extra_check = if (has_simd{}) {
     def {extra_check, bad_float_i64} = bad_float_i64{}
     def bulk = arch_defvw{}/width{E}
     def VT = [bulk]E

@@ -193,7 +193,7 @@ def lut_gen{mode, E, nt, ni if hasarch{'AARCH64'} and mode=='i' and E==u64 and n
 def lut16{tab:([16]u8), idxs:IV} = shuf{[16]u8, IV**tab, idxs}
 
 def shuf_u8bits{inds:(*u8), ni} = 0
-def shuf_u8bits{inds:(*u8), ni if has_sel} = {
+def shuf_u8bits{inds:(*u8), ni if has_sel{}} = {
   def I = [16]u8
   v0:= I**0
   v1:= I**0
