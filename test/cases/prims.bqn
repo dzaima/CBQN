@@ -218,9 +218,9 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 !"𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and number)" % ⟨⋈99, 1⟩ ⊏ 10‿10⥊2
 !"𝕨⊏𝕩: Compound 𝕨 must have rank at most 1 (1‿1 ≡ ≢𝕨)" % %USE eqerr ⋄ ⟨≍⋈↕5⟩ ⊏_eqerr ⟨↕10, 10‿10⥊↕100⟩
 !"𝕨⊏𝕩: Compound 𝕨 must have rank at most 1 (2‿2 ≡ ≢𝕨)" % [⟨1,↕2⟩, ⟨3,4⟩] ⊏ 10‿10⥊2
-!"𝕨⊏𝕩: Compound 𝕨 must not be longer than 𝕩 (2 ≡ ≠𝕨, ⟨10⟩ ≡ ≢𝕩)" % ⟨⟨⟩,⟨⟩⟩ ⊏ ↕10
-!"𝕨⊏𝕩: Compound 𝕨 must not be longer than 𝕩 (2 ≡ ≠𝕨, ⟨10⟩ ≡ ≢𝕩)" % ⟨↕2,↕2⟩ ⊏ ↕10
-!"𝕨⊏𝕩: Compound 𝕨 must not be longer than 𝕩 (2 ≡ ≠𝕨, ⟨4⟩ ≡ ≢𝕩)" % ⟨⋈⋈2,⋈⋈2⟩ ⊏ ↕4
+!"𝕨⊏𝕩: Length of compound 𝕨 must be at most rank of 𝕩 (2 ≡ ≠𝕨, ⟨10⟩ ≡ ≢𝕩)" % ⟨⟨⟩,⟨⟩⟩ ⊏ ↕10
+!"𝕨⊏𝕩: Length of compound 𝕨 must be at most rank of 𝕩 (2 ≡ ≠𝕨, ⟨10⟩ ≡ ≢𝕩)" % ⟨↕2,↕2⟩ ⊏ ↕10
+!"𝕨⊏𝕩: Length of compound 𝕨 must be at most rank of 𝕩 (2 ≡ ≠𝕨, ⟨4⟩ ≡ ≢𝕩)" % ⟨⋈⋈2,⋈⋈2⟩ ⊏ ↕4
 !"𝕨⊏𝕩: Indexing out-of-bounds (4∊𝕨, 4≡≠𝕩)" % ⟨⋈4⟩ ⊏ 4⥊1
 !"𝕨⊏𝕩: Indexing out-of-bounds (¯5∊𝕨, 4≡≠𝕩)" % ⟨⋈¯5⟩ ⊏ 4⥊1
 !"𝕨⊏𝕩: Indexing out-of-bounds along axis 0 (4 ∊ 0⊑𝕨, 4‿5≡≢𝕩)" % ⟨⋈4,⋈0⟩ ⊏ 4‿5⥊1

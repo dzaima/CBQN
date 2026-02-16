@@ -240,7 +240,7 @@ Depth2Inds select_depth2_parse_inds(B w, B x) { // consumes w; checks that w of 
   assert(wia > 0);
   if (RNK(w) > 1) { select_depth2_bad(w,x); fatal("should've errored"); }
   SGetU(w)
-  if (wia > RNK(x)) { select_depth2_bad(w,x); thrF("𝕨⊏𝕩: Compound 𝕨 must not be longer than 𝕩 (%s ≡ ≠𝕨, %H ≡ ≢𝕩)", wia, x); }
+  if (wia > RNK(x)) { select_depth2_bad(w,x); thrF("𝕨⊏𝕩: Length of compound 𝕨 must be at most rank of 𝕩 (%s ≡ ≠𝕨, %H ≡ ≢𝕩)", wia, x); }
   
   Depth2Inds r;
   HArr_p inds = m_harr0v(wia);
