@@ -56,7 +56,7 @@ static void* mmap_nvm(u64 sz) {
     if (c==MAP_FAILED) continue;
     
     i64 dist = (i64)near - (i64)c;
-    if (IABS(dist) < MAX_DIST) return c;
+    if (IABS(u64,dist) < MAX_DIST) return c;
     munmap(c, sz);
   }
 }

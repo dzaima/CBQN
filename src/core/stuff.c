@@ -289,11 +289,11 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
           if (c=='i') {
             i32 v = va_arg(a, i32);
             if (v<0) AU("¯");
-            snprintf(buf, 30, N64u, IABS((i64)v));
+            snprintf(buf, 30, N64u, IABS(u64, v));
           } else { assert(c=='l');
             i64 v = va_arg(a, i64);
             if (v<0) AU("¯");
-            snprintf(buf, 30, N64u, IABS(v));
+            snprintf(buf, 30, N64u, IABS(u64, v));
           }
         }
         A8(buf);

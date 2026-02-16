@@ -713,7 +713,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
   FLV_SET(a, fl);               \
   if (xr>1) {                   \
     usz* rsh=arr_shAlloc(a,xr); \
-    u64 wva = IABS(wv);         \
+    u64 wva = IABS(u64,wv);     \
     rsh[0] = SH0;               \
     shcpy(rsh+1, xsh+1, xr-1);  \
     ptr_dec(shObjS(xsh));       \
@@ -1496,7 +1496,7 @@ static B takedrop_ucw(bool take, i64 wi, B o, u64 am, B x, ux xr) {
 B take_ucw(B t, B o, B w, B x) {
   if (!isF64(w)) return def_fn_ucw(t, o, w, x);
   i64 wi = o2i64(w);
-  u64 am = IABS(wi);
+  u64 am = IABS(u64,wi);
   if (isAtm(x)) x = m_vec1(x);
   ur xr = RNK(x); if (xr==0) xr = 1;
   if (am>SH(x)[0]) thrF("𝔽⌾(n⊸↑)𝕩: Cannot modify fill with Under (%l ≡ n, %H ≡ ≢𝕩)", wi, x);
@@ -1506,7 +1506,7 @@ B take_ucw(B t, B o, B w, B x) {
 B drop_ucw(B t, B o, B w, B x) {
   if (!isF64(w)) return def_fn_ucw(t, o, w, x);
   i64 wi = o2i64(w);
-  u64 am = IABS(wi);
+  u64 am = IABS(u64,wi);
   if (isAtm(x)) x = m_vec1(x);
   ur xr = RNK(x); if (xr==0) xr = 1;
   usz cam = SH(x)[0];

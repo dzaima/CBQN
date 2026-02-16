@@ -6,8 +6,7 @@
 #define IMAX(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ > b_? a_ : b_; })
 #define IMIN(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ < b_? a_ : b_; })
 #define ICMP(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); (a_>b_?1:0)-(a_<b_?1:0); })
-#define AS_UNSIGNED(X) ({ AUTO s_ = (X); _Generic(s_, i64: (u64)s_, i32: (u32)s_, i16: (u16)s_, i8: (u8)s_); })
-#define IABS(X) ({ AUTO sgn_ = (X); AUTO uns_ = AS_UNSIGNED(sgn_); sgn_<0? -uns_ : uns_; })
+#define IABS(R, X) ({ AUTO sgn_ = (X); R uns_ = (R) sgn_; sgn_<0? -uns_ : uns_; })
 
 static void storeu_u64(void* p, u64 v) { memcpy(p, &v, 8); }  static u64 loadu_u64(void* p) { u64 v; memcpy(&v, p, 8); return v; }
 static void storeu_u32(void* p, u32 v) { memcpy(p, &v, 4); }  static u32 loadu_u32(void* p) { u32 v; memcpy(&v, p, 4); return v; }
