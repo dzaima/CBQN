@@ -166,7 +166,7 @@ def has_simd{} = hasarch{'X86_64'} or hasarch{'AARCH64'}
 def has_sel{} = hasarch{'AVX2'} or hasarch{'AARCH64'}
 def fast_BMI2{} = hasarch{'BMI2'} and not SLOW_PDEP
 def assert_hom{{...vs}} = each{assert_hom, vs}
-def assert_hom{x:[_]E if quality{E}=='u'} = x
+def assert_hom{x:V=[k]E if isint{E}} = { if (not is{E,u1}) emit{void, 'ASSERT_HOM', x, k, width{E}}; x }
 def sel{L=[_]_, v:[_]_, i:[_]_} = vec_shuffle{L, v, i}
 
 # base cases
@@ -290,6 +290,16 @@ if_inline (not hasarch{'X86_64'}) {
   def vec_shuffle16_lo{...} = vec_shuffle16_half{0, ...}
   def vec_shuffle16_hi{...} = vec_shuffle16_half{1, ...}
 }
+
+def ah0{v} = { assert_hom{v}; 0 }
+def hom_to_int{v:[_]_ if ah0{v}} = '!'
+def hom_to_hom{v:[_]_ if ah0{v}} = '!'
+def hom_to_int_ext{v:[_]_ if ah0{v}} = '!'
+def any_hom{v:[_]_ if ah0{v}} = '!'
+def all_hom{v:[_]_ if ah0{v}} = '!'
+def blend_hom{f, t, m:[_]_ if ah0{m}} = '!'
+def store_masked_hom {p:_, m:[_]_, ..._ if ah0{m}} = '!'
+def store_blended_hom{p:_, m:[_]_, ..._ if ah0{m}} = '!'
 
 def mzip   {a:T, b:T, k} = el_m{T} ~~ zip   {a, b, k}
 def mzip128{a:T, b:T, k} = el_m{T} ~~ zip128{a, b, k}

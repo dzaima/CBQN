@@ -44,6 +44,20 @@
   #define SINGELI_FILE0(X) #X
   #define SINGELI_FILE1(X) SINGELI_FILE0(X)
   #define si_unreachable() UD
+  #if DEBUG
+    static bool assert_hom_impl(void* mem, ux k, ux w) {
+      switch (w) { default: UD;
+        case  8: for (ux i=0; i<k; i++) {  u8 v = (( u8*)mem)[i]; if (v != 0  &&  ( u8)~v != 0) return false; } break;
+        case 16: for (ux i=0; i<k; i++) { u16 v = ((u16*)mem)[i]; if (v != 0  &&  (u16)~v != 0) return false; } break;
+        case 32: for (ux i=0; i<k; i++) { u32 v = ((u32*)mem)[i]; if (v != 0  &&  (u32)~v != 0) return false; } break;
+        case 64: for (ux i=0; i<k; i++) { u64 v = ((u64*)mem)[i]; if (v != 0  &&  (u64)~v != 0) return false; } break;
+      }
+      return true;
+    }
+    #define ASSERT_HOM(VAL, K, W) assert(assert_hom_impl(&(VAL), K, W))
+  #else
+    #define ASSERT_HOM(VAL, K, W)
+  #endif
 #endif
 
 
