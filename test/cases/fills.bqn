@@ -76,20 +76,32 @@
 %USE fill ⋄ {𝕊: a←10⥊<1‿2 ⋄ {        a∾↩𝕩⋄@}¨(𝕩⥊<<1‿2)∾<<1‿2‿3 ⋄ a!'e'≡Fill a}¨ ↕100
 %USE fill ⋄ {𝕊: a←10⥊<1‿2 ⋄ {a↩0↑a ⋄ a∾↩𝕩⋄@}¨(𝕩⥊<<1‿2)∾<<1‿2‿3 ⋄ a!'e'≡Fill a}¨ ↕100
 
-%USE fill ⋄ Fill ≠¨  ⟨⟩ %!EACH_FILLS %% 'e'
-%USE fill ⋄ Fill ≠¨  ⟨⟩ %EACH_FILLS  %% 0
-%USE fill ⋄ Fill ≠∘⊢¨⟨⟩              %% 'e'
-%USE fill ⋄ Fill   ⊢¨⟨⟩              %% 'e'
-%USE fill ⋄ Fill ⊢∘⊢¨⟨⟩              %% 'e'
+%USE fill ⋄ Fill ≠¨  ⟨⟩ %% 'e' %!EACH_FILLS
+%USE fill ⋄ Fill ≠¨  ⟨⟩ %% 0   %EACH_FILLS
+%USE fill ⋄ Fill ≠∘⊢¨⟨⟩ %% 'e'
+%USE fill ⋄ Fill   ⊢¨⟨⟩ %% 'e'
+%USE fill ⋄ Fill ⊢∘⊢¨⟨⟩ %% 'e'
 
-%USE fill ⋄ Fill ≠¨  "" %!EACH_FILLS %% ' '
-%USE fill ⋄ Fill ≠¨  "" %EACH_FILLS  %% 0
-%USE fill ⋄ Fill ≠∘⊢¨"" %!EACH_FILLS %% ' '
-%USE fill ⋄ Fill   ⊢¨"" %!EACH_FILLS %% ' '
-%USE fill ⋄ Fill ⊢∘⊢¨"" %!EACH_FILLS %% ' '
-%USE fill ⋄ Fill ≠∘⊢¨"" %EACH_FILLS  %% 0
-%USE fill ⋄ Fill   ⊢¨"" %EACH_FILLS  %% ' '
-%USE fill ⋄ Fill ⊢∘⊢¨"" %EACH_FILLS  %% ' '
+%USE fill ⋄ Fill ≠¨  "" %% ' ' %!EACH_FILLS
+%USE fill ⋄ Fill ≠¨  "" %% 0   %EACH_FILLS
+%USE fill ⋄ Fill ≠∘⊢¨"" %% ' ' %!EACH_FILLS
+%USE fill ⋄ Fill   ⊢¨"" %% ' ' %!EACH_FILLS
+%USE fill ⋄ Fill ⊢∘⊢¨"" %% ' ' %!EACH_FILLS
+%USE fill ⋄ Fill ≠∘⊢¨"" %% 0   %EACH_FILLS
+%USE fill ⋄ Fill   ⊢¨"" %% ' ' %EACH_FILLS
+%USE fill ⋄ Fill ⊢∘⊢¨"" %% ' ' %EACH_FILLS
+
+=¨¨ ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ↕4, ⟨↕0, 9, "foo", ↕2‿3⟩⟩ %!EACH_FILLS %%% ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, 4⥊0, 1‿0‿1‿2⟩
+≠¨¨ ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ↕4, ⟨↕0, 9, "foo", ↕2‿3⟩⟩ %!EACH_FILLS %%% ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, 4⥊1, 0‿1‿3‿2⟩
+≡¨¨ ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ↕4, ⟨↕0, 9, "foo", ↕2‿3⟩⟩ %!EACH_FILLS %%% ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, 4⥊0, 1‿0‿1‿2⟩
+≢¨¨ ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ↕4, ⟨↕0, 9, "foo", ↕2‿3⟩⟩ %!EACH_FILLS %%% ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ⟨↕0,↕0,↕0,↕0⟩, ⟨⋈0, ↕0, ⋈3, 2‿3⟩⟩
+=¨¨ ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ↕4, ⟨↕0, 9, "foo", ↕2‿3⟩⟩ %EACH_FILLS  %%% ⟨2‿0⥊↕0, 0‿2⥊↕0, ↕0, 4⥊0, 1‿0‿1‿2⟩
+≠¨¨ ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ↕4, ⟨↕0, 9, "foo", ↕2‿3⟩⟩ %EACH_FILLS  %%% ⟨2‿0⥊↕0, 0‿2⥊↕0, ↕0, 4⥊1, 0‿1‿3‿2⟩
+≡¨¨ ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ↕4, ⟨↕0, 9, "foo", ↕2‿3⟩⟩ %EACH_FILLS  %%% ⟨2‿0⥊↕0, 0‿2⥊↕0, ↕0, 4⥊0, 1‿0‿1‿2⟩
+≢¨¨ ⟨2‿0⥊↕0, 0‿2⥊"", ⟨⟩, ↕4, ⟨↕0, 9, "foo", ↕2‿3⟩⟩ %EACH_FILLS  %%% ⟨2‿0⥊<⟨⟩, 0‿2⥊<⟨⟩, 0⥊<⟨⟩, ⟨⟩WF 4⥊<↕0, ⟨⟩WF ⟨⋈0, ↕0, ⋈3, 2‿3⟩⟩
+
+⟨≠, <, ⊢, 1‿2, 1‿2˙, 2⥊˜0≡⊢⟩ {𝕎¨ 𝕩}⌜ ⟨4, 'a', +⟩ %!EACH_FILLS %%% 1‿1‿1‿2‿1 / [⟨<1,<1,<1⟩ ⋄ ⟨≍⁼⟨<4⟩, ≍⁼⟨<'a'⟩, <⟨⟩⥊⟨+⟩⟩ ⋄ ⟨<4, <'a', ⟨⟩⥊⟨+⟩⟩ ⋄ WOF 3⥊<    WOF<1‿2 ⋄ WOF 3⥊< WOF<↕0]
+⟨≠, <, ⊢, 1‿2, 1‿2˙, 2⥊˜0≡⊢⟩ {𝕎¨ 𝕩}⌜ ⟨4, 'a', +⟩ %EACH_FILLS  %%% 1‿1‿1‿2‿1 / [⟨<1,<1,<1⟩ ⋄ ⟨<<4, <<'a', <⟨⟩⥊⟨+⟩⟩       ⋄ ⟨<4, <'a', ⟨⟩⥊⟨+⟩⟩ ⋄ ⟨<1‿2,<1‿2,WOF<1‿2⟩ ⋄ ⟨(⋈0)WF<↕0, <↕0, ⟨⟩⥊⟨↕0⟩⟩]
 
 {3↑      -˝𝕩‿2⥊<<'a'}¨ 5‿6 %!HEAPVERIFY %% <¨¨ ⟨"aa ", 3⥊0⟩
 {3↑ (2⥊2)-˝𝕩‿2⥊<<'x'}¨ 5‿6 %!HEAPVERIFY %% <¨¨ ⟨"vv ", 2‿2‿0⟩
