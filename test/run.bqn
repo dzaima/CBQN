@@ -38,8 +38,7 @@ iRepr0 ← {
       ' '𝕊𝕩: ∧´2=•Type¨𝕩? {sh≡⟨⟩? ⟨1,⟨⟩,"<'"∾𝕩∾"'"⟩; ⟨0, ≢𝕩, '"' (⊣∾((1+=)/⊢)∾⊣) 𝕩⟩} 𝕩;
       'e'𝕊⟨⟩: 0‿⟨0⟩‿"⟨⟩";
       𝕨  𝕊⟨⟩: {sh≡⟨1⟩? ⟨1,⟨1⟩,"⋈"∾𝕩⟩; ⟨1,⟨⟩,"<"∾𝕩⟩} IRepr 𝕨;
-      'e'𝕊𝕩: {∧´1=𝕩?0;∧´2=𝕩?0;1} •Type¨ 𝕩? ⟨0,≢𝕩,LE𝕩⟩;
-      'e'𝕊a: ⟨1,⟨1⟩,"1↓"∾{2=•Type⊑a?"0∾";"@∾"}∾LE𝕩⟩;
+      'e'𝕊𝕩: nwof←{∧´1=𝕩?1;∧´2=𝕩?1;0} •Type¨ 𝕩 ⋄ ⟨nwof, ≢𝕩, "WOF"⊸∾⍟nwof LE𝕩⟩;
       𝕨𝕊⟨e⟩: 𝕨 Indistinguishable FillOf <e? {sh≡⟨1⟩? ⟨1,⟨1⟩,"⋈"∾𝕩⟩; ⟨1,⟨⟩,"<"∾𝕩⟩} IRepr e;
       𝕨  𝕊𝕩: ⟨⟩≡sh? ⟨1, ⟨⟩, 𝕨 GWF "<"∾ IRepr ⊑𝕩⟩;
       𝕨  𝕊𝕩: ⟨1, ≢𝕩, 𝕨 GWF LE𝕩⟩
@@ -214,7 +213,7 @@ Run ← { 𝕊 testname:
       ⟨dir, ∾⟨testname,"_line_",•Repr currLn+1,".bqn"⟩, ⟨helpers,"arg0",1⟩⟩ •BQN 𝕩
     }
     EvalS ← •BQN⎊{𝕊: Bad "Computing expected value errored: "∾{∧´2=•Type¨⥊𝕩?𝕩;•Repr⎊•Fmt 𝕩}•CurrentError@ ⋄ "(could not compute expected value)"}
-    withFillState ← ⟨".","",⟨WithFill, ⊑⊸WithFill⊘(!∘0)⟩⟩
+    withFillState ← ⟨".","",⟨WithFill, ⊑⊸WithFill⊘(!∘0), !˙⊸WithFill⟩⟩
     
     toRun ← tests
     toRun {{𝕩.enabled}∘⊑¨⊸/𝕩}↩
@@ -238,7 +237,7 @@ Run ← { 𝕊 testname:
       };
       ns‿kind‿str‿exp: ∨´md←kind⊸≡¨"indistinguishable"‿"equal"? {
         ok‿got ← (1⋈Eval)_catch_(0⋈ErrMsg) str
-        exp ↩ {md≡1‿0? ∨´"WF"⍷𝕩? withFillState EvalS "wf‿wf0←•args ⋄ "∾𝕩; EvalS 𝕩} exp
+        exp ↩ {md≡1‿0? ∨´ (∨´⍷⟜𝕩)¨ "WF"‿"WOF"? withFillState EvalS "wf‿wf0‿wof←•args ⋄ "∾𝕩; EvalS 𝕩} exp
         eq‿repr ← {md≡0‿1? ⟨EEqual, •Repr⎊•Fmt⟩; ⟨Indistinguishable, IRepr⟩}
         {
           ¬ok? Bad "Expected value, but got error: "∾got ⋄ @;
