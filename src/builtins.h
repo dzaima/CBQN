@@ -7,7 +7,7 @@
 /*    sfns.c*/A(shape,"⥊") A(pick,"⊑") A(pair,"⋈") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") \
 /*    sfns.c*/A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") A(transp,"⍉") \
 /*    sort.c*/A(gradeUp,"⍋") A(gradeDown,"⍒") \
-/*   sysfn.c*/M(iPureKeep,"•internal.PureKeep") \
+/*   sysfn.c*/M(iPureKeep,"•internal.PureKeep") M(iPureShow,"•internal.PureShow") \
 /* everything before the definition of •Type is defined to be pure, and everything after is not */ M(type,"•Type") \
 /*   sysfn.c*/M(decp,"•Decompose") M(repr,"•Repr") M(parseFloat,"•ParseFloat") M(fmt,"•Fmt") A(asrt,"!") A(casrt,"!") M(out,"•Out") M(show,"•Show") \
 /*   sysfn.c*/A(invalidFn, "(invalid fn)") A(grLen,"•GroupLen") D(grOrd,"•GroupOrd") A(compObj, "•CompObj") A(fill,"•FillFn") M(sys,"•getsys") M(primInd,"•PrimInd") M(glyph,"•Glyph") \

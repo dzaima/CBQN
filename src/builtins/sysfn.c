@@ -1690,7 +1690,7 @@ INIT_GLOBAL u32* const dsv_text[] = {
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.GC",U"•internal.HasFill",U"•internal.HeapDump",
   U"•internal.HeapStats",U"•internal.Indistinguishable",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.ObjFlags",
-  U"•internal.PureKeep",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Validate",U"•internal.Variation",U"•internal.WithFill",
+  U"•internal.PureKeep",U"•internal.PureShow",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Validate",U"•internal.Variation",U"•internal.WithFill",
   
   U"•math.Acos",U"•math.Acosh",U"•math.Asin",U"•math.Asinh",U"•math.Atan",U"•math.Atan2",U"•math.Atanh",U"•math.Cbrt",U"•math.Comb",U"•math.Cos",U"•math.Cosh",
   U"•math.Erf",U"•math.ErfC",U"•math.Expm1",U"•math.Fact",U"•math.GCD",U"•math.Hypot",U"•math.LCM",U"•math.Log10",U"•math.Log1p",U"•math.Log2",U"•math.LogFact",
