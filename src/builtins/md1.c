@@ -18,15 +18,11 @@ SHOULD_INLINE Arr* reshape_one_eachfill(usz ia, B x) { // doesn't consume x
 
 static NOINLINE B homFil1(B f, B r, B xf) {
   assert(EACH_FILLS);
-  if (isPureFn(f)) {
-    if (f.u==bi_eq.u || f.u==bi_ne.u || f.u==bi_feq.u) { dec(xf); return squeeze_numNew(r); }
-    if (f.u==bi_fne.u) { dec(xf); return withFill(r, emptyIVec()); }
-    if (!noFill(xf)) {
-      if (CATCH) { freeThrown(); return r; }
-      B rf = asFill(c1(f, xf));
-      popCatch();
-      return withFill(r, rf);
-    }
+  if (!noFill(xf) && isPureFn(f)) {
+    if (CATCH) { freeThrown(); return r; }
+    B rf = c1(f, xf);
+    popCatch();
+    return withFill(r, asFill(rf));
   }
   dec(xf);
   return r;
@@ -37,9 +33,9 @@ static NOINLINE B homFil2(B f, B r, B wf, B xf) {
     if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return squeeze_numNew(r); }
     if (!noFill(wf) && !noFill(xf)) {
       if (CATCH) { freeThrown(); return r; }
-      B rf = asFill(c2(f, wf, xf));
+      B rf = c2(f, wf, xf);
       popCatch();
-      return withFill(r, rf);
+      return withFill(r, asFill(rf));
     }
   }
   dec(wf); dec(xf);
@@ -48,23 +44,30 @@ static NOINLINE B homFil2(B f, B r, B wf, B xf) {
 
 B each_c1(Md1D* d, B x) { B f = d->f;
   B r, xf;
-  if (EACH_FILLS) xf = getFillR(x);
   
-  if (isAtm(x)) r = squeezed_unit(c1(f, x));
-  else if (isFun(f)) {
+  if (isAtm(x)) {
+    if (!EACH_FILLS) return squeezed_unit(c1(f, x));
+    x = m_unit(x);
+  }
+  if (isFun(f)) {
     u8 rtid = RTID(f);
     if (rtid==n_ltack || rtid==n_rtack) {
-      if (EACH_FILLS) dec(xf);
       return TI(x,arrD1) || IA(x)==0? x : squeeze_any(EACH_FILLS? x : withFill(x, bi_noFill));
+#if EACH_FILLS
+    } else if (rtid==n_eq || rtid==n_ne || rtid==n_feq || rtid==n_fne) {
+      B r = eachm_fn(f, x, c(Fun,f)->c1);
+      return rtid==n_fne? withFill(r, emptyIVec()) : squeeze_numNew(r);
+#endif
     } else if (fun_is_const(f)) {
-      r = taga(arr_shCopy(reshape_one_eachfill(IA(x), c(Md1D,f)->f), x));
+      B r = taga(arr_shCopy(reshape_one_eachfill(IA(x), c(Md1D,f)->f), x));
       decG(x); return r;
     }
+    if (EACH_FILLS) xf = getFillR(x);
     r = eachm_fn(f, x, c(Fun,f)->c1);
   } else {
     usz ia = IA(x);
     if (isMd(f) && ia>0) callMd(f);
-    r = taga(arr_shCopy(reshape_one_eachfill(ia, f), x));
+    B r = taga(arr_shCopy(reshape_one_eachfill(ia, f), x));
     decG(x); return r;
   }
   
