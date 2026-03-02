@@ -262,6 +262,7 @@ static bool elNum(u8 x) { return x<=el_f64; }
 static bool elInt(u8 x) { return x<=el_i32; }
 
 static u8 el_orSelf(u8 we, B x) { // el_or(we, selfElType(x))
+  assert(we < el_MAX);
   if (elNum(we)) return q_i32(x)? IMAX(we, selfElType_i32(o2iG(x))) : q_f64(x)? el_f64 : el_B;
   if (elChr(we)) return q_c32(x)? IMAX(we, selfElType_c32(o2cG(x))) : el_B;
   return el_B;

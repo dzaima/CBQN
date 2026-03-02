@@ -153,7 +153,7 @@ NOINLINE JoinFillslice fillslice_getJoin(B w, usz ria) {
   DEF0(RT, N, TY, INIT, CHK, EL, ARGS, __VA_ARGS__) \
   static RT m_##N##G_##TY ARGS
 
-#define DEF_S( RT, N, TY, CHK, X, ARGS, ...) DEF(RT, N, TY, , CHK, el_orSelf(el_##TY, X), ARGS, __VA_ARGS__)
+#define DEF_S( RT, N, TY, CHK, X, ARGS, ...) DEF(RT, N, TY, , CHK, el_orExt(el_##TY, selfElType(X)), ARGS, __VA_ARGS__)
 #define DEF_E( RT, N, TY, CHK, X, ARGS, ...) DEF(RT, N, TY, , CHK, TI(X,elType),  ARGS, __VA_ARGS__)
 #define DEF_G( RT, N, TY,         ARGS, ...)  \
   static RT m_##N##G_##TY ARGS;               \

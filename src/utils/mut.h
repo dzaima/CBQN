@@ -71,6 +71,11 @@ static Arr* mut_fp(Mut* m) { assert(m->fns->elType!=el_MAX);
 
 extern INIT_GLOBAL u8 el_orArr[];
 static u8 el_or(u8 a, u8 b) {
+  assert(a<el_MAX && b<el_MAX);
+  return el_orArr[a*16 + b];
+}
+static u8 el_orExt(u8 a, u8 b) { // if one arg is el_MAX, returns the other
+  assert(a<=el_MAX && b<=el_MAX);
   return el_orArr[a*16 + b];
 }
 
