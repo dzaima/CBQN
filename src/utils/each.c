@@ -1,5 +1,4 @@
 #include "../core.h"
-#include "mut.h"
 #include "each.h"
 
 static inline B  mv(B*     p, usz n) { B r = p  [n]; p  [n] = m_f64(0); return r; }

@@ -7,13 +7,7 @@
 
 
 SHOULD_INLINE Arr* reshape_one_eachfill(usz ia, B x) { // doesn't consume x
-  if (EACH_FILLS) {
-    return reshape_one(ia, inc(x));
-  } else {
-    MAKE_MUT(rm, ia);
-    mut_fill(rm, 0, x, ia);
-    return mut_fp(rm);
-  }
+  return reshape_one(ia, inc(x));
 }
 
 static NOINLINE B homFil1(B f, B r, B xf) {
@@ -45,10 +39,8 @@ static NOINLINE B homFil2(B f, B r, B wf, B xf) {
 B each_c1(Md1D* d, B x) { B f = d->f;
   B r, xf;
   
-  if (isAtm(x)) {
-    if (!EACH_FILLS) return squeezed_unit(c1(f, x));
-    x = m_unit(x);
-  }
+  if (isAtm(x)) x = m_unit(x);
+  
   if (isFun(f)) {
     u8 rtid = RTID(f);
     if (rtid==n_ltack || rtid==n_rtack) {
@@ -181,15 +173,21 @@ static B eachd_const(B f, B w, B x) {
   ur xr = isAtm(x)? 0 : RNK(x);
   ur mr = IMIN(wr, xr);
   if (mr>0 && !eqShPart(SH(w), SH(x), mr)) thrF("Mapping: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
-  if (wr>xr || isAtm(x)) { B t=w; w=x; x=t; }
-  dec(w);
+  if (wr>xr) { B t=w; w=x; x=t; }
+  else if (xr==0) {
+    B t=w; w=x; x=t;
+    if (isAtm(x)) {
+      B r = taga(arr_shAtm(reshape_one_eachfill(1, f)));
+      dec(w); dec(x); return r;
+    }
+  }
   usz ia = IA(x);
+  dec(w);
   B r = taga(arr_shCopy(reshape_one_eachfill(ia, f), x));
   decG(x); return r;
 }
 
 static B eachd(B f, B w, B x) {
-  if (isAtm(w) & isAtm(x)) return squeezed_unit(c2(f, w, x));
   if (RARE(!isFun(f))) {
     if (isMd(f) && (isAtm(x)||IA(x)!=0) && (isAtm(w)||IA(w)!=0)) callMd(f);
     return eachd_const(f, w, x);
