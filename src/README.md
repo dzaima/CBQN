@@ -383,10 +383,10 @@ B a = toI8Any(x); // get an object which be a valid argument to i8any_ptr
 
 Getting array fill element:
 ```C
-B f = getFillR(x); // fill of x, or bi_noFill if unknown (should generally only be used for computing the fill of another array)
+B f = getFillR(x); // fill of x, or bi_noFill if unknown (should generally only be used to affect more arrays' fills)
 B f = getFillN(x); // getFillR(x) but doesn't increment result refcount
-B f = getFillQ(x); // getFillR(x) but, if !SEMANTIC_CATCH, returns 0, i.e. "quiets" a missing fill (typically used when the fill may affect something other than more arrays' fills, but can reasonably proceed even if fill is unknown)
-B f = getFillE(x, "msg"); // getFillQ(x) but throws on missing fill; also returns 0 if !PROPER_FILLS. (typically used when the fill element is strictly necessary for further computation)
+B f = getFillQ(x); // getFillR(x) but, if unknown and FALLBACK_ZERO_FILL, returns m_f64(0), i.e. "quiets" a missing fill (typically used when the fill may affect something other than more arrays' fills, but can reasonably proceed even if fill is unknown)
+B f = getFillE(x, "msg"); // getFillQ(x) but throws on missing fill; also returns m_f64(0) if !PROPER_FILLS. (typically used when the fill element is strictly necessary for further computation)
 
 // getFillQ is the "true" semantic array fill value
 // getFillR exists just to preserve internal state for !SEMANTIC_CATCH closer to what it'd be in a proper build (allows testing more realistic code paths)

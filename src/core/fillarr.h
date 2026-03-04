@@ -61,12 +61,12 @@ static B getFillR(B x) { // doesn't consume; will return bi_noFill if fill is un
   if (isC32(x)) return m_c32(' ');
   return bi_noFill;
 }
-static B getFillQ(B x) { // doesn't consume; returns 0 if !SEMANTIC_CATCH
+static B getFillQ(B x) { // doesn't consume; returns 0 if FALLBACK_ZERO_FILL and input doesn't have fill
   B r = getFillR(x);
-  #if SEMANTIC_CATCH
-    return r;
+  #if FALLBACK_ZERO_FILL
+    return noFill(r)? m_f64(0) : r;
   #endif
-  return noFill(r)? m_f64(0) : r;
+  return r;
 }
 NORETURN void getFillE_err(B x, char* msg);
 static B getFillE(B x, char* msg) { // doesn't consume; errors if there's no fill

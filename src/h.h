@@ -56,7 +56,7 @@
   #define SFNS_FILLS 1
 #endif
 #ifndef PROPER_FILLS
-  #define PROPER_FILLS (SEMANTIC_CATCH & EACH_FILLS & SFNS_FILLS)
+  #define PROPER_FILLS SFNS_FILLS
 #endif
 
 #if ALL_R0 || ALL_R1
