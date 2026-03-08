@@ -14,6 +14,9 @@
   typedef void (*BlendArrScalarFn)(void* r, void* zero, u64 one, void* mask, u64 n);
   INIT_GLOBAL BlendArrScalarFn* blendArrScalarFns = si_blend_arr_scalar;
   
+  typedef void (*BlendArrArrFn)(void* r, void* zero, void* one, void* mask, u64 n);
+  STATIC_GLOBAL BlendArrArrFn* blendArrArrFns = si_blend_arr_arr;
+  
   INIT_GLOBAL BitSelFn* bitselFns = simd_bitsel;
 #else
   #define BITSEL_DEF(E) void bitsel_##E(void* rp, u64* bp, u64 e0i, u64 e1i, u64 ia) { for (usz i=0; i<ia; i++) ((E*)rp)[i] = bitp_get(bp,i)? e1i : e0i; }
@@ -92,6 +95,42 @@ NOINLINE B bit_sel(B b, B e0, B e1) {
   dec_ret:
   decG(b); return r;
 }
+
+#if SINGELI_SIMD
+B arr_blend(B m, B w, B x, ux ia) { // consumes w,x; takes on the fill of x, used for `w ⊣⌾(m⊸/) x`
+  assert(isArr(m) && isArr(w) && isArr(x));
+  if (ia==0) { decG(w); return x; }
+  
+  u8 we = TI(w,elType);
+  u8 xe = TI(x,elType);
+  u8 re = el_or(we, xe);
+  
+  void* wp;
+  if (re == el_B) {
+    wp = TO_BPTR(w);
+  } else if (we != re) {
+    DirectArr wd = toEltypeArr(w, re);
+    wp = wd.data;
+    w = wd.obj;
+  } else {
+    wp = tyany_ptr(w);
+  }
+  
+  void* mp = bitany_ptr(m);
+  ConvArr r = toEltypeArrX(x, re);
+  if (r.refState==1) decByMask(mp, r.rp, ia, false);
+  blendArrArrFns[elwBitLog(re)](r.rp, r.xp, wp, mp, ia);
+  if (re==el_B) {
+    if (r.refState==1) incByMask(mp, r.rp, ia, false);
+    else incEach(r.rp, ia);
+  }
+  
+  decG(w); decG(x);
+  NOGC_E;
+  return r.res;
+}
+#endif
+
 
 
 static inline u64 rbuu64(u64* p, ux off) { // read bit-unaligned u64; aka 64↑off↓p

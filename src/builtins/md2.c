@@ -284,7 +284,25 @@ B cond_c2(Md2D* d, B w, B x) { B g=d->g;
 B under_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
   return (LIKELY(isVal(g))? TI(g,fn_uc1) : def_fn_uc1)(g, f, x);
 }
+#if SINGELI_SIMD
+B arr_blend(B m, B w, B x, ux ia);
+#endif
 B under_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
+  #if SINGELI_SIMD
+  if (d->f.u == bi_ltack.u && isFun(d->g) && TY(d->g) == t_md2D) {
+    Md2D* g = c(Md2D, d->g);
+    if (PRTID(g->m2) == n_before && g->g.u == bi_slash.u) {
+      B mask = g->f;
+      if (isAtm(mask) || RNK(mask)!=1 || TI(mask,elType)!=el_bit) goto not_blend;
+      usz ia = IA(mask);
+      if (isAtm(w) || RNK(w)!=1 || IA(w)!=ia) goto not_blend;
+      if (isAtm(x) || RNK(x)!=1 || IA(x)!=ia) goto not_blend;
+      return arr_blend(mask, w, x, ia);
+    }
+    not_blend:;
+  }
+  #endif
+  
   B f2 = m2_d(incG(bi_before), c1(g, w), inc(f));
   B r = (LIKELY(isVal(g))? TI(g,fn_uc1) : def_fn_uc1)(g, f2, x);
   dec(f2);

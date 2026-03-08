@@ -33,11 +33,38 @@ fn blend_arr_scalar{E}(rp:*void, zero:*void, one0:u64, mask:*void, len:u64) : vo
     def bulk = arch_defvw{} / width{E}
     def VT = [bulk]E
     def one = VT**cast_i{E, one0}
-    @for_mu{bulk,mask_unr{bulk}}(r in tup{'g',*E~~rp}, zero in tup{VT,*E~~zero}, mask in tup{'b',VT,mask} over i to len) r{eachx{blend_hom, zero, one, mask}}
+    @for_mu{bulk,mask_unr{bulk}}(
+      r    in tup{'g', *E~~rp},
+      zero in tup{VT,  *E~~zero},
+      mask in tup{'b', VT, mask}
+      over i to len
+    ) r{eachx{blend_hom, zero, one, mask}}
   }
 }
 
 export_tab{'si_blend_arr_scalar', each{blend_arr_scalar, tup{u1, '!', '!', u8, u16, u32, u64}}}
+
+fn blend_arr_arr{E}(rp:*void, zero:*void, one:*void, mask:*void, len:u64) : void = {
+  if (same{E,'!'}) {
+    fatal{'bad blend'}
+  } else {
+    def {E, blend, maskp} = {
+      if (E==u1) tup{u8, blend_bit, tup{., *u8~~mask}}
+      else       tup{E,  blend_hom, tup{'b', ., mask}}
+    }
+    def bulk = arch_defvw{} / width{E}
+    def VT = [bulk]E
+    @for_mu{bulk,mask_unr{bulk}}(
+      r    in tup{'g', *E~~rp},
+      zero in tup{VT,  *E~~zero},
+      one  in tup{VT,  *E~~one},
+      mask in maskp{VT}
+      over i to len
+    ) r{eachx{blend, zero, one, mask}}
+  }
+}
+
+export_tab{'si_blend_arr_arr', each{blend_arr_arr, tup{u1, '!', '!', u8, u16, u32, u64}}}
 
 (if (has_sel{}) {
   fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {

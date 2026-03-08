@@ -181,6 +181,21 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 !"Integer out of range: 3.6893488147419103e19" % 1¨⌾(a⊸/) a←100⥊2⋆65
 !"Expected non-negative integer, got ¯10" % %USE evar ⋄ 1¨⌾(a⊸/)_evar a←¯10⌾(50⊸⊑) 100⥊10
 
+!"𝕨/𝕩: Simple 𝕨 must have rank 0 or 1 (2≡=𝕨)" % %USE evar ⋄ (2‿2⥊1‿0) {⊣⌾(𝕨⊸/)˜ 𝕩}_evar 2‿2⥊'a'
+!"𝕨/𝕩: 𝕩 must have rank at least 1 for simple 𝕨" % %USE evar ⋄ 1 ⊣⌾(1‿0‿1⊸/) "ABC"
+!"𝕨/𝕩: 𝕩 must have rank at least 1 for simple 𝕨" % %USE evar ⋄ "abc" ⊣⌾(1‿0‿1⊸/) 1
+%USE eqvar ⋄ {"abc" ⊣⌾(𝕩⊸/)_eqvar "ABC"}¨ ↕3 %%% "ABC"‿"abc"‿"abc"
+!"𝕨/𝕩: Lengths of components of 𝕨 must match 𝕩 (3 ≠ 2)" % %USE evar ⋄ "abc" ⊣⌾(1‿0‿1⊸/) "AB"
+!"𝕨/𝕩: Lengths of components of 𝕨 must match 𝕩 (3 ≠ 2)" % %USE evar ⋄ "ab" ⊣⌾(1‿0‿1⊸/) "ABC"
+!"𝕨/𝕩: Lengths of components of 𝕨 must match 𝕩 (2 ≠ 3)" % %USE evar ⋄ "abc" ⊣⌾(1‿0⊸/) "ABC"
+%USE eqvar ⋄ (4/0‿1) ⊣⌾(0‿0‿1‿1‿0‿0‿1‿1⊸/)_eqvar 8⥊0‿1 %%% 0‿1‿0‿0‿0‿1‿1‿1
+%USE eqvar ⋄ (4/0‿1) ⊣⌾(0‿0‿1‿2‿0‿0‿8‿9⊸/)_eqvar 8⥊0‿1 %%% 0‿1‿0‿0‿0‿1‿1‿1
+!"Expected non-negative integer, got ¯1" % %USE evar ⋄ ¯1‿0 {⊣⌾(𝕨⊸/)˜ 𝕩}_evar ↕2
+%USE eqvar ⋄  "abcde" ⊣⌾(1‿0‿0‿1‿1⊸/)_eqvar "ABCDE" %%% "aBCde"
+%USE eqvar ⋄  "abcde" ⊣⌾(1‿0‿0‿1‿1⊸/)_eqvar 'A'+↕⋈5 %%% " "WF⟨'a',"B","C",'d','e'⟩
+%USE eqvar ⋄ ('a'+↕⋈5)⊣⌾(1‿0‿0‿1‿1⊸/)_eqvar 'A'+↕⋈5 %%% " "WF ⋈¨ "aBCde"
+%USE eqvar ⋄ ('a'+↕⋈5)⊣⌾(1‿0‿0‿1‿1⊸/)_eqvar "ABCDE" %%% ' 'WF⟨"a",'B','C',"d","e"⟩
+
 # ↓ & ↑
 !"𝔽⌾(n⊸↑)𝕩: 𝔽 must return an array with the same shape as its input (2 ≡ n, ⟨1⟩ ≡ shape of result of 𝔽)" % ⟨1⟩⌾(2⊸↑) ↕4
 !"𝔽⌾(n⊸↓)𝕩: 𝔽 must return an array with the same shape as its input (2 ≡ n, ⟨1⟩ ≡ shape of result of 𝔽)" % ⟨1⟩⌾(2⊸↓) ↕4
