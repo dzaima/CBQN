@@ -69,16 +69,6 @@ static Arr* mut_fp(Mut* m) { assert(m->fns->elType!=el_MAX);
   return m->val;
 }
 
-extern INIT_GLOBAL u8 el_orArr[];
-static u8 el_or(u8 a, u8 b) {
-  assert(a<el_MAX && b<el_MAX);
-  return el_orArr[a*16 + b];
-}
-static u8 el_orExt(u8 a, u8 b) { // if one arg is el_MAX, returns the other
-  assert(a<=el_MAX && b<=el_MAX);
-  return el_orArr[a*16 + b];
-}
-
 void mut_pfree(Mut* m, usz n);
 
 // consumes x; sets m[ms] to x
@@ -284,36 +274,12 @@ ApdFn apd_tot_init, apd_sh_init, apd_reshape;
 
 
 
-typedef struct { B obj; void* data; } DirectArr;
 typedef B (*DirectGet)(void* data, ux i);
 typedef void (*DirectSet)(void* data, ux i, B v);
 typedef void (*DirectSetRange)(void* data, ux rs, B x, ux xs, ux l);
 extern INIT_GLOBAL DirectGet directGetU[el_MAX];
 extern INIT_GLOBAL DirectSet directSet[el_MAX];
 extern INIT_GLOBAL DirectSetRange directSetRange[el_MAX];
-
-// returns an array with eltype==re, with same shape/elements/fill as x, and its data pointer
-DirectArr toEltypeArr(B x, u8 re); // consumes
-
-// returns array with same shape & fill as x, returning x itself if possible (iif so, x.u==obj.u).
-// If reused, the object is untouched besides having its refcount incremented and flags cleared.
-// As such, if an el_B array is reused, all elements effectively have 1 more refcount than they should as x's elements never get freed
-// Otherwise, functionality is the same as if a regular new array was made (i.e. uninitialized elements, may start NOGC)
-DirectArr potentiallyReuse(B x); // doesn't consume
-
-typedef struct {
-  B res;
-  void* rp;
-  void* xp;
-  u8 refState;
-} ConvArr;
-
-// gives TI(res,elType)==re to write in via rp, and a pointer to x's data in eltype==re representation, from either x, or rp
-// TI(x,elType)==el_B needs special handling based on result.refState:
-//   0: elements aren't reference-counted (is so iif TI(x,elType)!=el_B)
-//   1: xp==rp, elements not desired to be copied from x must be decremented
-//   2: result is a fresh array, so elements desired to be copied from x must be incremented
-ConvArr toEltypeArrX(B x, u8 re); // doesn't consume; x must stay alive for xp to remain valid
 
 #define DIRECTARR_COPY(R, RE, X) \
   u8 R##_elt = RE;                                       \

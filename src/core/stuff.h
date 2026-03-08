@@ -224,13 +224,40 @@ Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the s
 Arr* emptyVec(B x); // doesn't consume; emptyArr(x, 1)
 
 typedef struct { Arr* obj; void* data; } UntaggedArr;
-UntaggedArr  m_arrp_copyFill(B x, ux ia); // doesn't consume; create new array with the fill and eltype of x
+UntaggedArr  m_arrp_copyFill(B x, ux ia); // doesn't consume; create new array with the fill and elType of x
 UntaggedArr m_barrp_copyFill(B x, ux ia); // doesn't consume; create new fillarr or harr with the fill of x
 static UntaggedArr m_barrp_withFill(ux ia, B fill); // doesn't consume; create new fillarr or harr with the specified fill
 
 NOINLINE Arr* emptyWithFill(B fill); // consumes; returns new array with unset shape and the specified fill
 B emptyNumsWithShape(B x); // consumes; empty bitarr with shape ≢x
 B emptyChrsWithShape(B x); // consumes; empty c8arr  with shape ≢x
+
+typedef struct { B obj; void* data; } DirectArr;
+// returns an array with elType==re, with same shape/elements/fill as x, and its data pointer
+DirectArr toEltypeArr(B x, u8 re); // consumes
+
+// returns array with same shape & fill as x, returning x itself if possible (iif so, x.u==obj.u).
+// If reused, the object is untouched besides having its refcount incremented and flags cleared.
+// As such, if an el_B array is reused, all elements effectively have 1 more refcount than they should as x's elements never get freed
+// Otherwise, functionality is the same as if a regular new array was made (i.e. uninitialized elements, may start NOGC)
+DirectArr potentiallyReuse(B x); // doesn't consume
+
+typedef struct {
+  B res;
+  void* rp;
+  void* xp;
+  u8 refState;
+} ConvArr;
+// gives a mutable array with TI(res,elType)==re, with data pointer rp, and shape and fill same as those of x, and zeroed flags
+// and a data pointer of x in elType==re representation, from either x, or rp
+// TI(x,elType)==el_B needs special handling based on result.refState:
+//   0: elements aren't reference-counted (is so iif TI(x,elType)!=el_B)
+//   1: xp==rp, elements not desired to be copied from x must be decremented
+//   2: result is a fresh array, so elements desired to be copied from x must be incremented
+ConvArr toEltypeArrX(B x, u8 re); // doesn't consume; x must stay alive for xp to remain valid
+
+void decByMask(u64* mask, B* elts, ux ia, bool inv); // for (ux i = 0; i < ia; i++) if (bitp_get(mask,i)^inv) inc(elts[i]);
+void incByMask(u64* mask, B* elts, ux ia, bool inv); // for (ux i = 0; i < ia; i++) if (bitp_get(mask,i)^inv) dec(elts[i]);
 
 B m_vec1(B a);      // complete fills
 B m_vec2(B a, B b); // incomplete fills
@@ -263,6 +290,15 @@ static bool elChr(u8 x) { return x>=el_c8 && x<=el_c32; }
 static bool elNum(u8 x) { return x<=el_f64; }
 static bool elInt(u8 x) { return x<=el_i32; }
 
+extern INIT_GLOBAL u8 el_orArr[];
+static u8 el_or(u8 a, u8 b) {
+  assert(a<el_MAX && b<el_MAX);
+  return el_orArr[a*16 + b];
+}
+static u8 el_orExt(u8 a, u8 b) { // if one arg is el_MAX, returns the other
+  assert(a<=el_MAX && b<=el_MAX);
+  return el_orArr[a*16 + b];
+}
 static u8 el_orSelf(u8 we, B x) { // el_or(we, selfElType(x))
   assert(we < el_MAX);
   if (elNum(we)) return q_i32(x)? IMAX(we, selfElType_i32(o2iG(x))) : q_f64(x)? el_f64 : el_B;

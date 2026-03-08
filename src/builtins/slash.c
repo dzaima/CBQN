@@ -1040,30 +1040,6 @@ B slash_im(B t, B x) {
   extern INIT_GLOBAL BlendArrScalarFn* blendArrScalarFns;
 #endif
 
-
-#define BY_MASK(F, ELTS, C) ({ \
-  u64 c = (C);        \
-  B* elts_ = (ELTS);  \
-  while (c) {         \
-    F(elts_[CTZ(c)]); \
-    c&=c-1;           \
-  }                   \
-})
-
-static void decByMask(u64* mask, B* elts, ux ia, bool inv) {
-  u64 xor = inv? U64_MAX : 0;
-  ux e = ia>>6;
-  for (ux i=0; i<e; i++) BY_MASK(dec, elts + i*64,  xor^mask[i]);
-  if (ia&63)             BY_MASK(dec, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
-}
-static void incByMask(u64* mask, B* elts, ux ia, bool inv) {
-  u64 xor = inv? U64_MAX : 0;
-  ux e = ia>>6;
-  for (ux i=0; i<e; i++) BY_MASK(inc, elts + i*64,  xor^mask[i]);
-  if (ia&63)             BY_MASK(inc, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
-}
-#undef BY_MASK
-
 B ne_c2(B,B,B);
 B slash_ucw(B t, B o, B w, B x) {
   if (isAtm(w) || isAtm(x) || RNK(w)!=1 || RNK(x)!=1 || IA(w)!=IA(x)) {

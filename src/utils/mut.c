@@ -905,6 +905,28 @@ ConvArr toEltypeArrX(B x, u8 re) { // doesn't consume
   }
 }
 
+#define BY_MASK(F, ELTS, C) ({ \
+  u64 c = (C);        \
+  B* elts_ = (ELTS);  \
+  while (c) {         \
+    F(elts_[CTZ(c)]); \
+    c&=c-1;           \
+  }                   \
+})
+NOINLINE void decByMask(u64* mask, B* elts, ux ia, bool inv) {
+  u64 xor = inv? U64_MAX : 0;
+  ux e = ia>>6;
+  for (ux i=0; i<e; i++) BY_MASK(dec, elts + i*64,  xor^mask[i]);
+  if (ia&63)             BY_MASK(dec, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
+}
+NOINLINE void incByMask(u64* mask, B* elts, ux ia, bool inv) {
+  u64 xor = inv? U64_MAX : 0;
+  ux e = ia>>6;
+  for (ux i=0; i<e; i++) BY_MASK(inc, elts + i*64,  xor^mask[i]);
+  if (ia&63)             BY_MASK(inc, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
+}
+#undef BY_MASK
+
 B directGetU_bit(void* data, ux i) { return m_f64(bitp_get(data,i));} void directSet_bit(void* data, ux i, B v) { bitp_set(data, i, o2bG(v)); }
 B directGetU_i8 (void* data, ux i) { return m_f64((( i8*)data)[i]); } void directSet_i8 (void* data, ux i, B v) { (( i8*)data)[i] = o2iG(v); }
 B directGetU_i16(void* data, ux i) { return m_f64(((i16*)data)[i]); } void directSet_i16(void* data, ux i, B v) { ((i16*)data)[i] = o2iG(v); }
