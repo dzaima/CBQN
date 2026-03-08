@@ -299,7 +299,7 @@ helpers ← {
   shouldNotError ⇐ o.noerr
   slow ⇐ o.slow
   
-  eqvarEq ← {o.heapverify? EEqual; Indistinguishable}
+  EqvarEq ← Indistinguishable
   Classify ← {(≢𝕩)⥊ ⊐EqvarEq⌜˜ ⥊𝕩}
   
   _eqvar0_ ⇐ { LV ← 𝔾
