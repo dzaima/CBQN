@@ -322,7 +322,7 @@ helpers ← {
         ! "TEST FAIL: _eqvar0_ failed: "∾classes
       }¨ 𝕩
     }¨ class ⊔ r
-    ⊑r
+    ¯1⊑⥊r # take last as that'll be one with the correct fill
   }
   
   GetRand ⇐ {𝕊: •MakeRand (GetTestState@).rand.Range 1e9}
