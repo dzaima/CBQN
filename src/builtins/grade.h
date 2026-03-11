@@ -279,7 +279,7 @@ B SORT_C1(B t, B x) {
       } else if (n < 256) {
         RADIX_SORT_i32(u8, SORT,);
       } else {
-        if (MAY_T(n>U32_MAX)) goto generic;
+        if (MAY_T(n>U32_MAX)) { tyarr_freeF(v(r)); goto generic; }
         RADIX_SORT_i32(u32, SORT,);
       }
     }
