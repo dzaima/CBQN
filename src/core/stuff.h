@@ -258,6 +258,7 @@ ConvArr toEltypeArrX(B x, u8 re); // doesn't consume; x must stay alive for xp t
 
 void decByMask(u64* mask, B* elts, ux ia, bool inv); // for (ux i = 0; i < ia; i++) if (bitp_get(mask,i)^inv) inc(elts[i]);
 void incByMask(u64* mask, B* elts, ux ia, bool inv); // for (ux i = 0; i < ia; i++) if (bitp_get(mask,i)^inv) dec(elts[i]);
+void incEach(B* elts, ux ia); // for (ux i = 0; i < ia; i++) inc(elts[i]);
 
 B m_vec1(B a);      // complete fills
 B m_vec2(B a, B b); // incomplete fills

@@ -130,7 +130,7 @@ Arr* join_cells(B w, B x, ur k) { // consumes w,x; join k-cells, 𝕨 ∾○⥊�
       
       HArr_p p = m_harrUv(ia); // Debug build complains with harrUp
       interleave_fns[3](p.a, wp, xp, n);
-      for (usz i=0; i<ia; i++) inc(p.a[i]);
+      incEach(p.a, ia);
       NOGC_E;
       r = (Arr*) p.c;
       decG(w2); decG(x2);

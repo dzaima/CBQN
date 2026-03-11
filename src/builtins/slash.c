@@ -220,7 +220,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) { // expected 
     }
     COMPRESS_GROUP(MEM_CPY)
     if (is_B) {
-      for (usz i = 0; i < wsum*csz; i++) inc(((B*)rp)[i]);
+      incEach((B*) rp, wsum*csz);
       NOGC_E;
       r = withFill(rh.b, getFillR(x));
       b_res:;
@@ -508,7 +508,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
         B* xp = arr_bptr(x);
         if (xp!=NULL) {
           COMPRESS_BLOCK_PREP(B, HArr_p rh = m_harrUv(wsum); B *rp = rh.a;);
-          for (usz i=0; i<wsum; i++) inc(rh.a[i]);
+          incEach(rh.a, wsum);
           NOGC_E;
           r = withFill(rh.b, xf);
         } else {

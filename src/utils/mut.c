@@ -281,7 +281,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     case t_c32arr: case t_c32slice: { u32* xp = c32any_ptr(x); vfor (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
     case t_harr: case t_hslice: case t_fillarr: case t_fillslice:;
       B* xp = arr_bptrG(x)+xs;
-      for (usz i = 0; i < l; i++) inc(xp[i]);
+      incEach(xp, l);
       memcpy(mpo, xp, l*sizeof(B));
       return;
     case t_f64arr: case t_f64slice:
@@ -926,6 +926,9 @@ NOINLINE void incByMask(u64* mask, B* elts, ux ia, bool inv) {
   if (ia&63)             BY_MASK(inc, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
 }
 #undef BY_MASK
+NOINLINE void incEach(B* elts, ux ia) {
+  for (ux i = 0; i < ia; i++) inc(elts[i]);
+}
 
 B directGetU_bit(void* data, ux i) { return m_f64(bitp_get(data,i));} void directSet_bit(void* data, ux i, B v) { bitp_set(data, i, o2bG(v)); }
 B directGetU_i8 (void* data, ux i) { return m_f64((( i8*)data)[i]); } void directSet_i8 (void* data, ux i, B v) { (( i8*)data)[i] = o2iG(v); }
