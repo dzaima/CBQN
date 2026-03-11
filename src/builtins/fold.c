@@ -598,7 +598,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
     if (rtid==n_rtack) return C2(select, m_f64(-1), x);
     if (rtid==n_join) { join:;
       if (xr==1) return x;
-      ShArr* rsh;
+      ShArr* rsh ONLY_GCC(=0);
       if (xr>2) {
         rsh = m_shArr(xr-1);
         usz* xsh = SH(x);

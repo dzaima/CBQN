@@ -399,7 +399,7 @@ B group_c2(B t, B w, B x) {
         xn = wia;
         // Combine first wr axes of x
         xr = 1 + xr-wr;
-        ShArr* zsh;
+        ShArr* zsh ONLY_GCC(=0);
         if (xr != 1) {
           zsh = m_shArr(xr);
           zsh->a[0] = xn; shcpy(zsh->a+1, xsh+wr, xr-1);
