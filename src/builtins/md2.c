@@ -240,6 +240,7 @@ B repeat_c2(Md2D* d, B w, B x) {
   #undef CALL
 }
 
+B beforeConst_c1(Md2D* d, B x) { return c2(d->g, inc(d->f), x); }
 
 NOINLINE B before_c1F(Md2D* d, B x, B f) { errMd(f); return c2(d->g, c1G(f,inc(x)), x); }
 NOINLINE B after_c1F (Md2D* d, B x, B g) { errMd(g); return c2(d->f, x, c1G(g,inc(x))); }
@@ -303,7 +304,7 @@ B under_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
   }
   #endif
   
-  B f2 = m2_d(incG(bi_before), c1(g, w), inc(f));
+  B f2 = m2_d(incG(bi_beforeConst), c1(g, w), inc(f));
   B r = (LIKELY(isVal(g))? TI(g,fn_uc1) : def_fn_uc1)(g, f2, x);
   dec(f2);
   return r;

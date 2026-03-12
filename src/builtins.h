@@ -40,6 +40,7 @@
 #define FOR_PM2(A,M,D) \
   /*md2.c*/A(val,"⊘") A(repeat,"⍟") A(rank,"⎉") A(depth,"⚇") A(fillBy,"•_fillBy_") A(catch,"⎊") \
   /*md2.c*/A(atop,"∘") A(over,"○") A(before,"⊸") A(after,"⟜") A(cond,"◶") A(under,"⌾") \
+  /*md2.c*/M(beforeConst, "•_beforeConst_") \
 /* everything before the definition of •_while_ is defined to be pure, and everything after is not */ \
   /*md2.c*/A(while,"•_while_") \
 /*sysfn.c*/A(invalidMd2, "(invalid 2-modifier)")
