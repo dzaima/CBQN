@@ -236,7 +236,7 @@ typedef struct { B obj; void* data; } DirectArr;
 // returns an array with elType==re, with same shape/elements/fill as x, and its data pointer
 DirectArr toEltypeArr(B x, u8 re); // consumes
 
-// returns array with same shape & fill as x, returning x itself if possible (iif so, x.u==obj.u).
+// returns array with same shape & fill as x, returning x itself if possible (iff so, x.u==obj.u).
 // If reused, the object is untouched besides having its refcount incremented and flags cleared.
 // As such, if an el_B array is reused, all elements effectively have 1 more refcount than they should as x's elements never get freed
 // Otherwise, functionality is the same as if a regular new array was made (i.e. uninitialized elements, may start NOGC)
@@ -251,7 +251,7 @@ typedef struct {
 // gives a mutable array with TI(res,elType)==re, with data pointer rp, and shape and fill same as those of x, and zeroed flags
 // and a data pointer of x in elType==re representation, from either x, or rp
 // TI(x,elType)==el_B needs special handling based on result.refState:
-//   0: elements aren't reference-counted (is so iif TI(x,elType)!=el_B)
+//   0: elements aren't reference-counted (is so iff TI(x,elType)!=el_B)
 //   1: xp==rp, elements not desired to be copied from x must be decremented
 //   2: result is a fresh array, so elements desired to be copied from x must be incremented
 ConvArr toEltypeArrX(B x, u8 re); // doesn't consume; x must stay alive for xp to remain valid
