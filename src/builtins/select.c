@@ -234,10 +234,9 @@ typedef struct {
   ux rank; // =w⊏x
   bool lastMaybeRange; // whether ¯1⊑r may be an a+↕b
 } Depth2Inds;
-Depth2Inds select_depth2_parse_inds(B w, B x) { // consumes w; checks that w of w⊏x is valid, and, if so, returns a depth-2 array of number arrays (i.e. `squeeze_numTry¨ ((≠w)↑≢x) | w`)
+Depth2Inds select_depth2_parse_inds(ux wia, B w, B x) { // consumes w; checks that w of w⊏x is valid, and, if so, returns a depth-2 array of number arrays (i.e. `squeeze_numTry¨ ((≠w)↑≢x) | w`)
   assert(isArr(w) && isArr(x));
-  usz wia = IA(w);
-  assert(wia > 0);
+  assert(IA(w)==wia && wia>0);
   if (RNK(w) > 1) { select_depth2_bad(w,x); fatal("should've errored"); }
   SGetU(w)
   if (wia > RNK(x)) { select_depth2_bad(w,x); thrF("𝕨⊏𝕩: Length of compound 𝕨 must be at most rank of 𝕩 (%s ≡ ≠𝕨, %H ≡ ≢𝕩)", wia, x); }
@@ -366,8 +365,8 @@ static NOINLINE B select_depth2_select(Spans ws, B x) { // consumes ws.starts
 }
 
 static B select_depth2_impl(ux wia, B w, B x) { // wia<=1 only if invalid; or if x is empty, w may also be a number list
-  Depth2Inds wi = select_depth2_parse_inds(w, x);
-  assert(IA(w)>=2); // invalid cases thrown out above
+  Depth2Inds wi = select_depth2_parse_inds(wia, w, x);
+  assert(wia>=2); // invalid cases thrown out above
   w = wi.inds;
   ux rr = wi.rank;
   
@@ -471,7 +470,7 @@ B select_c2(B t, B w, B x) {
   
   B xf = getFillR(x);
   usz xn = *SH(x);
-  if (xn==0) goto error_dec_xf; // empty x, non-empty w; error
+  if (xn==0) goto not_depth1_dec_xf; // empty x, non-empty w; error
   usz csz = arr_csz(x);
   u8 xl = cellWidthLog(x);
   usz ria = wia * csz;
@@ -608,13 +607,13 @@ B select_c2(B t, B w, B x) {
       w = squeeze_numTry(w, &we, SQ_MSGREQ(SQ_NUM));
       if (RANDOMIZE_HEURISTICS && we==el_f64) goto generic_l; // avoid infinite loop
       if (elNum(we)) goto retry;
-      goto error_dec_xf; // erroneous input
+      goto not_depth1_dec_xf; // erroneous input
     }
   }
   #undef CASE
   #undef CASEW
   
-  error_dec_xf:;
+  not_depth1_dec_xf:;
   dec(xf);
   depth2: return select_depth2_impl(wia, w, x);
   
