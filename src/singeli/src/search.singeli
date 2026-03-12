@@ -416,7 +416,11 @@ fn hashtab{T, name}(rpi:*rty{name}, iv:*void, mi:usz, fv:*void, ni:usz, links:it
         rdc := p64{m-i}*dc  # 0 if i==m, no need to recompute
         mm := p64{i}*p64{m+i}
         def recheck = setlabel{}
-        if (cc>=cc_stop or p64{n/4}*p64{cc} + rdc >= mm>>(5+log-(wt-sh))) {
+        def pos = 5+log
+        def neg = wt-sh; mm_sh := undefined{u64}
+        if (pos>=neg) mm_sh = mm >> (pos-neg)
+        else          mm_sh = mm << (neg-pos)
+        if (cc>=cc_stop or p64{n/4}*p64{cc} + rdc >= mm_sh) {
           hash_resize{cc, 2} # Factor of 4
           if (i==m and sz<msz) goto{recheck}
           if (cc >= cc_stop) { i=0; goto{abort} }
