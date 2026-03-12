@@ -59,7 +59,7 @@ B eachd_fn(B fo, B w, B x, FC2 f) {
 B eachm_fn(B fo, B x, FC1 f) {
   usz ia = IA(x);
   usz i = 0;
-  if (ia==0) return x;
+  if (ia==0) { B r = m_harrUc(x).b; decG(x); return r; }
   if (reusable(x)) {
     B* xp;
     re_reuse:

@@ -425,7 +425,7 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 ⊢¨ {a←𝕩 ⋄ 2‿3‿1⥊𝕩} 6⥊<"a"   %% 2‿3‿1⥊<"a"
 ⊢¨ {a←𝕩 ⋄ 2‿3⥊⥊𝕩} 2‿3⥊<"a"  %% 2‿3⥊<"a"
 ⊢¨ 2‿3⥊<"a"                 %% 2‿3⥊<"a"
-%USE tvar ⋄ {a ← •internal.PureKeep¨_tvar 𝕩 ⋄ b ← ⊢¨_tvar 𝕩 ⋄ a •Repr∘𝕩 {𝔽⍟¬⊸! 𝕨 ≡○(10⊸↑⎊'e') 𝕩}¨ b}¨ ⟨⊔↕2, ⊔↕0, ↕5, ↕0, "hello", ""⟩
+%USE tvar ⋄ {a ← •internal.PureKeep¨_tvar 𝕩 ⋄ b ← ⊢¨_tvar 𝕩 ⋄ a •Repr∘𝕩 {𝔽⍟¬⊸! 𝕨 •internal.Indistinguishable 𝕩}¨ b}¨ ⟨⊔↕2, ⊔↕0, ↕5, ↕0, "hello", ""⟩
 
 # ⊔
 !"𝕨⊔𝕩: ≠𝕨 must be either ≠𝕩 or one bigger (2≡≠𝕨, 3≡≠𝕩)" % 0‿0⊔↕3
