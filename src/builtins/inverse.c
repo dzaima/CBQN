@@ -1,6 +1,6 @@
 #include "core.h"
 #include "builtins.h"
-#include "nfns.h"
+#include "utils/nfns.h"
 
 
 STATIC_GLOBAL NFnDesc* fn_invRegDesc;

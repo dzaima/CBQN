@@ -1,6 +1,6 @@
-#include "nfns.h"
-#include "vm.h"
-#include "ns.h"
+#include "utils/nfns.h"
+#include "vm/vm.h"
+#include "core/ns.h"
 #include "utils/mut.h"
 // minimal compiler, capable of running mlochbaum/BQN/src/bootstrap/boot2.bqn
 // supports:

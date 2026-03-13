@@ -1,6 +1,6 @@
 #include "core.h"
-#include "ns.h"
-#include "vm.h"
+#include "core/ns.h"
+#include "vm/vm.h"
 
 void m_nsDesc(Body* body, bool imm, u8 ty, i32 actualVam, B nameList, B varIDs, B exported) { // doesn't consume nameList
   if (!isArr(varIDs) || !isArr(exported)) thrM("Internal error: Bad namespace description information");

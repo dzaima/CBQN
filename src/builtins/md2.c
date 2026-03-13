@@ -2,7 +2,7 @@
 #include "utils/each.h"
 #include "utils/talloc.h"
 #include "utils/calls.h"
-#include "nfns.h"
+#include "utils/nfns.h"
 #include "builtins.h"
 
 B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }

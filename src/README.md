@@ -36,21 +36,23 @@ src/
     mut.h       temporary mutable array operations
     talloc.h    temporary buffer allocations (described more below)
     utf.h       UTF-8 things
+    nfns.h      native functions for things that need to keep some state (e.g. •FLines needs to also hold the path its relative to)
   singeli/    Singeli-specific things
     src/        *.singeli files
     c/          C files specifically for Singeli stuff
   opt/        files which aren't needed for every build configuration
-  gen/        generated files
-  jit/        simple JIT compiler for x86-64
-  core/       things included everywhere
-  h.h         core CBQN definitions
+  vm/         VM & runtime initialization
+    jit/        simple JIT compiler for x86-64
+    vm.c        virtual machine interpreter
+    load.c      loads & sets up the self-hosted compiler, runtime, formatter, and the objects of primitives
+  core/       core 
+    h.h         core types, NaN-boxing definitions, and low-level helpers
+    stuff.h     various things that are somewhat higher-level than h.h
+    ns.h        namespaces (not included by core.h)
   builtins.h  definitions of all built-in functions (excluding things defined by means of nfns.c)
   core.h      file imported everywhere that defines the base BQN model
-  nfns.c      native functions for things that need to keep some state (e.g. •FLines needs to also hold the path its relative to)
-  load.c      loads the self-hosted compiler, runtime and formatter, initializes CBQN globals
   main.c      main function & commandline stuff
-  ns.c        namespaces
-  vm.c        virtual machine interpreter
+(not all files are listed here)
 ```
 
 ### Random example functions

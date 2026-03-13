@@ -1,7 +1,7 @@
 #include "core.h"
 #include "utils/each.h"
 #include "builtins.h"
-#include "ns.h"
+#include "core/ns.h"
 #include <math.h>
 
 static inline B arith_recm(FC1 f, B x) {

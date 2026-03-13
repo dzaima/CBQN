@@ -1,7 +1,7 @@
 #include "core.h"
 #include "utils/file.h"
 #include "builtins.h"
-#include "ns.h"
+#include "core/ns.h"
 #include "utils/cstr.h"
 #include "utils/calls.h"
 #include <stdarg.h>

@@ -1,5 +1,5 @@
 #include "core.h"
-#include "nfns.h"
+#include "utils/nfns.h"
 
 STATIC_GLOBAL u32 nfn_curr;
 STATIC_GLOBAL B nfn_list;

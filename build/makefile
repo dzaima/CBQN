@@ -181,7 +181,7 @@ endif
 endif
 	@echo ${postmsg}
 
-${bd}/BQN: builtins core base jit utils # build the final binary
+${bd}/BQN: builtins vm core base jit utils # build the final binary
 	@$(i_LD) ${CCFLAGS} -o ${bd}/BQN ${bd}/*.o $(ALL_LD_FLAGS)
 
 CC_INC = $(i_CC) $(ALL_CC_FLAGS) -MMD -MP -MF
@@ -191,7 +191,7 @@ ${bd}/%.o: src/core/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
-base: ${addprefix ${bd}/, load.o main.o rtwrap.o vm.o ns.o nfns.o ffi.o}
+base: ${addprefix ${bd}/, main.o ns.o nfns.o ffi.o}
 ${bd}/%.o: src/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
@@ -201,8 +201,13 @@ ${bd}/%.o: src/utils/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
+vm: ${addprefix ${bd}/, load.o vm.o rtwrap.o}
+${bd}/%.o: src/vm/%.c
+	@echo $< | cut -c 5-
+	@$(CC_INC) $@.d -o $@ -c $<
+
 jit: ${addprefix ${bd}/, nvm.o}
-${bd}/%.o: src/jit/%.c
+${bd}/%.o: src/vm/jit/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 

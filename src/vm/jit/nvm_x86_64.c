@@ -1,9 +1,9 @@
 #include "core.h"
-#include "ns.h"
+#include "core/ns.h"
 #include "utils/file.h"
 #include "utils/talloc.h"
 #include "utils/wyhash.h"
-#include "vm.h"
+#include "vm/vm.h"
 #include <sys/mman.h>
 
 #ifndef USE_PERF

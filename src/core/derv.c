@@ -1,5 +1,5 @@
 #include "core.h"
-#include "nfns.h"
+#include "utils/nfns.h"
 #include "builtins.h"
 
 DEF_FREE(md1D) { ptr_dec(((Md1D*)x)->m1); dec(((Md1D*)x)->f);                     }

@@ -4,13 +4,13 @@
 #endif
 
 #include "core.h"
-#include "vm.h"
-#include "ns.h"
+#include "vm/vm.h"
+#include "core/ns.h"
 #include "utils/utf.h"
 #include "utils/talloc.h"
 #include "utils/interrupt.h"
 #include "utils/toplevel.h"
-#include "load.h"
+#include "vm/load.h"
 #include <unistd.h>
 
 #ifndef UNWIND_COMPILER // whether to hide stackframes of the compiler in compiling errors

@@ -49,13 +49,14 @@ ModifyCBQNFlags ← {
     flagV∾↩ <𝕩
   }
   WantsIncludes ← {
+    # {•file.Exists "../../src" •file.At 𝕩?@;•Out "Unknown file: "∾𝕩} 𝕨
     𝕨 WantsFlags ∾ ("-include"⋈"src"•file.At⊢)¨ 𝕩
   }
   
   FilterPrefix ← {𝕨⊸{𝕨≡(≠𝕨)↑𝕩}¨⊸/ 𝕩}
   
   # main core.h sequence, assuming MM==1
-  coreIncludes ← ⟨"h.h","core/stuff.h","core/heap.h","opt/mm_buddy.h","core/gstack.h","core/harr.h","core/numarr.h","core/chrarr.h","core/fillarr.h","core/derv.h","core/arrFns.h"⟩
+  coreIncludes ← ⟨"core/h.h","core/stuff.h","opt/mm_buddy.h","core/gstack.h","core/harr.h","core/numarr.h","core/chrarr.h","core/fillarr.h","core/derv.h","core/arrFns.h"⟩
   {(¯1⊑𝕩) WantsIncludes ¯1↓𝕩}¨ 2↓↑ coreIncludes
   CoreTil ← {coreIncludes↑˜⊑coreIncludes⊐<𝕩}
   
@@ -65,10 +66,9 @@ ModifyCBQNFlags ← {
   
   # non-'utils/' headers & optional .c files
   {𝕩 WantsIncludes ⟨"core.h"⟩}¨ ⟨
-    "ns.h", "vm.h", "builtins.h", "load.h"
+    "core/ns.h", "vm/vm.h", "builtins.h", "vm/load.h"
     "opt/mm_malloc.c", "opt/mm_buddyTemplate.h", "opt/gc.c", "opt/gc.h"
     "builtins/radix.h", "singeli/c/arithdDispatch.h"
-    "jit/nvm.h"
   ⟩
   # and all the utils/ onces
   {𝕩 WantsIncludes ⟨"core.h"⟩}¨ "utils/" FilterPrefix filenames

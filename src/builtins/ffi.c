@@ -20,8 +20,8 @@
   #include "../include/bqnffi.h"
   #include "utils/calls.h"
   #include "utils/cstr.h"
-  #include "nfns.h"
-  #include "ns.h"
+  #include "utils/nfns.h"
+  #include "core/ns.h"
   #include "utils/file.h"
   #include "utils/toplevel.h"
 // ..continuing under "#if CBQN_EXPORT"
@@ -1501,7 +1501,7 @@ static void sysffi_init() {
   static void sysffi_init() { }
   B ffiload_c2(B t, B w, B x) { fatal("•FFI called"); }
 #else // whatever build.bqn uses from •FFI
-  #include "nfns.h"
+  #include "utils/nfns.h"
   #include "utils/cstr.h"
   #include <unistd.h>
   #include <poll.h>

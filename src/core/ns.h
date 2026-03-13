@@ -1,5 +1,5 @@
 #pragma once
-#include "vm.h"
+#include "vm/vm.h"
 
 typedef struct NSDesc {
   struct Value;

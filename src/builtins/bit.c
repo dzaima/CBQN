@@ -1,6 +1,6 @@
 #include "core.h"
 #include "builtins.h"
-#include "ns.h"
+#include "core/ns.h"
 
 typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
 #if SINGELI

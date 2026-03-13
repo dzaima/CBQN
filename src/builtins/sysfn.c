@@ -4,9 +4,9 @@
 #include "utils/wyhash.h"
 #include "utils/time.h"
 #include "builtins.h"
-#include "ns.h"
-#include "nfns.h"
-#include "load.h"
+#include "core/ns.h"
+#include "utils/nfns.h"
+#include "vm/load.h"
 
 #include <unistd.h>
 #if defined(_WIN32) || defined(_WIN64)

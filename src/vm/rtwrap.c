@@ -1,6 +1,6 @@
 #include "core.h"
 #if RT_WRAP
-#include "vm.h"
+#include "vm/vm.h"
 #include "builtins.h"
 #include "utils/time.h"
 #endif
