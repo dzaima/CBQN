@@ -1,6 +1,6 @@
-#include "../core.h"
-#include "../utils/each.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "utils/each.h"
+#include "utils/calls.h"
 
 #define cmp_fillFlags A_B | A_CN(A_NUM) | A_NC(A_NUM) | A_CC(A_NUM)
 

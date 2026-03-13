@@ -1,5 +1,5 @@
 #pragma once
-#include "utf.h"
+#include "utils/utf.h"
 // unless otherwise specified, these assume that paths are strings
 
 B path_rel(B base, B rel, char* name); // consumes rel; assumes base is a string or bi_N, throws if !isStr(rel)

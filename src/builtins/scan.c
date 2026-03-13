@@ -48,9 +48,9 @@
 //   = as ≠`⌾¬, - as (2×⊣`)-+`
 // SHOULD optimize non-boolean scan with rank
 
-#include "../core.h"
-#include "../utils/mut.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/mut.h"
+#include "builtins.h"
 #include <math.h>
 #define F64_MIN -INFINITY
 #define F64_MAX  INFINITY
@@ -73,7 +73,7 @@ B mul_c2(B, B, B);
   extern uint64_t* const si_spaced_masks;
   #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE scan
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #endif
 
 

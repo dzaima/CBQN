@@ -73,15 +73,15 @@
 // Used for ⌽⎉1
 // SHOULD use for /⎉k, ⌽⎉k, ↑⎉k, ↓⎉k, ↕⎉k, ⍉⎉k, probably more
 
-#include "../core.h"
-#include "../utils/talloc.h"
-#include "../utils/mut.h"
-#include "../utils/calls.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/talloc.h"
+#include "utils/mut.h"
+#include "utils/calls.h"
+#include "builtins.h"
 
 #if SINGELI
   #define SINGELI_FILE select
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
   typedef bool (*SimdSelectFn)(void* w0, void* x0, void* r0, u64 wl, u64 xl);
   #define SIMD_SELECT(WE, XL) ({ AUTO we_=(WE); AUTO xl_=(XL); assert(we_>=el_i8 && we_<=el_i32 && xl_>=3 && xl_<=6); si_select_tab[4*(we_-el_i8)+xl_-3]; })
 #endif

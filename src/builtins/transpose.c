@@ -38,11 +38,11 @@
 //   SHOULD convert ⍉ with rank to a Reorder Axes call
 //   COULD recognize ⍉ with rank+repeat combinations
 
-#include "../core.h"
-#include "../utils/mut.h"
-#include "../utils/talloc.h"
-#include "../builtins.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "utils/mut.h"
+#include "utils/talloc.h"
+#include "builtins.h"
+#include "utils/calls.h"
 
 #if __BMI2__ && __x86_64__
   #if !SLOW_PDEP
@@ -67,7 +67,7 @@ typedef void (*TranspFn)(void*,void*,u64,u64,u64,u64);
 #if SINGELI
   #define transposeFns simd_transpose
   #define SINGELI_FILE transpose
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #else
   static TranspFn const transposeFns[] = {
     transpose_i8, transpose_i16, transpose_i32, transpose_i64

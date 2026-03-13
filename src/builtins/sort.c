@@ -1,5 +1,5 @@
-#include "../core.h"
-#include "../utils/talloc.h"
+#include "core.h"
+#include "utils/talloc.h"
 
 // Defines Sort, Grade, isSortedUp/Down, and Bins
 
@@ -20,14 +20,14 @@ static bool bit_isSorted(void* data, u64 down, usz n) {
 
 #if SINGELI
   #define SINGELI_FILE bins
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #endif
 
 #if SINGELI_SIMD
   typedef bool (*IsSortedFn)(void*, u64, usz);
   INIT_GLOBAL IsSortedFn is_sorted[el_B];
   #define SINGELI_FILE sort
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #endif
 
 #define CAT0(A,B) A##_##B

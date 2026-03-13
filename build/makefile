@@ -113,7 +113,7 @@ ifeq ($(WINDOWS), 1)
 	
 endif
 
-ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DFFI=$(i_FFI) $(i_LIBS_CC) $(i_CC_PIE)
+ALL_CC_FLAGS = -std=gnu11 -Wall -Wno-unused-function -fms-extensions -ffp-contract=off -fno-math-errno -fno-strict-aliasing -iquote src $(CCFLAGS) $(f) $(i_f) $(NOWARN) -DBYTECODE_DIR=$(BYTECODE_DIR) -DFFI=$(i_FFI) $(i_LIBS_CC) $(i_CC_PIE)
 ALL_LD_FLAGS = $(LDFLAGS) $(lf) $(i_lf) $(i_PIE) $(i_LIBS_LD)
 
 j=4

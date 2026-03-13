@@ -1,10 +1,10 @@
-#include "../core.h"
-#include "../utils/hash.h"
-#include "../utils/calls.h"
-#include "../utils/mut.h"
-#include "../utils/talloc.h"
-#include "../utils/each.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/hash.h"
+#include "utils/calls.h"
+#include "utils/mut.h"
+#include "utils/talloc.h"
+#include "utils/each.h"
+#include "builtins.h"
 
 
 NOINLINE B intRange16(ux s, ux n) { // s+↕n with i16arr result

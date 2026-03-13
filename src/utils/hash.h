@@ -1,6 +1,6 @@
 #pragma once
-#include "wyhash.h"
-#include "talloc.h"
+#include "utils/wyhash.h"
+#include "utils/talloc.h"
 
 extern INIT_GLOBAL u64 wy_secret[4];
 

@@ -1,12 +1,12 @@
-#include "../core.h"
-#include "../builtins.h"
-#include "../ns.h"
+#include "core.h"
+#include "builtins.h"
+#include "ns.h"
 
 typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
 #if SINGELI
   extern uint64_t* const si_spaced_masks;
   #define SINGELI_FILE bit_arith
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
   INIT_GLOBAL const AndBytesFn andBytes_fn = si_andBytes;
   #define BITARITH_IDX(OP) (OP-op_add)*4 + owl-3
 #else

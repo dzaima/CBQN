@@ -31,10 +31,10 @@
 // SHOULD handle unequal search types better
 // Otherwise, generic hashtable
 
-#include "../core.h"
-#include "../utils/hash.h"
-#include "../utils/talloc.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "utils/hash.h"
+#include "utils/talloc.h"
+#include "utils/calls.h"
 
 extern NOINLINE void memset16(u16* p, u16 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
 extern NOINLINE void memset32(u32* p, u32 v, usz l) { for (usz i=0; i<l; i++) p[i]=v; }
@@ -47,7 +47,7 @@ INIT_GLOBAL RangeFn getRange_fns[el_f64+1];
 #if SINGELI
   extern RangeFn* const simd_getRangeRaw;
   #define SINGELI_FILE search
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #else
   #define GETRANGE(T,MAX,CHK) bool getRange_##T(void* x0, i64* res, u64 ia) { \
     assert(ia>0); T* x=x0; T min=*x,max=min; \

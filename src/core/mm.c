@@ -1,6 +1,6 @@
 #define MM_C 1
-#include "../core.h"
-#include "../utils/mem.h"
+#include "core.h"
+#include "utils/mem.h"
 
 static u64 prepAllocSize(u64 sz) {
   u64 psz = getPageSize();
@@ -13,11 +13,11 @@ static u64 prepAllocSize(u64 sz) {
 GLOBAL bool mem_log_enabled;
 
 #if MM==0
-  #include "../opt/mm_malloc.c"
+  #include "opt/mm_malloc.c"
 #elif MM==1
-  #include "../opt/mm_buddy.c"
+  #include "opt/mm_buddy.c"
 #elif MM==2
-  #include "../opt/mm_2buddy.c"
+  #include "opt/mm_2buddy.c"
 #else
   #error "bad MM value"
 #endif

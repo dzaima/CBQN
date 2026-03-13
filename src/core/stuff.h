@@ -442,7 +442,7 @@ static usz depth(B x) { // doesn't consume
 
 
 #if USE_VALGRIND
-  #include "../utils/valgrind.h"
+  #include "utils/valgrind.h"
 #else
   #define vg_def_p(X, L)
   #define vg_undef_p(X, L)

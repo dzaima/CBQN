@@ -1,7 +1,7 @@
-#include "../core.h"
-#include "../utils/mut.h"
-#include "../utils/talloc.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/mut.h"
+#include "utils/talloc.h"
+#include "builtins.h"
 
 static u8 el_orFill(u8 el) { return el; } // currently arrays always fit their fill element
 

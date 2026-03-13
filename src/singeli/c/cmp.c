@@ -1,5 +1,5 @@
-#include "../../core.h"
-#include "../../builtins.h"
+#include "core.h"
+#include "builtins.h"
 #include <math.h>
 
 extern bool please_tail_call_err;
@@ -7,7 +7,7 @@ static NOINLINE void cmp_err() { if (please_tail_call_err) thrM("Invalid compari
 
 
 #define SINGELI_FILE cmp
-#include "../../utils/includeSingeli.h"
+#include "utils/includeSingeli.h"
 
 FN_LUT_A(cmp_fns, eq, AS); FN_LUT_A(cmp_fns, eq, AA);
 FN_LUT_A(cmp_fns, ne, AS); FN_LUT_A(cmp_fns, ne, AA);

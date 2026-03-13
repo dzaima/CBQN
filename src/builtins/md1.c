@@ -1,8 +1,8 @@
-#include "../core.h"
-#include "../utils/mut.h"
-#include "../utils/each.h"
-#include "../utils/time.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/mut.h"
+#include "utils/each.h"
+#include "utils/time.h"
+#include "builtins.h"
 
 
 

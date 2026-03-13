@@ -1,9 +1,9 @@
-#include "../core.h"
-#include "../utils/file.h"
-#include "../builtins.h"
-#include "../ns.h"
-#include "../utils/cstr.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "utils/file.h"
+#include "builtins.h"
+#include "ns.h"
+#include "utils/cstr.h"
+#include "utils/calls.h"
 #include <stdarg.h>
 
 #ifndef DEBUG
@@ -306,7 +306,7 @@ B internalTemp_c1(B t, B x) {
 }
 
 #if TEST_UTILS
-  #include "../utils/mut.h"
+  #include "utils/mut.h"
 #endif
 #if RANDOMIZE_HEURISTICS
   extern u64 heuristic_seed;

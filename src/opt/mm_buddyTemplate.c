@@ -1,5 +1,5 @@
-#include "../utils/interrupt.h"
-#include "../utils/toplevel.h"
+#include "utils/interrupt.h"
+#include "utils/toplevel.h"
 #define AllocInfo BN(AllocInfo)
 #define buckets   BN(buckets)
 #define al        BN(al)

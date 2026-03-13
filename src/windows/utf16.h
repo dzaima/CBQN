@@ -1,4 +1,4 @@
-#include "../utils/talloc.h"
+#include "utils/talloc.h"
 #include <windows.h>
 
 static u64 utf16lenB(B x) { // doesn't consume

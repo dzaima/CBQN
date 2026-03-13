@@ -1,8 +1,8 @@
-#include "../core.h"
+#include "core.h"
 #if !NO_MMAP
 #include <sys/mman.h>
 #endif
-#include "gc.c"
+#include "opt/gc.c"
 
 #if OBJ_COUNTER
   u64 currObjCounter;
@@ -15,13 +15,13 @@ GLOBAL EmptyValue* mm_buckets[64];
 #define  MUL 1
 #define  MMI(X) X
 #define   BN(X) mm_##X
-#include "mm_buddyTemplate.c"
+#include "opt/mm_buddyTemplate.c"
 
 #undef BN
 #undef BSZ
 
 #if VERIFY_TAIL
-#include "../utils/talloc.h"
+#include "utils/talloc.h"
 FORCE_INLINE u64 ptrHash(void* ptr, usz off) {
   u64 pv = ptr2u64(ptr) ^ off;
   pv*= 0xa0761d6478bd642full;

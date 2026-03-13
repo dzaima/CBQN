@@ -1,6 +1,6 @@
 #pragma once
-#include "talloc.h"
-#include "utf.h"
+#include "utils/talloc.h"
+#include "utils/utf.h"
 
 static char* toCStr(B x) { // doesn't consume
   u64 len = utf8lenB(x);

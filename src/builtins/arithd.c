@@ -1,6 +1,6 @@
-#include "../core.h"
-#include "../utils/each.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/each.h"
+#include "builtins.h"
 #include <math.h>
 
 #define mul_fillFlags A_B
@@ -35,7 +35,7 @@ typedef void (*AndBytesFn)(u8*, u8*, u64, u64);
 extern INIT_GLOBAL const AndBytesFn andBytes_fn;
 
 #if SINGELI_SIMD
-  #include "../singeli/c/arithdDispatch.c"
+  #include "singeli/c/arithdDispatch.c"
 #endif
 
 B floor_c1(B t, B x);

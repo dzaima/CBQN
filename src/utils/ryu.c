@@ -24,7 +24,7 @@ void ryu_init(void) { }
 #else
 
 // original file: d2s.h
-#include "../core.h"
+#include "core.h"
 #include "ryu/ryu_common.h"
 
 // Include either the small or the full lookup tables depending on the mode.

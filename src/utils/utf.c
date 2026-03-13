@@ -1,5 +1,5 @@
-#include "../core.h"
-#include "utf.h"
+#include "core.h"
+#include "utils/utf.h"
 
 static i8 utf8lenb(u8 ch) {
   if (ch<128)           return 1;

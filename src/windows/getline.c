@@ -1,5 +1,4 @@
-
-#include "getline.h"
+#include "windows/getline.h"
 
 ssize_t getline (char **lptr, size_t *n, FILE *fp) {
   wchar_t buf[MAX_LINE_LENGTH/3] = {0};

@@ -1,5 +1,5 @@
-#include "../core.h"
-#include "mut.h"
+#include "core.h"
+#include "utils/mut.h"
 
 SHOULD_INLINE UntaggedArr mut_make_arr(u64 ia, u8 type, u8 el, u8 fillMode, B fillSource) {
   if (DEBUG && el!=el_B && fillMode!=0) {
@@ -302,7 +302,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
 
 #if SINGELI_SIMD
   #define SINGELI_FILE copy
-  #include "./includeSingeli.h"
+  #include "utils/includeSingeli.h"
   
   static void badCopy(void* rp, void* xp, u64 len, void* xRaw) {
     fatal("Copying wrong array type");

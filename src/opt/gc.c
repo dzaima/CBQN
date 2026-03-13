@@ -1,9 +1,9 @@
-#include "gc.h"
-#include "../utils/toplevel.h"
+#include "opt/gc.h"
+#include "utils/toplevel.h"
 
 #if ENABLE_GC
   static void mm_freeFreedAndMerge(void);
-  #include "../utils/time.h"
+  #include "utils/time.h"
   #if GC_LOG_DETAILED
     GLOBAL bool gc_log_enabled = true;
   #else

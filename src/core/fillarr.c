@@ -1,5 +1,5 @@
-#include "../core.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "utils/calls.h"
 
 B asFill(B x) { // consumes
   if (isArr(x)) {

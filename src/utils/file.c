@@ -1,17 +1,17 @@
-#include "../core.h"
-#include "file.h"
-#include "mem.h"
-#include "talloc.h"
-#include "cstr.h"
+#include "core.h"
+#include "utils/file.h"
+#include "utils/mem.h"
+#include "utils/talloc.h"
+#include "utils/cstr.h"
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
 
 #if defined(_WIN32)
   #include <direct.h>
-  #include "../windows/utf16.h"
+  #include "windows/utf16.h"
   // use wide char functions for unicode support / longer paths (potentially)
-  #include "../windows/realpath.c"
+  #include "windows/realpath.c"
 #endif
 
 #if !defined(_WIN32)
@@ -309,7 +309,7 @@ B path_list(B path) {
 #include <unistd.h>
 #else
 #include <windows.h>
-#include "../windows/winError.h"
+#include "windows/winError.h"
 #endif
 
 typedef struct MmapHolder {

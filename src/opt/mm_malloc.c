@@ -1,4 +1,4 @@
-#include "../core.h"
+#include "core.h"
 #include <stdlib.h>
 #include <malloc.h>
 

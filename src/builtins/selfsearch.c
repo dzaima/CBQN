@@ -31,10 +31,10 @@
 // Generic hash table for other cases
 //   Resizing is pretty expensive here
 
-#include "../core.h"
-#include "../utils/hash.h"
-#include "../utils/talloc.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "utils/hash.h"
+#include "utils/talloc.h"
+#include "utils/calls.h"
 
 extern B shape_c1(B, B);
 extern B slash_c2(B, B, B);
@@ -52,7 +52,7 @@ extern NOINLINE void memset64(u64* p, u64 v, usz l);
 
 #if SINGELI
   #define SINGELI_FILE selfsearch
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 
   #define TRY_HASHTAB_RET(NAME, W, RET) \
     if (NAME##_c1_hash##W(rp, (u##W*)xv, n)) { decG(x); return RET; }

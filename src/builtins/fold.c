@@ -53,10 +53,10 @@
 //   SHOULD extend transpose-insert code to any frame and cell rank
 //   SHOULD have dedicated +⌊⌈ insert with rank
 
-#include "../core.h"
-#include "../builtins.h"
-#include "../utils/mut.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "builtins.h"
+#include "utils/mut.h"
+#include "utils/calls.h"
 extern B insert_base(B f, B x, bool has_w, B w); // from cells.c
 
 static const usz sum_small_max = 1<<16;
@@ -64,7 +64,7 @@ static const usz sum_small_max = 1<<16;
   extern uint64_t* const si_spaced_masks;
   #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE fold
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #else
   #define SUM_SMALL(T,W) \
     static i64 sum_small_##T(void* xv, usz ia) { \

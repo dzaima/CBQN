@@ -1,10 +1,9 @@
-#include "../core.h"
-#include "../core/gstack.h"
-#include "../ns.h"
-#include "../utils/file.h"
-#include "../utils/talloc.h"
-#include "../utils/wyhash.h"
-#include "../vm.h"
+#include "core.h"
+#include "ns.h"
+#include "utils/file.h"
+#include "utils/talloc.h"
+#include "utils/wyhash.h"
+#include "vm.h"
 #include <sys/mman.h>
 
 #ifndef USE_PERF
@@ -23,7 +22,7 @@ GLOBAL u64 mmX_ctrs[64];
 #define BSZI(X) ((u8)(64-CLZ((X)-1ull)))
 #define  MMI(X) X
 #define   BN(X) mmX_##X
-#include "../opt/mm_buddyTemplate.h"
+#include "opt/mm_buddyTemplate.h"
 #define  MMI(X) X
 #define  ALSZ  20
 
@@ -65,7 +64,7 @@ extern GLOBAL bool mem_log_enabled;
 #define MMAP(SZ) mmap_nvm(SZ)
 #define  MUL 1
 #define ALLOC_MODE 1
-#include "../opt/mm_buddyTemplate.c"
+#include "opt/mm_buddyTemplate.c"
 #undef ALLOC_MODE
 static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-CLZ(sz-1ull), type); }
 #undef BN
@@ -269,7 +268,7 @@ INS B i_RETD(Scope* sc) {
 
 #if USE_PERF
 #include <unistd.h>
-#include "../utils/file.h"
+#include "utils/file.h"
 FILE* perf_map;
 u32 perfid = 0;
 #endif

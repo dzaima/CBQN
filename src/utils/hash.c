@@ -1,7 +1,7 @@
-#include "../core.h"
+#include "core.h"
 #define HASH_C 1
-#include "hash.h"
-#include "time.h"
+#include "utils/hash.h"
+#include "utils/time.h"
 
 B asNormalized(B x, usz n, bool nanBad); // from search.c
 NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation of atom & arr probably won't be worth it when there are actually sane typed array hashing things

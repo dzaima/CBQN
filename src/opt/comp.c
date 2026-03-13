@@ -1,7 +1,7 @@
-#include "../nfns.h"
-#include "../vm.h"
-#include "../ns.h"
-#include "../utils/mut.h"
+#include "nfns.h"
+#include "vm.h"
+#include "ns.h"
+#include "utils/mut.h"
 // minimal compiler, capable of running mlochbaum/BQN/src/bootstrap/boot2.bqn
 // supports:
 //   parentheses, ⟨…⟩ literals, •-values
@@ -284,7 +284,7 @@ B nc_generate(B p1) { // consumes
 }
 
 #if FAST_NATIVE_COMP
-  #include "../utils/hash.h"
+  #include "utils/hash.h"
   typedef H_b2i** Vars;
   u32 nc_var(Vars vars, B name) { // doesn't consume
     bool had;

@@ -1,5 +1,5 @@
-#include "../core.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "utils/calls.h"
 
 #if SINGELI_SIMD
   extern void (*const orAAu_bit_bit_bit)(void*,void*,void*,u64);
@@ -9,7 +9,7 @@
   }
   
   #define SINGELI_FILE bits
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 
   typedef void (*BlendArrScalarFn)(void* r, void* zero, u64 one, void* mask, u64 n);
   INIT_GLOBAL BlendArrScalarFn* blendArrScalarFns = si_blend_arr_scalar;

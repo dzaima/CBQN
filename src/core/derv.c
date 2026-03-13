@@ -1,6 +1,6 @@
-#include "../core.h"
-#include "../nfns.h"
-#include "../builtins.h"
+#include "core.h"
+#include "nfns.h"
+#include "builtins.h"
 
 DEF_FREE(md1D) { ptr_dec(((Md1D*)x)->m1); dec(((Md1D*)x)->f);                     }
 DEF_FREE(md2D) { ptr_dec(((Md2D*)x)->m2); dec(((Md2D*)x)->f); dec(((Md2D*)x)->g); }

@@ -1,7 +1,7 @@
-#include "../core.h"
-#include "../builtins.h"
-#include "../utils/mut.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "builtins.h"
+#include "utils/mut.h"
+#include "utils/calls.h"
 #include <math.h>
 
 B fne_c1(B, B);

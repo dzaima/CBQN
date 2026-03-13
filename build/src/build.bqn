@@ -369,6 +369,7 @@ po ← { # parsed options
       "-std=gnu11",
       "-Wall", "-Wno-unused-function",
       "-fms-extensions", "-ffp-contract=off", "-fno-math-errno", "-fvisibility=hidden", "-fno-strict-aliasing",
+      "-iquote", "src",
       "-DBYTECODE_DIR="∾•file.Name bytecodeDir,
       "-DSINGELI="∾•Repr singeli,
       "-DFFI="∾•Repr ffi

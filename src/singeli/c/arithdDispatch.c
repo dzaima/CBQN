@@ -1,6 +1,6 @@
-#include "../../core.h"
-#include "../../utils/each.h"
-#include "../../builtins.h"
+#include "core.h"
+#include "utils/each.h"
+#include "builtins.h"
 #include "arithdDispatch.h"
 #include <math.h>
 
@@ -263,7 +263,7 @@ NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
 }
 
 #define SINGELI_FILE dyarith
-#include "../../utils/includeSingeli.h"
+#include "utils/includeSingeli.h"
 
 static void  rootAAu_f64_f64_f64(void* r, void* w, void* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] = pow(((f64*)x)[i], 1.0/((f64*)w)[i]); }
 static void   powAAu_f64_f64_f64(void* r, void* w, void* x, u64 len) { for (u64 i = 0; i < len; i++) ((f64*)r)[i] =     pow(((f64*)w)[i], ((f64*)x)[i]); }
@@ -306,7 +306,7 @@ static NOINLINE B or_SA(B t, B w, B x) {
 extern void (*const orAAu_bit_bit_bit)(void*,void*,void*,u64); // used in bits.c
 
 #define SINGELI_FILE arTables
-#include "../../utils/includeSingeli.h"
+#include "utils/includeSingeli.h"
 
 DyTableAA* dyTableAAFor(B f) {
   assert(isFun(f));

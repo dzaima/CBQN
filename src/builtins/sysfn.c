@@ -1,17 +1,17 @@
-#include "../core.h"
-#include "../utils/hash.h"
-#include "../utils/file.h"
-#include "../utils/wyhash.h"
-#include "../utils/time.h"
-#include "../builtins.h"
-#include "../ns.h"
-#include "../nfns.h"
-#include "../load.h"
+#include "core.h"
+#include "utils/hash.h"
+#include "utils/file.h"
+#include "utils/wyhash.h"
+#include "utils/time.h"
+#include "builtins.h"
+#include "ns.h"
+#include "nfns.h"
+#include "load.h"
 
 #include <unistd.h>
 #if defined(_WIN32) || defined(_WIN64)
   #include <windows.h>
-  #include "../windows/getline.c"
+  #include "windows/getline.c"
 #endif
 #include <errno.h>
 
@@ -1154,9 +1154,9 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
 }
 #elif defined(_WIN32) || defined(_WIN64)
 #define HAS_SH 1
-#include "../windows/winError.h"
-#include "../windows/utf16.h"
-#include "../windows/sh.h"
+#include "windows/winError.h"
+#include "windows/utf16.h"
+#include "windows/sh.h"
 
 static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args

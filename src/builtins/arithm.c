@@ -1,7 +1,7 @@
-#include "../core.h"
-#include "../utils/each.h"
-#include "../builtins.h"
-#include "../ns.h"
+#include "core.h"
+#include "utils/each.h"
+#include "builtins.h"
+#include "ns.h"
 #include <math.h>
 
 static inline B arith_recm(FC1 f, B x) {
@@ -30,7 +30,7 @@ B add_c1(B t, B x) {
 }
 #if SINGELI_SIMD
   #define SINGELI_FILE monarith
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #endif
 
 #define GC1i(SYMB,NAME,FEXPR,TMIN,RMIN,MAIN) B NAME##_c1(B t, B x) { \

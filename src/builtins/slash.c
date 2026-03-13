@@ -70,11 +70,11 @@
 //   Run detection used partly to mitigate write stalls from repeats
 //   COULD also alternate writes to multiple tables if 𝕩 is long enough
 
-#include "../core.h"
-#include "../utils/mut.h"
-#include "../utils/calls.h"
-#include "../utils/talloc.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/mut.h"
+#include "utils/calls.h"
+#include "utils/talloc.h"
+#include "builtins.h"
 
 #ifdef __BMI2__
   #if !SLOW_PDEP
@@ -94,16 +94,16 @@
   extern void (*const si_scan_max_i32)(int32_t* v0,int32_t* v1,uint64_t v2);
   #define vmulq_p8u(A,B) (uint8x16_t)vmulq_p8((poly8x16_t)(A), (poly8x16_t)(B))
   #define SINGELI_FILE slash
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
   extern uint64_t* const si_spaced_masks;
   #define get_spaced_mask(i) si_spaced_masks[i-1]
   #define SINGELI_FILE replicate
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #endif
 
 #if SINGELI_SIMD
   #define SINGELI_FILE count
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #endif
 
 // Dense Where, still significantly worse than SIMD

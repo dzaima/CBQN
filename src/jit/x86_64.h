@@ -1,7 +1,7 @@
 // based on I: https://github.com/mlochbaum/ILanguage/blob/master/x86_64.h
 #pragma once
-#include "../core.h"
-#include "../utils/talloc.h"
+#include "core.h"
+#include "utils/talloc.h"
 
 //       V - volatile (overwritten by calls)
 // 0 rax V result

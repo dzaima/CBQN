@@ -1,5 +1,4 @@
 #include "core.h"
-#include "h.h"
 #include "nfns.h"
 
 STATIC_GLOBAL u32 nfn_curr;

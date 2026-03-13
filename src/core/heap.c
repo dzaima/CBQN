@@ -1,4 +1,4 @@
-#include "../core.h"
+#include "core.h"
 
 #if HEAP_VERIFY
 GLOBAL u32 heapVerify_mode = -1;

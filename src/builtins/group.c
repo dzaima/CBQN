@@ -19,14 +19,14 @@
 //   SHOULD use memcpy and bit_cpy for other sizes
 //   TRIED separating neg>0 and neg==0 loops, no effect
 
-#include "../core.h"
-#include "../utils/talloc.h"
-#include "../utils/calls.h"
-#include "../utils/mut.h"
+#include "core.h"
+#include "utils/talloc.h"
+#include "utils/calls.h"
+#include "utils/mut.h"
 
 #if SINGELI
   #define SINGELI_FILE group
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #endif
 #if SINGELI_SIMD
   // From slash.c

@@ -1,9 +1,9 @@
-#include "../core.h"
-#include "../utils/each.h"
-#include "../utils/talloc.h"
-#include "../utils/calls.h"
-#include "../nfns.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/each.h"
+#include "utils/talloc.h"
+#include "utils/calls.h"
+#include "nfns.h"
+#include "builtins.h"
 
 B val_c1(Md2D* d,      B x) { return c1(d->f,   x); }
 B val_c2(Md2D* d, B w, B x) { return c2(d->g, w,x); }

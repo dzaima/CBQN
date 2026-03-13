@@ -1,5 +1,5 @@
-#include "../core.h"
-#include "../utils/mut.h"
+#include "core.h"
+#include "utils/mut.h"
 
 INIT_GLOBAL u8 const elType2type[] = {
   [el_i8 ] = t_i8arr, [el_c8 ] = t_c8arr,

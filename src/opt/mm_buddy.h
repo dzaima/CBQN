@@ -1,4 +1,4 @@
-#include "gc.h"
+#include "opt/gc.h"
 
 typedef struct EmptyValue EmptyValue;
 struct EmptyValue { // needs set: mmInfo; type=t_empty; next; everything else can be garbage
@@ -15,7 +15,7 @@ extern GLOBAL u64 mm_ctrs[64];
 extern GLOBAL EmptyValue* mm_buckets[64];
 #define BSZ(X) (1ull<<(X))
 #define  BN(X) mm_##X
-#include "mm_buddyTemplate.h"
+#include "opt/mm_buddyTemplate.h"
 
 
 #define LOG2(X) ((u8)(64-CLZ((X)-1ull)))

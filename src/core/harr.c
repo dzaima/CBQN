@@ -1,6 +1,4 @@
-#include "../core.h"
-#include "gstack.h"
-
+#include "core.h"
 
 NOINLINE B m_caB(usz ia, B* a) {
   HArr_p r = m_harrUv(ia);

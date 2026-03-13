@@ -1,5 +1,5 @@
-#include "../core.h"
-#include "../vm.h"
+#include "core.h"
+#include "vm.h"
 
 u64 mm_heapUsed();
 #if JIT_START!=-1

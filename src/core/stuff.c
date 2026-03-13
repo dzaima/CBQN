@@ -1,8 +1,8 @@
-#include "../core.h"
-#include "../utils/mut.h"
-#include "../utils/utf.h"
-#include "../utils/talloc.h"
-#include "../builtins.h"
+#include "core.h"
+#include "utils/mut.h"
+#include "utils/utf.h"
+#include "utils/talloc.h"
+#include "builtins.h"
 #include <stdarg.h>
 #include <math.h>
 
@@ -545,7 +545,7 @@ NOINLINE void print_allocStats() {
 
 
 #if USE_VALGRIND
-  #include "../utils/valgrind.c"
+  #include "utils/valgrind.c"
 #endif
 
 // for gdb
@@ -650,7 +650,7 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
 #endif
 
 #if RANDOMIZE_HEURISTICS
-  #include "../utils/wyhash.h"
+  #include "utils/wyhash.h"
   #ifndef MATCH_ERROR_MESSAGES
     #define MATCH_ERROR_MESSAGES 1
   #endif

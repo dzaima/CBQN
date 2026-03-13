@@ -1,4 +1,4 @@
-#include "../core.h"
+#include "core.h"
 
 #define SQFN_START assert(xa == a(x) && ia==IA(x) && ia>0 && TY(x)==type && a(x)==xa)
 typedef B (*SqueezeFn)(B x, Arr* xa, u8 type, ux ia);
@@ -51,7 +51,7 @@ static B squeeze_nope(B x, Arr* xa, u8 type, ux ia) {
 
 #if SINGELI_SIMD
   #define SINGELI_FILE squeeze
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
   
   SQFN_NUM(i8,  or = si_squeeze_i8 ( i8anyv_ptr(xa), ia); if(or>       1) goto squeezed; else goto mostBit;)
   SQFN_NUM(i16, or = si_squeeze_i16(i16anyv_ptr(xa), ia); if(or>  I8_MAX) goto squeezed; else goto mostI8;)

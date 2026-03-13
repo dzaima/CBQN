@@ -1,8 +1,8 @@
-#include "../core.h"
+#include "core.h"
 #if !NO_MMAP
 #include <sys/mman.h>
 #endif
-#include "gc.c"
+#include "opt/gc.c"
 
 #if OBJ_COUNTER
   GLOBAL u64 currObjCounter;
@@ -22,7 +22,7 @@ GLOBAL EmptyValue* mm_buckets[128];
 #define  MUL 1
 #define  MMI(X) X
 #define   BN(X) b1_##X
-#include "mm_buddyTemplate.c"
+#include "opt/mm_buddyTemplate.c"
 #undef BN
 #undef BSZ
 
@@ -34,7 +34,7 @@ GLOBAL EmptyValue* mm_buckets[128];
 #define  MUL 3
 #define  MMI(X) ((X)|64)
 #define   BN(X) b3_##X
-#include "mm_buddyTemplate.c"
+#include "opt/mm_buddyTemplate.c"
 #undef BN
 #undef BSZ
 #undef ALLOC_MODE

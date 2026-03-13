@@ -1,5 +1,5 @@
-#include "../core.h"
-#include "../utils/calls.h"
+#include "core.h"
+#include "utils/calls.h"
 
 NOINLINE i32 compareF(B w, B x) {
   if (isNum(w) & isC32(x)) return -1;
@@ -123,7 +123,7 @@ INIT_GLOBAL u8 const matchFnData[] = { // for the main diagonal, amount to shift
 #if SINGELI_SIMD
   #define F(X) simd_equal_##X
   #define SINGELI_FILE equal
-  #include "../utils/includeSingeli.h"
+  #include "utils/includeSingeli.h"
 #else
   #define F(X) equal_##X
   bool F(1_1)(void* w, void* x, u64 l, u64 d) {
