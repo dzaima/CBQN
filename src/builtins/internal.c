@@ -293,8 +293,6 @@ B eequal_c2(B t, B w, B x) {
   return m_i32(r);
 }
 
-bool indistinguishable(B w, B x);
-
 B indistinguishable_c2(B t, B w, B x) {
   bool r = indistinguishable(w, x);
   dec(w); dec(x);
@@ -312,6 +310,7 @@ B internalTemp_c1(B t, B x) {
   extern u64 heuristic_seed;
 #endif
 #if NATIVE_COMPILER
+  #include "vm/load.h"
   extern B native_comp;
   void switchComp(void);
 #endif

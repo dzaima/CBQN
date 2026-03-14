@@ -28,9 +28,13 @@ typedef struct Block Block;
 typedef struct Scope Scope;
 NOINLINE B load_fullpath(B path, B name); // doesn't consume
 B bqn_explain(B str, B vars); // consumes str & vars
+B bqn_exec(B str, B state); // consumes both
 B bqn_execFile(B path, B args); // consumes both
 B bqn_execFileRe(B path, B args, B re); // consumes path,args
 Block* bqn_comp   (B str, B state, B re, Scope* sc, u8 kind, bool loose, bool noNS); // consumes str,state; noNS: fail to compile if result would be a namespace
 B      rebqn_exec (B str, B state, B re); // consumes str,state; runs in a new environment
 B      rerepl_exec(B str, B state, B re); // consumes str,state; uses re_mode and re_scope
 void init_comp(B* new_re, B* prev_re, B prim, B sys); // doesn't consume; writes re_* compiling info into new_re
+
+void cbqn_init(void);
+NORETURN void bqn_exit(i32 code);

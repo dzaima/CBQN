@@ -469,9 +469,9 @@ Most toggles require a value of `1` to be enabled.
 #define REPL_INTERRUPT 0 // support ctrl+c for interrupting some REPL execution
 #define ENABLE_GC 1      // enable garbage collection
 #define MM 1             // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
-#define HEAP_MAX ~0ULL   // initial heap max size (overridden by -M)
+#define HEAP_MAX U64_MAX // initial heap max size (overridable via -M)
 #define JIT_ENABLED (u)  // force-enable or force-disable JIT (x86_64-only)
-#define RANDSEED 0       // seed for initializing •rand (0 uses time)
+#define RANDSEED (u)     // seed for initializing •rand (if undefined, uses time)
 #define HASHSEED 0       // seed for hashing secret (0 uses time)
 #define JIT_START 2      // number of calls for when to start JITting (x86_64-only); default is 2, defined in vm.h
         // -1: never JIT (≈ JIT_ENABLED=0)

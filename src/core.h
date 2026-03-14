@@ -3,6 +3,9 @@
 #include "core/h.h"
 #include "core/stuff.h"
 
+#ifndef ENABLE_GC
+  #define ENABLE_GC 1
+#endif
 #if MM==0
   #include "opt/mm_malloc.h"
   #undef ENABLE_GC
@@ -24,11 +27,6 @@
 
 #include "core/derv.h"
 #include "core/arrFns.h"
-
-#ifdef RT_VERIFY
-  extern GLOBAL B r1Objs[RT_LEN];
-#endif
-
 
 typedef struct BFn {
   struct Fun;
@@ -57,3 +55,21 @@ typedef struct BMd2 {
   M2C4 uc1;
   M2C5 ucw;
 } BMd2;
+
+#define RT_LEN 64
+#if RT_VERIFY
+  extern GLOBAL B r1Objs[RT_LEN];
+#endif
+
+#ifndef FFI
+  #define FFI 2
+#endif
+#ifndef FORMATTER
+  #define FORMATTER 1
+#endif
+#ifndef CHECK_VALID
+  #define CHECK_VALID 1
+#endif
+#if HEAP_VERIFY
+  void cbqn_heapVerify(void);
+#endif

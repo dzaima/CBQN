@@ -1,3 +1,17 @@
+#ifndef SEMANTIC_CATCH
+  #define SEMANTIC_CATCH USE_SETJMP
+#endif
+
+#ifndef EACH_FILLS
+  #define EACH_FILLS 0 // must stay 0 if !SEMANTIC_CATCH
+#endif
+#ifndef SFNS_FILLS
+  #define SFNS_FILLS 1
+#endif
+#ifndef PROPER_FILLS
+  #define PROPER_FILLS SFNS_FILLS
+#endif
+
 typedef struct FillArr {
   struct Arr;
   B fill;

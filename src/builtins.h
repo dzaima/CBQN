@@ -111,3 +111,7 @@ FOR_PM1(F,F,F)
 FOR_PM2(F,F,F)
 #undef F
 rt_invFnReg, rt_invFnSwap;
+
+char* pfn_repr(u8 u);
+char* pm1_repr(u8 u);
+char* pm2_repr(u8 u);

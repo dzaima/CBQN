@@ -59,12 +59,12 @@ B primInd_c1(B t, B x) {
 }
 
 B nsFmt(B x);
-#ifdef RT_WRAP
+#if RT_WRAP
 B rtWrap_unwrap(B x);
 #endif
 B glyph_c1(B t, B x) {
   if (!isVal(x)) return m_c32vec_0(U"(•Glyph: not given a function)");
-  #ifdef RT_WRAP
+  #if RT_WRAP
     x = rtWrap_unwrap(x);
   #endif
   if (isPrim(x)) {
@@ -665,7 +665,7 @@ B makeRand_c1(B t, B x) {
 STATIC_GLOBAL B randNS;
 B getRandNS(void) {
   if (randNS.u == 0) {
-    #if RANDSEED==0
+    #ifndef RANDSEED
       randNS = c1G(bi_makeRand, m_f64(nsTime()));
     #else
       randNS = c1G(bi_makeRand, m_f64(RANDSEED));

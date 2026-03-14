@@ -1,5 +1,9 @@
 #include "core.h"
 
+#ifndef CBQN_EXPORT
+  #define CBQN_EXPORT 1
+#endif
+
 #if FFI && !defined(CBQN_EXPORT)
   #error "Expected CBQN_EXPORT if FFI is defined"
 #endif
@@ -24,6 +28,7 @@
   #include "core/ns.h"
   #include "utils/file.h"
   #include "utils/toplevel.h"
+  #include "vm/load.h"
 // ..continuing under "#if CBQN_EXPORT"
 
 #ifndef DIRECT_BQNV

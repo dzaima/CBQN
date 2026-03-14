@@ -1,28 +1,7 @@
-// memory defs
 #ifndef MAP_NORESERVE
  #define MAP_NORESERVE 0 // apparently needed for freebsd or something
 #endif
 
-#define IMAX(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ > b_? a_ : b_; })
-#define IMIN(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ < b_? a_ : b_; })
-#define ICMP(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); (a_>b_?1:0)-(a_<b_?1:0); })
-#define IABS(R, X) ({ AUTO sgn_ = (X); R uns_ = (R) sgn_; sgn_<0? -uns_ : uns_; })
-
-static void storeu_u64(void* p, u64 v) { memcpy(p, &v, 8); }  static u64 loadu_u64(void* p) { u64 v; memcpy(&v, p, 8); return v; }
-static void storeu_u32(void* p, u32 v) { memcpy(p, &v, 4); }  static u32 loadu_u32(void* p) { u32 v; memcpy(&v, p, 4); return v; }
-static void storeu_u16(void* p, u16 v) { memcpy(p, &v, 2); }  static u16 loadu_u16(void* p) { u16 v; memcpy(&v, p, 2); return v; }
-#define ptr_roundUp(P, N) ({ AUTO p_ = (P); u64 n_ = (N); TOPTR(typeof(*p_), (ptr2u64(p_)+n_-1) & ~(n_-1)); })
-#define ptr_roundUpToEl(P) ({ AUTO p2_ = (P); ptr_roundUp(p2_, _Alignof(typeof(*p2_))); })
-
-static u64 bit_reverse64(u64 x) {
-  u64 c = __builtin_bswap64(x);
-  c = (c&0x0f0f0f0f0f0f0f0f)<<4 | (c&0xf0f0f0f0f0f0f0f0)>>4;
-  c = (c&0x3333333333333333)<<2 | (c&0xcccccccccccccccc)>>2;
-  c = (c&0x5555555555555555)<<1 | (c&0xaaaaaaaaaaaaaaaa)>>1;
-  return c;
-}
-
-void print_allocStats(void);
 void vm_pstLive(void);
 
 typedef struct CustomObj {
@@ -32,19 +11,7 @@ typedef struct CustomObj {
 } CustomObj;
 void* m_customObj(u64 size, V2v visit, V2v freeO);
 
-// shape mess
-
-typedef struct ShArr {
-  struct Value;
-  usz a[];
-} ShArr;
-static ShArr* shObjS(usz* x) { return RFLD(x, ShArr, a); }
-static ShArr* shObj (B x) { return RFLD(SH(x), ShArr, a); }
-static ShArr* shObjP(Value* x) { return RFLD(PSH((Arr*)x), ShArr, a); }
-static void decShObj(ShArr* x) { tptr_dec(x, mm_free); }
-static void decSh(Value* x) { if (RARE(PRNK(x)>1)) decShObj(shObjP(x)); }
-
-// some array stuff
+// array initialization & metadata stuff
 
 typedef void (*M_CopyF)(void*, usz, B, usz, usz);
 typedef void (*M_FillF)(void*, usz, B, usz);
@@ -179,12 +146,16 @@ static void shcpy(usz* dst, usz* src, ux len) {
   PLAINLOOP for (ux i = 0; i < len; i++) dst[i] = src[i];
 }
 
-static usz shProd(usz* sh, usz s, usz e) {
+static usz uszMul(usz a, usz b) {
+  if (mulOn(a, b)) thrM("Size too large");
+  return a;
+}
+static usz shProd(usz* sh, usz s, usz e) { // doesn't check for overflow; be careful on slices of shapes with empty product!
   usz r = 1;
   PLAINLOOP for (i32 i = s; i < e; i++) r*= sh[i];
   return r;
 }
-static usz arr_csz(B x) {
+static usz arr_csz(B x) { // if 0=≠x, may overflow, returning a meaningless value
   ur xr = RNK(x);
   if (xr<=1) return 1;
   return shProd(SH(x), 1, xr);
@@ -199,8 +170,27 @@ static bool ptr_eqShape(usz* wsh, ur wr, usz* xsh, ur xr) {
 }
 static bool eqShape(B w, B x) { assert(isArr(w) && isArr(x)); return ptr_eqShape(SH(w), RNK(w), SH(x), RNK(x)); }
 
-B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
+void noop_visit(Value* x);
+#if HEAP_VERIFY
+  void arr_visit(Value* x);
+  #define VISIT_SHAPE(X) ({ if (PRNK(X)>1) mm_visitP(shObjP(X)); })
+#else
+  #define arr_visit noop_visit
+  #define VISIT_SHAPE(X)
+#endif
 
+// core utilities
+
+B bqn_fmt(B x); // consumes
+B bqn_repr(B x); // consumes
+bool equal(B w, B x); // doesn't consume
+bool eequal(B w, B x); // doesn't consume
+bool indistinguishable(B w, B x); // doesn't consume
+B toCells(B x); // consumes
+B toKCells(B x, ur k); // consumes
+B bqn_merge(B x, u32 type); // consumes
+
+B bit_sel(B b, B e0, B e1); // consumes b; b must be bitarr; b⊏e0‿e1
 
 Arr* allZeroes(usz ia); // ia⥊0 with undefined shape; always produces new array
 Arr* allOnes(usz ia); // ia⥊1 with undefined shape; always produces new array
@@ -220,17 +210,17 @@ void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam);
 
 Arr* customizeShape(B x); // consumes; returns new array with unset shape
 Arr* cpyWithShape(B x); // consumes; returns new array with the same shape as x (SH(x) will be dangling, PSH(result) must be used to access it)
+
 Arr* emptyArr(B x, ur xr); // doesn't consume; returns an empty array with the same fill as x; if xr>1, shape must be set; else, x may have refc>1
 Arr* emptyVec(B x); // doesn't consume; emptyArr(x, 1)
+B emptyNumsWithShape(B x); // consumes; empty bitarr with shape ≢x
+B emptyChrsWithShape(B x); // consumes; empty c8arr  with shape ≢x
+NOINLINE Arr* emptyWithFill(B fill); // consumes; returns new array with unset shape and the specified fill
 
 typedef struct { Arr* obj; void* data; } UntaggedArr;
 UntaggedArr  m_arrp_copyFill(B x, ux ia); // doesn't consume; create new array with the fill and elType of x
 UntaggedArr m_barrp_copyFill(B x, ux ia); // doesn't consume; create new fillarr or harr with the fill of x
 static UntaggedArr m_barrp_withFill(ux ia, B fill); // doesn't consume; create new fillarr or harr with the specified fill
-
-NOINLINE Arr* emptyWithFill(B fill); // consumes; returns new array with unset shape and the specified fill
-B emptyNumsWithShape(B x); // consumes; empty bitarr with shape ≢x
-B emptyChrsWithShape(B x); // consumes; empty c8arr  with shape ≢x
 
 typedef struct { B obj; void* data; } DirectArr;
 // returns an array with elType==re, with same shape/elements/fill as x, and its data pointer
@@ -263,15 +253,7 @@ void incEach(B* elts, ux ia); // for (ux i = 0; i < ia; i++) inc(elts[i]);
 B m_vec1(B a);      // complete fills
 B m_vec2(B a, B b); // incomplete fills
 
-// random stuff
-
-#define addOn(V,X) ({ AUTO v_ = &(V); __builtin_add_overflow(*v_, X, v_); })
-#define mulOn(V,X) ({ AUTO v_ = &(V); __builtin_mul_overflow(*v_, X, v_); })
-
-static usz uszMul(usz a, usz b) {
-  if (mulOn(a, b)) thrM("Size too large");
-  return a;
-}
+// eltype stuff
 
 static u8 selfElType_i32(i32 i) {
   return i==(i8)i? (i==(i&1)? el_bit : el_i8) : (i==(i16)i? el_i16 : el_i32);
@@ -332,19 +314,25 @@ void fprint_fmt(FILE* f, char* p, ...);
 #define C1(F,  X) C1_0(F,  X)
 #define C2(F,W,X) C2_0(F,W,X)
 
-bool validate_flags(bool crash, B x);
 char* type_repr(u8 u);
-char* pfn_repr(u8 u);
-char* pm1_repr(u8 u);
-char* pm2_repr(u8 u);
 char* eltype_repr(u8 u);
 char* genericDesc(B x); // doesn't consume
 bool isPureFn(B x); // doesn't consume
 bool isStr(B x); // doesn't consume; returns if x is a rank 1 array of characters (includes any empty array)
-B bqn_merge(B x, u32 type); // consumes
+
+B def_fn_uc1(B t,    B o,           B x);  B def_fn_ucw(B t,    B o,           B w, B x);
+B def_m1_uc1(Md1* t, B o, B f,      B x);  B def_m1_ucw(Md1* t, B o, B f,      B w, B x);
+B def_m2_uc1(Md2* t, B o, B f, B g, B x);  B def_m2_ucw(Md2* t, B o, B f, B g, B w, B x);
+B def_fn_is(B t,      B x);
+B def_fn_im(B t,      B x);  B def_m1_im(Md1D* d,      B x);  B def_m2_im(Md2D* d,      B x);
+B def_fn_iw(B t, B w, B x);  B def_m1_iw(Md1D* d, B w, B x);  B def_m2_iw(Md2D* d, B w, B x);
+B def_fn_ix(B t, B w, B x);  B def_m1_ix(Md1D* d, B w, B x);  B def_m2_ix(Md2D* d, B w, B x);
+NORETURN B c1_bad(B f,      B x);
+NORETURN B c2_bad(B f, B w, B x);
 
 
 
+// squeeze
 B squeeze_any(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
 B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed; if this function errors due to OOM, the argument won't yet be consumed
 
@@ -379,24 +367,7 @@ static B squeeze_chrTry(B x, u8* re_out, u32 req) { SQ_UNPACK(squeeze_chrTry) } 
 B squeeze_numOut(B x); // consumes; squeeze_numTry but without re_out
 B squeeze_chrOut(B x); // consumes; squeeze_chrTry but without re_out
 
-B def_fn_uc1(B t,    B o,           B x);  B def_fn_ucw(B t,    B o,           B w, B x);
-B def_m1_uc1(Md1* t, B o, B f,      B x);  B def_m1_ucw(Md1* t, B o, B f,      B w, B x);
-B def_m2_uc1(Md2* t, B o, B f, B g, B x);  B def_m2_ucw(Md2* t, B o, B f, B g, B w, B x);
-B def_fn_is(B t,      B x);
-B def_fn_im(B t,      B x);  B def_m1_im(Md1D* d,      B x);  B def_m2_im(Md2D* d,      B x);
-B def_fn_iw(B t, B w, B x);  B def_m1_iw(Md1D* d, B w, B x);  B def_m2_iw(Md2D* d, B w, B x);
-B def_fn_ix(B t, B w, B x);  B def_m1_ix(Md1D* d, B w, B x);  B def_m2_ix(Md2D* d, B w, B x);
-
-void noop_visit(Value* x);
-#if HEAP_VERIFY
-  void arr_visit(Value* x);
-  #define VISIT_SHAPE(X) ({ if (PRNK(X)>1) mm_visitP(shObjP(X)); })
-#else
-  #define arr_visit noop_visit
-  #define VISIT_SHAPE(X)
-#endif
-
-
+// comparisons
 
 SHOULD_INLINE i32 floatCompare(f64 w, f64 x) { // w •Cmp x
   if (RARE(w!=w || x!=x)) return (w!=w) - (x!=x);
@@ -439,7 +410,7 @@ static usz depth(B x) { // doesn't consume
   return depthF(x);
 }
 
-
+// memory management stuff
 
 #if USE_VALGRIND
   #include "utils/valgrind.h"
@@ -450,30 +421,6 @@ static usz depth(B x) { // doesn't consume
   #define vg_undef_v(X) (X)
 #endif
 
-// call stuff
-NORETURN B c1_bad(B f,      B x);
-NORETURN B c2_bad(B f, B w, B x);
-NORETURN B m1c1_bad(Md1D* d,      B x);
-NORETURN B m1c2_bad(Md1D* d, B w, B x);
-NORETURN B m2c1_bad(Md2D* d,      B x);
-NORETURN B m2c2_bad(Md2D* d, B w, B x);
-
-B md_c1(B t,      B x);
-B md_c2(B t, B w, B x);
-B arr_c1(B t,      B x);
-B arr_c2(B t, B w, B x);
-static FC1 c1fn(B f) {
-  if (isFun(f)) return c(Fun,f)->c1;
-  if (isMd(f)) return md_c1;
-  return arr_c1;
-}
-static FC2 c2fn(B f) {
-  if (isFun(f)) return c(Fun,f)->c2;
-  if (isMd(f)) return md_c2;
-  return arr_c2;
-}
-
-// alloc stuff
 #if ALLOC_STAT
   extern GLOBAL u64* ctr_a;
   extern GLOBAL u64* ctr_f;

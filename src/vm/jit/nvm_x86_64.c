@@ -33,7 +33,7 @@ __attribute__((optnone))
 #endif
 #endif
 static void* mmap_nvm(u64 sz) {
-  u64 near = (u64)&bqn_exec;
+  u64 near = (u64)&evalBC;
   u64 MAX_DIST = 1ULL<<30;
   if (near < MAX_DIST) return mmap(NULL, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1, 0);
   u64 ps = getPageSize();

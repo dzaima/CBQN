@@ -52,12 +52,6 @@ void noop_visit(Value* x) { }
 #if HEAP_VERIFY
   void arr_visit(Value* x) { VISIT_SHAPE(x); }
 #endif
-NOINLINE B c1_bad(B f,      B x) { thrM("This function can't be called monadically"); }
-NOINLINE B c2_bad(B f, B w, B x) { thrM("This function can't be called dyadically"); }
-NOINLINE B m1c1_bad(Md1D* d,      B x) { thrM("This 1-modifier can't be called monadically"); }
-NOINLINE B m1c2_bad(Md1D* d, B w, B x) { thrM("This 1-modifier can't be called dyadically"); }
-NOINLINE B m2c1_bad(Md2D* d,      B x) { thrM("This 2-modifier can't be called monadically"); }
-NOINLINE B m2c2_bad(Md2D* d, B w, B x) { thrM("This 2-modifier can't be called dyadically"); }
 
 NOINLINE B md_c1(B t,      B x) { thrM("Cannot call a modifier"); }
 NOINLINE B md_c2(B t, B w, B x) { thrM("Cannot call a modifier"); }

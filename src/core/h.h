@@ -1,34 +1,7 @@
 #pragma once
 
-#ifndef USE_SETJMP
-  #define USE_SETJMP 1
-#endif
-#ifndef ENABLE_GC
-  #define ENABLE_GC 1
-#endif
-#ifndef CHECK_VALID
-  #define CHECK_VALID 1
-#endif
-#ifndef MM
-  #define MM 1
-#endif
-#ifndef HEAP_MAX
-  #define HEAP_MAX ~0ULL
-#endif
-#ifndef FORMATTER
-  #define FORMATTER 1
-#endif
-#ifndef RANDSEED
-  #define RANDSEED 0
-#endif
 #ifndef DEBUG
   #define DEBUG 0
-#endif
-#ifndef FFI
-  #define FFI 2
-  #ifndef CBQN_EXPORT
-    #define CBQN_EXPORT 1
-  #endif
 #endif
 
 #ifdef __OpenBSD__
@@ -40,34 +13,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#ifndef USE_SETJMP
+  #define USE_SETJMP 1
+#endif
 #if USE_SETJMP
 #include <setjmp.h>
 #endif
 
-#define RT_LEN 64
-
-#ifndef SEMANTIC_CATCH
-  #define SEMANTIC_CATCH USE_SETJMP
+#ifndef MM
+  #define MM 1
 #endif
-#ifndef EACH_FILLS
-  #define EACH_FILLS 0 // must stay 0 if !SEMANTIC_CATCH
-#endif
-#ifndef SFNS_FILLS
-  #define SFNS_FILLS 1
-#endif
-#ifndef PROPER_FILLS
-  #define PROPER_FILLS SFNS_FILLS
-#endif
-
 #if ALL_R0 || ALL_R1
   #define WRAP_NNBI 1
 #endif
-
 #if RT_PERF || RT_VERIFY
   #define RT_WRAP 1
-  #if RT_PERF && RT_VERIFY
-    #error "can't have both RT_PERF and RT_VERIFY"
-  #endif
+#endif
+#if RT_WRAP || WRAP_NNBI
+  #define IF_WRAP(X) X
+#else
+  #define IF_WRAP(X)
 #endif
 
 typedef   int8_t i8;
@@ -109,15 +74,28 @@ typedef size_t ux;
   #define SHOULD_INLINE FORCE_INLINE
 #endif
 #define AUTO __auto_type
-#define CLZ(X) __builtin_clzll(X)
-#define CTZ(X) __builtin_ctzll(X)
-#define POPC(X) __builtin_popcountll(X)
 #define LIKELY(X) __builtin_expect((X)!=0,1)
 #define RARE(X) __builtin_expect((X)!=0,0)
 #define ARBITRARY(T) ((T)0) // to be potentially replaced with something better if such arrives
 #define GUARANTEED(V) ({ AUTO v_ = (V); __builtin_constant_p(v_) && v_; })
 #define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount
 #define RFLD(X,T,F) ((T*)((char*)(X) - offsetof(T,F))) // value, result type, field name; reverse-read field: `T* x = …; E v = x->f; x == RFLD(v, T, f)`
+#define CLZ(X) __builtin_clzll(X)
+#define CTZ(X) __builtin_ctzll(X)
+#define POPC(X) __builtin_popcountll(X)
+#define IMAX(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ > b_? a_ : b_; })
+#define IMIN(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ < b_? a_ : b_; })
+#define ICMP(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); (a_>b_?1:0)-(a_<b_?1:0); })
+#define IABS(R, X) ({ AUTO sgn_ = (X); R uns_ = (R) sgn_; sgn_<0? -uns_ : uns_; })
+#define ptr2u64(X) ((u64)(uintptr_t)(X))
+#define TOPTR(T,X) ((T*)(uintptr_t)(X))
+#define ptr_roundUp(P, N) ({ AUTO p_ = (P); u64 n_ = (N); TOPTR(typeof(*p_), (ptr2u64(p_)+n_-1) & ~(n_-1)); })
+#define ptr_roundUpToEl(P) ({ AUTO p2_ = (P); ptr_roundUp(p2_, _Alignof(typeof(*p2_))); })
+#define addOn(V,X) ({ AUTO v_ = &(V); __builtin_add_overflow(*v_, X, v_); })
+#define mulOn(V,X) ({ AUTO v_ = &(V); __builtin_mul_overflow(*v_, X, v_); })
+static void storeu_u64(void* p, u64 v) { memcpy(p, &v, 8); }  static u64 loadu_u64(void* p) { u64 v; memcpy(&v, p, 8); return v; }
+static void storeu_u32(void* p, u32 v) { memcpy(p, &v, 4); }  static u32 loadu_u32(void* p) { u32 v; memcpy(&v, p, 4); return v; }
+static void storeu_u16(void* p, u16 v) { memcpy(p, &v, 2); }  static u16 loadu_u16(void* p) { u16 v; memcpy(&v, p, 2); return v; }
 #define N64x "%"SCNx64
 #define N64d "%"SCNd64
 #define N64u "%"SCNu64
@@ -165,7 +143,6 @@ typedef size_t ux;
 #define GLOBAL __attribute__((visibility("hidden"))) // global variable mutated potentially multiple times, or set to a value referencing the heap
 #define STATIC_GLOBAL static // GLOBAL (i.e. may be state-specific) but static
 
-
 #if USE_REPLXX_IO
   #include <replxx.h>
   extern GLOBAL Replxx* global_replxx;
@@ -206,10 +183,9 @@ static const u16 NSP_TAG = 0b1111111111110101; // FFF5 1111111111110101ppppppppp
 static const u16 OBJ_TAG = 0b1111111111110110; // FFF6 1111111111110110ppppppppppppppppppppppppppppppppppppppppppppp000 custom/internal object
 static const u16 ARR_TAG = 0b1111111111110111; // FFF7 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 array (everything else here is an atom)
 static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110................................................... pointer to Value, needs refcounting
+
 #define ftag(X) ((u64)(X) << 48)
-#define ptr2u64(X) ((u64)(uintptr_t)(X))
 #define tagu64(V, T) r_uB((u64)(V) | ftag(T))
-#define TOPTR(T,X) ((T*)(uintptr_t)(X))
 #define c(T,X) TOPTR(T, (X).u&0xFFFFFFFFFFFFull)
 #define tag(V, T) ({ void* tagv_ = (V); r_uB(ptr2u64(tagv_) | ftag(T)); })
 #define taga(V) tag(V,ARR_TAG)
@@ -228,12 +204,6 @@ FORCE_INLINE u64 r_Bu(B x) { return x.u; }
 FORCE_INLINE f64 r_Bf(B x) { return x.f; }
 FORCE_INLINE B r_uB(u64 x) { return (B){.u=x}; }
 FORCE_INLINE B r_fB(f64 x) { return (B){.f=x}; }
-
-#if defined(RT_WRAP) || defined(WRAP_NNBI)
-  #define IF_WRAP(X) X
-#else
-  #define IF_WRAP(X)
-#endif
 
 #if defined(OBJ_TRACK)
   #define OBJ_COUNTER 1
@@ -378,9 +348,6 @@ void gc_add_ref(B* x); // add x as a root reference
 bool gc_maybeGC(bool toplevel); // gc if that seems necessary; returns if did gc
 void gc_forceGC(bool toplevel); // force a gc; who knows what happens if gc is disabled (probably should error)
 u64 tot_heapUsed(void);
-#if HEAP_VERIFY
-  void cbqn_heapVerify(void);
-#endif
 
 // some primitive actions
 static const B bi_N      = (B) {.u = (u64)0x7FF2000000000000ull };
@@ -396,32 +363,23 @@ extern GLOBAL B bi_emptyHVec, bi_emptyIVec, bi_emptyCVec, bi_emptySVec;
 #define emptySVec() incG(bi_emptySVec)
 ALLOC_FN void* mm_alloc(u64 sz, u8 type);
 ALLOC_FN void  mm_free(Value* x);
-static void  mm_visit(B x);
-static void  mm_visitP(void* x);
-static u64   mm_size(Value* x);
+static void mm_visit(B x);
+static void mm_visitP(void* x);
+static u64  mm_size(Value* x);
 #if !VERIFY_TAIL
 #define mm_sizeUsable mm_size
 #endif
 static void dec(B x);
 static B    inc(B x);
 static void ptr_dec(void* x);
+
+NORETURN NOINLINE void fatal(char* s);
 void fprintI(FILE* f, B x); // doesn't consume
 void  printI(         B x); // doesn't consume
 void fprintsB(FILE* f, B x); // doesn't consume
 void  printsB(         B x); // doesn't consume
 void farr_print(FILE* f, B x); // doesn't consume
 void  arr_print(         B x); // doesn't consume
-bool equal(B w, B x);     // doesn't consume
-bool eequal(B w, B x);    // doesn't consume
-B    toCells(B x);        // consumes
-B    toKCells(B x, ur k); // consumes
-B    withFill(B x, B f);  // consumes both
-
-void cbqn_init(void);
-NORETURN void bqn_exit(i32 code);
-B bqn_exec(B str, B state); // consumes both
-B bqn_fmt(B x); // consumes
-B bqn_repr(B x); // consumes
 
 NOINLINE NORETURN void thr(B b);
 NOINLINE NORETURN void rethrow(void);
@@ -462,12 +420,6 @@ void freeThrown(void);
 #define NID(X) ((X)->nid)
 
 #define VTY(X,T) assert(isVal(X) && TY(X)==(T))
-
-#if DEBUG
-  B validate(B x);
-  Value* validateP(Value* x);
-#endif
-NORETURN NOINLINE void fatal(char* s);
 
 // tag checks
 FORCE_INLINE bool isFun(B x) { return (x.u>>48) == FUN_TAG; }
@@ -774,6 +726,20 @@ static B c2G(B f, B w, B x) { assert(isFun(f)); return c(Fun,f)->c2(f, w, x); }
 #define c1rt(N,    X) ({           B x_=(X); SLOW1("!rt_" #N,   x_); c1G(rt_##N,     x_); })
 #define c2rt(N, W, X) ({ B w_=(W); B x_=(X); SLOW2("!rt_" #N,w_,x_); c2G(rt_##N, w_, x_); })
 
+B md_c1(B t,      B x);
+B md_c2(B t, B w, B x);
+B arr_c1(B t,      B x);
+B arr_c2(B t, B w, B x);
+static FC1 c1fn(B f) {
+  if (isFun(f)) return c(Fun,f)->c1;
+  if (isMd(f)) return md_c1;
+  return arr_c1;
+}
+static FC2 c2fn(B f) {
+  if (isFun(f)) return c(Fun,f)->c2;
+  if (isMd(f)) return md_c2;
+  return arr_c2;
+}
 
 struct Md1 {
   struct Value;
@@ -785,3 +751,21 @@ struct Md2 {
   D2C1 c1; // f(md2d{this,f,g},  x); consumes x
   D2C2 c2; // f(md2d{this,f,g},w,x); consumes w,x
 };
+
+typedef struct ShArr {
+  struct Value;
+  usz a[];
+} ShArr;
+static ShArr* shObjS(usz* x) { return RFLD(x, ShArr, a); }
+static ShArr* shObj (B x) { return RFLD(SH(x), ShArr, a); }
+static ShArr* shObjP(Value* x) { return RFLD(PSH((Arr*)x), ShArr, a); }
+static void decShObj(ShArr* x) { tptr_dec(x, mm_free); }
+static void decSh(Value* x) { if (RARE(PRNK(x)>1)) decShObj(shObjP(x)); }
+
+static u64 bit_reverse64(u64 x) {
+  u64 c = __builtin_bswap64(x);
+  c = (c&0x0f0f0f0f0f0f0f0f)<<4 | (c&0xf0f0f0f0f0f0f0f0)>>4;
+  c = (c&0x3333333333333333)<<2 | (c&0xcccccccccccccccc)>>2;
+  c = (c&0x5555555555555555)<<1 | (c&0xaaaaaaaaaaaaaaaa)>>1;
+  return c;
+}

@@ -8,6 +8,9 @@
 #ifndef FAKE_RUNTIME
   #define FAKE_RUNTIME 0
 #endif
+#ifndef HEAP_MAX
+  #define HEAP_MAX U64_MAX
+#endif
 
 #define PRECOMPILED_FILE(END) STR1(../../build/BYTECODE_DIR/gen/END)
 
@@ -508,7 +511,7 @@ void load_init() { // very last init function
     gc_add(rt_depth   = Get(rtObjRaw, n_depth ));
     
     for (usz i = 0; i < RT_LEN; i++) {
-      #ifdef RT_WRAP
+      #if RT_WRAP
       r1Objs[i] = Get(rtObjRaw, i); gc_add(r1Objs[i]);
       #endif
       #if ALL_R1
@@ -516,14 +519,14 @@ void load_init() { // very last init function
         B r = Get(rtObjRaw, i);
       #else
         bool nnbi = !rtComplete[i];
-        #if !defined(WRAP_NNBI)
+        #if !WRAP_NNBI
         if (nnbi) fatal("Refusing to load non-native builtin into runtime without -DWRAP_NNBI");
         #endif
         B r = nnbi? Get(rtObjRaw, i) : inc(fruntime[i]);
       #endif
       if (q_N(r)) fatal("· in runtime!\n");
       if (isVal(r)) v(r)->flags|= i+1;
-      #if defined(RT_WRAP) || defined(WRAP_NNBI)
+      #if RT_WRAP || WRAP_NNBI
         r = rtWrap_wrap(r, nnbi);
         if (isVal(r)) v(r)->flags|= i+1;
       #endif
@@ -626,6 +629,7 @@ B bqn_execFile(B path, B args) { // consumes both
   return bqn_exec(path_chars(path), state);
 }
 
+void print_allocStats(void);
 void before_exit(void);
 void bqn_exit(i32 code) {
   #ifdef DUMP_ON_EXIT
@@ -701,6 +705,13 @@ B def_m1_ix(Md1D* d, B w, B x) { return def_fn_ix(tag(d,FUN_TAG), w, x); }
 B def_m2_im(Md2D* d,      B x) { return def_fn_im(tag(d,FUN_TAG),    x); }
 B def_m2_iw(Md2D* d, B w, B x) { return def_fn_iw(tag(d,FUN_TAG), w, x); }
 B def_m2_ix(Md2D* d, B w, B x) { return def_fn_ix(tag(d,FUN_TAG), w, x); }
+
+NOINLINE B c1_bad(B f,      B x) { thrM("This function can't be called monadically"); }
+NOINLINE B c2_bad(B f, B w, B x) { thrM("This function can't be called dyadically"); }
+NOINLINE B m1c1_bad(Md1D* d,      B x) { thrM("This 1-modifier can't be called monadically"); }
+NOINLINE B m1c2_bad(Md1D* d, B w, B x) { thrM("This 1-modifier can't be called dyadically"); }
+NOINLINE B m2c1_bad(Md2D* d,      B x) { thrM("This 2-modifier can't be called monadically"); }
+NOINLINE B m2c2_bad(Md2D* d, B w, B x) { thrM("This 2-modifier can't be called dyadically"); }
 
 #if DONT_FREE
 static B empty_get(Arr* x, usz n) {

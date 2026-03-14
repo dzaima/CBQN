@@ -5,7 +5,10 @@
 #include "utils/time.h"
 #endif
 
-#if defined(RT_WRAP) || defined(WRAP_NNBI)
+#if RT_WRAP || WRAP_NNBI
+#if RT_PERF && RT_VERIFY
+  #error "can't have both RT_PERF and RT_VERIFY"
+#endif
 
 
 typedef struct WFun WFun;
@@ -195,7 +198,7 @@ B wm2_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g; WMd2* t = (WMd2*)d->m2;
 
 
 B rtWrap_wrap(B t, bool nnbi) {
-  #if !defined(RT_WRAP)
+  #if !RT_WRAP
     if (!nnbi) return t;
   #endif
   if (isFun(t)) {
