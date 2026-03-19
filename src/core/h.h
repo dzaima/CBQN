@@ -195,11 +195,10 @@ typedef union B {
   f64 f;
 } B;
 
-typedef union { u32 u; f32 f; } F32R;
-FORCE_INLINE u64 r_f64u(f64 x) { return (B){.f=x}.u; }
-FORCE_INLINE f64 r_u64f(u64 x) { return (B){.u=x}.f; }
-FORCE_INLINE u32 r_f32u(f32 x) { return (F32R){.f=x}.u; }
-FORCE_INLINE f32 r_u32f(u32 x) { return (F32R){.u=x}.f; }
+FORCE_INLINE u64 r_f64u(f64 x) { u64 r; memcpy(&r,&x,8); return r; }
+FORCE_INLINE f64 r_u64f(u64 x) { f64 r; memcpy(&r,&x,8); return r; }
+FORCE_INLINE u32 r_f32u(f32 x) { u32 r; memcpy(&r,&x,4); return r; }
+FORCE_INLINE f32 r_u32f(u32 x) { f32 r; memcpy(&r,&x,4); return r; }
 FORCE_INLINE u64 r_Bu(B x) { return x.u; }
 FORCE_INLINE f64 r_Bf(B x) { return x.f; }
 FORCE_INLINE B r_uB(u64 x) { return (B){.u=x}; }
