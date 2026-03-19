@@ -917,7 +917,7 @@ B select_cells_single(usz ind, B x, usz cam, usz l, usz csz) { // ⥊ ind ⊏˘ 
   return withFill(taga(ra), getFillR(x));
 }
 
-#define CLZC(X) (64-(CLZ((u64)(X))))
+#define CLZC(X) (64-(CLZ64((u64)(X))))
 
 #ifdef SELECT_ROWS_PRINTF
   #undef SELECT_ROWS_PRINTF

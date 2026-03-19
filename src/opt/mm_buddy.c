@@ -23,7 +23,7 @@ GLOBAL EmptyValue* mm_buckets[64];
 #if VERIFY_TAIL
 #include "utils/talloc.h"
 FORCE_INLINE u64 ptrHash(void* ptr, usz off) {
-  u64 pv = ptr2u64(ptr) ^ off;
+  u64 pv = PTR_TO_U64(ptr) ^ off;
   pv*= 0xa0761d6478bd642full;
   pv-= off;
   pv^= 0xe7037ed1a0b428dbull;
@@ -101,7 +101,7 @@ NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u
   u64 dS = off<32? 0 : off-32;
   if (dS>0) dS&= ~7ULL;
   u64 dE = off+32; if (dE>allocTotal) dE = allocTotal; dE&= ~7ULL;
-  printf("%-+6"SCNd64,dS); for (u64 i=dS; i<dE; i+= 8) printf("   0x%012"SCNx64, i + ptr2u64(ptr)); printf("\n");
+  printf("%-+6"SCNd64,dS); for (u64 i=dS; i<dE; i+= 8) printf("   0x%012"SCNx64, i + PTR_TO_U64(ptr)); printf("\n");
   printf("exp:  ");          for (u64 i=dS; i<dE; i++) dumpByte(true,  i>=allocFilled, ptr, i); printf("\n");
   printf("got:  ");          for (u64 i=dS; i<dE; i++) dumpByte(false, i>=allocFilled, ptr, i); printf("\n");
   fflush(stdout); fflush(stderr);

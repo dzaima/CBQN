@@ -195,7 +195,7 @@ MAKE_FLIP(u8, for) MAKE_FLIP(u32, NOUNROLL for) MAKE_FLIP(usz, NOUNROLL for)
   for (usz i=0; i<n; i++) { i16 v=xp[i]; r0[c0 [(u8)v     ]++]=v; }          \
   for (usz i=0; i<n; i++) { i16 v=r0[i]; rp[c1o[(i8)(v>>8)]++]=v; }          \
   ,                                                                          \
-  I *g0 = ptr_roundUpToEl((i32*)(r0+n));                                     \
+  I *g0 = PTR_ROUND_UP_TO_ELT((i32*)(r0+n));                                     \
   for (usz i=0; i<n; i++) { i16 v=xp[i]; T c=c0[(u8)v     ]++; r0[c]=v; g0[c]=i; } \
   for (usz i=0; i<n; i++) { i16 v=r0[i]; rp[c1o[(i8)(v>>8)]++]=g0[i]; }      \
   )                                                                          \

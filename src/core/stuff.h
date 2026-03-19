@@ -147,7 +147,7 @@ static void shcpy(usz* dst, usz* src, ux len) {
 }
 
 static usz uszMul(usz a, usz b) {
-  if (mulOn(a, b)) thrM("Size too large");
+  if (MUL_ON(a, b)) thrM("Size too large");
   return a;
 }
 static usz shProd(usz* sh, usz s, usz e) { // doesn't check for overflow; be careful on slices of shapes with empty product!

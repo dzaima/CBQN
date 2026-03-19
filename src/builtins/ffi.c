@@ -76,7 +76,7 @@
     #define bqnv_assert assert
   #endif
   
-  #define BV2W(X) TOPTR(BVW,X)
+  #define BV2W(X) PTR_FROM_INT(BVW,X)
   static bool isRaw(B x) { return x.u>>48 == RAW_TAG; }
   static B bv_get(BQNV v) {
     B r = BV2W(v)->value;
@@ -90,7 +90,7 @@
     bqnv_assert(isRaw(c->value));
     bvw_freelist = c(BVW, c->value);
     c->value = x;
-    return ptr2u64(c);
+    return PTR_TO_U64(c);
   }
   static void bvw_pushEmpty(BVW* p) {
     p->value = tag(bvw_freelist, RAW_TAG);
@@ -244,7 +244,7 @@ BQN_EXP BQNV bqn_makeChar(uint32_t c) { return bv_mk(m_c32(c)); }
 static usz calcIA(size_t rank, const size_t* shape) {
   if (rank>UR_MAX) thrM("Rank too large");
   usz r = 1;
-  PLAINLOOP for (size_t i = 0; i < rank; i++) if (mulOn(r, shape[i])) thrM("Size too large");
+  PLAINLOOP for (size_t i = 0; i < rank; i++) if (MUL_ON(r, shape[i])) thrM("Size too large");
   return r;
 }
 static void copyBData(B* r, const BQNV* data, usz ia) {
@@ -665,7 +665,7 @@ ParsedType ffi_parseType(u32** src, bool inPtr, bool top) { // parse actual type
     B roP = ro;
     BQNFFIType* rp; ro = m_bqnFFIType(&rp, cty_repr, 1);
     rp->reType = t;
-    rp->reWidth = 63-CLZ(n);
+    rp->reWidth = 63-CLZ64(n);
     rp->a[0].o = roP;
   }
   *src = c;
@@ -1131,7 +1131,7 @@ B libffiFn_c2(B t, B w, B x) {
   i32 mutArgs = bf->mutCount;
   bool testBuildObj = false;
   if (mutArgs || testBuildObj) {
-    u32 flags = ptr2u64(bf->w_c1);
+    u32 flags = PTR_TO_U64(bf->w_c1);
     bool resSingle = flags&4;
     B* objsCurr = harr_ptr(ffiObjs);
     if (resSingle) {
@@ -1281,7 +1281,7 @@ B ffiload_c2(B t, B w, B x) {
   if (s!=FFI_OK) thrM("FFI: Error preparing call interface");
   
   u32 flags = eRes.resSingle<<2;
-  B r = m_ffiFn(foreignFnDesc, m_hvec3(argObj, tag(cif, OBJ_TAG), tag(ao, OBJ_TAG)), libffiFn_c1, libffiFn_c2, TOPTR(void,flags), sym);
+  B r = m_ffiFn(foreignFnDesc, m_hvec3(argObj, tag(cif, OBJ_TAG), tag(ao, OBJ_TAG)), libffiFn_c1, libffiFn_c2, PTR_FROM_INT(void,flags), sym);
   c(BoundFn,r)->mutCount = mutCount;
   c(BoundFn,r)->wLen = whole[1]? -1 : count[1];
   c(BoundFn,r)->xLen = whole[0]? -1 : count[0];

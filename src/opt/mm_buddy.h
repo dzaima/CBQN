@@ -18,7 +18,7 @@ extern GLOBAL EmptyValue* mm_buckets[64];
 #include "opt/mm_buddyTemplate.h"
 
 
-#define LOG2(X) ((u8)(64-CLZ((X)-1ull)))
+#define LOG2(X) ((u8)(64-CLZ64((X)-1ull)))
 
 #if !ALLOC_NOINLINE || ALLOC_IMPL || ALLOC_IMPL_MMX
 ALLOC_FN void* mm_alloc(u64 sz, u8 type) {

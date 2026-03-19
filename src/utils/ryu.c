@@ -443,7 +443,7 @@ B ryu_d2s(double f) {
     return _BitScanReverse64(&index, value) ? index : 64;
   }
 #else
-  static inline uint32_t floor_log2(const uint64_t value) { return 63 - CLZ(value); }
+  static inline uint32_t floor_log2(const uint64_t value) { return 63 - CLZ64(value); }
 #endif
 
 // The max function is already defined on Windows.

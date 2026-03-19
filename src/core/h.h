@@ -80,19 +80,19 @@ typedef size_t ux;
 #define GUARANTEED(V) ({ AUTO v_ = (V); __builtin_constant_p(v_) && v_; })
 #define fsizeof(T,F,E,N) (offsetof(T, F) + sizeof(E)*(N)) // type, flexible array member name, flexible array member type, item amount
 #define RFLD(X,T,F) ((T*)((char*)(X) - offsetof(T,F))) // value, result type, field name; reverse-read field: `T* x = …; E v = x->f; x == RFLD(v, T, f)`
-#define CLZ(X) __builtin_clzll(X)
+#define CLZ64(X) __builtin_clzll(X)
 #define CTZ(X) __builtin_ctzll(X)
 #define POPC(X) __builtin_popcountll(X)
 #define IMAX(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ > b_? a_ : b_; })
 #define IMIN(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ < b_? a_ : b_; })
 #define ICMP(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); (a_>b_?1:0)-(a_<b_?1:0); })
 #define IABS(R, X) ({ AUTO sgn_ = (X); R uns_ = (R) sgn_; sgn_<0? -uns_ : uns_; })
-#define ptr2u64(X) ((u64)(uintptr_t)(X))
-#define TOPTR(T,X) ((T*)(uintptr_t)(X))
-#define ptr_roundUp(P, N) ({ AUTO p_ = (P); u64 n_ = (N); TOPTR(typeof(*p_), (ptr2u64(p_)+n_-1) & ~(n_-1)); })
-#define ptr_roundUpToEl(P) ({ AUTO p2_ = (P); ptr_roundUp(p2_, _Alignof(typeof(*p2_))); })
-#define addOn(V,X) ({ AUTO v_ = &(V); __builtin_add_overflow(*v_, X, v_); })
-#define mulOn(V,X) ({ AUTO v_ = &(V); __builtin_mul_overflow(*v_, X, v_); })
+#define PTR_TO_U64(X) ((u64)(uintptr_t)(X))
+#define PTR_FROM_INT(T,X) ((T*)(uintptr_t)(X))
+#define PTR_ROUND_UP(P, N) ({ AUTO p_ = (P); u64 n_ = (N); PTR_FROM_INT(typeof(*p_), (PTR_TO_U64(p_)+n_-1) & ~(n_-1)); })
+#define PTR_ROUND_UP_TO_ELT(P) ({ AUTO p2_ = (P); PTR_ROUND_UP(p2_, _Alignof(typeof(*p2_))); })
+#define ADD_ON(V,X) ({ AUTO v_ = &(V); __builtin_add_overflow(*v_, X, v_); })
+#define MUL_ON(V,X) ({ AUTO v_ = &(V); __builtin_mul_overflow(*v_, X, v_); })
 static void storeu_u64(void* p, u64 v) { memcpy(p, &v, 8); }  static u64 loadu_u64(void* p) { u64 v; memcpy(&v, p, 8); return v; }
 static void storeu_u32(void* p, u32 v) { memcpy(p, &v, 4); }  static u32 loadu_u32(void* p) { u32 v; memcpy(&v, p, 4); return v; }
 static void storeu_u16(void* p, u16 v) { memcpy(p, &v, 2); }  static u16 loadu_u16(void* p) { u16 v; memcpy(&v, p, 2); return v; }
@@ -186,8 +186,8 @@ static const u16 VAL_TAG = 0b1111111111110   ; // FFF. 1111111111110............
 
 #define ftag(X) ((u64)(X) << 48)
 #define tagu64(V, T) r_uB((u64)(V) | ftag(T))
-#define c(T,X) TOPTR(T, (X).u&0xFFFFFFFFFFFFull)
-#define tag(V, T) ({ void* tagv_ = (V); r_uB(ptr2u64(tagv_) | ftag(T)); })
+#define c(T,X) PTR_FROM_INT(T, (X).u&0xFFFFFFFFFFFFull)
+#define tag(V, T) ({ void* tagv_ = (V); r_uB(PTR_TO_U64(tagv_) | ftag(T)); })
 #define taga(V) tag(V,ARR_TAG)
 
 typedef union B {

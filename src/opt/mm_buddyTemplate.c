@@ -74,7 +74,7 @@ static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
     if (mem_log_enabled) fprintf(stderr, ": %s\n", mem==MAP_FAILED? "failed" : "success");
     if (mem==MAP_FAILED) thrOOM();
   #endif
-  if (ptr2u64(mem)+sz > (1ULL<<48)) fatal("mmap returned address range above 2⋆48");
+  if (PTR_TO_U64(mem)+sz > (1ULL<<48)) fatal("mmap returned address range above 2⋆48");
   #if ALLOC_MODE==0
     mem+= ALLOC_PADDING;
     ux off = offsetof(TyArr,a);
@@ -163,7 +163,7 @@ static NOINLINE void BN(freeFreedAndMerge)() {
           u64 curr = emptySize ^ left;
           
           EmptyValue* cv = (EmptyValue*)emptyStart;
-          u64 b = 63-CLZ(curr);
+          u64 b = 63-CLZ64(curr);
           *cv = (EmptyValue){
             .type = 0,
             .mmInfo = MMI(b),
@@ -198,7 +198,7 @@ void writeNum(FILE* f, u64 v, i32 len);
 void BN(dumpHeap)(FILE* f) {
   for (u64 i = 0; i < alSize; i++) {
     AllocInfo ci = al[i];
-    u64 addrI = ptr2u64(ci.p);
+    u64 addrI = PTR_TO_U64(ci.p);
     writeNum(f, ci.sz, 8);
     writeNum(f, addrI, 8);
     char* prefix = STR1(BN());

@@ -358,7 +358,7 @@ B rand_range_c2(B t, B w, B x) {
     bool bad=false, good=false;
     for (u64 i = 0; i < wia; i++) {
       usz c = o2s(GetU(w, i));
-      bad|= mulOn(am, c);
+      bad|= MUL_ON(am, c);
       good|= c==0;
     }
     if (bad && !good) thrOOM();
@@ -471,7 +471,7 @@ B rand_deal_c1(B t, B x) {
       // are within 1 and stop when a partition is full
       // Shuffle leftovers in at the end
       u64 n = xi;
-      usz log2 = 64 - CLZ(n-1);
+      usz log2 = 64 - CLZ64(n-1);
       usz thr = 16;
       usz sd = log2<thr+8? log2-thr : 8;
       usz m = 1<<sd; // Number of partitions

@@ -221,7 +221,7 @@ B sum_c1(B t, B x) {
     T* xp = xv;                                              \
     while (ia--) {                                           \
       i32 i0=init;                                           \
-      if (mulOn(init,xp[ia])) return prod_##T(xv, ia+1, i0); \
+      if (MUL_ON(init,xp[ia])) return prod_##T(xv, ia+1, i0);\
     }                                                        \
     return init;                                             \
   }
@@ -420,7 +420,7 @@ NOINLINE static u64 usum_generic(B x, usz xia) {
   u64 r = 0;
   for (usz i = 0; i < xia; i++) {
     u64 c = o2u64(GetU(x,i));
-    if (addOn(r,c)) thrM("Sum too big");
+    if (ADD_ON(r,c)) thrM("Sum too big");
   }
   return r;
 }
@@ -430,16 +430,16 @@ u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, 
   usz xia = IA(x);
   u8 xe = TI(x,elType);
   if      (xe==el_bit) return bit_sum(bitany_ptr(x), xia);
-  else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); i8  m=0; for (usz i = 0; i < xia; ) { usz b=1<< 8; i16 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (addOn(r,(u16)s)) goto overflow; } }
-  else if (xe==el_i16) { i16* p = i16any_ptr(x); i16 m=0; for (usz i = 0; i < xia; ) { usz b=1<<16; i32 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (addOn(r,(u32)s)) goto overflow; } }
-  else if (xe==el_i32) { i32* p = i32any_ptr(x); i32 m=0; for (usz i = 0; i < xia; i++) { m|=p[i]; if (addOn(r,p[i])) { if (m<0) goto neg; else goto overflow; } } if (m<0) goto neg; }
+  else if (xe==el_i8 ) { i8*  p = i8any_ptr (x); i8  m=0; for (usz i = 0; i < xia; ) { usz b=1<< 8; i16 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (ADD_ON(r,(u16)s)) goto overflow; } }
+  else if (xe==el_i16) { i16* p = i16any_ptr(x); i16 m=0; for (usz i = 0; i < xia; ) { usz b=1<<16; i32 s=0; for (usz e = xia-i<b?xia:i+b; i < e; i++) { m|=p[i]; s+=p[i]; } if (m<0) goto neg; if (ADD_ON(r,(u32)s)) goto overflow; } }
+  else if (xe==el_i32) { i32* p = i32any_ptr(x); i32 m=0; for (usz i = 0; i < xia; i++) { m|=p[i]; if (ADD_ON(r,p[i])) { if (m<0) goto neg; else goto overflow; } } if (m<0) goto neg; }
   else if (xe==el_f64) {
     f64* p = f64any_ptr(x);
     for (usz i = 0; i < xia; i++) {
       f64 c = p[i];
       u64 ci;
       if (!q_fu64(&ci, c)) expU_f64(c);
-      if (addOn(r,ci)) goto overflow;
+      if (ADD_ON(r,ci)) goto overflow;
     }
   } else {
     return usum_generic(x, xia);

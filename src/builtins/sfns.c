@@ -274,7 +274,7 @@ NOINLINE B shape_c2_listw(B t, B w, B x) {
     usz cu;
     if (q_usz(&cu, c)) {
       sh->a[i] = cu;
-      if (RARE(mulOn(nia, cu))) bad = true;
+      if (RARE(MUL_ON(nia, cu))) bad = true;
       good|= cu==0;
     } else {
       shape_c2_prim0(c);
@@ -575,7 +575,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
       anyFill|= c>xshc;
       rsh->a[i] = c;
       good|= c==0;
-      bad|= mulOn(ria, c);
+      bad|= MUL_ON(ria, c);
     }
     if (bad && !good) thrOOM();
     
@@ -704,7 +704,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
   if (xr>1) {             \
     csz = arr_csz(x);     \
     xsh = SH(x);          \
-    if (mulOn(n, csz)) thrOOM(); \
+    if (MUL_ON(n, csz)) thrOOM(); \
     ptr_inc(shObjS(xsh)); /* TODO handle leak if further allocation fails */ \
   } else xr=1;            \
 
@@ -949,7 +949,7 @@ B join_c1(B t, B x) {
     usz* csh = tr ? SH(x0) + r0-tr : NULL;  // Trailing shape
     usz csz = shProd(csh, 0, tr);
     usz ria = shProd(st, 0, xr);
-    if (mulOn(ria, csz)) thrOOM();
+    if (MUL_ON(ria, csz)) thrOOM();
     Arr* ra;
     if (ria>0) {
       MAKE_MUT(r, ria);
@@ -1619,7 +1619,7 @@ B drop_powd(i64 am, B w, B x) {
     SGetU(w);
     for (usz i=0; i<wia; i++) {
       i64 wi = o2i64(GetU(w, i));
-      if (mulOn(wi, am)) { rsh[i] = 0; continue; }
+      if (MUL_ON(wi, am)) { rsh[i] = 0; continue; }
       if (wi<0) wi = -wi;
       usz l = rsh[i];
       rsh[i] = l<wi? 0 : l-wi;
@@ -1628,7 +1628,7 @@ B drop_powd(i64 am, B w, B x) {
     return taga(arr_shSetUG(customizeShape(x), rr, sh));
   } else if (isAtm(w)) {
     i64 wi = o2i64(w);
-    if (mulOn(wi, am)) wi = USZ_MAX;
+    if (MUL_ON(wi, am)) wi = USZ_MAX;
     return C2(drop, m_f64(wi), x);
   } else {
     if (elInt(TI(w,elType)) && am<=1ll<<32) {
@@ -1638,7 +1638,7 @@ B drop_powd(i64 am, B w, B x) {
       SGetU(w); usz wia = IA(w);
       for (usz i=0; i<wia; i++) {
         i64 wi = o2i64(GetU(w, i));
-        if (mulOn(wi, am)) wi = USZ_MAX;
+        if (MUL_ON(wi, am)) wi = USZ_MAX;
         rp[i] = wi;
       }
       decG(w); w=r;
@@ -1706,7 +1706,7 @@ B shift_powm(bool aft, i64 am, B x) {
 }
 static B join_cycled(bool aft, usz wl, B w, B x, usz* csh, ur cr) {
   if (wl == 0) goto no_reshape; // join_powd sets this if reshape already done
-  usz ria = wl; if (mulOn(ria, shProd(csh, 0, cr))) thrOOM();
+  usz ria = wl; if (MUL_ON(ria, shProd(csh, 0, cr))) thrOOM();
   usz wia = IA(w);
   Arr *wa = ria==wia? customizeShape(w) : reshape_cycle(ria, wia, w);
   if (cr==0) arr_shVec(wa); else {
@@ -1727,7 +1727,7 @@ B shift_powd(bool aft, i64 am, B w, B x) {
   ur xr = RNK(x);
   usz xn = *SH(x); usz wn = RNK(w)<xr? 1 : *SH(w);
   if (wn >= xn) return aft? C2(shifta, w, x) : C2(shiftb, w, x);
-  i64 xd = wn; if (mulOn(xd, am)) xd = xn;
+  i64 xd = wn; if (MUL_ON(xd, am)) xd = xn;
   if (xd >= xn) {
     xd = xn;
     if (aft) { usz o = xn%wn; if (o) w = C2(reverse, m_usz(wn-o), w); }
@@ -1745,7 +1745,7 @@ B join_powd(bool aft, i64 am, B w, B x) {
     if (aft) { B t=w; w=x; x=t; }
     C2(join, w, x); fatal("expected join_c2 to error");
   }
-  usz wc = wr? *SH(w) : 1; if (mulOn(wc, am)) thrOOM();
+  usz wc = wr? *SH(w) : 1; if (MUL_ON(wc, am)) thrOOM();
   if (isAtm(w)) { w = taga(arr_shVec(reshape_one(wc, w))); wc = 0; } // suppress join_cycled reshape
   if (isAtm(x)) x = m_unit(x);
   return join_cycled(aft, wc, w, x, SH(x)+xr-cr, cr);

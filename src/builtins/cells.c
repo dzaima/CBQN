@@ -361,7 +361,7 @@ static NOINLINE B to_fill_cell(B x, ur k, u32 chr) { // consumes x
   ur cr = RNK(x)-k;
   usz* sh = SH(x)+k;
   usz csz = 1;
-  for (usz i=0; i<cr; i++) if (mulOn(csz, sh[i])) thrF("%c: Empty argument too large (%H ≡ ≢𝕩)", chr, x);
+  for (usz i=0; i<cr; i++) if (MUL_ON(csz, sh[i])) thrF("%c: Empty argument too large (%H ≡ ≢𝕩)", chr, x);
   Arr* ca = reshape_one(csz, xf);
   usz* csh = arr_shAlloc(ca, cr);
   if (cr>1) shcpy(csh, sh, cr);

@@ -429,7 +429,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
     we = wp[--ie];
   }
   usz wia0 = wia;
-  wia = 64*(ie+1) - CLZ(we);
+  wia = 64*(ie+1) - CLZ64(we);
   usz wsum = bit_sum(wp, wia);
   if (wsum == wia0) return incG(x);
   assert(wsum > 0);
@@ -681,7 +681,7 @@ B slash_c2(B t, B w, B x) {
       SLOW2("𝕨/𝕩", w, x);
       ux ria = s;
       usz csz = arr_csz(x);
-      mulOn(ria, csz);
+      MUL_ON(ria, csz);
       if (s>=USZ_MAX) thrOOM();
       MAKE_MUT_INIT_COPYFILL(r0, ria, TI(x,elType), x); MUTG_INIT(r0);
       SGetU(w)
@@ -756,7 +756,7 @@ B slash_c2(B t, B w, B x) {
     }
     if (xlen == 0) return x;
     usz s = xlen;
-    if (mulOn(s, wv)) thrOOM();
+    if (MUL_ON(s, wv)) thrOOM();
     if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
       B xf = getFillR(x);
       if (xr!=1) {

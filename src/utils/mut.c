@@ -694,7 +694,7 @@ NOINLINE void apd_sh_init(ApdMut* m, B x) {
     else            { m->apd=apd_sh2_fns[xe]; m->cr=xr; } // csh written on result shape creation
     rr+= xr;
     m->cia = xia;
-    if (mulOn(ria, xia)) thrOOM();
+    if (MUL_ON(ria, xia)) thrOOM();
     pos0 = xia;
   }
   if (xe==el_B) {

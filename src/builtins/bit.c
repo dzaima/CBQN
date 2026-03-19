@@ -140,7 +140,7 @@ B bitcast_impl(B el0, B el1, B x) {
       assert(rct.s != 1 && xct.s != 1); // rt==t_bitarr handles rct.s==1, and xct.s==1 never currently makes a slice (..though it could)
       u8 arrt = SLICE_TO_ARR(TY(r));
       void* r0p = tyslicev_ptr(a(r));
-      if (ptr2u64(r0p) & ((rct.s>>3) - 1)) {
+      if (PTR_TO_U64(r0p) & ((rct.s>>3) - 1)) {
         Arr* r1;
         void* r2p = m_tyarrp(&r1, xct.s>>3, IA(r), arrt);
         memcpy(r2p, r0p, IA(r)*(xct.s>>3));

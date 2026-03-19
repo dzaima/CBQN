@@ -19,7 +19,7 @@
 GLOBAL EmptyValue* mmX_buckets[64];
 GLOBAL u64 mmX_ctrs[64];
 #define  BSZ(X) (1ull<<(X))
-#define BSZI(X) ((u8)(64-CLZ((X)-1ull)))
+#define BSZI(X) ((u8)(64-CLZ64((X)-1ull)))
 #define  MMI(X) X
 #define   BN(X) mmX_##X
 #include "opt/mm_buddyTemplate.h"
@@ -66,7 +66,7 @@ extern GLOBAL bool mem_log_enabled;
 #define ALLOC_MODE 1
 #include "opt/mm_buddyTemplate.c"
 #undef ALLOC_MODE
-static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-CLZ(sz-1ull), type); }
+static void* mmX_allocN(usz sz, u8 type) { assert(sz>=16); return mmX_allocL(64-CLZ64(sz-1ull), type); }
 #undef BN
 #undef BSZ
 #undef ALLOC_IMPL_MMX
@@ -774,7 +774,7 @@ Nvm_res m_nvm(Body* body) {
   asm_free();
   onJIT(body, binEx, sz);
   #if STORE_JIT_MAP
-    fprintf(jit_map, "  # start address: "N64d"\n}\n", ptr2u64(binEx));
+    fprintf(jit_map, "  # start address: "N64d"\n}\n", PTR_TO_U64(binEx));
     fflush(jit_map);
   #endif
   return (Nvm_res){.p = binEx, .refs = optRes.refs};

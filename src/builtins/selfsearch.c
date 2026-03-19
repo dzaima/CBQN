@@ -153,7 +153,7 @@ u8 radix_offsets_2_usz(usz* c0, u32* v0, usz n) {
 extern void (*const simd_mark_firsts_u8)(void*,uint64_t,void*,void*);
 extern u64  (*const simd_deduplicate_u8)(void*,uint64_t,void*,void*);
 
-#define PRUP ptr_roundUpToEl
+#define PRUP PTR_ROUND_UP_TO_ELT
 B memberOf_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("∊𝕩: 𝕩 cannot have rank 0");
   u64 n = *SH(x);

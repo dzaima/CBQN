@@ -336,7 +336,7 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
             bDone[id] = true;
             Block* bl = compileBlock(IGetU(allBlocks,id), comp, bDone, bc, bcIA, allBlocks, allBodies, nameList, sc, depth+1, c-bc, 0);
             TSADD(newBC, bl->ty==0? DFND0 : bl->ty==1? DFND1 : DFND2);
-            A64(ptr2u64(bl));
+            A64(PTR_TO_U64(bl));
             TSADD(usedBlocks, bl);
             break;
           }
@@ -401,8 +401,8 @@ Block* compileBlock(B block, Comp* comp, bool* bDone, u32* bc, usz bcIA, B allBl
     u64 bodyReqAm = TSSIZE(bodyReqs);
     for (u64 i = 0; i < bodyReqAm; i++) {
       NextRequest r = bodyReqs[i];
-      /*ugly, but whatever*/ u64 v1 = ptr2u64(bodyMap[r.pos1]); newBC[r.off+0] = (u32)v1; newBC[r.off+1] = v1>>32;
-      if (r.pos2!=U32_MAX) { u64 v2 = ptr2u64(bodyMap[r.pos2]); newBC[r.off+2] = (u32)v2; newBC[r.off+3] = v2>>32; }
+      /*ugly, but whatever*/ u64 v1 = PTR_TO_U64(bodyMap[r.pos1]); newBC[r.off+0] = (u32)v1; newBC[r.off+1] = v1>>32;
+      if (r.pos2!=U32_MAX) { u64 v2 = PTR_TO_U64(bodyMap[r.pos2]); newBC[r.off+2] = (u32)v2; newBC[r.off+3] = v2>>32; }
     }
     TSFREE(bodyReqs);
     TFREE(bodyMap);
@@ -747,7 +747,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
   #endif
   #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
   #if VM_POS
-    #define POS_UPD envCurr->pos = ptr2u64(bc-1);
+    #define POS_UPD envCurr->pos = PTR_TO_U64(bc-1);
   #else
     #define POS_UPD
   #endif
@@ -815,9 +815,9 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         }
         break;
       }
-      case DFND0: { GS_UPD;POS_UPD; ADD(evalFunBlock(TOPTR(Block,L64), sc)); break; }
-      case DFND1: { GS_UPD;POS_UPD; ADD(m_md1Block  (TOPTR(Block,L64), sc)); break; }
-      case DFND2: { GS_UPD;POS_UPD; ADD(m_md2Block  (TOPTR(Block,L64), sc)); break; }
+      case DFND0: { GS_UPD;POS_UPD; ADD(evalFunBlock(PTR_FROM_INT(Block,L64), sc)); break; }
+      case DFND1: { GS_UPD;POS_UPD; ADD(m_md1Block  (PTR_FROM_INT(Block,L64), sc)); break; }
+      case DFND2: { GS_UPD;POS_UPD; ADD(m_md2Block  (PTR_FROM_INT(Block,L64), sc)); break; }
       
       case MD1C: { P(f)P(m)     GS_UPD;POS_UPD; ADD(m1_d  (m,f  )); break; }
       case MD2C: { P(f)P(m)P(g) GS_UPD;POS_UPD; ADD(m2_d  (m,f,g)); break; }
@@ -882,20 +882,20 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
       
       case SETH1:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64;
         bool ok = v_seth(pscs, s, x); dec(x); dec(s);
-        if (!ok) { return gotoNextBody(bl, sc, TOPTR(Body, v1)); }
+        if (!ok) { return gotoNextBody(bl, sc, PTR_FROM_INT(Body, v1)); }
         break;
       }
       case SETH2:{ P(s)    P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
         bool ok = v_seth(pscs, s, x); dec(x); dec(s);
-        if (!ok) { return gotoNextBody(bl, sc, TOPTR(Body, q_N(sc->vars[2])? v1 : v2)); }
+        if (!ok) { return gotoNextBody(bl, sc, PTR_FROM_INT(Body, q_N(sc->vars[2])? v1 : v2)); }
         break;
       }
       case PRED1:{ P(x) GS_UPD; POS_UPD; u64 v1 = L64;
-        if (!o2b(x)) { return gotoNextBody(bl, sc, TOPTR(Body, v1)); }
+        if (!o2b(x)) { return gotoNextBody(bl, sc, PTR_FROM_INT(Body, v1)); }
         break;
       }
       case PRED2:{ P(x) GS_UPD; POS_UPD; u64 v1 = L64; u64 v2 = L64;
-        if (!o2b(x)) { return gotoNextBody(bl, sc, TOPTR(Body, q_N(sc->vars[2])? v1 : v2)); }
+        if (!o2b(x)) { return gotoNextBody(bl, sc, PTR_FROM_INT(Body, q_N(sc->vars[2])? v1 : v2)); }
         break;
       }
       
@@ -1449,7 +1449,7 @@ NOINLINE void vm_pst(Env* s, Env* e) { // e not included
       i = 10;
     }
     Comp* comp = c->sc->body->bl->comp;
-    i32 bcPos = c->pos&1? ((u32)c->pos)>>1 : BCPOS(c->sc->body, TOPTR(u32, c->pos));
+    i32 bcPos = c->pos&1? ((u32)c->pos)>>1 : BCPOS(c->sc->body, PTR_FROM_INT(u32, c->pos));
     vm_printPos(comp, bcPos, i);
     i--;
   }
@@ -1490,7 +1490,7 @@ void profiler_bc_handler(int x) {
   if (envCurr<envStart) return;
   Env e = *envCurr;
   Comp* comp = e.sc->body->bl->comp;
-  i32 bcPos = e.pos&1? ((u32)e.pos)>>1 : BCPOS(e.sc->body, TOPTR(u32, e.pos));
+  i32 bcPos = e.pos&1? ((u32)e.pos)>>1 : BCPOS(e.sc->body, PTR_FROM_INT(u32, e.pos));
   Profiler_ent ent;
   if (gc_running) ent = (Profiler_ent){.comp = NULL, .bcPos = ~ENT_SP_GC};
   else ent = (Profiler_ent){.comp = ptr_inc(comp), .bcPos = bcPos};
@@ -1713,7 +1713,7 @@ void unwindEnv(Env* envNew) {
   while (envCurr!=envNew) {
     // if ((envCurr->pos&1) == 0) printf("unwinding %ld\n", (u32*)envCurr->pos - (u32*)envCurr->sc->body->bl->bc);
     // else printf("not unwinding %ld", envCurr->pos>>1);
-    if ((envCurr->pos&1) == 0) envCurr->pos = (BCPOS(envCurr->sc->body, TOPTR(u32, envCurr->pos))<<1) | 1;
+    if ((envCurr->pos&1) == 0) envCurr->pos = (BCPOS(envCurr->sc->body, PTR_FROM_INT(u32, envCurr->pos))<<1) | 1;
     envCurr--;
   }
 }

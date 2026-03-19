@@ -86,7 +86,7 @@ NOINLINE B list_range(B x) {
     for (ux i = 1; i < xia; i++) {
       usz c = o2s(GetU(x, i));
       sh->a[i] = c;
-      bad|= mulOn(ria, c);
+      bad|= MUL_ON(ria, c);
       if (c > max) max = c;
       if (c < min) min = c;
     }
@@ -193,9 +193,9 @@ B ud_c2(B t, B w, B x) {
   
   ur fr=2*wr; // Frame rank in result
   usz cia=1; // Cell length
-  for (usz i=fr; i<rr; i++) if (mulOn(cia, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
+  for (usz i=fr; i<rr; i++) if (MUL_ON(cia, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
   usz ria=cia;
-  for (usz i=0;  i<fr; i++) if (mulOn(ria, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
+  for (usz i=0;  i<fr; i++) if (MUL_ON(ria, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
   TALLOC(usz, ri, fr-1);
   MAKE_MUT_INIT_COPYFILL(r, ria, TI(x,elType), x);
   MUTG_INIT(r);
@@ -335,7 +335,7 @@ B find_c2(B t, B w, B x) {
       PLAINLOOP for (ux i = 0; i < xr-wr; i++) {
         usz c = xsh[i];
         rsh[i] = c;
-        if (mulOn(ia, c)) {
+        if (MUL_ON(ia, c)) {
           shapeBig:;
           mm_free((Value*)sh);
           thrOOM();
@@ -352,7 +352,7 @@ B find_c2(B t, B w, B x) {
           ia = 0;
         } else {
           c = xsh[i]+1u-wsh[i];
-          if (c==0 || mulOn(ia, c)) goto shapeBig;
+          if (c==0 || MUL_ON(ia, c)) goto shapeBig;
         }
         rsh[i] = c;
       }

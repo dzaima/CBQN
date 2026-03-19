@@ -703,7 +703,7 @@ B hashmap_keys_or_vals(B* vars, usz which) {
   hp[j] = v | i;
 
 B hashmap_build(B key_arr, usz n) {
-  usz sh = CLZ(n|16)-1;
+  usz sh = CLZ64(n|16)-1;
   u64 sz = hashmap_size(sh);
   HashMap* map = hashmap_alloc(n, sh, sz);
   u64* hp = map->a;

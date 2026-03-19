@@ -237,7 +237,7 @@ static inline void pushEnv(Scope* sc, u32* bc) {
   if (envCurr+1==envEnd) thrM("Stack overflow");
   Env* e = envCurr+1;
   e->sc = sc;
-  e->pos = ptr2u64(bc);
+  e->pos = PTR_TO_U64(bc);
   PROFILER_FENCE;
   envCurr = e;
 }

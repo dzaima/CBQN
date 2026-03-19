@@ -586,7 +586,7 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
     if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && !ignore_bad_tag) {
-      fprintf(stderr, "bad array tag/type: type=%d, obj=%p\n", v(x)->type, TOPTR(void, x.u));
+      fprintf(stderr, "bad array tag/type: type=%d, obj=%p\n", v(x)->type, PTR_FROM_INT(void, x.u));
       PRINT_ID(v(x));
       fprintI(stderr, x);
       fatal("\n");

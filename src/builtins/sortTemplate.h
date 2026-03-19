@@ -39,7 +39,7 @@
 #endif
 
 static inline int compute_minrun(const uint64_t size) {
-  const int top_bit = 64 - CLZ(size);
+  const int top_bit = 64 - CLZ64(size);
   const int shift = MAX(top_bit, 6) - 6;
   const int minrun = (int)(size >> shift);
   const uint64_t mask = (1ULL << shift) - 1;

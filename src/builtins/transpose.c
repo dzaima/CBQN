@@ -279,7 +279,7 @@ B transp_c2(B t, B w, B x) {
 
   // Compute shape for the given axes
   usz* xsh = SH(x);
-  usz* rsh = ptr_roundUpToEl((usz*)(p + xr)); // Length xr
+  usz* rsh = PTR_ROUND_UP_TO_ELT((usz*)(p + xr)); // Length xr
   usz dup = 0, max = 0, id = 0;
   usz no_sh = -(usz)1;
   for (usz j=0; j<xr; j++) rsh[j] = no_sh;
