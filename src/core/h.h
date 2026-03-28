@@ -501,7 +501,7 @@ FORCE_INLINE f64   o2fG(B x) { return      x.f; }
 FORCE_INLINE i64 o2i64G(B x) { return (i64)x.f; }
 FORCE_INLINE u64 o2u64G(B x) { return (u64)x.f; }
 
-FORCE_INLINE bool  o2b(B x) { i32 t=(i32)x.f; if(t!=x.f || t!=0&t!=1)thrM("Expected boolean"); return o2bG(x); }
+FORCE_INLINE bool  o2b(B x) { i32 t; if(!q_i32o(&t,x) || (u32)t >= 2) thrM("Expected boolean"); return t; }
 FORCE_INLINE f64   o2f(B x) { if (!isNum(x)) thrM("Expected number");    return o2fG(x); }
 FORCE_INLINE u32   o2c(B x) { if (!isC32(x)) thrM("Expected character"); return o2cG(x); }
 FORCE_INLINE i32   o2i(B x) { if (!q_i32(x)) expI_B(x);                  return o2iG(x); }

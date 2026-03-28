@@ -1,4 +1,6 @@
 %DEF jiteq _jiteq ← {r ← ⍷ (1⋈𝔽)⎊{𝕊: 0⋈•CurrentError@}¨ 4⥊<𝕩 ⋄ "TEST FAIL: all results weren't equal" ! 1=≠r ⋄ {0‿e: !e; 1‿e: e}⊑r}
+%DEF eqvar ⟨_eqvar⟩←⊑•args
+%DEF eqerr %USE eqvar ⋄ _eqerr ← {ok←{⇐} ⋄ r←⥊𝕨 ok∘𝔽⎊{𝕊: •CurrentError@}⌜ 𝕩 ⋄ {⊑ok∊r? !"TEST FAIL: case didn't error"; ("TEST FAIL: varying error messages"⊸⋈ ! 1=≠)⍷r ⋄ (⊑r)!0}}
 
 # body usage
 a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
@@ -87,3 +89,6 @@ X←1‿2{a⇐𝕘-𝕗}3‿4 ⋄ ⟨a⟩←x ⋄ +´a %% 4
 # optimizer bug
 {𝕏¨ ↕5}¨ •BQN '⟩'∾˜ '⟨'∾∾ {",{𝕊:"∾"⟨⟩}"∾˜(2×𝕩)⥊"𝕩‿"}¨↕50 %% {𝕊i: {⋈⁼⍟(i=0) ⟨⟨⟩⟩∾˜i⥊𝕩}¨ ↕5}¨ ↕50
 {𝕏¨ ↕5}¨ •BQN '⟩'∾˜ '⟨'∾∾ {",{𝕊:"∾"⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩‿⟨⟩}"∾˜(2×𝕩)⥊"𝕩‿"}¨↕50 %% {𝕊i: {(i⥊𝕩)∾12⥊<⟨⟩}¨ ↕5}¨ ↕50
+!"Expected boolean" % %USE eqerr ⋄ {𝕊v: ⊢•_while_ v @                   }_eqerr @     ∾ ∧¬∘∊⟜0‿1⊸/ ⍷⥊(¯5+↕10) +⌜ ∾⟜- 2⋆↕100
+!"Expected boolean" % %USE eqerr ⋄ {𝕊v: ⊢•_while_{𝕊: •internal.Keep v} @}_eqerr @‿+‿¨ ∾ ∧¬∘∊⟜0‿1⊸/ ⍷⥊(¯5+↕10) +⌜ ∾⟜- 2⋆↕100
+!"Expected boolean" % %USE eqerr ⋄ {•internal.Keep 𝕩?@;@                }_eqerr @‿+‿¨ ∾ ∧¬∘∊⟜0‿1⊸/ ⍷⥊(¯5+↕10) +⌜ ∾⟜- 2⋆↕100
