@@ -268,6 +268,9 @@ a←↕2 ⋄ ! "e" ≡ (↕10){b←a‿a‿a‿a‿a‿a‿a‿a‿a‿a ⋄ �
 !">𝕩: Incompatible element shapes (encountered shapes ⟨0⟩ and ⟨⟩)" % > ↕¨⟨0, ⟨⟩⟩
 !">𝕩: Incompatible element shapes (encountered shapes 2‿3 and ⟨⟩)" % > ↕¨⟨2‿3, ⟨⟩⟩
 !">𝕩: Incompatible element shapes (encountered shapes 4‿5 and 4‿6)" % ≢>2‿3⥊⟨4‿5⥊↕20,4‿6⥊↕1⟩
+>⟨⟩ %%% ⟨⟩
+>0‿4⥊⟨⟩ %%% 0‿4⥊⟨⟩
+>4‿3‿0⥊⟨⟩ %%% 4‿3‿0⥊⟨⟩
 >⟨<'a',1⟩ %% 'a'‿1
 >⟨1,2,<3,4,<<5⟩ %% ⟨1,2,3,4,<5⟩
 ≢>0‿1⥊<2‿3⥊<"ab" %% ↕4

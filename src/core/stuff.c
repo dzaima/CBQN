@@ -486,8 +486,8 @@ B bqn_merge(B x, u32 type) { // type: 0: expected valid; 1: >𝕩; 2: [a,b,c]
   usz xia = IA(x);
   ur xr = RNK(x);
   if (xia==0) {
-    B xf = getFillE(x, ">𝕩: Fill element of empty 𝕩 not known");
-    if (isAtm(xf)) { dec(xf); return x; }
+    B xf = getFillQ(x);
+    if (!isArr(xf)) { dec(xf); return x; } // includes handling xf==bi_noFill
     i32 xfr = RNK(xf);
     Arr* r = emptyWithFill(getFillR(xf));
     if (xr+xfr > UR_MAX) thrM(">𝕩: Result rank too large");
