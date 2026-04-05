@@ -103,7 +103,7 @@
     FOR(j,C/2) for (usz c=CP[j+g]; c--; ) *rp++ = j+h; \
   }
 
-#if SINGELI_AVX2
+#if SINGELI_SIMD
 extern void (*const si_scan_max_i8)(int8_t* v0,int8_t* v1,uint64_t v2);
 extern void (*const si_scan_min_i8)(int8_t* v0,int8_t* v1,uint64_t v2);
 extern void (*const si_scan_max_i16)(int16_t* v0,int16_t* v1,uint64_t v2);
