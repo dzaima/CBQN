@@ -358,19 +358,13 @@ B depthf_c2(B t, B w, B x) {
 }
 extern GLOBAL B rt_depth;
 B depth_c1(Md2D* d, B x) {
-  if (isF64(d->g) && o2fG(d->g)==0) {
-    if (isArr(x)) return eachm_fn(d->f, x, depthf_c1);
-    else return c1(d->f, x);
-  }
-  SLOW3("!F⚇𝕨 𝕩", d->g, x, d->f);
+  if (isF64(d->g) && o2fG(d->g)==0) return depthf_c1(d->f, x);
+  SLOW3("!𝔽⚇𝕘 𝕩", d->g, x, d->f);
   return m2c1(rt_depth, d->f, d->g, x);
 }
 B depth_c2(Md2D* d, B w, B x) {
-  if (isF64(d->g) && o2fG(d->g)==0) {
-    if (isArr(w) || isArr(x)) return eachd_fn(d->f, w, x, depthf_c2);
-    else return c2(d->f, w, x);
-  }
-  SLOW3("!𝕨 𝔽⚇f 𝕩", w, x, d->g);
+  if (isF64(d->g) && o2fG(d->g)==0) return depthf_c2(d->f, w, x);
+  SLOW3("!𝕨 𝔽⚇𝕘 𝕩", w, x, d->g);
   return m2c2(rt_depth, d->f, d->g, w, x);
 }
 
