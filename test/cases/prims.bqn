@@ -90,6 +90,9 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 !"This function can't be called monadically" % ≤@
 !"This function can't be called monadically" % ≥@
 
+!"𝕨+𝕩: Invalid character" % (@+1114111)+100⥊1‿0
+!"𝕨-𝕩: Invalid character" % @-100⥊1‿0
+
 # 𝕨/𝕩
 2‿3‿0‿1/4‿3⥊↕⋈12 %% ⋈¨6‿3⥊0‿1‿2‿0‿1‿2‿3‿4‿5‿3‿4‿5‿3‿4‿5‿9‿10‿11
 2‿3‿0‿1/↕4 %% 6⥊0‿0‿1‿1‿1‿3

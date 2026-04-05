@@ -277,8 +277,8 @@ bool mul_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_
 bool min_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f<=0?f:0); r[1] = m_f64(f<=1?f:1); return true; }
 bool max_forBitselNN_SA (DyTableSA* table, B w, B* r) { f64 f=o2fG(w); r[0] = m_f64(f>=0?f:0); r[1] = m_f64(f>=1?f:1); return true; }
 
-bool add_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cG(w); if(wc+1<=CHR_MAX) return false; r[0] = m_c32(wc); r[1] = m_c32(wc+1); return true; }
-bool sub_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cG(w); if(wc  !=0      ) return false; r[0] = m_c32(wc); r[1] = m_c32(wc-1); return true; }
+bool add_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cG(w); if(wc+1>CHR_MAX) return false; r[0] = m_c32(wc); r[1] = m_c32(wc+1); return true; }
+bool sub_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cG(w); if(wc ==0      ) return false; r[0] = m_c32(wc); r[1] = m_c32(wc-1); return true; }
 
 B sub_c2R(B t, B w, B x) { return sub_c2(t, x, w); }
 
