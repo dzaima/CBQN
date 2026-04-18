@@ -341,7 +341,7 @@ static OptRes opt(u32* bc0) {
         goto defIns;
       }
       case MD1C: { S(f,0) S(m,1)
-        if (f.p==-1 | m.p==-1) goto defIns;
+        if (f.p==-1 || m.p==-1 || !isMd1(m.v) || TY(m.v)!=t_md1BI) goto defIns;
         B d = m1_d(inc(m.v), inc(f.v));
         cact = 5; RM(f.p); RM(m.p);
         TSADD(data, d.u);
@@ -350,7 +350,7 @@ static OptRes opt(u32* bc0) {
         break;
       }
       case MD2C: { S(f,0) S(m,1) S(g,2)
-        if (f.p==-1 | m.p==-1 | g.p==-1) goto defIns;
+        if (f.p==-1 || m.p==-1 || g.p==-1 || !isMd2(m.v) || TY(m.v)!=t_md2BI) goto defIns;
         B d = m2_d(inc(m.v), inc(f.v), inc(g.v));
         cact = 5; RM(f.p); RM(m.p); RM(g.p);
         TSADD(data, d.u);
