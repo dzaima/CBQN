@@ -559,7 +559,10 @@ static NOINLINE i64 readInt(char** p) {
   }
   const char* cbqn_replxx_input(char* prefix) {
     setPrev(emptyCVec(), 0);
-    return replxx_input(global_replxx, prefix);
+    replxx_enable_bracketed_paste(global_replxx);
+    const char* r = replxx_input(global_replxx, prefix);
+    replxx_disable_bracketed_paste(global_replxx);
+    return r;
   }
 #else
   void before_exit(void) { }
@@ -1097,7 +1100,6 @@ int main(int argc, char* argv[]) {
       replxx_set_highlighter_callback(global_replxx, highlighter_replxx, NULL);
       replxx_set_hint_callback(global_replxx, hint_replxx, NULL);
       replxx_set_completion_callback(global_replxx, complete_replxx, NULL);
-      replxx_enable_bracketed_paste(global_replxx);
       replxx_bind_key(global_replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
       replxx_set_modify_callback(global_replxx, modified_replxx, NULL);
       replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('N'), "history_next");
