@@ -22,6 +22,20 @@ a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
 {0?"abc" ; "def"} %% "def"
 {123456 ⋄ 1‿{2} ⋄ ⟨1⟩ ⋄ 1‿{1+5}} %% 1‿6
 
+# headers/assignment
+!"Square brackets can't be empty" % •BQN⎊{𝕊: !{𝕩/˜∧`𝕩≠@+10} •CurrentError@} "[]"
+{⟨[]⇐x⟩: 1; 0} {x⇐[1‿2,3‿4]} %% 0
+{⟨[]⇐x⟩: 1; 0} {x⇐0‿2‿3⥊0} %% 1
+{⟨[1‿2,3‿4]⇐x⟩: 1; 0} {x⇐1+2‿2⥊↕4} %% 1
+{⟨[1‿2,3‿4]⇐x⟩: 1; 0} {x⇐2+2‿2⥊↕4} %% 0
+{⟨[a,·]⇐x⟩: a} {x⇐2‿2‿3⥊↕24} %% 2‿3⥊↕6
+[1,2,3] %%% 1‿2‿3
+[<1,2,3] %%% 1‿2‿3
+!"[…]: Incompatible element shapes (encountered shapes ⟨2⟩ and ⟨⟩)" % [1‿2,1]
+!"[…]: Incompatible element shapes (encountered shapes ⟨⟩ and ⟨2⟩)" % [1,1‿2]
+!"[…]: Incompatible element shapes (encountered shapes ⟨3⟩ and 3‿2)" % [1‿2‿3,[4‿5,6‿7,8‿9]]
+!"[…]: Incompatible element shapes (encountered shapes 3‿2 and ⟨3⟩)" % [[1‿2,3‿4,5‿6],7‿8‿9]
+
 # forks with funky tines
 {(𝕩⊏⟨⋈ ⋄ "ab" ⋄ 9⟩) {f‿g‿h←𝕨 ⋄ T←F G H ⋄ ⟨T⋈𝕩 ⋄ (≍𝕩‿𝕩)T⋈𝕩⟩} ↕3}¨ ↕2‿2‿2 %% 2‿2‿2⥊⟨⟨⟨⟨⟨0‿1‿2⟩⟩,⟨⟨0‿1‿2⟩⟩⟩,⟨⟨1‿2⥊⟨0‿1‿2,0‿1‿2⟩,⟨0‿1‿2⟩⟩,⟨1‿2⥊⟨0‿1‿2,0‿1‿2⟩,⟨0‿1‿2⟩⟩⟩⟩,⟨⟨⟨⟨0‿1‿2⟩⟩,"ab"⟩,⟨⟨1‿2⥊⟨0‿1‿2,0‿1‿2⟩,⟨0‿1‿2⟩⟩,"ab"⟩⟩,⟨"ab","ab"⟩,⟨"ab","ab"⟩,⟨⟨"ab",⟨⟨0‿1‿2⟩⟩⟩,⟨"ab",⟨1‿2⥊⟨0‿1‿2,0‿1‿2⟩,⟨0‿1‿2⟩⟩⟩⟩,⟨⟨"ab","ab"⟩,⟨"ab","ab"⟩⟩,⟨"ab","ab"⟩,⟨"ab","ab"⟩⟩
 

@@ -151,9 +151,7 @@ INS B i_ARMM(B el0, i64 sz, B* cStack) { assert(sz>0);
   r.a[sz-1] = el0;
   for (i64 i = 1; i < sz; i++) r.a[sz-i-1] = GSP;
   NOGC_E; GS_UPD;
-  WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_arrMerge);
-  a->obj = r.b;
-  return tag(a,OBJ_TAG);
+  return m_wrappedObj(r.b, t_arrMerge);
 }
 INS B i_DFND_0(u32* bc, Scope* sc, Block* bl) { POS_UPD; return evalFunBlock(bl, sc); }
 INS B i_DFND_1(u32* bc, Scope* sc, Block* bl) { POS_UPD; return m_md1Block(bl, sc); } // TODO these only fail on oom, so no need to update pos
@@ -232,16 +230,11 @@ INS B i_FLDG(B ns, u32 p, Scope* sc, u32* bc) { POS_UPD;
   decG(ns);
   return r;
 }
-INS B i_VFYM(B o) { // TODO this and ALIM allocate and thus can error on OOM
-  WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_vfyObj);
-  a->obj = o;
-  return tag(a,OBJ_TAG);
+INS B i_VFYM(B o) { // this and ALIM allocate and thus can error on OOM, but opt should be constfolding them all
+  return m_wrappedObj(o, t_vfyObj);
 }
 INS B i_ALIM(B o, u32 l) {
-  FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
-  a->obj = o;
-  a->p = l;
-  return tag(a,OBJ_TAG);
+  return m_fldAlias(o, l);
 }
 INS B i_CHKV(B x, u32* bc, B* cStack) {
   if(q_N(x)) { POS_UPD; GS_UPD; thrM("Unexpected Nothing (·)"); }
@@ -307,6 +300,7 @@ static OptRes opt(u32* bc0) {
     u8 cact = 0;
     #define L64 ({ u64 r = bc[0] | ((u64)bc[1])<<32; bc+= 2; r; })
     #define S(N,I) SRef N = stk[TSSIZE(stk)-1-(I)];
+    // all mutable object creation is attempted to be const-folded here, though for safety the non-const-folded path is still functional (though with `debug_assert`s that it doesn't happen)
     switch (*bc++) { case FN1Ci: case FN1Oi: case FN2Ci: case FN2Oi: fatal("optimization: didn't expect already immediate FN__");
       case ADDU: case ADDI: cact = 0; TSADD(stk,SREF(r_uB(L64), pos)); break;
       case POPS: { assert(TSSIZE(actions) > 0);
@@ -339,6 +333,22 @@ static OptRes opt(u32* bc0) {
         TSADD(data, (u64) c(Fun, f.v)->c1);
         TSADD(data, (u64) c(Fun, f.v)->c2);
         goto defIns;
+      }
+      case VFYM: { S(o,0)
+        debug_assert(o.p!=-1); if (o.p==-1) goto defIns;
+        B r = m_wrappedObj(inc(o.v), t_vfyObj);
+        cact = 5; RM(o.p);
+        TSADD(data, r.u);
+        stk[TSSIZE(stk)-1] = SREF(r, pos);
+        break;
+      }
+      case ALIM: { S(o,0) u32 l = *bc++;
+        debug_assert(o.p!=-1); if (o.p==-1) goto defIns;
+        B r = m_fldAlias(inc(o.v), l);
+        cact = 5; RM(o.p);
+        TSADD(data, r.u);
+        stk[TSSIZE(stk)-1] = SREF(r, pos);
+        break;
       }
       case MD1C: { S(f,0) S(m,1)
         if (f.p==-1 || m.p==-1 || !isMd1(m.v) || TY(m.v)!=t_md1BI) goto defIns;
@@ -390,9 +400,9 @@ static OptRes opt(u32* bc0) {
           TSADD(stk, SREF(bi_emptyHVec, pos));
           cact = 0;
         } else {
-          bool allNum = len>0;
+          bool allNum = true;
           for (i32 i = 0; i < len; i++) { S(c,i);
-            if(c.p==-1) goto defIns;
+            if (c.p==-1) goto defIns;
             allNum&= q_f64(c.v);
           }
           TSSIZE(stk)-= len-1; // huh, doing this beforehand works out nicely
@@ -407,6 +417,32 @@ static OptRes opt(u32* bc0) {
           TSADD(data, r.u);
           stk[TSSIZE(stk)-1] = SREF(r, pos);
         }
+        break;
+      }
+      case ARMO: case ARMM: { i32 len = *bc++;
+        assert(len != 0); // vm.c bytecode prep should've replaced this with a constant
+        S(e0,0);
+        bool mut = ARMM==*sbc;
+        debug_assert(!mut || e0.p!=-1);
+        if (e0.p==-1) goto defIns;
+        ux r0 = isAtm(e0.v)? 0 : RNK(e0.v);
+        usz* sh0 = r0==0? NULL : SH(e0.v);
+        for (i32 i = 1; i < len; i++) { S(c,i);
+          debug_assert(!mut || c.p!=-1);
+          if (c.p==-1) goto defIns;
+          if (!mut && (isAtm(c.v)? r0!=0 : !ptr_eqShape(SH(c.v), RNK(c.v), sh0, r0))) goto defIns;
+        }
+        TSSIZE(stk)-= len-1;
+        HArr_p h = m_harrUv(len);
+        for (i32 i = 0; i < len; i++) { S(c,-i);
+          h.a[i] = inc(c.v);
+          RM(c.p);
+        }
+        NOGC_E;
+        cact = 5;
+        B r = mut? m_wrappedObj(h.b, t_arrMerge) : bqn_merge(h.b,0);
+        TSADD(data, r.u);
+        stk[TSSIZE(stk)-1] = SREF(r, pos);
         break;
       }
       case RETN: case RETD:

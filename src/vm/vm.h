@@ -287,6 +287,17 @@ typedef struct WrappedObj {
   struct Value;
   B obj;
 } WrappedObj;
+static B m_wrappedObj(B obj, u8 type) {
+  WrappedObj* a = mm_alloc(sizeof(WrappedObj), type);
+  a->obj = obj;
+  return tag(a, OBJ_TAG);
+}
+static B m_fldAlias(B obj, i32 p) {
+  FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
+  a->obj = obj;
+  a->p = p;
+  return tag(a, OBJ_TAG);
+}
 
 #define V_POS(X) ((u32)((X).u))
 #define V_DEPTH(X) ((u16)((X).u>>32))

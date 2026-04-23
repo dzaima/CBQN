@@ -906,10 +906,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         break;
       }
       case ALIM: { P(o) GS_UPD; u32 l = *bc++;
-        FldAlias* a = mm_alloc(sizeof(FldAlias), t_fldAlias);
-        a->obj = o;
-        a->p = l;
-        ADD(tag(a,OBJ_TAG));
+        ADD(m_fldAlias(o, l));
         break;
       }
       case CHKV: {
@@ -917,9 +914,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         break;
       }
       case VFYM: { P(o) GS_UPD;
-        WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_vfyObj);
-        a->obj = o;
-        ADD(tag(a,OBJ_TAG));
+        ADD(m_wrappedObj(o, t_vfyObj));
         break;
       }
       case FAIL: thrM(q_N(sc->vars[2])? "This block cannot be called monadically" : "This block cannot be called dyadically");
@@ -939,9 +934,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         HArr_p r = m_harrUv(sz);
         for (i64 i = 0; i < sz; i++) r.a[sz-i-1] = POP;
         NOGC_E; GS_UPD;
-        WrappedObj* a = mm_alloc(sizeof(WrappedObj), t_arrMerge);
-        a->obj = r.b;
-        ADD(tag(a,OBJ_TAG));
+        ADD(m_wrappedObj(r.b, t_arrMerge));
         break;
       }
       
@@ -1304,11 +1297,8 @@ void comp_init(void) {
   TIi(t_funBl,fn_iw) = funBl_iw; TIi(t_md1Bl,m1_iw) = md1Bl_iw; TIi(t_md2Bl,m2_iw) = md2Bl_iw;
   TIi(t_funBl,fn_ix) = funBl_ix; TIi(t_md1Bl,m1_ix) = md1Bl_ix; TIi(t_md2Bl,m2_ix) = md2Bl_ix;
   
-  oomMessage = m_c8vec_0("Out of memory"); gc_add(oomMessage);
-  WrappedObj* arm0 = mm_alloc(sizeof(WrappedObj), t_arrMerge);
-  arm0->obj = emptyHVec();
-  emptyARMM = tag(arm0, OBJ_TAG);
-  gc_add(emptyARMM);
+  gc_add(oomMessage = m_c8vec_0("Out of memory"));
+  gc_add(emptyARMM = m_wrappedObj(emptyHVec(), t_arrMerge));
   
   
   #ifndef GS_REALLOC
