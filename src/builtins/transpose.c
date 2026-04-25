@@ -387,14 +387,14 @@ B transp_c2(B t, B w, B x) {
     // corresponds to the last argument axis and we have a strided
     // transpose swapping that with the last result axis
     usz rai = na-1;
-    usz xai=rai; while (st[--xai]!=1) if (xai==0) goto skip_2d;
+    usz xai=rai; while (st[--xai]!=csz) if (xai==0) goto skip_2d;
     if (rsh[xai]*rsh[rai] < (256*8) >> xlw) goto skip_2d;
     TranspFn tran = transposeFns[CTZ(csz<<xlw)-3];
     usz rf = shProd(rsh, 0, na);
     Arr* ra;
     u8* rp = m_tyarrlbp(&ra,xlw,rf*csz,el2t(xe));
     u8* xp = tyany_ptr(x);
-    usz w = rsh[xai]; usz ws = st[rai];
+    usz w = rsh[xai]; usz ws = st[rai]>>CTZ(csz);
     usz h = rsh[rai]; usz hs = shProd(rsh, xai+1, rai) * h;
     if (na == 2) {
       tran(rp, xp, w, h, ws, hs);
