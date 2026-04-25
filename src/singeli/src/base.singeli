@@ -224,7 +224,7 @@ extend (extend_each{anyall{1}}){all_hom, all_top}
 extend (extend_each{anyall{0}}){any_hom, any_top}
 
 def hom_to_int_ext{a:T} = tup{1, hom_to_int{a}} # tup{n,mask}; mask with each bit repeated n times
-def ctz_ext{{n,v}} = ctz{v}/n # ctz for a result of homMaskX
+def ctz_ext{{n,v}} = ctz{v}/n # ctz for a result of hom_to_int_ext
 def hom_to_int{...vs if length{vs}>1} = {
   def n = length{vs}
   def [k]_ = one_type{vs}
