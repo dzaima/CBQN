@@ -20,6 +20,7 @@ def cbqn_tagTag{} = emit{u64, '', 'TAG_TAG'}
 def cbqn_varTag{} = emit{u64, '', 'VAR_TAG'}
 def cbqn_extTag{} = emit{u64, '', 'EXT_TAG'}
 def cbqn_rawTag{} = emit{u64, '', 'RAW_TAG'}
+def cbqn_cpxTag{} = emit{u64, '', 'CPX_TAG'}
 def cbqn_md1Tag{} = emit{u64, '', 'MD1_TAG'}
 def cbqn_md2Tag{} = emit{u64, '', 'MD2_TAG'}
 def cbqn_funTag{} = emit{u64, '', 'FUN_TAG'}

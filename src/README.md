@@ -74,7 +74,9 @@ src/
 ```C
 Type checks (all are safe to execute on any B object):
   test           tag    description     heap-allocated
-  isF64(x)       N/A    a number        no
+  isF64(x)       N/A    a real number   no
+  isCpx(x)     CPX_TAG  complex number  yes
+  isNum(x)              isCpx|isF64     depends
   isC32(x)     C32_TAG  a character     no
   isAtm(x)      [many]  !isArr(x)       depends
   isVal(x)      [many]  heap-allocated  yes
@@ -128,6 +130,7 @@ type field for heap-allocated objects:
   t_funBI, t_md1BI, t_md2BI // function/1-modifier/2-modifier builtins; BFn, BMd1, BMd2
   t_funBl, t_md1Bl, t_md2Bl // function/1-modifier/2-modifier blocks; FunBlock, Md1Block, Md2Block
   t_shape // shape object
+  t_complex // complex number
   
   t_fork, t_atop // (F G H), (F G); Fork, Atop
   t_md1D, t_md2D // (F _m), (F _m_ G); Md1D, Md2D

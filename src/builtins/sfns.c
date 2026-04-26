@@ -50,7 +50,17 @@ FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
     }
   }
   if (fills) {
-    if (isAtm(a) || isAtm(b)) goto noFills;
+    if (isAtm(a) || isAtm(b)) {
+      if ((isCpx(a) && isNum(b)) || (isCpx(b) && isNum(a))) {
+        Arr* ra = arr_shVec(m_fillarrp(2));
+        fillarr_setFill(ra, m_f64(0));
+        fillarrv_ptr(ra)[0] = a;
+        fillarrv_ptr(ra)[1] = b;
+        NOGC_E;
+        return taga(ra);
+      }
+      goto noFills;
+    }
     B af = asFill(incG(a));
     if (noFill(af)) goto noFills;
     B bf = asFill(incG(b));

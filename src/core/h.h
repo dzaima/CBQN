@@ -23,6 +23,9 @@
 #ifndef MM
   #define MM 1
 #endif
+#ifndef COMPLEX_SUPPORT
+  #define COMPLEX_SUPPORT 1
+#endif
 #if ALL_R0 || ALL_R1
   #define WRAP_NNBI 1
 #endif
@@ -179,6 +182,7 @@ static const u16 TAG_TAG = 0b0111111111110010; // 7FF2 0111111111110010nnnnnnnnn
 static const u16 VAR_TAG = 0b0111111111110011; // 7FF3 0111111111110011ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn variable reference
 static const u16 EXT_TAG = 0b0111111111110100; // 7FF4 0111111111110100ddddddddddddddddnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn extended variable reference
 static const u16 RAW_TAG = 0b0111111111110101; // 7FF5 0111111111110101nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn raw 48 bits of data
+static const u16 CPX_TAG = 0b1111111111110001; // FFF7 1111111111110111ppppppppppppppppppppppppppppppppppppppppppppp000 complex number
 static const u16 MD1_TAG = 0b1111111111110010; // FFF2 1111111111110010ppppppppppppppppppppppppppppppppppppppppppppp000 1-modifier
 static const u16 MD2_TAG = 0b1111111111110011; // FFF3 1111111111110011ppppppppppppppppppppppppppppppppppppppppppppp000 2-modifier
 static const u16 FUN_TAG = 0b1111111111110100; // FFF4 1111111111110100ppppppppppppppppppppppppppppppppppppppppppppp000 function
@@ -233,18 +237,19 @@ FORCE_INLINE B r_fB(f64 x) { return (B){.f=x}; }
   /* 3*/ F(md1BI) F(md1Bl) \
   /* 5*/ F(md2BI) F(md2Bl) \
   /* 7*/ F(shape) /* doesn't get visited in arrays, won't be freed by gc */ \
+  /* 8*/ F(complex) \
   \
-  /* 8*/ F(fork) F(atop) F(md1D) F(md2D) \
+  /* 9*/ F(fork) F(atop) F(md1D) F(md2D) \
   \
-  /*12*/ F(hslice) F(fillslice) F(i8slice) F(i16slice) F(i32slice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
-  /*21*/ F(harr  ) F(fillarr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
-  /*30*/ F(bitarr) \
+  /*13*/ F(hslice) F(fillslice) F(i8slice) F(i16slice) F(i32slice) F(c8slice) F(c16slice) F(c32slice) F(f64slice) \
+  /*22*/ F(harr  ) F(fillarr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
+  /*31*/ F(bitarr) \
   \
-  /*31*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(unkArr) F(ffiType) F(ffiScratchMem) F(bvwArena) \
-  /*42*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
-  /*52*/ F(freed) F(invalid) F(customObj) F(mmapH) \
+  /*32*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(unkArr) F(ffiType) F(ffiScratchMem) F(bvwArena) \
+  /*43*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
+  /*53*/ F(freed) F(invalid) F(customObj) F(mmapH) \
   \
-  /*56*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*57*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,
@@ -438,11 +443,12 @@ FORCE_INLINE bool isMd2(B x) { return (x.u>>48) == MD2_TAG; }
 FORCE_INLINE bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }
 FORCE_INLINE bool isNsp(B x) { return (x.u>>48) == NSP_TAG; }
 FORCE_INLINE bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
+FORCE_INLINE bool isCpx(B x) { return (x.u>>48) == CPX_TAG && COMPLEX_SUPPORT; }
 // FORCE_INLINE bool isVal(B x) { return ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0); }
 // FORCE_INLINE bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(r_Bu(m_f64(1.0/0.0))<<1)); }
 FORCE_INLINE bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);
 FORCE_INLINE bool isF64(B x) { return (x.u<<1) - ((0xFFEull<<52) + 2) >= (1ull<<52) - 2; }
-FORCE_INLINE bool isNum(B x) { return isF64(x); }
+FORCE_INLINE bool isNum(B x) { return isF64(x) || isCpx(x); }
 
 FORCE_INLINE bool isAtm(B x) { return !isArr(x); }
 FORCE_INLINE bool isCallable(B x) { u16 tag = x.u>>48; return tag>=MD1_TAG && tag<=FUN_TAG; }
@@ -781,3 +787,32 @@ static u64 bit_reverse64(u64 x) {
   c = (c&0x5555555555555555)<<1 | (c&0xaaaaaaaaaaaaaaaa)>>1;
   return c;
 }
+
+// complex numbers
+typedef struct CpxVal { f64 re, im; } CpxVal;
+typedef struct CpxObj {
+  struct Value;
+  CpxVal val;
+} CpxObj;
+static CpxObj* m_cpxG(f64 re, f64 im) {
+  CpxObj* r = mm_alloc(sizeof(CpxObj), t_complex);
+  r->val = (CpxVal){re, im};
+  return r;
+}
+static B m_cpx(f64 re, f64 im) {
+  if (im==0) return m_f64(re);
+  return tag(m_cpxG(re, im), CPX_TAG);
+}
+static B m_cpxv(CpxVal x) { return m_cpx(x.re, x.im); }
+static CpxVal o2cpxXG(B x)  { assert(isCpx(x)); return c(CpxObj, x)->val; } // doesn't consume; assumes isCpx(x)
+static CpxVal o2cpxXGD(B x)  { CpxVal r = o2cpxXG(x); decG(x); return r; } // consumes; assumes isCpx(x)
+static CpxVal o2cpxG(B x)  { return isCpx(x)? o2cpxXG(x)  : (CpxVal){o2fG(x), 0}; } // doesn't consume; assumes isNum(x)
+static CpxVal o2cpxGD(B x) { return isCpx(x)? o2cpxXGD(x) : (CpxVal){o2fG(x), 0}; } // consumes; assumes isNum(x)
+NORETURN void expCpx_B(B what);
+FORCE_INLINE bool q_cpx_impl(CpxVal* out, B x, bool decrement) {
+  if (isCpx(x)) { *out = c(CpxObj, x)->val; if (decrement) decG(x); return true; }
+  if (isF64(x)) { *out = (CpxVal){o2fG(x), 0}; return true; }
+  return false;
+}
+FORCE_INLINE bool q_cpx (CpxVal* out, B x) { return q_cpx_impl(out, x, false); } // doesn't consume; leaves out unchanged if returns false
+FORCE_INLINE bool q_cpxD(CpxVal* out, B x) { return q_cpx_impl(out, x, true); } // consumes if true; leaves out unchanged if returns false

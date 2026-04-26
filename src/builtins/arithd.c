@@ -121,6 +121,61 @@ static NOINLINE u8 iMakeEq(B* w, B* x, u8 we, u8 xe) {
   return we|xe;
 }
 
+#define DEF_CPX_COMM(CHR, NAME, F) NOINLINE B NAME##_cpx_c2(B t, B cpx, B other, bool swapped) { \
+  CpxVal va = o2cpxXGD(cpx); \
+  CpxVal vb; if (!q_cpxD(&vb, other)) thrM("𝕨"CHR"𝕩: One argument was a complex number, but the other wasn't a number"); \
+  return F; \
+}
+#define TO_CPX_COMM(NAME) ({ \
+  if (isCpx(w)) return NAME##_cpx_c2(t, w, x, 0); \
+  if (isCpx(x)) return NAME##_cpx_c2(t, x, w, 1); \
+})
+
+#define DEF_CPX(CHR, NAME, F) \
+NOINLINE B NAME##_cpx_w_c2(B t, B w, B x) { \
+  CpxVal wv = o2cpxXGD(w); \
+  CpxVal xv; if (!q_cpxD(&xv, x)) thrM("𝕨"CHR"𝕩: 𝕨 was a complex number, but 𝕩 wasn't a number"); \
+  return F; \
+} \
+NOINLINE B NAME##_cpx_x_c2(B t, B w, B x) { \
+  CpxVal xv = o2cpxXGD(x); \
+  CpxVal wv; if (!q_cpxD(&wv, w)) thrM("𝕨"CHR"𝕩: 𝕩 was a complex number, but 𝕨 wasn't a number"); \
+  return F; \
+}
+#define TO_CPX(NAME) ({ \
+  if (isCpx(w)) return NAME##_cpx_w_c2(t, w, x); \
+  if (isCpx(x)) return NAME##_cpx_x_c2(t, w, x); \
+})
+
+static CpxVal cpx_add(CpxVal w, CpxVal x) { return (CpxVal){w.re+x.re, w.im+x.im}; }
+static CpxVal cpx_sub(CpxVal w, CpxVal x) { return (CpxVal){w.re-x.re, w.im-x.im}; }
+static CpxVal cpx_mul(CpxVal w, CpxVal x) { return (CpxVal){w.re*x.re - w.im*x.im, w.re*x.im + w.im*x.re}; }
+static CpxVal cpx_div(CpxVal w, CpxVal x) {
+  f64 tre, tim, div;
+  if (x.im==0) { // make sure that complex division exactly matches real division for real divisor
+    tre = w.re;
+    tim = w.im;
+    div = x.re + 0;
+  } else { // TODO handle overflow?
+    div = x.re*x.re + x.im*x.im;
+    tim = w.im*x.re - w.re*x.im;
+    tre = w.re*x.re + w.im*x.im;
+  }
+  return (CpxVal){tre/div, tim/div};
+}
+DEF_CPX_COMM("+", add, m_cpxv(cpx_add(va, vb)))
+DEF_CPX     ("-", sub, m_cpxv(cpx_sub(wv, xv)))
+DEF_CPX_COMM("×", mul, m_cpxv(cpx_mul(va, vb)))
+DEF_CPX     ("÷", div, m_cpxv(cpx_div(wv, xv)))
+DEF_CPX("√",  root,  (thrM("𝕨√𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
+DEF_CPX("⋆",  pow,   (thrM("𝕨⋆𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
+DEF_CPX("⋆⁼", log,   (thrM("𝕨⋆⁼𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
+DEF_CPX("|",  stile, (thrM("𝕨|𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
+DEF_CPX_COMM("∧", and,    (thrM("𝕨∧𝕩: TODO complex"),(void)va,(void)vb,bi_N))
+DEF_CPX_COMM("∨", or,     (thrM("𝕨∨𝕩: TODO complex"),(void)va,(void)vb,bi_N))
+DEF_CPX_COMM("⌊", floor,  (thrM("𝕨⌊𝕩: TODO complex"),(void)va,(void)vb,bi_N))
+DEF_CPX_COMM("⌈", ceil,   (thrM("𝕨⌈𝕩: TODO complex"),(void)va,(void)vb,bi_N))
+
 #define PF(N)   f64* N##p = f64any_ptr(N);
 #define PI8(N)  i8*  N##p = i8any_ptr (N);
 #define PI16(N) i16* N##p = i16any_ptr(N);
@@ -164,7 +219,7 @@ static NOINLINE u8 iMakeEq(B* w, B* x, u8 we, u8 xe) {
     }                                                           \
     P2(NAME, A_B)                                               \
   }                                                             \
-  thrM("𝕨" SYMB "𝕩: Unexpected argument types");                \
+  TO_CPX(NAME); thrM("𝕨" SYMB "𝕩: Unexpected argument types");  \
 }
 GC2f("÷", div  , wf/(xf+0),
   , /*INT_SA*/
@@ -399,25 +454,25 @@ GC2f("|", stile, pfmod(xf, wf), NOUNROLL,
   if (isArr(x)) return isArr(w)? NAME##_AA(t, w, x) : NAME##_SA(t, w, x); \
   else if (isArr(w)) return NAME##_AS(t, w, x);
 
-#define AR_I_SCALAR(CHR, NAME, EXPR, MORE) B NAME##_c2(B t, B w, B x) { \
+#define AR_I_SCALAR(CHR, NAME, EXPR, MORE, COMPLEX) B NAME##_c2(B t, B w, B x) { \
   if (q_f64(w) & q_f64(x)) return m_f64(EXPR); \
-  MORE; AR_I_TO_ARR(NAME)                      \
-  thrM("𝕨"CHR "𝕩: Unexpected argument types"); \
+  MORE; AR_I_TO_ARR(NAME); COMPLEX;            \
+  thrM("𝕨"CHR"𝕩: Unexpected argument types");  \
 }
 
 AR_I_SCALAR("+", add, w.f+x.f, {
   if (isC32(w) & q_f64(x)) { u64 r = (u64)(o2cG(w)+o2i64(x)); if(r>CHR_MAX)thrM("𝕨+𝕩: Invalid character"); return m_c32((u32)r); }
   if (q_f64(w) & isC32(x)) { u64 r = (u64)(o2cG(x)+o2i64(w)); if(r>CHR_MAX)thrM("𝕨+𝕩: Invalid character"); return m_c32((u32)r); }
-});
+}, TO_CPX_COMM(add))
 AR_I_SCALAR("-", sub, w.f-x.f, {
   if (isC32(w) & q_f64(x)) { u64 r = (u64)((i32)o2cG(w)-o2i64(x)); if(r>CHR_MAX)thrM("𝕨-𝕩: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
-})
-AR_I_SCALAR("×", mul, w.f*x.f, {})
-AR_I_SCALAR("∧", and, w.f*x.f, {})
-AR_I_SCALAR("∨", or , bqn_or(w.f, x.f), {})
-AR_I_SCALAR("⌊", floor, w.f>x.f?x.f:w.f, {})
-AR_I_SCALAR("⌈", ceil , w.f>x.f?w.f:x.f, {})
+}, TO_CPX(sub))
+AR_I_SCALAR("×", mul, w.f*x.f, {}, TO_CPX_COMM(mul))
+AR_I_SCALAR("∧", and, w.f*x.f, {}, TO_CPX_COMM(and))
+AR_I_SCALAR("∨", or , bqn_or(w.f, x.f), {}, TO_CPX_COMM(or))
+AR_I_SCALAR("⌊", floor, w.f>x.f?x.f:w.f, {}, TO_CPX_COMM(floor))
+AR_I_SCALAR("⌈", ceil , w.f>x.f?w.f:x.f, {}, TO_CPX_COMM(ceil))
 #undef AR_I_SCALAR
 B not_c2(B t, B w, B x) {
   return C2(add, m_f64(1), sub_c2(t, w, x));

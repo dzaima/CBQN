@@ -27,6 +27,7 @@ B asFill(B x) { // consumes
   if (isF64(x)) return m_i32(0);
   if (isC32(x)) return m_c32(' ');
   dec(x);
+  if (isCpx(x)) return m_i32(0);
   return bi_noFill;
 }
 

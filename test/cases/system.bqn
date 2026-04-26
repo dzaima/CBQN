@@ -486,7 +486,7 @@ a←•internal.Unshare ↕10 ⋄ b←10⥊<a ⋄ ! 11 ≡ •internal.Refc a �
 
 # •internal.Info
 •internal.Info 1 %% "3ff0000000000000: not heap-allocated"
-33↑•internal.Info •internal.Unshare ↕10 %% "fff7: refc:1 type:23=i8arr alloc:"
+33↑•internal.Info •internal.Unshare ↕10 %% "fff7: refc:1 type:24=i8arr alloc:"
 # •internal.HasFill
 •internal.HasFill¨ ⟨↕0, ↕10, ⟨⟩, 'a'‿1, ""⟩ %% 1‿1‿0‿0‿1
 # •internal.Squeeze

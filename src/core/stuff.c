@@ -374,7 +374,8 @@ NOINLINE void thrF(char* p, ...) {
 }
 
 char* genericDesc(B x) {
-  if (isNum(x)) return "number";
+  if (isF64(x)) return "number";
+  if (isCpx(x)) return "complex number";
   if (isC32(x)) return "character";
   if (isArr(x)) return "array";
   if (isFun(x)) return "function";

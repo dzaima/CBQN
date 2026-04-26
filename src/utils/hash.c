@@ -81,6 +81,13 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
       hashbuf[2] = bqn_hash(xv->h, secret);
       break;
     }
+    case t_complex: {
+      CpxVal v = o2cpxXG(x);
+      hashbuf[0] = 0;
+      hashbuf[1] = r_f64u(v.re);
+      hashbuf[2] = r_f64u(v.im);
+      break;
+    }
     default: /*printf("%d/%s\n",TY(x),type_repr(TY(x)));*/ thrM("Cannot hash this object");
   }
   return wyhash(hashbuf, sizeof(hashbuf), TY(x), secret);

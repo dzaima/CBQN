@@ -686,6 +686,7 @@ static B def_getU(Arr* x, usz n) { fatal("def_getU"); }
 static B def_m1_d(B m, B f     ) { thrM("cannot derive this"); }
 static B def_m2_d(B m, B f, B g) { thrM("cannot derive this"); }
 static Arr* def_slice(B x, usz s, usz ia) { fatal("cannot slice non-array!"); }
+static void cpx_print(FILE* f, B x) { CpxVal v = c(CpxObj,x)->val; printf("%.18gi%.18g", v.re, v.im); }
 
 GLOBAL B rt_invFnReg, rt_invFnSwap;
 GLOBAL FC1 rt_invFnRegFn;
@@ -834,6 +835,8 @@ void base_init() { // very first init function
   TIi(t_shape,visit) = noop_visit;
   TIi(t_temp,visit) = noop_visit;
   TIi(t_talloc,visit) = noop_visit;
+  TIi(t_complex,visit) = noop_visit;
+  TIi(t_complex,print) = cpx_print;
   
   TIi(t_md1BI,visit) = TIi(t_md2BI,visit) = noop_visit;
   TIi(t_md1BI,freeO) = TIi(t_md2BI,freeO) = TIi(t_funBI,freeO) = builtin_free;
