@@ -560,7 +560,7 @@ void load_init() { // very last init function
   
   
   #ifdef PRECOMP
-    decG(load_compOpts);
+    gc_add(load_rt);
     Block* c = ({
       #include "../build/interp"
     });
