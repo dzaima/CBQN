@@ -384,7 +384,7 @@ NOINLINE bool indistinguishable(B w, B x); // whether w and x are semantically i
 
 NOINLINE i32 compareF(B w, B x);
 static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if w≡x
-  if (isNum(w) & isNum(x)) return floatCompare(o2fG(w), o2fG(x));
+  if (q_f64(w) & q_f64(x)) return floatCompare(o2fG(w), o2fG(x));
   if (isC32(w) & isC32(x)) return ICMP(o2cG(w), o2cG(x));
   return compareF(w, x);
 }

@@ -239,7 +239,7 @@ CharBuf get_chars(B x) {
     SGetU(x)
     for (u64 i = 0; i < len; i++) {
       B c = GetU(x,i);
-      buf[i] = isNum(c)? o2iG(c) : o2c(c);
+      buf[i] = q_f64(c)? o2iG(c) : o2c(c);
     }
   }
   return (CharBuf){.data=buf, .alloc=alloc};

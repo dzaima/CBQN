@@ -217,7 +217,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
     switch(c = *p++) { default: printf("Unknown format character '%c'", c); fatal(""); UD;
       case 'R': {
         B b = va_arg(a, B);
-        if (isNum(b)) AFMT("%f", o2f(b));
+        if (q_f64(b)) AFMT("%f", o2f(b));
         else s = appendRaw(s, inc(b));
         break;
       }

@@ -154,7 +154,7 @@ NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
       else { dec(xf); goto rec; } // whatever
     }
     bool charW;
-    if (isNum(w)) charW=0;
+    if (q_f64(w)) charW=0;
     else if (isC32(w)) charW=1;
     else goto rec;
     
@@ -177,7 +177,7 @@ NOINLINE B dyArith_SA(DyTableSA* table, B w, B x) {
     }
   }
   
-  if (!isF64(w)) {
+  if (!q_f64(w)) {
     if (!isC32(w)) goto rec;
     DyTableSA* t2 = table->chrAtom;
     if (t2==NULL) goto rec;
@@ -283,7 +283,7 @@ bool sub_forBitselCN_SA(DyTableSA* table, B w, B* r) { u32 wc=o2cG(w); if(wc ==0
 B sub_c2R(B t, B w, B x) { return sub_c2(t, x, w); }
 
 static NOINLINE B or_SA(B t, B w, B x) {
-  if (!isF64(w)) return arith_recd(or_c2, w, x, A_B);
+  if (!q_f64(w)) return arith_recd(or_c2, w, x, A_B);
   u8 xe = TI(x,elType);
   if (LIKELY(xe==el_bit)) {
     bitsel:;

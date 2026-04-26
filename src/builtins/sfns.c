@@ -34,7 +34,7 @@ Arr* cpyWithShape(B x) {
 
 FORCE_INLINE B m_vec2Base(B a, B b, bool fills) {
   if (isAtm(a)&isAtm(b)) {
-    if (LIKELY(isNum(a)&isNum(b))) {
+    if (LIKELY(q_f64(a)&q_f64(b))) {
       i32 ai; i32 bi;
       if(RARE(!q_i32o(&ai,a)|!q_i32o(&bi,b))){f64* rp; B r = m_f64arrv(&rp, 2); rp[0]=o2fG(a); rp[1]=o2fG(b); return r; }
       else if (q_ibit(ai)   &   q_ibit(bi)) { u64* rp; B r = m_bitarrv(&rp, 2); rp[0]=ai | (bi<<1);           return r; }
@@ -412,7 +412,7 @@ B pick_c1(B t, B x) {
 static NOINLINE void checkIndexList(B w, ur xr) {
   SGetU(w)
   usz ia = IA(w);
-  for (usz i = 0; i < ia; i++) if (!isNum(GetU(w,i))) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
+  for (usz i = 0; i < ia; i++) if (!q_f64(GetU(w,i))) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
   if (ia>xr+xr+10) {
     if (RNK(w)!=1) thrF("𝕨⊑𝕩: Leaf arrays in 𝕨 must have rank 1 (element in 𝕨 has shape %H)", w);
     thrF("𝕨⊑𝕩: Leaf array in 𝕨 too large (has shape %H)", w);
@@ -450,12 +450,12 @@ static B recPick(B w, B x) { // doesn't consume
         return IGet(x,0);
       }
       SGetU(w)
-      if (isNum(GetU(w,0))) {
+      if (q_f64(GetU(w,0))) {
         if(RNK(w)!=1) goto wrr;
         if (ia!=xr) goto wrl;
         PICK_IDX(c, ({
           B cw = GetU(w,i);
-          if (!isNum(cw)) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
+          if (!q_f64(cw)) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
           o2i64(cw);
         }), ia, goto oob);
         return IGet(x,c);
@@ -482,7 +482,7 @@ B pick_c2(B t, B w, B x) {
     if (isArr(w) && RNK(w)==1 && IA(w)==0) { decG(w); return x; }
     x = m_unit(x);
   }
-  if (isNum(w)) {
+  if (q_f64(w)) {
     if (RNK(x)!=1) thrF("𝕨⊑𝕩: 𝕩 must be a list when 𝕨 is a number (%H ≡ ≢𝕩)", x);
     usz p = WRAP(o2i64(w), IA(x), thrF("𝕨⊑𝕩: indexing out-of-bounds (𝕨≡%R, %s≡≠𝕩)", w, iaW));
     return TO_GET(x, p);
@@ -694,7 +694,7 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
 
 #define TAKEDROP_INIT(TAKE) \
   if (!isArr(x)) { x = m_unit(x); } assert(isArr(x)); \
-  if (!isNum(w)) return takedrop_highrank(TAKE, w, x); \
+  if (!q_f64(w)) return takedrop_highrank(TAKE, w, x); \
   Arr* a;                 \
   i64 wv = o2i64(w);      \
   i64 n = wv;             \
@@ -1357,10 +1357,10 @@ static usz pick_oneIndex(B w, ur xr, usz* xsh) { // throws if guaranteed bad; re
     case el_c8: case el_c16: case el_c32: case el_bit:
     case el_B: {
       SGetU(w)
-      if (!isNum(GetU(w,0))) return USZ_MAX;
+      if (!q_f64(GetU(w,0))) return USZ_MAX;
       PICK_IDX(c, ({
         B cw = GetU(w,i);
-        if (!isNum(cw)) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
+        if (!q_f64(cw)) thrM("𝕨⊑𝕩: 𝕨 contained list with mixed-type elements");
         o2i64(cw);
       }), xr, goto oob);
       return c;

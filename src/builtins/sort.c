@@ -47,7 +47,7 @@ static NOINLINE void generic_grade(B x, usz ia, B r, i32* rp, void (*fn)(BI32p*,
   TFREE(tmp);
 }
 static bool q_nan(B x) {
-  assert(isNum(x));
+  assert(q_f64(x));
   double f = o2fG(x);
   return f!=f;
 }

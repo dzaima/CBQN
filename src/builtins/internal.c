@@ -411,7 +411,7 @@ B internalTemp_c2(B t, B w, B x) {
     
     #if TEST_CELL_FILLS
       case 299: { // test/cells.bqn
-        if (isNum(x)) fullCellFills = o2iG(x);
+        if (q_f64(x)) fullCellFills = o2iG(x);
         B r = m_i32(cellFillErrored);
         cellFillErrored = 0;
         return r;

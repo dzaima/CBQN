@@ -378,7 +378,7 @@ static u32 styG(B x) {
     usz ia = IA(x); SGetU(x)
     for (ux i = 0; i < ia; i++) {
       B c = GetU(x,i);
-      if (!isNum(c)) return inc(c);
+      if (!q_f64(c)) return inc(c);
     }
     return m_f64(0);
   }
@@ -847,8 +847,8 @@ void genObj(B o, B c, void* ptr, B* sourceObjs) { // doesn't consume
       case sty_i32: { if(!q_fi32(f)) thrM("FFI: improper value for i32"); *(i32*)ptr = (i32)f; break; }
       case sty_u64: { u64 i; if(!q_fu64(&i,f)) thrM("FFI: improper value for u64"); if (i>=(1ULL<<53))                 thrM("FFI: u64 argument value ≥ 2⋆53");          *(u64*)ptr = i; break; }
       case sty_i64: { i64 i; if(!q_fi64(&i,f)) thrM("FFI: improper value for i64"); if (i>=(1LL<<53) || i<=-(1LL<<53)) thrM("FFI: i64 argument absolute value ≥ 2⋆53"); *(i64*)ptr = i; break; }
-      case sty_f32: { if(!isNum(c))  thrM("FFI: improper value for f32"); *(float* )ptr = f; break; }
-      case sty_f64: { if(!isNum(c))  thrM("FFI: improper value for f64"); *(double*)ptr = f; break; }
+      case sty_f32: { if(!q_f64(c))  thrM("FFI: improper value for f32"); *(float* )ptr = f; break; }
+      case sty_f64: { if(!q_f64(c))  thrM("FFI: improper value for f64"); *(double*)ptr = f; break; }
     }
   } else {
     BQNFFIType* t = c(BQNFFIType, o);
@@ -1461,7 +1461,7 @@ static bool ty_equal(B a, B b) {
 }
 static B ptrobjSub_c1(B t, B x) {
   B h = nfn_objU(t);
-  if (isNum(x)) return m_ptrobj(ptrobj_elbase(h, x, true), inc(ptrh_type(h)), ptrh_stride(h));
+  if (q_f64(x)) return m_ptrobj(ptrobj_elbase(h, x, true), inc(ptrh_type(h)), ptrh_stride(h));
   if (isNsp(x)) {
     B h2 = ptrobj_checkget(x);
     B t1 = ptrh_type(h);

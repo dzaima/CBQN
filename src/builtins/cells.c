@@ -633,7 +633,7 @@ B rank_c1(Md2D* d, B x) { B f = d->f; B g = d->g;
   f64 kf;
   B gi = bi_z;
   if (RARE(isFun(g))) gi = g = c1iX(g, x);
-  if (LIKELY(isNum(g))) {
+  if (LIKELY(q_f64(g))) {
     kf = req_whole(o2fG(g));
   } else {
     usz gia = check_rank_vec(g);
@@ -888,7 +888,7 @@ B rank_c2(Md2D* d, B w, B x) { B f = d->f; B g = d->g;
   f64 wf, xf;
   B gi = bi_z;
   if (RARE(isFun(g))) gi = g = c2iWX(g, w, x);
-  if (LIKELY(isNum(g))) {
+  if (LIKELY(q_f64(g))) {
     wf = xf = req_whole(o2fG(g));
   } else {
     usz gia = check_rank_vec(g);

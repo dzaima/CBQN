@@ -76,7 +76,7 @@ void repeat_bounds(i64* bound, B g) { // doesn't consume
       SGetU(g)
       for (usz i = 0; i < ia; i++) repeat_bounds(bound, GetU(g, i));
     }
-  } else if (isNum(g)) {
+  } else if (q_f64(g)) {
     i64 c;
     if (!q_i64(&c, g)) repeat_bad_num();
     if (c<bound[0]) bound[0] = c;
@@ -132,7 +132,7 @@ B repeat_c2(Md2D* d, B w, B x);
 B repeat_c1(Md2D* d, B x) {
   B g = c1(d->g, inc(x));
   B f = d->f;
-  if (isNum(g)) {
+  if (q_f64(g)) {
     i64 am = o2i64(g);
     if ((u64)am <= 1) goto basic;
     if (isFun(f)) { u8 rtid = RTID(f); switch (rtid) {
@@ -188,7 +188,7 @@ B repeat_c1(Md2D* d, B x) {
 B repeat_c2(Md2D* d, B w, B x) {
   B g = c2(d->g, inc(w), inc(x));
   B f = d->f;
-  if (isNum(g)) {
+  if (q_f64(g)) {
     i64 am = o2i64(g);
     if ((u64)am <= 1) goto basic;
     if (isFun(f)) { u8 rtid = RTID(f); switch (rtid) {
@@ -257,7 +257,7 @@ B pick_c2(B t, B w, B x);
 
 B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
   B fr = c1iX(f, x);
-  if (isNum(fr)) {
+  if (q_f64(fr)) {
     if (isAtm(g)||RNK(g)!=1) thrM("𝔽◶𝕘𝕩: 𝕘 must have rank 1 when index is a number");
     usz fri = WRAP(o2i64(fr), IA(g), thrM("𝔽◶𝕘𝕩: Index out of bounds of 𝕘"));
     return c1(IGetU(g, fri), x);
@@ -270,7 +270,7 @@ B cond_c1(Md2D* d, B x) { B f=d->f; B g=d->g;
 }
 B cond_c2(Md2D* d, B w, B x) { B g=d->g;
   B fr = c2iWX(d->f, w, x);
-  if (isNum(fr)) {
+  if (q_f64(fr)) {
     if (isAtm(g)||RNK(g)!=1) thrM("𝕨𝔽◶𝕘𝕩: 𝕘 must have rank 1 when index is a number");
     usz fri = WRAP(o2i64(fr), IA(g), thrM("𝕨𝔽◶𝕘𝕩: Index out of bounds of 𝕘"));
     return c2(IGetU(g, fri), w, x);
@@ -358,12 +358,12 @@ B depthf_c2(B t, B w, B x) {
 }
 extern GLOBAL B rt_depth;
 B depth_c1(Md2D* d, B x) {
-  if (isF64(d->g) && o2fG(d->g)==0) return depthf_c1(d->f, x);
+  if (q_f64(d->g) && o2fG(d->g)==0) return depthf_c1(d->f, x);
   SLOW3("!𝔽⚇𝕘 𝕩", d->g, x, d->f);
   return m2c1(rt_depth, d->f, d->g, x);
 }
 B depth_c2(Md2D* d, B w, B x) {
-  if (isF64(d->g) && o2fG(d->g)==0) return depthf_c2(d->f, w, x);
+  if (q_f64(d->g) && o2fG(d->g)==0) return depthf_c2(d->f, w, x);
   SLOW3("!𝕨 𝔽⚇𝕘 𝕩", w, x, d->g);
   return m2c2(rt_depth, d->f, d->g, w, x);
 }

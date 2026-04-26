@@ -204,7 +204,7 @@ static NOINLINE void select_depth2_bad(B w, B x) {
   for (ux i = 0; i < wia; i++) {
     B wc = GetU(w,i);
     if (depth1) {
-      if (isAtm(wc) && !isNum(wc)) thrF("𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained %S)", genericDesc(wc));
+      if (isAtm(wc) && !q_f64(wc)) thrF("𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained %S)", genericDesc(wc));
     } else {
       if (isAtm(wc)) thrF("𝕨⊏𝕩: 𝕨 must be an array of numbers or list of such (𝕨 contained both an array and %S)", genericDesc(wc));
     }
@@ -1194,7 +1194,7 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   ux in = IA(inds);
   if (in == 0) return taga(emptyVec(x));
   if (in == 1) {
-    B w = IGetU(inds,0); if (!isF64(w)) goto generic;
+    B w = IGetU(inds,0); if (!q_f64(w)) goto generic;
     B r = select_cells_single(WRAP_SELECT_ONE(o2i64(w), csz, "%R", w), x, cam, csz, 1);
     decG(x); decG(inds); return r;
   }
@@ -1264,7 +1264,7 @@ B select_ucw(B t, B o, B w, B x) {
   if (RARE(isAtm(x))) { def: return def_fn_ucw(t, o, w, x); }
   u8 we;
   if (isAtm(w)) {
-    if (RARE(!isNum(w))) goto def;
+    if (RARE(!q_f64(w))) goto def;
     w = m_unit(w);
     we = TI(w,elType);
     assert(elNum(we));

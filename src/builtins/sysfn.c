@@ -228,7 +228,7 @@ B casrt_c2(B t, B w, B x) {
   dec(x);
   if (isArr(w) && IA(w)==2) {
     B w0 = IGetU(w,0);
-    if (isNum(w0)) {
+    if (q_f64(w0)) {
       B s = IGet(w,1);
       AFMT("\n");
       usz pos = o2s(w0);
@@ -655,7 +655,7 @@ static NOINLINE void rand_init() {
   rand_subsetName = m_c8vec_0("subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_c8vec_0("(rand).Subset"),       c1_bad, rand_subset_c2);
 }
 B makeRand_c1(B t, B x) {
-  if (!isNum(x)) thrM("•MakeRand 𝕩: 𝕩 must be a number");
+  if (!isF64(x)) thrM("•MakeRand 𝕩: 𝕩 must be a number");
   if (rand_ns==NULL) rand_init();
   B r = m_nns(rand_ns, r_uB(x.u>>32), r_uB(x.u&0xFFFFFFFF), m_nfn(rand_rangeDesc, bi_N), m_nfn(rand_dealDesc, bi_N), m_nfn(rand_subsetDesc, bi_N));
   Scope* sc = c(NS,r)->sc;

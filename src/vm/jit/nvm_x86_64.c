@@ -120,19 +120,19 @@ INS B i_LST_0(void) { // TODO combine with ADDI
   return emptyHVec();
 }
 INS B i_LST_1(B a) {
-  if (isNum(a)) return m_vec1(a);
+  if (q_f64(a)) return m_vec1(a);
   return m_hvec1(a);
 }
 INS B i_LST_2(B a, B b) {
-  if (isNum(a) && isNum(b)) return m_vec2(a, b);
+  if (q_f64(a) && q_f64(b)) return m_vec2(a, b);
   return m_hvec2(a, b);
 }
 INS B i_LST_p(B el0, i64 sz, B* cStack) { assert(sz>0);
   GS_UPD;
   HArr_p r = m_harrUv(sz); // can't use harrs as gStack isn't updated
-  bool allNum = isNum(el0);
+  bool allNum = q_f64(el0);
   r.a[sz-1] = el0;
-  for (i64 i = 1; i < sz; i++) if (!isNum(r.a[sz-i-1] = GSP)) allNum = false;
+  for (i64 i = 1; i < sz; i++) if (!q_f64(r.a[sz-i-1] = GSP)) allNum = false;
   NOGC_E; GS_UPD;
   if (allNum) return squeeze_numNew(r.b);
   return r.b;
@@ -393,7 +393,7 @@ static OptRes opt(u32* bc0) {
           bool allNum = len>0;
           for (i32 i = 0; i < len; i++) { S(c,i);
             if(c.p==-1) goto defIns;
-            allNum&= isNum(c.v);
+            allNum&= q_f64(c.v);
           }
           TSSIZE(stk)-= len-1; // huh, doing this beforehand works out nicely
           HArr_p h = m_harrUv(len);

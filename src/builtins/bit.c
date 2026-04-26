@@ -29,7 +29,7 @@ static bool isCharArr(B x) {
 }
 static CastType getCastType(B e, bool hasVal, B val) { // returns a valid type (doesn't check if it can apply to val)
   usz s; bool c;
-  if (isNum(e)) {
+  if (q_f64(e)) {
     s = o2s(e);
     if (s!=1 && s!=8 && s!=16 && s!=32 && s!=64) thrF("•bit._cast: Unsupported width %s", s);
     c = hasVal? isCharArr(val) : 0;

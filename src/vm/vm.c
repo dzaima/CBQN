@@ -806,7 +806,7 @@ B evalBC(Body* b, Scope* sc, Block* bl) { // doesn't consume
         } else {
           HArr_p r = m_harrUv(sz);
           bool allNum = true;
-          for (i64 i = 0; i < sz; i++) if (!isNum(r.a[sz-i-1] = POP)) allNum = false;
+          for (i64 i = 0; i < sz; i++) if (!q_f64(r.a[sz-i-1] = POP)) allNum = false;
           NOGC_E;
           if (allNum) {
             GS_UPD;

@@ -471,7 +471,7 @@ FLOAT_UB FORCE_INLINE bool q_fi8o(i8*  out, f64 x) { return x == (f64) (*out = (
 FLOAT_UB FORCE_INLINE bool q_fi16o(i16*out, f64 x) { return x == (f64) (*out = (i16)(i32)x); }
 FLOAT_UB FORCE_INLINE bool q_fi32o(i32*out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(i32, x)); }
 
-FORCE_INLINE bool q_bit(B x) { return isNum(x) & (x.f==0 | x.f==1); }
+FORCE_INLINE bool q_bit(B x) { return isF64(x) & (x.f==0 | x.f==1); }
 FORCE_INLINE bool q_i8 (B x) { return q_fi8 (x.f); }
 FORCE_INLINE bool q_i16(B x) { return q_fi16(x.f); }
 FORCE_INLINE bool q_i32(B x) { return q_fi32(x.f); }
@@ -502,7 +502,7 @@ FORCE_INLINE i64 o2i64G(B x) { return (i64)x.f; }
 FORCE_INLINE u64 o2u64G(B x) { return (u64)x.f; }
 
 FORCE_INLINE bool  o2b(B x) { i32 t; if(!q_i32o(&t,x) || (u32)t >= 2) thrM("Expected boolean"); return t; }
-FORCE_INLINE f64   o2f(B x) { if (!isNum(x)) thrM("Expected number");    return o2fG(x); }
+FORCE_INLINE f64   o2f(B x) { if (!q_f64(x)) thrM("Expected number");    return o2fG(x); }
 FORCE_INLINE u32   o2c(B x) { if (!isC32(x)) thrM("Expected character"); return o2cG(x); }
 FORCE_INLINE i32   o2i(B x) { if (!q_i32(x)) expI_B(x);                  return o2iG(x); }
 FORCE_INLINE usz   o2s(B x) { usz v; if (!q_usz(&v, x)) expU_B(x);       return v; }

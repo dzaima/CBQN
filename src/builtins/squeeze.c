@@ -190,7 +190,7 @@ static B squeeze_B_chrMaybe(B x, Arr* xa, u8 type, ux ia) { return squeeze_B_chr
 NOINLINE B squeeze_BGeneric(B x, Arr* xa, u8 type, ux ia) {
   SQFN_START;
   B x0 = IGetU(x,0);
-  if (isNum(x0)) return squeeze_B_numSlow(x, xa, type, ia, true);
+  if (q_f64(x0)) return squeeze_B_numSlow(x, xa, type, ia, true);
   if (isC32(x0)) return squeeze_B_chrSlow(x, xa, type, ia, true);
   FLV_SET(xa, fl_squoze);
   return x;
@@ -200,7 +200,7 @@ static B squeeze_B(B x, Arr* xa, u8 type, ux ia) {
   B* xp = arrv_bptr(xa);
   if (xp == NULL) return squeeze_BGeneric(x, xa, type, ia);
   B x0 = xp[0];
-  if (isNum(x0)) return squeeze_BV_numImpl(x, xa, type, ia, xp, true);
+  if (q_f64(x0)) return squeeze_BV_numImpl(x, xa, type, ia, xp, true);
   if (isC32(x0)) return squeeze_BV_chrImpl(x, xa, type, ia, xp, true);
   FLV_SET(xa, fl_squoze);
   return x;
