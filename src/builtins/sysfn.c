@@ -1709,6 +1709,7 @@ INIT_GLOBAL u32* const dsv_text[] = {
   U"•math.Acos",U"•math.Acosh",U"•math.Asin",U"•math.Asinh",U"•math.Atan",U"•math.Atan2",U"•math.Atanh",U"•math.Cbrt",U"•math.Comb",U"•math.Cos",U"•math.Cosh",
   U"•math.Erf",U"•math.ErfC",U"•math.Expm1",U"•math.Fact",U"•math.GCD",U"•math.Hypot",U"•math.LCM",U"•math.Log10",U"•math.Log1p",U"•math.Log2",U"•math.LogFact",
   U"•math.Sin",U"•math.Sinh",U"•math.Sum",U"•math.Tan",U"•math.Tanh",
+  U"•math.Re",U"•math.Im", // TODO sort
   
   U"•ns.Get",U"•ns.Has",U"•ns.Keys",
   U"•platform.bqn.impl",U"•platform.bqn.implVersion",U"•platform.cpu.arch",U"•platform.environment",U"•platform.os",

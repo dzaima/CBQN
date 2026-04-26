@@ -20,4 +20,11 @@
 %USE fill ⋄ Fill 1 ⋈˜ √¯1 %% 0
 %USE fill ⋄ Fill 1 ∾  √¯1 %% 0
 %USE fill ⋄ Fill 1 ∾˜ √¯1 %% 0
+%USE fill ⋄ •math.Re 2+3×√¯1 %% 2
+%USE fill ⋄ •math.Re 12 %% 12
+%USE fill ⋄ •math.Re 3‿3⥊↕9 %% 3‿3⥊↕9
+%USE fill ⋄ •math.Im 12 %% 0
+%USE fill ⋄ •math.Im 3‿3⥊↕9 %% 3‿3⥊0
+%USE fill ⋄ •math.Im 2+3×√¯1 %% 3
 %USE rand ⋄ a‿b‿c←1000 r.Range¨ 3⥊0 ⋄ +´ (2×a÷c) = +⟜+ (a+b×√¯1)÷c %% 1000
+(•math.Re⋈•math.Im) (1+√¯1) ÷ -0 %% ∞‿∞
