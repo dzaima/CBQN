@@ -158,10 +158,33 @@ NOINLINE f64 logfact_inv(f64 y) {
   return x;
 }
 f64 fact_inv(f64 y) { return logfact_inv(log(y)); }
+B cpx_exp(CpxVal x) {
+  f64 e = exp(x.re);
+  return m_cpx(e*cos(x.im), e*sin(x.im));
+}
 
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
-B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(o2fG(x))); P1(  pow); thrM("⋆𝕩: 𝕩 contained non-number"); }
-B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(o2fG(x))); P1(  log); thrM("⋆⁼𝕩: 𝕩 contained non-number"); }
+B pow_c1(B t, B x) {
+  if (isF64(x)) return m_f64(exp(o2fG(x)));
+  if (isCpx(x)) return cpx_exp(o2cpxXGD(x));
+  P1(pow); thrM("⋆𝕩: 𝕩 contained non-number");
+}
+B log_c1(B t, B x) {
+  if (isF64(x)) return m_f64(log(o2fG(x)));
+  P1(log);
+  thrM("⋆⁼𝕩: 𝕩 contained non-number");
+}
+B mRe_c1(B t, B x) {
+  if (isF64(x) || (isArr(x) && elNum(TI(x,elType)))) return x;
+  if (isCpx(x)) return m_f64(o2cpxXGD(x).re);
+  P1(mRe); thrM("•math.Re 𝕩: 𝕩 contained non-number");
+}
+B mIm_c1(B t, B x) {
+  if (isF64(x)) return m_f64(0);
+  if (isArr(x) && elNum(TI(x,elType))) return i64EachDec(0, x);
+  if (isCpx(x)) return m_f64(o2cpxXGD(x).im);
+  P1(mIm); thrM("•math.Im 𝕩: 𝕩 contained non-number");
+}
 #undef P1
 static NOINLINE B arith_recm_slow(f64 (*fn)(f64), FC1 rec, B x, char* s) {
   if (isF64(x)) return m_f64(fn(o2fG(x)));
@@ -185,8 +208,8 @@ STATIC_GLOBAL B mathNS;
 B getMathNS(void) {
   if (mathNS.u == 0) {
     #define F(X) incG(bi_##X),
-    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","asinh","acosh","atanh","cbrt","log2","log10","log1p","expm1","hypot","fact","logfact","erf","erfc","comb","gcd","lcm","sum");
-    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)F(atan2)F(sinh)F(cosh)F(tanh)F(asinh)F(acosh)F(atanh)F(cbrt)F(log2)F(log10)F(log1p)F(expm1)F(hypot)F(fact)F(logfact)F(erf)F(erfc)F(comb)F(gcd)F(lcm)F(sum));
+    Body* d = m_nnsDesc("sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","asinh","acosh","atanh","cbrt","log2","log10","log1p","expm1","hypot","fact","logfact","erf","erfc","comb","gcd","lcm","sum", "re", "im");
+    mathNS = m_nns(d,  F(sin)F(cos)F(tan)F(asin)F(acos)F(atan)F(atan2)F(sinh)F(cosh)F(tanh)F(asinh)F(acosh)F(atanh)F(cbrt)F(log2)F(log10)F(log1p)F(expm1)F(hypot)F(fact)F(logfact)F(erf)F(erfc)F(comb)F(gcd)F(lcm)F(sum)F(mRe)F(mIm));
     #undef F
     gc_add(mathNS);
   }
