@@ -522,7 +522,6 @@ Most toggles require a value of `1` to be enabled.
 #define ALLOC_STAT  0 // store basic allocation statistics
 #define ALLOC_SIZES 0 // store per-type allocation size statistics
 #define DONT_FREE 0   // don't actually ever free objects, such that they can be printed after being freed for debugging
-#define TYPED_ARITH 1 // enable specialized loops for typed arith
 #define VM_POS 1      // whether to store detailed execution position information for stacktraces
 #define OBJ_COUNTER 0 // store a unique allocation number with each object; superseded by the existence of https://rr-project.org/
 #define OBJ_TRACK (u) // object ID to track
