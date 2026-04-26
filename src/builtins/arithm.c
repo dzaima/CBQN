@@ -24,7 +24,13 @@ B bit_negate(B x) { // consumes
 
 B add_c1(B t, B x) {
   if (q_f64(x)) return x;
-  if (!isArr(x)) thrM("+𝕩: Argument must consist of numbers");
+  if (isAtm(x)) {
+    if (isCpx(x)) {
+      CpxVal xv = o2cpxXGD(x);
+      return m_cpx(xv.re, -xv.im);
+    }
+    thrM("+𝕩: Argument must consist of numbers");
+  }
   if (elNum(TI(x,elType))) return x;
   return arith_recm(add_c1, x);
 }
@@ -33,9 +39,12 @@ B add_c1(B t, B x) {
   #include "utils/includeSingeli.h"
 #endif
 
-#define GC1i(SYMB,NAME,FEXPR,TMIN,RMIN,MAIN) B NAME##_c1(B t, B x) { \
+#define GC1i(SYMB,NAME,FEXPR,TMIN,RMIN,MAIN,COMPLEX) B NAME##_c1(B t, B x) { \
   if (isF64(x)) { f64 v = o2fG(x); return m_f64(FEXPR); } \
-  if (RARE(!isArr(x))) thrM(SYMB "𝕩: 𝕩 contained non-number"); \
+  if (RARE(!isArr(x))) {                              \
+    if (isCpx(x)) { CpxVal xv=o2cpxXGD(x); COMPLEX; } \
+    thrM(SYMB "𝕩: 𝕩 contained non-number");           \
+  }                                                   \
   u8 xe = TI(x,elType);                               \
   if (elNum(xe)) {                                    \
     if (xe<=TMIN) return RMIN;                        \
@@ -85,15 +94,15 @@ B sub_c2(B,B,B);
 #define SUB_BODY(FEXPR) return sub_c2(t, m_f64(0), x);
 #define NOT_BODY(FEXPR) x = squeeze_numTry(x, &xe, SQ_ANY); return xe==el_bit? bit_negate(x) : C2(sub, m_f64(1), x);
 
-GC1i("-", sub,    -v,              el_bit, bit_sel(x,m_f64(0),m_f64(-1)), SUB_BODY)
-GC1i("|", stile,  fabs(v),         el_bit, x, STILE_BODY)
-GC1i("⌊", floor,  floor(v),        el_i32, x, FLOAT_BODY)
-GC1i("⌈", ceil,   ceil(v),         el_i32, x, FLOAT_BODY)
-GC1i("×", mul,    v==0?0:v>0?1:-1, el_bit, x, SIGN_MAIN)
-GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY)
+GC1i("-", sub,    -v,              el_bit, bit_sel(x,m_f64(0),m_f64(-1)), SUB_BODY, return m_cpx(-xv.re,-xv.im))
+GC1i("|", stile,  fabs(v),         el_bit, x, STILE_BODY, return m_f64(hypot(xv.re, xv.im)))
+GC1i("⌊", floor,  floor(v),        el_i32, x, FLOAT_BODY, (thrM("⌊𝕩: TODO complex"),(void)xv))
+GC1i("⌈", ceil,   ceil(v),         el_i32, x, FLOAT_BODY, (thrM("⌈𝕩: TODO complex"),(void)xv))
+GC1i("×", mul,    v==0?0:v>0?1:-1, el_bit, x, SIGN_MAIN, (thrM("×𝕩: TODO complex"),(void)xv))
+GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY, (thrM("¬𝕩: TODO complex"),(void)xv))
 
 #define GC1f(N, F, MSG) B N##_c1(B t, B x) {         \
-  if (isF64(x)) { f64 xv=o2fG(x); return m_f64(F); } \
+  if (isF64(x)) { f64 xv=o2fG(x); return m_cpxv(F); } \
   if (isArr(x)) {                           \
     u8 xe = TI(x,elType);                   \
     if (elNum(xe)) {                        \
@@ -102,9 +111,12 @@ GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY)
       f64* xp = f64any_ptr(x);              \
       f64* rp; B r = m_f64arrc(&rp, x);     \
       vfor (i64 i = 0; i < ia; i++) {       \
-        f64 xv=xp[i]; rp[i] = (F);          \
+        f64 xv=xp[i]; CpxVal r = (F);       \
+        if (r.im!=0) goto cpxRes;           \
+        rp[i] = r.re;                       \
       }                                     \
       decG(x); return r;                    \
+      cpxRes: decG(r); /* fall through to arith_recm */ \
     }                                       \
     SLOW1("arithm " #N, x);                 \
     return arith_recm(N##_c1, x);           \
@@ -112,8 +124,14 @@ GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY)
   thrM(MSG);                                \
 }
 
-GC1f( div, 1/(xv+0), "÷𝕩: 𝕩 contained non-number")
-GC1f(root, sqrt(xv), "√𝕩: 𝕩 contained non-number")
+CpxVal bqn_sqrt_re(f64 re) {
+  if (!COMPLEX_SUPPORT) return (CpxVal){sqrt(re),0};
+  f64 root = sqrt(fabs(re));
+  return re<0? (CpxVal){0, root} : (CpxVal){root, 0};
+}
+
+GC1f( div, ((CpxVal){1/(xv+0), 0}), "÷𝕩: 𝕩 contained non-number")
+GC1f(root, bqn_sqrt_re(xv), "√𝕩: 𝕩 contained non-number")
 #undef GC1i
 #undef LOOP_BODY
 #undef SIGN_EXPR

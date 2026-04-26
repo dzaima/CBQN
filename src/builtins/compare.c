@@ -1,9 +1,21 @@
 #include "core.h"
 #include "utils/calls.h"
 
+i32 complexCompare(CpxVal w, CpxVal x) {
+  thrM("TODO complexCompare");
+}
+
 NOINLINE i32 compareF(B w, B x) {
-  if (isNum(w) & isC32(x)) return -1;
-  if (isC32(w) & isNum(x)) return  1;
+  if (isF64(w) & isC32(x)) return -1;
+  if (isC32(w) & isF64(x)) return  1;
+  if (isCpx(w)) {
+    if (isC32(x)) return -1;
+    if (isNum(x)) return complexCompare(o2cpxXG(w), o2cpxG(x));
+  }
+  if (isCpx(x)) {
+    if (isC32(w)) return 1;
+    if (isNum(w)) return complexCompare(o2cpxG(w), o2cpxXG(x));
+  }
   
   i32 atmNeg;
   if (isAtm(w)) {
@@ -56,6 +68,11 @@ NOINLINE i32 compareF(B w, B x) {
 SHOULD_INLINE bool decomposeEqual(B w, B x, bool (*partEqual)(B,B)) {
   assert(w.u != x.u);
   if (TI(w,byRef) || TY(w)!=TY(x)) return false;
+  if (isCpx(w)) { // types being equal is checked above, so x is also complex
+    CpxVal wv = o2cpxXG(w);
+    CpxVal xv = o2cpxXG(x);
+    return floatEqual(wv.re, xv.re) && floatEqual(wv.im, xv.im);
+  }
   
   B2B dcf = TI(w,decompose);
   B xd=dcf(incG(x)); B* xdp=harr_ptr(xd);

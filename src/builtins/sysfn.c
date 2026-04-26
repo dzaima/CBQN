@@ -37,6 +37,7 @@ B type_c1(B t, B x) {
   else if (isMd1(x)) r = 4;
   else if (isMd2(x)) r = 5;
   else if (isNsp(x)) r = 6;
+  else if (isCpx(x)) r = 1;
   if (RARE(r==-1)) {
     if (q_beq(x, bi_optOut)) thrM("Reading variable that was optimized out by F↩ after error");
     printI(x); fatal(": getting type");
@@ -96,6 +97,13 @@ B repr_c1(B t, B x) {
       return utf8Decode0(buf);
     #else
       return ryu_d2s(o2fG(x));
+    #endif
+  } else if (isCpx(x)) {
+    CpxVal v = o2cpxGD(x);
+    #if NO_RYU
+      return m_c8vec_0("(TODO: format complex numbers without Ryu)");
+    #else
+      return vec_join(vec_addN(ryu_d2s(v.re), m_c32('i')), ryu_d2s(v.im));
     #endif
   } else {
     #if FORMATTER
