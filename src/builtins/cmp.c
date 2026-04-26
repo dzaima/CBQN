@@ -203,7 +203,8 @@ CMP_SA_D(gt, lt, )
   CMP_TO_ARR(NAME, RNAME);                         \
   if (isF64(w)&isC32(x)) return m_i32(FC);         \
   if (isC32(w)&isF64(x)) return m_i32(CF);         \
-  return m_i32(compare(w, x) OP 0);                \
+  B r = m_i32(compare(w, x) OP 0);                 \
+  dec(w); dec(x); return r;                        \
 }
 
 CMP_SCALAR(le, ge, <=, 1, 0)
