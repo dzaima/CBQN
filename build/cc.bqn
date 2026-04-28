@@ -104,38 +104,50 @@ FmtComp ← {
   ⟩
 }
 
-primN ← ⟨
-  "add",      "sub",     "mul",    "div",   "pow",     "root",      "floor",  "ceil",  "stile",   "not"
-  "and",      "or",      "lt",     "gt",    "ne",      "eq",        "le",     "ge",    "feq",     "fne"
-  "ltack",    "rtack",   "shape",  "join",  "couple",  "pair",      "take",   "drop",  "ud",      "shifta"
-  "shiftb",   "reverse", "transp", "slash", "gradeUp", "gradeDown", "select", "pick",  "indexOf", "count"
-  "memberOf", "find",    "group",  "asrt",  "const",   "swap",      "cell",   "each",  "tbl",     "undo"
-  "fold",     "insert",  "scan",   "atop",  "over",    "before",    "after",  "under", "val",     "cond"
-  "rank",     "depth",   "repeat", "catch"
-⟩
-primC ← "+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!˙˜˘¨⌜⁼´˝`∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"
-pre ← "+-=×↕≢≤⊑⊘⌊⌜⥊!<>`|¨´÷˙˜↑↓∘∾≠≥⊢⊣⊸⋆⋈⌈⍟⎊○◶⟜⊏"
+primC‿primN ← {
+  lns ← •FLines "../src/builtins.h"
+  lns↓˜↩ 1+ ⋈⁼/ {16<≠𝕩? "enum PrimNumbers"≡16↑𝕩; 0}¨ lns
+  lns↑˜↩ ⊑ /"};"⊸≡¨ lns
+  <˘⍉> ∾{
+    ps ← 2+⋈⁼/ "/*"⍷𝕩
+    pe ←   ⋈⁼/ "*/"⍷𝕩
+    chars ← ' '⊸≠⊸/ ps↓pe↑𝕩
+    𝕩↓˜↩ pe
+    m ← 𝕩∊'_'∾∾"0aA"+⟜↕¨10‿26‿26
+    names ← 2↓¨ {3≤≠𝕩?"n_"≡2↑𝕩;0}¨⊸/ (¯1+m×+`m>»m)⊔𝕩
+    chars ⋈¨ names
+  }¨ lns
+}
+primX ← (⊑¨⋈1⊸↓¨) ⟨"&type", "∩fill", "⍣log", "$grLen", "%grOrd", "⍝fillBy"⟩
+
+pre ← "+-=×↕≢≤⊑⊘⌊⌜⥊!<>`|¨´÷˙˜↑↓∘∾≠≥⊢⊣⊸⋆⋈⌈⍟⎊○◶⟜⊏⍳"
 isFull ← ¬ primC ∊ "⁼/⊔⌾⍷⚇˝" # primitives whose rt_* values are necessary
 fullC ← isFull/primC
 extraC ← pre (¬∘∊˜/⊢) fullC
-# •Out 1↓·∾","⊸∾¨ "bi_"⊸∾¨ (primC∊extraC) / primN # entries to put in "B provide[]" in load.c
 
 glyphs ← Import "glyphs.bqn"
 _getComp ← { (4+2×srcmap)↑ <∘⊢∾˜ 5↑ (𝕗 Import "c.bqn"){𝔽} }
 Comp ← ((<"incG(runtime["∾F∾"])"˙)¨↕≠∾glyphs) glyphs _getComp ⊢
+GetPR ← Import⟜"pr.bqn"
 RT ← {
   ext ← 2=≠𝕩
   𝕩 ↩ ⊑𝕩
-  src‿need‿inputs←((ext⊑𝕩‿1) ∾ ext/⟨fullC, extraC⟩) Import "pr.bqn"
+  src‿need‿inputs ← GetPR (ext⊑𝕩‿1) ∾ ext/⟨fullC, extraC⟩
   pr←"runtime_0"‿"provide"{(∾𝕨<⊸(<∘{∾"incG("‿𝕨‿"["‿𝕩‿"])"}⟜F¨)⟜(↕≠)¨𝕩)⊏˜(∾𝕩)⊐∾need}○((-1+1=𝕩)⊸↑)inputs
   FmtComp pr need _getComp src
 }
+Provide ← { 𝕊:
+  chars ← 1⊑(GetPR 1‿fullC‿extraC).inputs
+  primCX‿primNX ← primC‿primN ∾¨ primX
+  2↓∾", bi_"⊸∾¨ primNX⊏˜primCX⊐chars
+}
+
 CArg ← {(@+10) Join (¯5⊸↓∾𝕩˙)⌾⊑ FLines "c.bqn"}
 SVG ← {∾⟨"Modify←GetHighlights←⊢⋄"⟩∾ FChars∘∾⟜".bqn"¨ "../svg"‿𝕩}
 
 LFC ← FmtComp∘Comp
 
-(@+10)∾˜ •Out⍟(¬return) (⊑"r"‿"r0"‿"r1"‿"r1x"‿"c"‿"cc"‿"f"‿"e"‿"eu"‿"p"⊐⊏)◶⟨
+(@+10)∾˜ •Out⍟(¬return) (⊑"r"‿"r0"‿"r1"‿"r1x"‿"c"‿"cc"‿"f"‿"e"‿"eu"‿"p"‿"pr"⊐⊏)◶⟨
   RT∘2, RT∘0, RT∘1, RT∘1‿'x'
   {𝕩⋄LFC CArg "⟨"∾"⟩"«∾","⊸∾¨'"'(⊣∾∾˜)¨glyphs}
   {𝕩⋄LFC "{"∾"}"∾˜CArg"𝕩"}
@@ -143,5 +155,6 @@ LFC ← FmtComp∘Comp
   {𝕩⋄LFC SVG "e"}
   {𝕩⋄LFC FChars "eu.bqn"}
   {𝕩⋄LFC SVG "p"}
+  Provide
   ∾LFC¨
 ⟩ args
