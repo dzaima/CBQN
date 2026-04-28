@@ -8,6 +8,7 @@
 #define or_fillFlags A_B
 #define floor_fillFlags A_B
 #define ceil_fillFlags A_B
+#define cpxf_fillFlags A_B
 #define add_fillFlags  A_B | A_CN(A_CHR) | A_NC(A_CHR)
 #define sub_fillFlags  A_B | A_CN(A_CHR) | A_CC(A_NUM)
 #define subR_fillFlags A_B | A_NC(A_CHR) | A_CC(A_NUM)
@@ -175,6 +176,15 @@ DEF_CPX_COMM("∧", and,    (thrM("𝕨∧𝕩: TODO complex"),(void)va,(void)vb
 DEF_CPX_COMM("∨", or,     (thrM("𝕨∨𝕩: TODO complex"),(void)va,(void)vb,bi_N))
 DEF_CPX_COMM("⌊", floor,  (thrM("𝕨⌊𝕩: TODO complex"),(void)va,(void)vb,bi_N))
 DEF_CPX_COMM("⌈", ceil,   (thrM("𝕨⌈𝕩: TODO complex"),(void)va,(void)vb,bi_N))
+B cpxf_c2(B t, B w, B x) {
+  CpxVal wv, xv;
+  if (q_cpx(&wv,w) && q_cpxD(&xv,x)) {
+    dec(w);
+    return m_cpx(wv.re-xv.im, wv.im+xv.re);
+  }
+  if (isArr(w) || isArr(x)) return arith_recd(cpxf_c2, w, x, cpxf_fillFlags);
+  thrM("𝕨⍳𝕩: bad args TODO message");
+}
 
 #define PF(N)   f64* N##p = f64any_ptr(N);
 #define PI8(N)  i8*  N##p = i8any_ptr (N);

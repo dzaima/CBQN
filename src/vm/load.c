@@ -434,9 +434,11 @@ void load_init() { // very last init function
     /* ∧∨<>≠=≤≥≡≢  */ bi_and     , bi_or     , bi_lt    , bi_gt   , bi_ne     , bi_eq       , bi_le    , bi_ge   , bi_feq    , bi_fne,
     /* ⊣⊢⥊∾≍⋈↑↓↕«  */ bi_ltack   , bi_rtack  , bi_shape , bi_join , bi_couple , bi_pair     , bi_take  , bi_drop , bi_ud     , bi_shifta,
     /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ bi_shiftb  , bi_reverse, bi_transp, bi_slash, bi_gradeUp, bi_gradeDown, bi_select, bi_pick , bi_indexOf, bi_count,
-    /* ∊⍷⊔!˙˜˘¨⌜⁼  */ bi_memberOf, bi_find   , bi_group , bi_asrt , bi_const  , bi_swap     , bi_cell  , bi_each , bi_tbl    , bi_undo,
+    /* ∊⍷⊔!˙˜˘¨⌜⁼  */ bi_memberOf, bi_find   , bi_group , bi_asrt , 
+    /* ⍳ */           bi_cpxf,
+    /* ∊⍷⊔!˙˜˘¨⌜⁼  */                                               bi_const  , bi_swap     , bi_cell  , bi_each , bi_tbl    , bi_undo,
     /* ´˝`∘○⊸⟜⌾⊘◶  */ bi_fold    , bi_insert , bi_scan  , bi_atop , bi_over   , bi_before   , bi_after , bi_under, bi_val    , bi_cond,
-    /* ⎉⚇⍟⎊        */ bi_rank    , bi_depth  , bi_repeat, bi_catch
+    /* ⎉⚇⍟⎊        */ bi_rank    , bi_depth  , bi_repeat, bi_catch,
 
   };
   bool rtComplete[] = { // if you unset any of these, also define WRAP_NNBI
@@ -445,8 +447,9 @@ void load_init() { // very last init function
     /* ⊣⊢⥊∾≍⋈↑↓↕«  */ 1,1,1,1,1,1,1,1,1,1,
     /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ 1,1,1,1,1,1,1,1,1,1,
     /* ∊⍷⊔!˙˜˘¨⌜⁼  */ 1,1,1,1,1,1,1,1,1,1,
+    /* ⍳ somewhere here */ 1,
     /* ´˝`∘○⊸⟜⌾⊘◶  */ 1,1,1,1,1,1,1,1,1,1,
-    /* ⎉⚇⍟⎊        */ 1,1,1,1
+    /* ⎉⚇⍟⎊        */ 1,1,1,1,
   };
   assert(sizeof(fruntime)/sizeof(B) == RT_LEN);
   for (u64 i = 0; i < RT_LEN; i++) inc(fruntime[i]);
@@ -565,7 +568,7 @@ void load_init() { // very last init function
     #endif
     bqn_exit(0);
   #else // use compiler
-    B load_glyphs = m_hvec3N(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
+    B load_glyphs = m_hvec3N(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!⍳"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
     
     B load_comp;
     #if ONLY_NATIVE_COMP

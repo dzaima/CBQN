@@ -2,7 +2,7 @@
 
 #define FOR_PFN(A,M,D) \
 /* arith    */A(add,"+") A(sub,"-") A(mul,"×") A(div,"÷") A(pow,"⋆") A(root,"√") A(floor,"⌊") A(ceil,"⌈") A(stile,"|") A(eq,"=") \
-/* arith    */A(ne,"≠") D(le,"≤") D(ge,"≥") A(lt,"<") A(gt,">") A(and,"∧") A(or,"∨") A(not,"¬") A(log,"⋆⁼") \
+/* arith    */A(ne,"≠") D(le,"≤") D(ge,"≥") A(lt,"<") A(gt,">") A(and,"∧") A(or,"∨") A(not,"¬") A(log,"⋆⁼") A(cpxf,"⍳") \
 /*     fns.c*/A(ud,"↕") A(fne,"≢") A(feq,"≡") A(ltack,"⊣") A(rtack,"⊢") A(indexOf,"⊐") A(memberOf,"∊") A(find,"⍷") A(count,"⊒") \
 /*    sfns.c*/A(shape,"⥊") A(pick,"⊑") A(pair,"⋈") A(select,"⊏") A(slash,"/") A(join,"∾") A(couple,"≍") A(shiftb,"»") \
 /*    sfns.c*/A(shifta,"«") A(take,"↑") A(drop,"↓") A(group,"⊔") A(reverse,"⌽") A(transp,"⍉") \
@@ -51,9 +51,11 @@ enum PrimNumbers { // note: this enum is parsed by build/cc.bqn, so each line mu
     /* ∧∨<>≠=≤≥≡≢  */ n_and     , n_or     , n_lt    , n_gt   , n_ne     , n_eq       , n_le    , n_ge   , n_feq    , n_fne,
     /* ⊣⊢⥊∾≍⋈↑↓↕«  */ n_ltack   , n_rtack  , n_shape , n_join , n_couple , n_pair     , n_take  , n_drop , n_ud     , n_shifta,
     /* »⌽⍉/⍋⍒⊏⊑⊐⊒  */ n_shiftb  , n_reverse, n_transp, n_slash, n_gradeUp, n_gradeDown, n_select, n_pick , n_indexOf, n_count,
-    /* ∊⍷⊔!˙˜˘¨⌜⁼  */ n_memberOf, n_find   , n_group , n_asrt , n_const  , n_swap     , n_cell  , n_each , n_tbl    , n_undo,
+    /* ∊⍷⊔!        */ n_memberOf, n_find   , n_group , n_asrt ,
+    /* ⍳ */                                                   n_cpxf, // TODO should be earlier to make isPervasiveDy see it
+    /*     ˙˜˘¨⌜⁼  */                                           n_const  , n_swap     , n_cell  , n_each , n_tbl    , n_undo,
     /* ´˝`∘○⊸⟜⌾⊘◶  */ n_fold    , n_insert , n_scan  , n_atop , n_over   , n_before   , n_after , n_under, n_val    , n_cond,
-    /* ⎉⚇⍟⎊        */ n_rank    , n_depth  , n_repeat, n_catch
+    /* ⎉⚇⍟⎊        */ n_rank    , n_depth  , n_repeat, n_catch,
 };
 extern GLOBAL FC1 rt_invFnRegFn, rt_invFnSwapFn;
 

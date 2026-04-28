@@ -186,10 +186,10 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
   static bool chr_upp(u32 c) { return c>='A' && c<='Z'; }
   static u32 chr_to_low(u32 c) { return c-'A'+'a'; }
   static u32 chr_to_upp(u32 c) { return c-'a'+'A'; }
-  static bool chr_num0(u32 c) { return chr_dig(c) || c==U'¯' || c==U'π' || c==U'∞'; }
+  static bool chr_num0(u32 c) { return chr_dig(c) || c==U'¯' || c==U'π' || c==U'∞' || c==U'i' || c==U'I'; }
   static bool chr_name0(u32 c) { return chr_low(c) || chr_upp(c) || c=='_'; }
   static bool chr_nameM(u32 c) { return chr_name0(c) || chr_num0(c); }
-  static u32* const chrs_fn = U"!+-×÷⋆*√⌊⌈∧∨¬|=≠≤<>≥≡≢⊣⊢⥊∾≍⋈↑↓↕⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔«»𝔽𝔾𝕎𝕏𝕊";
+  static u32* const chrs_fn = U"!+-×÷⋆*√⌊⌈∧∨¬|=≠≤<>≥≡≢⊣⊢⥊∾≍⋈↑↓↕⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔«»⍳𝔽𝔾𝕎𝕏𝕊";
   static u32* const chrs_m1 = U"`˜˘¨⁼⌜´˝˙";
   static u32* const chrs_m2 = U"∘⊸⟜○⌾⎉⚇⍟⊘◶⎊";
   static u32* const chrs_lit = U"⟨⟩[]·@‿";
