@@ -46,7 +46,7 @@
   /*md2.c*/A(while,"•_while_") \
 /*sysfn.c*/A(invalidMd2, "(invalid 2-modifier)")
 
-enum PrimNumbers {
+enum PrimNumbers { // note: this enum is parsed by build/cc.bqn, so each line must be "/* primChars */ n_abc, n_def ..."! parsing ends at line "};"
     /* +-×÷⋆√⌊⌈|¬  */ n_add     , n_sub    , n_mul   , n_div  , n_pow    , n_root     , n_floor , n_ceil , n_stile  , n_not,
     /* ∧∨<>≠=≤≥≡≢  */ n_and     , n_or     , n_lt    , n_gt   , n_ne     , n_eq       , n_le    , n_ge   , n_feq    , n_fne,
     /* ⊣⊢⥊∾≍⋈↑↓↕«  */ n_ltack   , n_rtack  , n_shape , n_join , n_couple , n_pair     , n_take  , n_drop , n_ud     , n_shifta,

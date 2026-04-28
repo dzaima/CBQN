@@ -455,10 +455,7 @@ void load_init() { // very last init function
   B load_rt;
   #if !NO_RT
     B provide[] = {
-      /* actual provide: */
-      bi_type,bi_fill,bi_log,bi_grLen,bi_grOrd,bi_asrt,bi_add,bi_sub,bi_mul,bi_div,bi_pow,bi_floor,bi_eq,bi_le,bi_fne,bi_shape,bi_pick,bi_ud,bi_tbl,bi_scan,bi_fillBy,bi_val,bi_catch
-      /* result list from commented-out •Out line in cc.bqn: */,
-      bi_root,bi_not,bi_and,bi_or,bi_feq,bi_couple,bi_shifta,bi_shiftb,bi_reverse,bi_transp,bi_gradeUp,bi_gradeDown,bi_indexOf,bi_count,bi_memberOf,bi_cell,bi_rank
+        #include PRECOMPILED_FILE(provide)
     };
     
     #if !ALL_R0

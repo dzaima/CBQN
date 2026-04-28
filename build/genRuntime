@@ -12,5 +12,6 @@ CC ⟨"gen/compiles",  "cc",  "(compiler)"⟩
 CC ⟨"gen/runtime0",  "r0",  "(self-hosted runtime0)"⟩
 CC ⟨"gen/runtime1",  "r1",  "(self-hosted runtime1)"⟩
 CC ⟨"gen/runtime1x", "r1x", "(self-hosted runtime1x)"⟩
+CC ⟨"gen/provide",   "pr",  "(provide)"⟩
 CC ⟨"gen/formatter", "f",   "(formatter)"⟩
 CC ⟨"gen/explain",   "eu",  "(explain)"⟩
