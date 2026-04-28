@@ -34,6 +34,11 @@ B add_c1(B t, B x) {
   if (elNum(TI(x,elType))) return x;
   return arith_recm(add_c1, x);
 }
+B cpxf_c1(B t, B x) {
+  CpxVal v;
+  if (q_cpxD(&v, x)) return m_cpx(-v.im, v.re);
+  return arith_recm(cpxf_c1, x);
+}
 #if SINGELI_SIMD
   #define SINGELI_FILE monarith
   #include "utils/includeSingeli.h"
@@ -132,6 +137,7 @@ CpxVal bqn_sqrt_re(f64 re) {
 
 GC1f( div, ((CpxVal){1/(xv+0), 0}), "÷𝕩: 𝕩 contained non-number")
 GC1f(root, bqn_sqrt_re(xv), "√𝕩: 𝕩 contained non-number")
+
 #undef GC1i
 #undef LOOP_BODY
 #undef SIGN_EXPR

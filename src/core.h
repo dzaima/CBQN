@@ -56,7 +56,7 @@ typedef struct BMd2 {
   M2C5 ucw;
 } BMd2;
 
-#define RT_LEN 64
+#define RT_LEN 65
 #if RT_VERIFY
   extern GLOBAL B r1Objs[RT_LEN];
 #endif
