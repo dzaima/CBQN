@@ -2,7 +2,7 @@
 #include "utils/each.h"
 #include "builtins.h"
 #include "core/ns.h"
-#include <math.h>
+#include "builtins/arith.h"
 
 static NOINLINE B arith_recm(FC1 f, B x) {
   B fx = getFillN(x);
@@ -129,14 +129,8 @@ GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY, (thrM("¬�
   thrM(MSG);                                \
 }
 
-CpxVal bqn_sqrt_re(f64 re) {
-  if (!COMPLEX_SUPPORT) return (CpxVal){sqrt(re),0};
-  f64 root = sqrt(fabs(re));
-  return re<0? (CpxVal){0, root} : (CpxVal){root, 0};
-}
-
 GC1f( div, ((CpxVal){1/(xv+0), 0}), "÷𝕩: 𝕩 contained non-number")
-GC1f(root, bqn_sqrt_re(xv), "√𝕩: 𝕩 contained non-number")
+GC1f(root, cpx_sqrt_re(xv), "√𝕩: 𝕩 contained non-number")
 
 #undef GC1i
 #undef LOOP_BODY
@@ -164,19 +158,20 @@ NOINLINE f64 logfact_inv(f64 y) {
   return x;
 }
 f64 fact_inv(f64 y) { return logfact_inv(log(y)); }
-B cpx_exp(CpxVal x) {
-  f64 e = exp(x.re);
-  return m_cpx(e*cos(x.im), e*sin(x.im));
-}
 
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
 B pow_c1(B t, B x) {
   if (isF64(x)) return m_f64(exp(o2fG(x)));
-  if (isCpx(x)) return cpx_exp(o2cpxXGD(x));
+  if (isCpx(x)) return m_cpxv(cpx_exp(o2cpxXGD(x)));
   P1(pow); thrM("⋆𝕩: 𝕩 contained non-number");
 }
 B log_c1(B t, B x) {
-  if (isF64(x)) return m_f64(log(o2fG(x)));
+  if (isF64(x)) {
+    f64 f = o2fG(x);
+    if (f < 0) return m_cpx(log(-f), BQN_PI);
+    return m_f64(log(f));
+  }
+  if (isCpx(x)) return m_cpxv(cpx_log(o2cpxXGD(x)));
   P1(log);
   thrM("⋆⁼𝕩: 𝕩 contained non-number");
 }
