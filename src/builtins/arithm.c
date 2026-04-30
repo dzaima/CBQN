@@ -4,7 +4,7 @@
 #include "core/ns.h"
 #include <math.h>
 
-static inline B arith_recm(FC1 f, B x) {
+static NOINLINE B arith_recm(FC1 f, B x) {
   B fx = getFillN(x);
   if (!noFill(fx)) fx = fill_charToErrOwned(fx);
   B r = eachm_fn(bi_z, x, f);
