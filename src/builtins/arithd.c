@@ -1,7 +1,7 @@
 #include "core.h"
 #include "utils/each.h"
 #include "builtins.h"
-#include <math.h>
+#include "builtins/arith.h"
 
 #define mul_fillFlags A_B
 #define and_fillFlags A_B
@@ -148,29 +148,13 @@ NOINLINE B NAME##_cpx_x_c2(B t, B w, B x) { \
   if (isCpx(x)) return NAME##_cpx_x_c2(t, w, x); \
 })
 
-static CpxVal cpx_add(CpxVal w, CpxVal x) { return (CpxVal){w.re+x.re, w.im+x.im}; }
-static CpxVal cpx_sub(CpxVal w, CpxVal x) { return (CpxVal){w.re-x.re, w.im-x.im}; }
-static CpxVal cpx_mul(CpxVal w, CpxVal x) { return (CpxVal){w.re*x.re - w.im*x.im, w.re*x.im + w.im*x.re}; }
-static CpxVal cpx_div(CpxVal w, CpxVal x) {
-  f64 tre, tim, div;
-  if (x.im==0) { // make sure that complex division exactly matches real division for real divisor
-    tre = w.re;
-    tim = w.im;
-    div = x.re + 0;
-  } else { // TODO handle overflow?
-    div = x.re*x.re + x.im*x.im;
-    tim = w.im*x.re - w.re*x.im;
-    tre = w.re*x.re + w.im*x.im;
-  }
-  return (CpxVal){tre/div, tim/div};
-}
 DEF_CPX_COMM("+", add, m_cpxv(cpx_add(va, vb)))
 DEF_CPX     ("-", sub, m_cpxv(cpx_sub(wv, xv)))
 DEF_CPX_COMM("×", mul, m_cpxv(cpx_mul(va, vb)))
 DEF_CPX     ("÷", div, m_cpxv(cpx_div(wv, xv)))
 DEF_CPX("√",  root,  (thrM("𝕨√𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
 DEF_CPX("⋆",  pow,   (thrM("𝕨⋆𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
-DEF_CPX("⋆⁼", log,   (thrM("𝕨⋆⁼𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
+DEF_CPX("⋆⁼", log,   m_cpxv(cpx_div(cpx_log(xv), cpx_log(wv))))
 DEF_CPX("|",  stile, (thrM("𝕨|𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
 DEF_CPX_COMM("∧", and,    (thrM("𝕨∧𝕩: TODO complex"),(void)va,(void)vb,bi_N))
 DEF_CPX_COMM("∨", or,     (thrM("𝕨∨𝕩: TODO complex"),(void)va,(void)vb,bi_N))
