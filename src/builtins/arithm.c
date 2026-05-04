@@ -23,7 +23,7 @@ B bit_negate(B x) { // consumes
 }
 
 B add_c1(B t, B x) {
-  if (isF64(x)) return x;
+  if (q_f64(x)) return x;
   if (!isArr(x)) thrM("+𝕩: Argument must consist of numbers");
   if (elNum(TI(x,elType))) return x;
   return arith_recm(add_c1, x);
@@ -34,7 +34,7 @@ B add_c1(B t, B x) {
 #endif
 
 #define GC1i(SYMB,NAME,FEXPR,TMIN,RMIN,MAIN) B NAME##_c1(B t, B x) { \
-  if (isF64(x)) { f64 v = x.f; return m_f64(FEXPR); } \
+  if (isF64(x)) { f64 v = o2fG(x); return m_f64(FEXPR); } \
   if (RARE(!isArr(x))) thrM(SYMB "𝕩: 𝕩 contained non-number"); \
   u8 xe = TI(x,elType);                               \
   if (elNum(xe)) {                                    \
@@ -142,11 +142,11 @@ NOINLINE f64 logfact_inv(f64 y) {
 f64 fact_inv(f64 y) { return logfact_inv(log(y)); }
 
 #define P1(N) { if(isArr(x)) { SLOW1("arithm " #N, x); return arith_recm(N##_c1, x); } }
-B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(x.f)); P1(  pow); thrM("⋆𝕩: 𝕩 contained non-number"); }
-B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(x.f)); P1(  log); thrM("⋆⁼𝕩: 𝕩 contained non-number"); }
+B   pow_c1(B t, B x) { if (isF64(x)) return m_f64(  exp(o2fG(x))); P1(  pow); thrM("⋆𝕩: 𝕩 contained non-number"); }
+B   log_c1(B t, B x) { if (isF64(x)) return m_f64(  log(o2fG(x))); P1(  log); thrM("⋆⁼𝕩: 𝕩 contained non-number"); }
 #undef P1
 static NOINLINE B arith_recm_slow(f64 (*fn)(f64), FC1 rec, B x, char* s) {
-  if (isF64(x)) return m_f64(fn(x.f));
+  if (isF64(x)) return m_f64(fn(o2fG(x)));
   if(isArr(x)) return arith_recm(rec, x);
   thrF("•math.%S 𝕩: 𝕩 contained non-number", s);
 }
