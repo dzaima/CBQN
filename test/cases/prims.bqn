@@ -83,6 +83,12 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 %USE var ⋄ a←4⥊0 ⋄ b←4⥊@ ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨   -, ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
 %USE var ⋄ a←4⥊@ ⋄ b←4⥊0 ⋄ {r←•Repr f←𝕩 ⋄ {(⊢!≡´) ("𝕨"∾r∾"𝕩: Unexpected argument types") ⋈ (𝕨 V a) 0∘F⎊{𝕊: •CurrentError@} 𝕩 V b}⌜○LV´ a‿b}⌜ ⟨      ×, ÷, ⋆, √, ⌊, ⌈, |, ∧, ∨, ÷⟩
 
+%DEF arithdTest %USE eqvar ⋄ Eq ← ⊢!•internal.Indistinguishable ⋄ ArithdTest ← {𝕨𝕊w‿F‿x: el←10⥊𝕨 ⋄ 𝕨 Eq r←w F x ⋄ el Eq w⊸F _eqvar 10⥊x ⋄ el Eq F⟜x _eqvar 10⥊w ⋄ el Eq w F _eqvar○(10⊸⥊) x ⋄ r}
+a←⟨0÷0, 10⥊0÷0⟩ ⋄ Eq ← ⊢!•internal.Indistinguishable ⋄ {a Eq 𝕏 a}¨ ⟨+,-,÷,⋆,√,⌊,⌈,|,¬⟩
+a←⟨0÷0, 10⥊0÷0⟩ ⋄ Eq ← ⊢!•internal.Indistinguishable ⋄ {a Eq 2 𝕏 a ⋄ a Eq a 𝕏 2 ⋄ a Eq 𝕏˜ a}¨ ⟨+,-,×,÷,⋆,√,|,¬,∧,∨⟩
+%USE arithdTest ⋄ (0÷0) ArithdTest¨ ⟨0‿×‿∞, 0‿×‿¯∞, ∞‿-‿∞, ¯∞‿-‿¯∞, ∞‿+‿¯∞, ⟨0,⋆⁼,0⟩, ⟨∞,⋆⁼,∞⟩, ⟨∞,⋆⁼,¯∞⟩⟩
+1⋆0÷0 %% 1
+
 !"𝕨-𝕩: Unexpected argument types" % 0-@
 !"𝕨÷𝕩: Unexpected argument types" % 0÷@
 !"+𝕩: Argument must consist of numbers" % +@

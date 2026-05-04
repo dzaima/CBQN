@@ -42,3 +42,7 @@ static CpxVal cpx_sqrt(CpxVal x) {
   f64 im = sqrt(0.5*(r-x.re));
   return (CpxVal){re, x.im<0? -im : im};
 }
+
+static CpxVal cpx_pow(CpxVal w, CpxVal x) {
+  return cpx_exp(cpx_mul(x, cpx_log(w)));
+}
