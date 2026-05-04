@@ -8,6 +8,9 @@
 #define or_fillFlags A_B
 #define floor_fillFlags A_B
 #define ceil_fillFlags A_B
+#define pow_fillFlags A_B
+#define root_fillFlags A_B
+#define log_fillFlags A_B
 #define cpxf_fillFlags A_B
 #define add_fillFlags  A_B | A_CN(A_CHR) | A_NC(A_CHR)
 #define sub_fillFlags  A_B | A_CN(A_CHR) | A_CC(A_NUM)
@@ -105,7 +108,7 @@ static B modint_AS(B w,   B xv) { return modint_AA(w, C2(shape, C1(fne, incG(w))
 
 
 #define ARITH_SLOW(N) SLOWIF((!isArr(w) || TI(w,elType)!=el_B)  &&  (!isArr(x) || TI(x,elType)!=el_B)) SLOW2("arithd " #N, w, x)
-#define P2(N, FILL_FLAGS) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); return arith_recd(N##_c2, w, x, FILL_FLAGS); }}
+#define P2(N, FILL_FLAGS) { if(isArr(w)|isArr(x)) { ARITH_SLOW(N); toRec: MAYBE_UNUSED; return arith_recd(N##_c2, w, x, FILL_FLAGS); }}
 
 static NOINLINE u8 iMakeEq(B* w, B* x, u8 we, u8 xe) {
   B* p = we<xe?w:x;
@@ -152,8 +155,8 @@ DEF_CPX_COMM("+", add, m_cpxv(cpx_add(va, vb)))
 DEF_CPX     ("-", sub, m_cpxv(cpx_sub(wv, xv)))
 DEF_CPX_COMM("×", mul, m_cpxv(cpx_mul(va, vb)))
 DEF_CPX     ("÷", div, m_cpxv(cpx_div(wv, xv)))
-DEF_CPX("√",  root,  (thrM("𝕨√𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
-DEF_CPX("⋆",  pow,   (thrM("𝕨⋆𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
+DEF_CPX("√",  root,  m_cpxv(cpx_pow(xv, cpx_div((CpxVal){1,0}, wv))))
+DEF_CPX("⋆",  pow,   m_cpxv(cpx_pow(wv, xv)))
 DEF_CPX("⋆⁼", log,   m_cpxv(cpx_div(cpx_log(xv), cpx_log(wv))))
 DEF_CPX("|",  stile, (thrM("𝕨|𝕩: TODO complex"),(void)wv,(void)xv,bi_N))
 DEF_CPX_COMM("∧", and,    (thrM("𝕨∧𝕩: TODO complex"),(void)va,(void)vb,bi_N))
@@ -182,8 +185,15 @@ B cpxf_c2(B t, B w, B x) {
 #define DOI8(EXPR,A,W,X,BASE)  { Ri8(A)  for (usz i=0; i<ia; i++) { i16 wv=W; i16 xv=X; i16 rv=EXPR; if (RARE(rv!=( i8)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
 #define DOI16(EXPR,A,W,X,BASE) { Ri16(A) for (usz i=0; i<ia; i++) { i32 wv=W; i32 xv=X; i32 rv=EXPR; if (RARE(rv!=(i16)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
 #define DOI32(EXPR,A,W,X,BASE) { Ri32(A) for (usz i=0; i<ia; i++) { i64 wv=W; i64 xv=X; i64 rv=EXPR; if (RARE(rv!=(i32)rv)) { decG(r); goto BASE; } rp[i]=rv; } goto dec_ret; }
+static NOINLINE bool realToCpx(f64* rp, B r, ux ia) {
+  bool bad = false;
+  vfor (usz i = 0; i < ia; i++) bad |= isnan(rp[i]);
+  if (bad) { decG(r); return true; }
+  return false;
+}
+#define CPX_END(REAL_TO_CPX) if (COMPLEX_SUPPORT && REAL_TO_CPX && RARE(realToCpx(rp, r, ia))) goto toRec;
 
-#define GC2f(SYMB, NAME, EXPR, DECOR, INT_SA, INT_AS, INT_AA, FLT_SAI, ANY_AS) B NAME##_c2_arr(B t, B w, B x) { \
+#define GC2f(SYMB, NAME, REAL_TO_CPX, EXPR, DECOR, INT_SA, INT_AS, INT_AA, FLT_SAI, ANY_AS) B NAME##_c2_arr(B t, B w, B x) { \
   if (isArr(w)|isArr(x)) { B r;                                 \
     if (isArr(w)&isArr(x) && RNK(w)==RNK(x)) {                  \
       if (!eqShPart(SH(w), SH(x), RNK(w))) thrF("𝕨" SYMB "𝕩: Expected equal shape prefix (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x); \
@@ -202,35 +212,41 @@ B cpxf_c2(B t, B w, B x) {
           if (xe==el_i32) { DECOR vfor (usz i = 0; i < ia; i++) { wf=((f64*)wp)[i]; xf=((i32*)xp)[i]; rp[i]=EXPR; } } \
           else            { DECOR vfor (usz i = 0; i < ia; i++) { wf=((f64*)wp)[i]; xf=((f64*)xp)[i]; rp[i]=EXPR; } } \
         }                                                       \
+        CPX_END(REAL_TO_CPX);                                   \
         decG(w); decG(x); return squeeze_numNewTy(el_f64,r);    \
       }                                                         \
     } else if (q_f64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); f64 wf=o2fG(w); \
-      if (elInt(xe)) {INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR vfor (usz i=0; i<ia; i++) {f64 xf=xp[i]; rp[i]=EXPR;} decG(x); return squeeze_numNewTy(el_f64,r); } \
-      if (xe==el_f64){       Rf64(x);         PF(x)  FLT_SAI DECOR vfor (usz i=0; i<ia; i++) {f64 xf=xp[i]; rp[i]=EXPR;} decG(x); return squeeze_numNewTy(el_f64,r); } \
+      if (elInt(xe)) {INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR vfor (usz i=0; i<ia; i++) {f64 xf=xp[i]; rp[i]=EXPR;} CPX_END(REAL_TO_CPX); decG(x); return squeeze_numNewTy(el_f64,r); } \
+      if (xe==el_f64){       Rf64(x);         PF(x)  FLT_SAI DECOR vfor (usz i=0; i<ia; i++) {f64 xf=xp[i]; rp[i]=EXPR;} CPX_END(REAL_TO_CPX); decG(x); return squeeze_numNewTy(el_f64,r); } \
     } else if (q_f64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); f64 xf=o2fG(x); ANY_AS \
-      if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR vfor (usz i=0; i<ia; i++) {f64 wf=wp[i]; rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
-      if (we==el_f64){       Rf64(w);         PF(w)          DECOR vfor (usz i=0; i<ia; i++) {f64 wf=wp[i]; rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
+      if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR vfor (usz i=0; i<ia; i++) {f64 wf=wp[i]; rp[i]=EXPR;} CPX_END(REAL_TO_CPX); decG(w); return squeeze_numNewTy(el_f64,r); } \
+      if (we==el_f64){       Rf64(w);         PF(w)          DECOR vfor (usz i=0; i<ia; i++) {f64 wf=wp[i]; rp[i]=EXPR;} CPX_END(REAL_TO_CPX); decG(w); return squeeze_numNewTy(el_f64,r); } \
     }                                                           \
     P2(NAME, A_B)                                               \
   }                                                             \
   TO_CPX(NAME); thrM("𝕨" SYMB "𝕩: Unexpected argument types");  \
 }
-GC2f("÷", div  , wf/(xf+0),
+GC2f("÷", div, 0, wf/(xf+0),
   , /*INT_SA*/
   , /*INT_AS*/ if(q_i32(x)) { r = divint_AS(w, o2iG(x)); /*decG(w);         */ return r; }
   , /*INT_AA*/                r = divint_AA(w, x);       /*decG(w); decG(x);*/ return r;
   , /*FLT_SAI*/
   , /*ANY_AS*/ if((r_f64u(o2fG(x)) & TAIL(u64,52)) == 0 && elNum(we)) return squeeze_numNew(C2(mul, w, m_f64(1/(o2fG(x)+0))));
 )
-GC2f("√", root , pow(xf+0, 1.0/(wf+0)), NOUNROLL,,,,,)
-GC2f("⋆", pow  , pow(wf+0, xf), NOUNROLL,,,,,)
-GC2f("⋆⁼",log  , log(xf)/log(wf), NOUNROLL,,,,,)
+
+#define CPX_FALLBACK(NAME) \
+  { bool has_nan = false; vfor (usz i = 0; i < ia; i++) has_nan |= isnan(rp[i]); \
+    if (RARE(has_nan)) { decG(r); return arith_recd(NAME##_c2, w, x, NAME##_fillFlags); } }
+
+GC2f("√",  root, 1, pow(xf+0, 1.0/(wf+0)), NOUNROLL,,,,,)
+GC2f("⋆",  pow,  1, pow(wf+0, xf), NOUNROLL,,,,,)
+GC2f("⋆⁼", log,  1, log(xf)/log(wf), NOUNROLL,,,,,)
 static u64 const repeatNum[] = {
   [el_i8 ] = 0x0101010101010101ULL,
   [el_i16] = 0x0001000100010001ULL,
   [el_i32] = 0x0000000100000001ULL,
 };
-GC2f("|", stile, pfmod(xf, wf), NOUNROLL,
+GC2f("|", stile, 0, pfmod(xf, wf), NOUNROLL,
   /*INT_SA*/
   if (q_i32(w)) {
     i32 wi32 = o2iG(w);
@@ -476,12 +492,22 @@ B not_c2(B t, B w, B x) {
   if (q_f64(w) & q_f64(x)) { f64 wf=o2fG(w), xf=o2fG(x); return m_f64(EXPR); } \
   AR_F_TO_ARR(NAME); \
 }
-AR_F_SCALAR("÷", div  , wf/(xf+0))
-AR_F_SCALAR("⋆", pow  , pow(wf+0, xf))
-AR_F_SCALAR("√", root , pow(xf+0, 1.0/(0+wf)))
-AR_F_SCALAR("|", stile,   pfmod(xf, wf))
-AR_F_SCALAR("⋆⁼",log  , log(xf)/log(wf))
+#define AR_F_SCALAR_CPX(CHR, NAME, EXPR, CPX_EXPR) B NAME##_c2(B t, B w, B x) { \
+  if (q_f64(w) & q_f64(x)) { \
+    f64 wf=o2fG(w), xf=o2fG(x); \
+    f64 rv = EXPR; \
+    if (RARE(isnan(rv)) && !isnan(wf) && !isnan(xf)) return m_cpxv(CPX_EXPR); \
+    return m_f64(rv); \
+  } \
+  AR_F_TO_ARR(NAME); \
+}
+AR_F_SCALAR    ("÷", div  , wf/(xf+0))
+AR_F_SCALAR_CPX("⋆", pow  , pow(wf+0, xf), cpx_pow((CpxVal){wf,0}, (CpxVal){xf,0}))
+AR_F_SCALAR_CPX("√", root , pow(xf+0, 1.0/(0+wf)), cpx_pow((CpxVal){xf,0}, cpx_div((CpxVal){1,0}, (CpxVal){wf,0})))
+AR_F_SCALAR    ("|", stile, pfmod(xf, wf))
+AR_F_SCALAR_CPX("⋆⁼",log  , log(xf)/log(wf), cpx_div(cpx_log((CpxVal){xf,0}), cpx_log((CpxVal){wf,0})))
 #undef AR_F_SCALAR
+#undef AR_F_SCALAR_CPX
 
 static f64 comb_nat(f64 k, f64 n) {
   assert(k>=0 && n>=2*k);
