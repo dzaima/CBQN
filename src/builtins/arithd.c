@@ -146,42 +146,42 @@ static NOINLINE u8 iMakeEq(B* w, B* x, u8 we, u8 xe) {
         if (we<el_i32) { w=taga(cpyI32Arr(w)); we=el_i32; } void* wp=tyany_ptr(w); \
         if (xe<el_i32) { x=taga(cpyI32Arr(x)); xe=el_i32; } void* xp=tyany_ptr(x); \
         Rf64(x);                                                \
-        if (we==el_i32) { B w,x /*shadow*/;                     \
-          if (xe==el_i32) { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
-          else            { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((i32*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
-        } else {          B w,x /*shadow*/;                     \
-          if (xe==el_i32) { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((i32*)xp)[i]; rp[i]=EXPR; } } \
-          else            { DECOR vfor (usz i = 0; i < ia; i++) { w.f=((f64*)wp)[i]; x.f=((f64*)xp)[i]; rp[i]=EXPR; } } \
+        if (we==el_i32) { f64 wf, xf;                           \
+          if (xe==el_i32) { DECOR vfor (usz i = 0; i < ia; i++) { wf=((i32*)wp)[i]; xf=((i32*)xp)[i]; rp[i]=EXPR; } } \
+          else            { DECOR vfor (usz i = 0; i < ia; i++) { wf=((i32*)wp)[i]; xf=((f64*)xp)[i]; rp[i]=EXPR; } } \
+        } else {          f64 wf, xf;                           \
+          if (xe==el_i32) { DECOR vfor (usz i = 0; i < ia; i++) { wf=((f64*)wp)[i]; xf=((i32*)xp)[i]; rp[i]=EXPR; } } \
+          else            { DECOR vfor (usz i = 0; i < ia; i++) { wf=((f64*)wp)[i]; xf=((f64*)xp)[i]; rp[i]=EXPR; } } \
         }                                                       \
         decG(w); decG(x); return squeeze_numNewTy(el_f64,r);    \
       }                                                         \
-    } else if (isF64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); \
-      if (elInt(xe)) {INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR vfor (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return squeeze_numNewTy(el_f64,r); } \
-      if (xe==el_f64){       Rf64(x);         PF(x)  FLT_SAI DECOR vfor (usz i=0; i<ia; i++) {B x/*shadow*/;x.f=xp[i];rp[i]=EXPR;} decG(x); return squeeze_numNewTy(el_f64,r); } \
-    } else if (isF64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); ANY_AS \
-      if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
-      if (we==el_f64){       Rf64(w);         PF(w)          DECOR vfor (usz i=0; i<ia; i++) {B w/*shadow*/;w.f=wp[i];rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
+    } else if (q_f64(w)&isArr(x)) { usz ia=IA(x); u8 xe=TI(x,elType); f64 wf=o2fG(w); \
+      if (elInt(xe)) {INT_SA Rf64(x); x=toI32Any(x); PI32(x) DECOR vfor (usz i=0; i<ia; i++) {f64 xf=xp[i]; rp[i]=EXPR;} decG(x); return squeeze_numNewTy(el_f64,r); } \
+      if (xe==el_f64){       Rf64(x);         PF(x)  FLT_SAI DECOR vfor (usz i=0; i<ia; i++) {f64 xf=xp[i]; rp[i]=EXPR;} decG(x); return squeeze_numNewTy(el_f64,r); } \
+    } else if (q_f64(x)&isArr(w)) { usz ia=IA(w); u8 we=TI(w,elType); f64 xf=o2fG(x); ANY_AS \
+      if (elInt(we)) {INT_AS Rf64(w); w=toI32Any(w); PI32(w) DECOR vfor (usz i=0; i<ia; i++) {f64 wf=wp[i]; rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
+      if (we==el_f64){       Rf64(w);         PF(w)          DECOR vfor (usz i=0; i<ia; i++) {f64 wf=wp[i]; rp[i]=EXPR;} decG(w); return squeeze_numNewTy(el_f64,r); } \
     }                                                           \
     P2(NAME, A_B)                                               \
   }                                                             \
   thrM("𝕨" SYMB "𝕩: Unexpected argument types");                \
 }
-GC2f("÷", div  , w.f/(x.f+0),
+GC2f("÷", div  , wf/(xf+0),
   , /*INT_SA*/
   , /*INT_AS*/ if(q_i32(x)) { r = divint_AS(w, o2iG(x)); /*decG(w);         */ return r; }
   , /*INT_AA*/                r = divint_AA(w, x);       /*decG(w); decG(x);*/ return r;
   , /*FLT_SAI*/
   , /*ANY_AS*/ if((r_f64u(o2fG(x)) & TAIL(u64,52)) == 0 && elNum(we)) return squeeze_numNew(C2(mul, w, m_f64(1/(o2fG(x)+0))));
 )
-GC2f("√", root , pow(x.f+0, 1.0/(w.f+0)), NOUNROLL,,,,,)
-GC2f("⋆", pow  , pow(w.f+0, x.f), NOUNROLL,,,,,)
-GC2f("⋆⁼",log  , log(x.f)/log(w.f), NOUNROLL,,,,,)
+GC2f("√", root , pow(xf+0, 1.0/(wf+0)), NOUNROLL,,,,,)
+GC2f("⋆", pow  , pow(wf+0, xf), NOUNROLL,,,,,)
+GC2f("⋆⁼",log  , log(xf)/log(wf), NOUNROLL,,,,,)
 static u64 const repeatNum[] = {
   [el_i8 ] = 0x0101010101010101ULL,
   [el_i16] = 0x0001000100010001ULL,
   [el_i32] = 0x0000000100000001ULL,
 };
-GC2f("|", stile, pfmod(x.f, w.f), NOUNROLL,
+GC2f("|", stile, pfmod(xf, wf), NOUNROLL,
   /*INT_SA*/
   if (q_i32(w)) {
     i32 wi32 = o2iG(w);
@@ -255,13 +255,13 @@ GC2f("|", stile, pfmod(x.f, w.f), NOUNROLL,
     if (xe==el_i8  && q_i8 (w)) { PI8 (x) i8  wc=o2iG(w); DOI8 (EXPR,x,wc,xp[i],sa8B ) } sa8B :; \
     if (xe==el_i16 && q_i16(w)) { PI16(x) i16 wc=o2iG(w); DOI16(EXPR,x,wc,xp[i],sa16B) } sa16B:; \
     if (xe==el_i32 && q_i32(w)) { PI32(x) i32 wc=o2iG(w); DOI32(EXPR,x,wc,xp[i],sa32B) } sa32B:; \
-    if (xe==el_f64) { Rf64(x) PF(x) DOF(EXPR,w,w.f,xp[i]) goto dec_ret; }
+    if (xe==el_f64) { Rf64(x) PF(x) DOF(EXPR,w,o2fG(w),xp[i]) goto dec_ret; }
   #define REG_AS(NAME, EXPR) \
     if (we==el_bit) return bit_sel1Fn(NAME##_c2,w,x,0); \
     if (we==el_i8  && q_i8 (x)) { PI8 (w) i8  xc=o2iG(x); DOI8 (EXPR,w,wp[i],xc,as8B ) } as8B :; \
     if (we==el_i16 && q_i16(x)) { PI16(w) i16 xc=o2iG(x); DOI16(EXPR,w,wp[i],xc,as16B) } as16B:; \
     if (we==el_i32 && q_i32(x)) { PI32(w) i32 xc=o2iG(x); DOI32(EXPR,w,wp[i],xc,as32B) } as32B:; \
-    if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],x.f) goto dec_ret; }
+    if (we==el_f64) { Rf64(w) PF(w) DOF(EXPR,x,wp[i],o2fG(x)) goto dec_ret; }
   
   static B bitAA0(B w, B x, usz ia) { UD; }
   static NOINLINE B bitAA1(B w, B x, usz ia) {
@@ -340,14 +340,14 @@ GC2f("|", stile, pfmod(x.f, w.f), NOUNROLL,
   
   #define AR_I_AS(CHR, NAME, EXPR, DO_AS, EXTRA) NOINLINE B NAME##_AS(B t, B w, B x) { \
     B r; u8 we=TI(w,elType); EXTRA                       \
-    if (isF64(x)) { usz ia=IA(w); DO_AS(NAME,EXPR) }     \
+    if (q_f64(x)) { usz ia=IA(w); DO_AS(NAME,EXPR) }     \
     ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x, NAME##_fillFlags); \
     dec_ret: decG(w); return r;                          \
   }
   
   #define AR_I_SA(CHR, NAME, EXPR, DO_SA, EXTRA) NOINLINE B NAME##_SA(B t, B w, B x) { \
     B r; u8 xe=TI(x,elType); EXTRA                       \
-    if (isF64(w)) { usz ia=IA(x); DO_SA(NAME,EXPR) }     \
+    if (q_f64(w)) { usz ia=IA(x); DO_SA(NAME,EXPR) }     \
     ARITH_SLOW(CHR); return arith_recd(NAME##_c2, w, x, NAME##_fillFlags); \
     dec_ret: decG(x); return r;                          \
   }
@@ -400,17 +400,17 @@ GC2f("|", stile, pfmod(x.f, w.f), NOUNROLL,
   else if (isArr(w)) return NAME##_AS(t, w, x);
 
 #define AR_I_SCALAR(CHR, NAME, EXPR, MORE) B NAME##_c2(B t, B w, B x) { \
-  if (isF64(w) & isF64(x)) return m_f64(EXPR); \
+  if (q_f64(w) & q_f64(x)) return m_f64(EXPR); \
   MORE; AR_I_TO_ARR(NAME)                      \
   thrM("𝕨"CHR "𝕩: Unexpected argument types"); \
 }
 
 AR_I_SCALAR("+", add, w.f+x.f, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)(o2cG(w)+o2i64(x)); if(r>CHR_MAX)thrM("𝕨+𝕩: Invalid character"); return m_c32((u32)r); }
-  if (isF64(w) & isC32(x)) { u64 r = (u64)(o2cG(x)+o2i64(w)); if(r>CHR_MAX)thrM("𝕨+𝕩: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & q_f64(x)) { u64 r = (u64)(o2cG(w)+o2i64(x)); if(r>CHR_MAX)thrM("𝕨+𝕩: Invalid character"); return m_c32((u32)r); }
+  if (q_f64(w) & isC32(x)) { u64 r = (u64)(o2cG(x)+o2i64(w)); if(r>CHR_MAX)thrM("𝕨+𝕩: Invalid character"); return m_c32((u32)r); }
 });
 AR_I_SCALAR("-", sub, w.f-x.f, {
-  if (isC32(w) & isF64(x)) { u64 r = (u64)((i32)o2cG(w)-o2i64(x)); if(r>CHR_MAX)thrM("𝕨-𝕩: Invalid character"); return m_c32((u32)r); }
+  if (isC32(w) & q_f64(x)) { u64 r = (u64)((i32)o2cG(w)-o2i64(x)); if(r>CHR_MAX)thrM("𝕨-𝕩: Invalid character"); return m_c32((u32)r); }
   if (isC32(w) & isC32(x)) return m_f64((i32)(u32)w.u - (i32)(u32)x.u);
 })
 AR_I_SCALAR("×", mul, w.f*x.f, {})
@@ -424,15 +424,14 @@ B not_c2(B t, B w, B x) {
 }
 
 #define AR_F_SCALAR(CHR, NAME, EXPR) B NAME##_c2(B t, B w, B x) { \
-  if (isF64(w) & isF64(x)) return m_f64(EXPR); \
-  AR_F_TO_ARR(NAME)                            \
-  thrM("𝕨"CHR "𝕩: Unexpected argument types"); \
+  if (q_f64(w) & q_f64(x)) { f64 wf=o2fG(w), xf=o2fG(x); return m_f64(EXPR); } \
+  AR_F_TO_ARR(NAME); \
 }
-AR_F_SCALAR("÷", div  ,       w.f/(x.f+0))
-AR_F_SCALAR("⋆", pow  , pow(w.f+0, x.f))
-AR_F_SCALAR("√", root , pow(x.f+0, 1.0/(0+w.f)))
-AR_F_SCALAR("|", stile,   pfmod(x.f, w.f))
-AR_F_SCALAR("⋆⁼",log  , log(x.f)/log(w.f))
+AR_F_SCALAR("÷", div  , wf/(xf+0))
+AR_F_SCALAR("⋆", pow  , pow(wf+0, xf))
+AR_F_SCALAR("√", root , pow(xf+0, 1.0/(0+wf)))
+AR_F_SCALAR("|", stile,   pfmod(xf, wf))
+AR_F_SCALAR("⋆⁼",log  , log(xf)/log(wf))
 #undef AR_F_SCALAR
 
 static f64 comb_nat(f64 k, f64 n) {
@@ -470,10 +469,9 @@ static f64 bqn_atan2  (f64 x, f64 w) { return atan2(x+0, w+0); }
 static f64 bqn_atan2ix(f64 x, f64 w) { return w * tan(x); }
 static f64 bqn_atan2iw(f64 x, f64 w) { return w / (tan(x)+0); }
 
-#define MATH(n,N,I) B n##_c2(B t, B w, B x) {          \
-  if (isNum(w) && isNum(x)) return m_f64(I(x.f, w.f)); \
-  P2(n, A_B)                                           \
-  thrM("𝕨 •math." N " 𝕩: Unexpected argument types");  \
+#define MATH(n,N,I) B n##_c2(B t, B w, B x) { \
+  if (q_f64(w) && q_f64(x)) return m_f64(I(o2fG(x), o2fG(w))); \
+  P2(n, A_B); thrM("𝕨 •math." N " 𝕩: Unexpected argument types"); \
 }
 MATH(atan2,"Atan2",bqn_atan2)
 MATH(atan2ix,"Atan2⁼",bqn_atan2ix)
@@ -504,7 +502,7 @@ static u64 lcm_u64(u64 a, u64 b) {
   return (a / gcd_u64(a, b)) * b;
 }
 B gcd_c2(B t, B w, B x) {
-  if (isNum(w) && isNum(x)) {
+  if (q_f64(w) && q_f64(x)) {
     u64 wu, xu;
     if (!q_u64o(&wu, w) || !q_u64o(&xu, x)) thrM("𝕨 •math.GCD 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(gcd_u64(wu, xu));
@@ -513,7 +511,7 @@ B gcd_c2(B t, B w, B x) {
   thrM("𝕨 •math.GCD 𝕩: Unexpected argument types");
 }
 B lcm_c2(B t, B w, B x) {
-  if (isNum(w) && isNum(x)) {
+  if (q_f64(w) && q_f64(x)) {
     u64 wu, xu;
     if (!q_u64o(&wu, w) || !q_u64o(&xu, x)) thrM("𝕨 •math.LCM 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(lcm_u64(wu, xu));
