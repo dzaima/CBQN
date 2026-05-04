@@ -34,3 +34,11 @@ static CpxVal cpx_sqrt_re(f64 re) {
   f64 root = sqrt(fabs(re));
   return re<0? (CpxVal){0, root} : (CpxVal){root, 0};
 }
+
+static CpxVal cpx_sqrt(CpxVal x) {
+  if (x.im == 0) return cpx_sqrt_re(x.re);
+  f64 r = hypot(x.re, x.im);
+  f64 re = sqrt(0.5*(r+x.re));
+  f64 im = sqrt(0.5*(r-x.re));
+  return (CpxVal){re, x.im<0? -im : im};
+}

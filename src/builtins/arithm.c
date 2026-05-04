@@ -106,7 +106,7 @@ GC1i("⌈", ceil,   ceil(v),         el_i32, x, FLOAT_BODY, (thrM("⌈𝕩: TODO
 GC1i("×", mul,    v==0?0:v>0?1:-1, el_bit, x, SIGN_MAIN, (thrM("×𝕩: TODO complex"),(void)xv))
 GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY, (thrM("¬𝕩: TODO complex"),(void)xv))
 
-#define GC1f(N, F, MSG) B N##_c1(B t, B x) {         \
+#define GC1f(N, F, CF, MSG) B N##_c1(B t, B x) { \
   if (isF64(x)) { f64 xv=o2fG(x); return m_cpxv(F); } \
   if (isArr(x)) {                           \
     u8 xe = TI(x,elType);                   \
@@ -126,11 +126,12 @@ GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY, (thrM("¬�
     SLOW1("arithm " #N, x);                 \
     return arith_recm(N##_c1, x);           \
   }                                         \
+  if (isCpx(x)) { CpxVal xv=o2cpxXGD(x); return m_cpxv(CF); } \
   thrM(MSG);                                \
 }
 
-GC1f( div, ((CpxVal){1/(xv+0), 0}), "÷𝕩: 𝕩 contained non-number")
-GC1f(root, cpx_sqrt_re(xv), "√𝕩: 𝕩 contained non-number")
+GC1f( div, ((CpxVal){1/(xv+0), 0}), cpx_div((CpxVal){1,0}, xv), "÷𝕩: 𝕩 contained non-number")
+GC1f(root, cpx_sqrt_re(xv), cpx_sqrt(xv), "√𝕩: 𝕩 contained non-number")
 
 #undef GC1i
 #undef LOOP_BODY
