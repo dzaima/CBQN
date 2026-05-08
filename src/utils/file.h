@@ -6,6 +6,7 @@ B path_rel(B base, B rel, char* name); // consumes rel; assumes base is a string
 B path_parent(B path); // consumes; returns the containing directory, with trailing slash
 B path_name(B path); // consumes; returns filename from a path
 B path_abs(B path); // consumes; returns absolute version of the path; propagates bi_N
+bool path_isSingleComponent(B path); // doesn't consume; returns whether path doesn't contain slashes
 
 FILE* file_open(B path, char* desc, char* mode); // doesn't consume path
 I8Arr* path_bytes(B path); // consumes

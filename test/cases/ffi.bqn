@@ -8,6 +8,12 @@
 !"•FFI: 𝕩 must be a list" % @•FFI @
 !"•FFI: 𝕩 must be a list" % @•FFI 2‿2⥊<"a"
 !"•FFI: Path must be a list of characters" % 1‿2 •FFI ""‿"bqn_init"
+!"•FFI: Path must be a list of characters" % (2‿2⥊@) •FFI ""‿"bqn_init"
+!"•FFI: Path must be a list of characters" % ∘‿2 •FFI ""‿"bqn_init"
+!"↑‿path •FFI 𝕩: Path must be a list of characters" % ↑‿2 •FFI ""‿"bqn_init"
+!"↑‿path •FFI 𝕩: Path must be a list of characters" % ⟨↑,'a'‿2⟩ •FFI ""‿"bqn_init"
+!"↑‿path •FFI 𝕩: Path must be a list of characters" % ⟨↑,2‿2⥊"a"⟩ •FFI ""‿"bqn_init"
+!"↑‿path •FFI 𝕩: Path cannot contain slashes" % ↑‿"foo/bar.so" •FFI ""‿"bqn_init"
 !"This function can't be called monadically" % •FFI ""‿"bqn_init"
 @ •FFI⎊{𝕊: 28↑•CurrentError@} ""‿"bqn_this symbol doesn't exist" %% "FFI: Failed to find symbol: "
 !"FFI: Type must be a string" % @•FFI "hello"

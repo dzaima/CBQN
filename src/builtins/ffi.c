@@ -22,6 +22,7 @@
     #define BQN_EXP __attribute__((__visibility__("default")))
   #endif
   #include "../include/bqnffi.h"
+  #include "builtins.h"
   #include "utils/calls.h"
   #include "utils/cstr.h"
   #include "utils/nfns.h"
@@ -1260,8 +1261,20 @@ B ffiload_c2(B t, B w, B x) {
   
   char* ws = NULL;
   if (w.u != m_c32(0).u) {
+    if (isArr(w) && RNK(w)==1 && IA(w)==2) {
+      SGetU(w);
+      B e0 = GetU(w,0);
+      if (isFun(e0) && RTID(e0) == n_take) {
+        B e1 = GetU(w,1);
+        if (!isStr(e1)) thrM("↑‿path •FFI 𝕩: Path must be a list of characters");
+        if (!path_isSingleComponent(e1)) thrM("↑‿path •FFI 𝕩: Path cannot contain slashes");
+        ws = toCStr(e1);
+        goto wsSet;
+      }
+    }
     w = path_rel(nfn_objU(t), w, "•FFI");
     ws = toCStr(w);
+    wsSet:;
   }
   void* dl = dlopen(ws, RTLD_NOW);
   

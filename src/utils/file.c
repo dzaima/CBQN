@@ -207,6 +207,16 @@ B path_name(B path) {
   }
   return path;
 }
+bool path_isSingleComponent(B path) {
+  assert(isArr(path) && RNK(path)==1);
+  ux ia = IA(path);
+  SGetU(path);
+  for (ux i = 0; i < ia; i++) {
+    char c = o2cG(GetU(path, i));
+    if (isPathSep(c)) return false;
+  }
+  return true;
+}
 
 B path_abs(B path) {
   assert(isStr(path));
