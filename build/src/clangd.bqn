@@ -93,6 +93,7 @@ ModifyCBQNFlags ← {
   {𝕩 WantsFlags ⟨"-DSINGELI"⟩}¨ "singeli/c/" FilterPrefix filenames
   
   # template files
+  "builtins/ffi/ffiExport.c" WantsIncludes ⟨"builtins/ffi.c"⟩
   "builtins/sortTemplate.h" WantsIncludes ⟨"core.h", "utils/talloc.h"⟩
   "builtins/sortTemplate.h" WantsFlags ⟨"-DSORT_NAME=", "-DSORT_TYPE=B", "-DSORT_CMP=compare"⟩
   "opt/mm_buddyTemplate.c"‿"opt/mm_buddyTemplate.h" WantsFlags¨ <⟨"-DBN(X)=mm_##X", "-DMMI(X)=X", "-DBSZ(X)=(1ull<<(X))", "-DALSZ=20", "-DMM=1"⟩
