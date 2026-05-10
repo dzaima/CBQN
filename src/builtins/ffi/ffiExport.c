@@ -11,12 +11,8 @@
   #define BQN_EXP __attribute__((__visibility__("default")))
 #endif
 #include "../include/bqnffi.h"
-#include "builtins.h"
-#include "utils/calls.h"
-#include "utils/cstr.h"
 #include "utils/nfns.h"
 #include "core/ns.h"
-#include "utils/file.h"
 #include "utils/toplevel.h"
 #include "vm/load.h"
 
@@ -267,26 +263,27 @@ typedef struct BoundFn {
   struct NFn;
   void* w_c1;
   void* w_c2;
-  i32 mutCount;
-  i32 wLen; // 0: not needed; -1: is whole array; ≥1: length
-  i32 xLen; // 0: length 0 array; else, ↑
 } BoundFn;
 
 B boundFn_c1(B t,      B x) { BoundFn* c = c(BoundFn,t); return bv_to(((bqn_boundFn1)c->w_c1)(bv_mk(inc(c->obj)),           bv_mk(x))); }
 B boundFn_c2(B t, B w, B x) { BoundFn* c = c(BoundFn,t); return bv_to(((bqn_boundFn2)c->w_c2)(bv_mk(inc(c->obj)), bv_mk(w), bv_mk(x))); }
 
-static B m_ffiFn(NFnDesc* desc, B obj, FC1 c1, FC2 c2, void* wc1, void* wc2) {
-  BoundFn* r = mm_alloc(sizeof(BoundFn), t_nfn);
+static NFn* m_ffiFn(ux size, NFnDesc* desc, B obj, FC1 c1, FC2 c2) {
+  NFn* r = mm_alloc(size, t_nfn);
   nfn_lateInit((NFn*)r, desc);
   r->obj = obj;
   r->c1 = c1;
   r->c2 = c2;
+  return r;
+}
+static B m_boundFn(B obj, FC1 c1, FC2 c2, void* wc1, void* wc2) {
+  BoundFn* r = (BoundFn*) m_ffiFn(sizeof(BoundFn), boundFnDesc, obj, c1, c2);
   r->w_c1 = wc1;
   r->w_c2 = wc2;
   return tag(r, FUN_TAG);
 }
-BQN_EXP BQNV bqn_makeBoundFn1(bqn_boundFn1 f, BQNV obj) { return bv_mk(m_ffiFn(boundFnDesc, inc(bv_get(obj)), boundFn_c1, c2_bad, f, NULL)); }
-BQN_EXP BQNV bqn_makeBoundFn2(bqn_boundFn2 f, BQNV obj) { return bv_mk(m_ffiFn(boundFnDesc, inc(bv_get(obj)), c1_bad, boundFn_c2, NULL, f)); }
+BQN_EXP BQNV bqn_makeBoundFn1(bqn_boundFn1 f, BQNV obj) { return bv_mk(m_boundFn(inc(bv_get(obj)), boundFn_c1, c2_bad, f, NULL)); }
+BQN_EXP BQNV bqn_makeBoundFn2(bqn_boundFn2 f, BQNV obj) { return bv_mk(m_boundFn(inc(bv_get(obj)), c1_bad, boundFn_c2, NULL, f)); }
 
 static const u8 typeMap[] = {
   [el_bit] = elt_unk,

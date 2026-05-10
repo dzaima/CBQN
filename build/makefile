@@ -24,7 +24,7 @@ i_CC := cc
 i_PIE :=
 i_LIBS_LD := -lm
 i_LIBS_CC := -fvisibility=hidden
-i_FFI := 2
+i_FFI := 1
 i_OUTPUT := BQN
 
 ifeq ($(origin i_OUTPUT_DEF),command line)

@@ -372,7 +372,8 @@ po ← { # parsed options
       "-iquote", "src",
       "-DBYTECODE_DIR="∾•file.Name bytecodeDir,
       "-DSINGELI="∾•Repr singeli,
-      "-DFFI="∾•Repr ffi
+      "-DFFI="∾•Repr ffi,
+      "-DCBQN_EXPORT="∾•Repr exportSymbols,
     ⟩
     args∾↩ ccClang⊑⟨
       ⟨"-Wno-parentheses"⟩ # gcc
@@ -397,7 +398,6 @@ po ← { # parsed options
     args∾↩ (           debug) / ⟨"-DDEBUG"⟩
     args∾↩ (        rtverify) / ⟨"-DRT_VERIFY"⟩
     args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY", "-DUSE_SETJMP=0"⟩
-    args∾↩ (   exportSymbols) / ⟨"-DCBQN_EXPORT"⟩
     args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ (pie ∧ ¬sharedLib) / ⟨"-fPIE"⟩
     args∾↩ (             lib) / ⟨"-DCBQN_LIB"⟩

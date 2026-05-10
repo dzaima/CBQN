@@ -1,18 +1,15 @@
 #include "core.h"
 
-#ifndef CBQN_EXPORT
-  #define CBQN_EXPORT 1
-#endif
-
 #if FFI && !defined(CBQN_EXPORT)
   #error "Expected CBQN_EXPORT if FFI is defined"
 #endif
 
-#ifndef FFI_CHECKS // option to disable extended correctness checks
+#include "ffi/ffiExport.c"
+
+#ifndef FFI_CHECKS // option to disable extended correctness checks of •FFI
   #define FFI_CHECKS 1
 #endif
 
-#include "ffi/ffiExport.c"
 
 #if FFI
   #if !__has_include(<ffi.h>)
@@ -20,8 +17,20 @@
   #endif
   #include <dlfcn.h>
   #include <ffi.h>
-  #include "utils/mut.h"
-// ..continuing under "#if FFI"
+  #include "builtins.h"
+  #include "utils/calls.h"
+  #include "utils/cstr.h"
+  #include "utils/file.h"
+// ..continuing under "#if FFI" until nearly the end of the file
+
+typedef struct FFIFn {
+  struct NFn;
+  void* sym;
+  u32 ffiFlags;
+  i32 mutCount;
+  i32 wLen; // 0: not needed; -1: is whole array; ≥1: length
+  i32 xLen; // 0: length 0 array; else, ↑
+} FFIFn;
 
 STATIC_GLOBAL NFnDesc* foreignFnDesc;
 typedef struct BQNFFIEnt {
@@ -35,7 +44,7 @@ typedef struct BQNFFIEnt {
 typedef struct BQNFFIType {
   struct Value;
   u8 ty;
-  usz ia; // num0ber of entries in 'a', each with refcounted .o
+  usz ia; // number of entries in 'a', each with refcounted .o
   union {
     u32 staticAllocTotal; // cty_arglist
     struct { u32 structSize; }; // cty_struct, cty_starr
@@ -738,7 +747,7 @@ B readUpdatedObj(BQNFFIEnt ent, bool anyMut, B** objs) {
 }
 
 B libffiFn_c2(B t, B w, B x) {
-  BoundFn* bf = c(BoundFn,t);
+  FFIFn* bf = c(FFIFn,t);
   BQNFFIType* argObj = c(BQNFFIType, c(HArr,bf->obj)->a[0]);
   
   #define PROC_ARG(ISX, L, U, S) \
@@ -791,7 +800,7 @@ B libffiFn_c2(B t, B w, B x) {
   // }
   // printf("\n");
   
-  void* sym = bf->w_c2;
+  void* sym = bf->sym;
   ffi_call(cif, sym, res, argPtrs);
   
   B r;
@@ -815,7 +824,7 @@ B libffiFn_c2(B t, B w, B x) {
   i32 mutArgs = bf->mutCount;
   bool testBuildObj = false;
   if (mutArgs || testBuildObj) {
-    u32 flags = PTR_TO_U64(bf->w_c1);
+    u32 flags = bf->ffiFlags;
     bool resSingle = flags&4;
     B* objsCurr = harr_ptr(ffiObjs);
     if (resSingle) {
@@ -977,11 +986,13 @@ B ffiload_c2(B t, B w, B x) {
   if (s!=FFI_OK) thrM("FFI: Error preparing call interface");
   
   u32 flags = eRes.resSingle<<2;
-  B r = m_ffiFn(foreignFnDesc, m_hvec3(argObj, tag(cif, OBJ_TAG), tag(ao, OBJ_TAG)), libffiFn_c1, libffiFn_c2, PTR_FROM_INT(void,flags), sym);
-  c(BoundFn,r)->mutCount = mutCount;
-  c(BoundFn,r)->wLen = whole[1]? -1 : count[1];
-  c(BoundFn,r)->xLen = whole[0]? -1 : count[0];
-  return r;
+  FFIFn* r = (FFIFn*) m_ffiFn(sizeof(FFIFn), foreignFnDesc, m_hvec3(argObj, tag(cif, OBJ_TAG), tag(ao, OBJ_TAG)), libffiFn_c1, libffiFn_c2);
+  r->ffiFlags = flags;
+  r->sym = sym;
+  r->mutCount = mutCount;
+  r->wLen = whole[1]? -1 : count[1];
+  r->xLen = whole[0]? -1 : count[0];
+  return tag(r, FUN_TAG);
 }
 
 #define FFI_TYPE_FLDS(OBJ) \

@@ -61,9 +61,6 @@ typedef struct BMd2 {
   extern GLOBAL B r1Objs[RT_LEN];
 #endif
 
-#ifndef FFI
-  #define FFI 2
-#endif
 #ifndef FORMATTER
   #define FORMATTER 1
 #endif
