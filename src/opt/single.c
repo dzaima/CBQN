@@ -46,6 +46,6 @@
 #include "../core/ns.c"
 #include "../utils/nfns.c"
 #include "../vm/rtwrap.c"
-#include "../builtins/ffi.c"
+#include "../builtins/ffi/ffi.c"
 #include "../vm/jit/nvm.c"
 #include "../main.c"

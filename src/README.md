@@ -141,7 +141,7 @@ type field for heap-allocated objects:
   t_fldAlias, t_arrMerge, t_vfyObj // various mutation target data holders; see vm.h & vm.c
   t_ns, t_nsDesc // namespace, namespace descriptor; NS, NSDesc
   t_nfn, t_nfnDesc // native function, native function descriptor; NFn, NFnDesc
-  t_ffiType, t_bvwArena // ffi.c things; BQNFFIType, BVWArena
+  t_unkArr, t_ffiType, t_ffiScratchMem, t_bvwArena // ffi.c things; arr with unknown element type, FFICompoundType, ffiFn_core ScratchMem, BVWArena
   t_customObj // type with dynamic visit & free methods; CustomObj
   t_arbObj // generic arbitrary heap-allocated object
   t_talloc, t_temp // temporary allocation types; multiple uses

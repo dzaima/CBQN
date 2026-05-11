@@ -28,9 +28,8 @@ cbqn_repl.txt
 cbqn-jit.bqn
 
 # test temporary files
-/test/ffi/ffiTest.o
-/test/ffi/test.got
-/test/ffi/shared.got
+/test/ffi/*.o
+/test/ffi/*.got
 /test/ffi/sharedTest
 /test/ffi/staticTest
 /test/ffi/sharedLibFolder

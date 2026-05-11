@@ -188,7 +188,7 @@ static B reduceI32Width(B r, usz count) {
   return count<=I8_MAX? taga(cpyI8Arr(r)) : count<=I16_MAX? taga(cpyI16Arr(r)) : r;
 }
 
-static NOINLINE usz indexOfOne(B l, B e) {
+NOINLINE usz indexOfOne(B l, B e) {
     void* lp = tyany_ptr(l);
     usz wia = IA(l);
     u8 v8; u16 v16; u32 v32; f64 v64f;

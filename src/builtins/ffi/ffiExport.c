@@ -1,3 +1,5 @@
+#pragma once
+
 #if !CBQN_EXPORT
   static void bqnffi_init() { }
 #else // rest of the file continues under this
@@ -127,7 +129,7 @@
 
 B boundFn_c1(B t,      B x);
 B boundFn_c2(B t, B w, B x);
-STATIC_GLOBAL NFnDesc* boundFnDesc;
+DEFINE_NFN boundFnDesc;
 static void bqnffi_init() {
   boundFnDesc = registerNFn(m_c8vec_0("(foreign function)"), boundFn_c1, boundFn_c2);
   #if !DIRECT_BQNV

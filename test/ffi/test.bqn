@@ -1,5 +1,4 @@
 f←@
-sizet ← "u64"
 Section ← {•Out 𝕩∾˜@+10}
 
 f ↩ "lib.so" •FFI ""‿"do_nothing" ⋄ •Show F ⟨⟩
@@ -92,7 +91,7 @@ f ↩ "lib.so" •FFI ⟨s1, "incMembers", ">"∾s1⟩ ⋄ •Show F ⟨200, 2e9
 f ↩ "lib.so" •FFI ⟨"&", "incMany", "&"∾s2, "u64"⟩ ⋄ •Show¨ F ⟨0‿3‿6+3⥊<0‿1+2⥊<⟨200, 2e9, ¯30000, 1‿2‿3‿4, 3.25⟩, 3⟩
 
 {
-  calloc ← @•FFI"*:i32"‿"calloc"‿sizet‿sizet ⋄ mem ← Calloc 3‿4
+  calloc ← @•FFI"*:i32"‿"calloc"‿"usize"‿"usize" ⋄ mem ← Calloc 3‿4
   f ← "lib.so" •FFI "i32"‿"arrayRefOp"‿">&{*:i32,u64}"
   {𝕊: ⟨sum, ⟨arr‿sz⟩⟩ ← F ⟨mem‿3⟩ ⋄ •Show sum ∾ arr-mem}¨ ↕2
 }
@@ -113,7 +112,10 @@ f ↩ "lib.so"•FFI ⟨"i32", "arrstruct1", as1, "*"∾as1⟩ ⋄ •Show F ⟨
 
 as2 ← "{[1]i32,[2]"∾as1∾",[3]f64}"
 f ↩ "lib.so"•FFI ⟨as2, "arrstruct2", as2, "*"∾as2⟩ ⋄ •Out •Repr F ⟨⟨⟨4⟩ ⋄ ⋈∘⋈¨1‿2 ⋄ 1.2‿2.3‿3.4⟩, ⟨⟨⟨5⟩ ⋄ ⋈∘⋈¨10‿20 ⋄ 5.1‿6.1‿7.1⟩⟩⟩
-f ↩ "lib.so"•FFI ⟨"&", "arrstruct2Inc", ">&"∾as2⟩ ⋄ •Out •Repr F (⊢⋈50⊸+) ⟨⟨10⟩ ⋄ ⋈∘⋈¨11‿12 ⋄ 13‿14‿15⟩
+f ↩ "lib.so"•FFI ⟨"",  "arrstruct2Inc", ">&·"∾as2⟩ ⋄ •Show F arrStruct2v←(⊢⋈50⊸+) ⟨⟨10⟩ ⋄ ⋈∘⋈¨11‿12 ⋄ 13‿14‿15⟩
+f ↩ "lib.so"•FFI ⟨"&", "arrstruct2Inc", ">&"∾as2⟩ ⋄ •Out •Repr F arrStruct2v
+f ↩ "lib.so"•FFI ⟨"", "add_int64structarr", "&·{[1]i64,[1]u64}", "i64"⟩ ⋄ •Show F ⟨5⥊<2⥊<⋈1e14, ¯1e15⟩
+
 
 f ↩ "lib.so"•FFI "&"‿"manyargs"‿"{f32,*i8,[5]i8}"‿"*[7]i8"‿"[4]i8"‿"&i8" ⋄ •Show F ⟨⟨31, 10+↕10, 5+↕5⟩, ⟨14+↕7, 21+↕7⟩, 40+↕4, 100+↕13⟩ # ⟨100, 31, 10,19, 5,9 ⋄ 14,20, 21,27, 40,43, 112⟩
 f ↩ "lib.so"•FFI  ""‿"manyargs"‿"{f32,*i8,[5]i8}"‿"*[7]i8"‿"[4]i8"‿"&i8" ⋄ •Show F ⟨⟨31, 10+↕10, 5+↕5⟩, ⟨14+↕7, 21+↕7⟩, 40+↕4, 100+↕13⟩
@@ -121,7 +123,7 @@ f ↩ "lib.so"•FFI  ""‿"manyargs"‿"{f32,*i8,[5]i8}"‿"*[7]i8"‿"[4]i8"�
 Section "# nested"
 {
   f ← "lib.so"•FFI "i32"‿"callWithinMutated"‿"a"‿"&i32"
-  g ← @ •FFI "*:i8"‿"memcpy"‿"&i8"‿"*i8"‿sizet
+  g ← @ •FFI "*:i8"‿"memcpy"‿"&i8"‿"*i8"‿"usize"
   Fn ← {
     ! 𝕩≡fn
     •Show 1⊑G ⟨5⥊0, 3+↕5, 4⟩
@@ -132,7 +134,7 @@ Section "# nested"
 
 Section "# Struct of pointers"
 {
-  malloc ← "lib.so" •FFI ⟨"*u8", "malloc", ">"∾sizet⟩
+  malloc ← "lib.so" •FFI ⟨"*u8", "malloc", ">"∾"usize"⟩
   p ← Malloc 100
   sop ← "{*,*i32,[2]*}"
   f ← "lib.so"•FFI ⟨sop, "operateOnStructOfPtrs", sop, "[2]"∾sop⟩
@@ -143,6 +145,9 @@ Section "# Struct of pointers"
   
   f ↩ "lib.so" •FFI "&"‿"updatePointerWithinPointer"‿">&{i32,*u8}"
   •Show {x‿y: x ⋈ y.Sub p}¨ F {⟨𝕩×1000, (p.Add 𝕩×100).Cast ""⟩}¨ ↕5
+  
+  f ↩ "lib.so" •FFI ""‿"mutateStructOfPtrs2"‿">{&i32,i8,{i16,⥊i8,&{i64,u64}}}"
+  •Show F ⟨10×1+↕3, ¯100, ⟨¯50, 10, ¯10‿1⊸×¨ 1e10×1+↕3⟩⟩
 }
 
 Section "# 𝕨/𝕩/>"
@@ -172,6 +177,17 @@ Section "# 𝕨/𝕩/>"
   "pack" Auto 9‿8‿7 # 987
 }
 
+Section "# SNaNs"
+{
+  •Show •internal.Validate {𝕏⟨⟩} "lib.so" •FFI "f32"‿"ret_snan32"
+  •Show •internal.Validate {𝕏⟨⟩} "lib.so" •FFI "f64"‿"ret_snan64"
+}
+
+Section "# size_t"
+{
+  f ↩ "lib.so" •FFI "usize"‿"size_type"‿"&isize"‿"usize"‿"isize"
+  •Show F ⟨¯1e5‿¯10, 1e8, ¯5⟩
+}
 
 # erroring:
 

@@ -546,7 +546,12 @@ bool validate_flags(bool crash, B x) {
 
 B iValidate_c1(B t, B x) {
   validate_flags(false, x);
-  return x;
+  if (isArr(x) && TI(x,elType)==el_f64) {
+    f64* xp = tyany_ptr(x);
+    ux ia = IA(x);
+    NOUNROLL for (ux i = 0; i < ia; i++) if (!isF64(r_fB(xp[i]))) validate_fail(false, "Validate: f64 array contains a signaling NaN");
+  }
+  return VALIDATE(x);
 }
 
 B unshare_c1(B t, B x) {

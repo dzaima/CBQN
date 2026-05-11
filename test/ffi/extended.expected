@@ -1,0 +1,521 @@
+### overflow check i 0
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+### overflow check u 0
+Error message: FFI: Improper value for u64: ¯1e15
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+### overflow check i 1
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+### overflow check u 1
+Error message: FFI: Improper value for u64: ¯1e15
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+### overflow check i 2
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+### overflow check u 2
+Error message: FFI: Improper value for u64: ¯1e15
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+### overflow check i 3
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+### overflow check u 3
+Error message: FFI: Improper value for u64: ¯1e15
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+### overflow check i 4
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+### overflow check u 4
+Error message: FFI: Improper value for u64: ¯1e15
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+### overflow check i 5
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+### overflow check u 5
+Error message: FFI: Improper value for u64: ¯1e15
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+### overflow check i 6
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+### overflow check u 6
+Error message: FFI: Improper value for u64: ¯1e15
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+### *
+  conv none: * fac=1
+Error message: Expected pointer object, got character
+Error message: Expected pointer object, got character
+Error message: Expected pointer object, got some other kind of namespace
+Error message: Expected pointer object, got some other kind of namespace
+Error message: Expected pointer object, got array
+Error message: Expected pointer object, got array
+  conv u1: *:u1 fac=64
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for *:u1 needs to have a length that's a multiple of 64, but array had shape ⟨1⟩
+Error message: FFI: Array provided for *:u1 needs to have a length that's a multiple of 64, but array had shape ⟨1⟩
+  conv i8: *:i8 fac=8
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for *:i8 needs to have a length that's a multiple of 8, but array had shape ⟨1⟩
+Error message: FFI: Array provided for *:i8 needs to have a length that's a multiple of 8, but array had shape ⟨1⟩
+  conv i16: *:i16 fac=4
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Array provided for *:i16 needs to have a length that's a multiple of 4, but array had shape ⟨1⟩
+Error message: FFI: Array provided for *:i16 needs to have a length that's a multiple of 4, but array had shape ⟨1⟩
+  conv i32: *:i32 fac=2
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Array provided for *:i32 needs to have a length that's a multiple of 2, but array had shape ⟨1⟩
+Error message: FFI: Array provided for *:i32 needs to have a length that's a multiple of 2, but array had shape ⟨1⟩
+  conv c8: *:c8 fac=8
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for *:c8 needs to have a length that's a multiple of 8, but array had shape ⟨1⟩
+Error message: FFI: Array provided for *:c8 needs to have a length that's a multiple of 8, but array had shape ⟨1⟩
+  conv c16: *:c16 fac=4
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Array provided for *:c16 needs to have a length that's a multiple of 4, but array had shape ⟨1⟩
+Error message: FFI: Array provided for *:c16 needs to have a length that's a multiple of 4, but array had shape ⟨1⟩
+  conv c32: *:c32 fac=2
+Error message: FFI: Array provided for *:c32 needs to have a length that's a multiple of 2, but array had shape ⟨1⟩
+Error message: FFI: Array provided for *:c32 needs to have a length that's a multiple of 2, but array had shape ⟨1⟩
+### bool
+  conv none: bool fac=1
+Error message: FFI: Improper value for bool: ¯1
+Error message: FFI: Improper value for bool: ¯1
+Error message: FFI: Improper value for bool: 2
+Error message: FFI: Improper value for bool: 2
+### f32
+  conv none: f32 fac=1
+Error message: FFI: Improper value for f32: character
+Error message: FFI: Improper value for f32: character
+Error message: FFI: Improper value for f32: namespace
+Error message: FFI: Improper value for f32: namespace
+  conv u1: f32:u1 fac=32
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for f32:u1 needs to have a length that's a multiple of 32, but array had shape ⟨33⟩
+Error message: FFI: Array provided for f32:u1 needs to have a length that's a multiple of 32, but array had shape ⟨33⟩
+  conv i8: f32:i8 fac=4
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for f32:i8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for f32:i8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv i16: f32:i16 fac=2
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Array provided for f32:i16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for f32:i16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv i32: f32:i32 fac=1
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Improper value for i32: 2147483648
+  conv c8: f32:c8 fac=4
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for f32:c8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for f32:c8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv c16: f32:c16 fac=2
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Array provided for f32:c16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for f32:c16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv c32: f32:c32 fac=1
+### f64
+  conv none: f64 fac=1
+Error message: FFI: Improper value for f64: character
+Error message: FFI: Improper value for f64: character
+Error message: FFI: Improper value for f64: namespace
+Error message: FFI: Improper value for f64: namespace
+  conv u1: f64:u1 fac=64
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for f64:u1 needs to have a length that's a multiple of 64, but array had shape ⟨65⟩
+Error message: FFI: Array provided for f64:u1 needs to have a length that's a multiple of 64, but array had shape ⟨65⟩
+  conv i8: f64:i8 fac=8
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for f64:i8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+Error message: FFI: Array provided for f64:i8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+  conv i16: f64:i16 fac=4
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Array provided for f64:i16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for f64:i16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv i32: f64:i32 fac=2
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Array provided for f64:i32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for f64:i32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv c8: f64:c8 fac=8
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for f64:c8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+Error message: FFI: Array provided for f64:c8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+  conv c16: f64:c16 fac=4
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Array provided for f64:c16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for f64:c16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv c32: f64:c32 fac=2
+Error message: FFI: Array provided for f64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for f64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+### i8
+  conv none: i8 fac=1
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+  conv u1: i8:u1 fac=8
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for i8:u1 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+Error message: FFI: Array provided for i8:u1 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+  conv i8: i8:i8 fac=1
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+  conv c8: i8:c8 fac=1
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+### i16
+  conv none: i16 fac=1
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+  conv u1: i16:u1 fac=16
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for i16:u1 needs to have a length that's a multiple of 16, but array had shape ⟨17⟩
+Error message: FFI: Array provided for i16:u1 needs to have a length that's a multiple of 16, but array had shape ⟨17⟩
+  conv i8: i16:i8 fac=2
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for i16:i8 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for i16:i8 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv i16: i16:i16 fac=1
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+  conv c8: i16:c8 fac=2
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for i16:c8 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for i16:c8 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv c16: i16:c16 fac=1
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+### i32
+  conv none: i32 fac=1
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Improper value for i32: 2147483648
+  conv u1: i32:u1 fac=32
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for i32:u1 needs to have a length that's a multiple of 32, but array had shape ⟨33⟩
+Error message: FFI: Array provided for i32:u1 needs to have a length that's a multiple of 32, but array had shape ⟨33⟩
+  conv i8: i32:i8 fac=4
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for i32:i8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for i32:i8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv i16: i32:i16 fac=2
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Array provided for i32:i16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for i32:i16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv i32: i32:i32 fac=1
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Improper value for i32: 2147483648
+  conv c8: i32:c8 fac=4
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for i32:c8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for i32:c8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv c16: i32:c16 fac=2
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Array provided for i32:c16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for i32:c16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv c32: i32:c32 fac=1
+### i64
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: FFI: i64 result absolute value ≥ 2⋆53
+  conv none: i64 fac=1
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: Improper value for i64: ¯9.007199254740992e15
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+Error message: FFI: Improper value for i64: 9.007199254740992e15
+  conv u1: i64:u1 fac=64
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for i64:u1 needs to have a length that's a multiple of 64, but array had shape ⟨65⟩
+Error message: FFI: Array provided for i64:u1 needs to have a length that's a multiple of 64, but array had shape ⟨65⟩
+  conv i8: i64:i8 fac=8
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for i64:i8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+Error message: FFI: Array provided for i64:i8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+  conv i16: i64:i16 fac=4
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Array provided for i64:i16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for i64:i16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv i32: i64:i32 fac=2
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Array provided for i64:i32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for i64:i32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv c8: i64:c8 fac=8
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for i64:c8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+Error message: FFI: Array provided for i64:c8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+  conv c16: i64:c16 fac=4
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Array provided for i64:c16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for i64:c16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv c32: i64:c32 fac=2
+Error message: FFI: Array provided for i64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for i64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+### u8
+  conv none: u8 fac=1
+Error message: FFI: Improper value for u8: ¯1
+Error message: FFI: Improper value for u8: ¯1
+Error message: FFI: Improper value for u8: 256
+Error message: FFI: Improper value for u8: 256
+  conv u1: u8:u1 fac=8
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for u8:u1 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+Error message: FFI: Array provided for u8:u1 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+  conv i8: u8:i8 fac=1
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+  conv c8: u8:c8 fac=1
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+### u16
+  conv none: u16 fac=1
+Error message: FFI: Improper value for u16: ¯1
+Error message: FFI: Improper value for u16: ¯1
+Error message: FFI: Improper value for u16: 65536
+Error message: FFI: Improper value for u16: 65536
+  conv u1: u16:u1 fac=16
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for u16:u1 needs to have a length that's a multiple of 16, but array had shape ⟨17⟩
+Error message: FFI: Array provided for u16:u1 needs to have a length that's a multiple of 16, but array had shape ⟨17⟩
+  conv i8: u16:i8 fac=2
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for u16:i8 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for u16:i8 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv i16: u16:i16 fac=1
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+  conv c8: u16:c8 fac=2
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for u16:c8 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for u16:c8 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv c16: u16:c16 fac=1
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+### u32
+  conv none: u32 fac=1
+Error message: FFI: Improper value for u32: ¯1
+Error message: FFI: Improper value for u32: ¯1
+Error message: FFI: Improper value for u32: 4294967296
+Error message: FFI: Improper value for u32: 4294967296
+  conv u1: u32:u1 fac=32
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for u32:u1 needs to have a length that's a multiple of 32, but array had shape ⟨33⟩
+Error message: FFI: Array provided for u32:u1 needs to have a length that's a multiple of 32, but array had shape ⟨33⟩
+  conv i8: u32:i8 fac=4
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for u32:i8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for u32:i8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv i16: u32:i16 fac=2
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Array provided for u32:i16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for u32:i16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv i32: u32:i32 fac=1
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Improper value for i32: 2147483648
+  conv c8: u32:c8 fac=4
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for u32:c8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for u32:c8 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv c16: u32:c16 fac=2
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Array provided for u32:c16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for u32:c16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv c32: u32:c32 fac=1
+### u64
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+Error message: FFI: u64 result ≥ 2⋆53
+  conv none: u64 fac=1
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: Improper value for u64: ¯1
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+Error message: FFI: Improper value for u64: 9.007199254740992e15
+  conv u1: u64:u1 fac=64
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: ¯1
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Improper value for u1: 2
+Error message: FFI: Array provided for u64:u1 needs to have a length that's a multiple of 64, but array had shape ⟨65⟩
+Error message: FFI: Array provided for u64:u1 needs to have a length that's a multiple of 64, but array had shape ⟨65⟩
+  conv i8: u64:i8 fac=8
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: ¯129
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Improper value for i8: 128
+Error message: FFI: Array provided for u64:i8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+Error message: FFI: Array provided for u64:i8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+  conv i16: u64:i16 fac=4
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: ¯32769
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Improper value for i16: 32768
+Error message: FFI: Array provided for u64:i16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for u64:i16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv i32: u64:i32 fac=2
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: ¯2147483649
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Improper value for i32: 2147483648
+Error message: FFI: Array provided for u64:i32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for u64:i32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+  conv c8: u64:c8 fac=8
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Improper value for c8: @+256
+Error message: FFI: Array provided for u64:c8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+Error message: FFI: Array provided for u64:c8 needs to have a length that's a multiple of 8, but array had shape ⟨9⟩
+  conv c16: u64:c16 fac=4
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Improper value for c16: @+65536
+Error message: FFI: Array provided for u64:c16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+Error message: FFI: Array provided for u64:c16 needs to have a length that's a multiple of 4, but array had shape ⟨5⟩
+  conv c32: u64:c32 fac=2
+Error message: FFI: Array provided for u64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Error message: FFI: Array provided for u64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
+Passed!

@@ -214,7 +214,7 @@ NOINLINE B do_fmt(B s, char* p, va_list a) {
   while (*p != 0) { c = *p++;
     if (c!='%') continue;
     if (lp!=p-1) AJOIN(utf8Decode(lp, p-1-lp));
-    switch(c = *p++) { default: printf("Unknown format character '%c'", c); fatal(""); UD;
+    switch(c = *p++) { default: printf("Unknown format character '%c'\n", c); fatal(""); UD;
       case 'R': {
         B b = va_arg(a, B);
         if (q_f64(b)) AFMT("%f", o2f(b));
@@ -587,7 +587,7 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   NOINLINE B VALIDATE(B x) {
     if (!isVal(x)) return x;
     VALIDATEP(v(x));
-    if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && !ignore_bad_tag) {
+    if(isArr(x)!=TI(x,isArr) && v(x)->type!=t_freed && v(x)->type!=t_unkArr && !ignore_bad_tag) {
       fprintf(stderr, "bad array tag/type: type=%d, obj=%p\n", v(x)->type, PTR_FROM_INT(void, x.u));
       PRINT_ID(v(x));
       fprintI(stderr, x);

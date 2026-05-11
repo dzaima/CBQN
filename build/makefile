@@ -181,7 +181,7 @@ endif
 endif
 	@echo ${postmsg}
 
-${bd}/BQN: builtins vm core base jit utils # build the final binary
+${bd}/BQN: builtins vm core base jit ffi utils # build the final binary
 	@$(i_LD) ${CCFLAGS} -o ${bd}/BQN ${bd}/*.o $(ALL_LD_FLAGS)
 
 CC_INC = $(i_CC) $(ALL_CC_FLAGS) -MMD -MP -MF
@@ -191,7 +191,7 @@ ${bd}/%.o: src/core/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
-base: ${addprefix ${bd}/, main.o ns.o nfns.o ffi.o}
+base: ${addprefix ${bd}/, main.o ns.o nfns.o}
 ${bd}/%.o: src/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
@@ -206,6 +206,11 @@ ${bd}/%.o: src/vm/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
+ffi: ${addprefix ${bd}/, ffi.o}
+${bd}/%.o: src/builtins/ffi/%.c
+	@echo $< | cut -c 5-
+	@$(CC_INC) $@.d -o $@ -c $<
+
 jit: ${addprefix ${bd}/, nvm.o}
 ${bd}/%.o: src/vm/jit/%.c
 	@echo $< | cut -c 5-
@@ -216,7 +221,7 @@ ${bd}/%.o: src/builtins/%.c
 	@echo $< | cut -c 5-
 	@$(CC_INC) $@.d -o $@ -c $<
 
-.INTERMEDIATE: core base utils jit builtins bytecodeMessage
+.INTERMEDIATE: builtins vm core base jit ffi utils bytecodeMessage
 
 $(bd)/load.o: bytecodeMessage
 bytecodeMessage:

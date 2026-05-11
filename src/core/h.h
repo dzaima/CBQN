@@ -235,11 +235,11 @@ FORCE_INLINE B r_fB(f64 x) { return (B){.f=x}; }
   /*21*/ F(harr  ) F(fillarr  ) F(i8arr  ) F(i16arr  ) F(i32arr  ) F(c8arr  ) F(c16arr  ) F(c32arr  ) F(f64arr  ) \
   /*30*/ F(bitarr) \
   \
-  /*31*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(ffiType) F(bvwArena) \
-  /*40*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
-  /*50*/ F(freed) F(invalid) F(customObj) F(mmapH) \
+  /*31*/ F(comp) F(block) F(body) F(scope) F(scopeExt) F(blBlocks) F(arbObj) F(unkArr) F(ffiType) F(ffiScratchMem) F(bvwArena) \
+  /*42*/ F(ns) F(nsDesc) F(fldAlias) F(arrMerge) F(vfyObj) F(hashmap) F(temp) F(talloc) F(nfn) F(nfnDesc) \
+  /*52*/ F(freed) F(invalid) F(customObj) F(mmapH) \
   \
-  /*54*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
+  /*56*/ IF_WRAP(F(funWrap) F(md1Wrap) F(md2Wrap))
 
 enum Type {
   #define F(X) t_##X,

@@ -366,6 +366,29 @@ void updatePointerWithinPointer(PtrWrapper* ptr) {
   }
 }
 
+typedef struct Struct64 {
+  int64_t sgn;
+  uint64_t uns;
+} Struct64;
+
+struct StructOfPtrs2Sub {
+  int16_t data2;
+  int8_t* ptr2;
+  Struct64* ptr3;
+};
+struct StructOfPtrs2 {
+  int32_t* ptr1;
+  int8_t data1;
+  struct StructOfPtrs2Sub p2;
+};
+
+void mutateStructOfPtrs2(struct StructOfPtrs2 x) {
+  x.ptr1[0]+= x.data1;
+  for (int i = 0; i < 10; i++) x.p2.ptr2[i] = i;
+  x.p2.ptr3[1].sgn = -12345;
+  x.p2.ptr3[2].uns = (uint16_t) x.p2.data2;
+}
+
 int32_t inc_i32(int32_t x) {
   return x + 1;
 }
@@ -384,4 +407,90 @@ int32_t sub_i32p(int32_t* a, int32_t* b) {
 }
 int32_t pack_i32p(int32_t* a, int32_t* b, int32_t* c) {
   return *a + *b*10 + *c*100;
+}
+
+
+#if __linux__
+#include <sys/mman.h>
+#include <unistd.h>
+void* alloc_test_mem_4096(uint64_t* sizeOut) {
+  size_t size = sysconf(_SC_PAGESIZE);
+  if (size < 4096) size = 4096;
+  *sizeOut = size;
+  char* r = mmap(NULL, size*3, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+  mprotect(r + size, size, PROT_READ|PROT_WRITE);
+  return r + size;
+}
+void free_test_mem_4096(void* mem, uint64_t size) {
+  munmap((uint8_t*)mem - size, size*3);
+}
+#else
+void* alloc_test_mem_4096(uint64_t* sizeOut) {
+  size_t size = *sizeOut = 4096;
+  return malloc(size);
+}
+void free_test_mem_4096(void* mem, uint64_t size) {
+  free(mem);
+}
+#endif
+
+
+
+void add_int64ptr(uint64_t* a, int64_t b) {
+  *a += b;
+}
+
+void add_i64init(uint64_t* dst, int64_t a, int64_t b) {
+  *dst = a+b;
+}
+void add_u64init(uint64_t* dst, uint64_t a, int64_t b) {
+  *dst = a+b;
+}
+
+int64_t add_i64ret(int64_t a, int64_t b) {
+  return a+b;
+}
+uint64_t add_u64ret(uint64_t a, int64_t b) {
+  return a+b;
+}
+
+
+size_t size_type(ssize_t* buf, size_t a, ssize_t b) {
+  buf[0]+= a+1;
+  buf[1]+= a+2;
+  return a + b;
+}
+
+Struct64 add_int64structret(Struct64 a, int64_t b) {
+  return (Struct64) { .sgn = a.sgn+b, .uns = a.uns+b };
+}
+Struct64 add_int64structret2(Struct64 a[1], int64_t b) {
+  return (Struct64) { .sgn = a->sgn+b, .uns = a->uns+b };
+}
+void add_int64structptr(Struct64* a, int64_t b) {
+  a->sgn+= b;
+  a->uns+= b;
+}
+
+typedef struct Struct64Arr {
+  int64_t sgn[1];
+  uint64_t uns[1];
+} Struct64Arr;
+void add_int64structarr(Struct64Arr* a, int64_t b) {
+  a->sgn[0]+= b;
+  a->uns[0]+= b;
+}
+
+#include <string.h>
+float ret_snan32() {
+  float r;
+  memcpy(&r, (uint32_t[]){0xFFB80000}, 4);
+  return r;
+}
+
+#include <string.h>
+double ret_snan64() {
+  double r;
+  memcpy(&r, (uint64_t[]){0xFFF7000000000000}, 8);
+  return r;
 }

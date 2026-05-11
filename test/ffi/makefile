@@ -1,4 +1,4 @@
-test: testLib testShared
+test: testLib testShared testExtended
 
 
 
@@ -21,5 +21,9 @@ testLib: buildLib
 	@diff --color -su test.expected test.got
 
 buildLib:
-	$(CC) -O3 -g -c -fpic ffiTest.c -o ffiTest.o
-	$(CC) -shared -olib.so ffiTest.o
+	$(CC) -O3 -g -c -fpic testlib.c -o testlib.o
+	$(CC) -shared -olib.so testlib.o
+
+testExtended: buildLib
+	@../../BQN extended.bqn > extended.got
+	@diff --color -su extended.expected extended.got

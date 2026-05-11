@@ -737,7 +737,7 @@ MakeLinkerInv ← { 𝕊 GetArgs‿cache‿name‿srcs:
 cachedBin‿linkerCache ← {
   Shorten ← {po.clangd? 𝕩; r ← {𝕩↓˜¯1-⊑'.'⊐˜⌽𝕩}¨ •file.Name¨ 𝕩 ⋄ ! ∧´ ∊r ⋄ r}
   cbqnSrc ← ∾{⌽(⊑𝕩)⊸•file.At¨ 1↓𝕩}¨ ⌽⟨
-    ⟨"src/builtins/", "arithd.c", "arithm.c", "cmp.c", "sfns.c", "squeeze.c", "select.c", "slash.c", "group.c", "sort.c", "search.c", "selfsearch.c", "transpose.c", "fold.c", "scan.c", "md1.c", "md2.c", "compare.c", "cells.c", "fns.c", "sysfn.c", "internal.c", "inverse.c", "bit.c", "ffi.c"⟩
+    ⟨"src/builtins/", "arithd.c", "arithm.c", "cmp.c", "sfns.c", "squeeze.c", "select.c", "slash.c", "group.c", "sort.c", "search.c", "selfsearch.c", "transpose.c", "fold.c", "scan.c", "md1.c", "md2.c", "compare.c", "cells.c", "fns.c", "sysfn.c", "internal.c", "inverse.c", "bit.c", "ffi/ffi.c"⟩
     ⟨"src/core/", "tyarr.c", "harr.c", "fillarr.c", "stuff.c", "derv.c", "mm.c", "heap.c", "ns.c"⟩
     ⟨"src/", "main.c"⟩
     ⟨"src/vm/", "load.c", "vm.c", "rtwrap.c"⟩
