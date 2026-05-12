@@ -365,3 +365,23 @@ void updatePointerWithinPointer(PtrWrapper* ptr) {
     ptr[i].ptr+= i;
   }
 }
+
+int32_t inc_i32(int32_t x) {
+  return x + 1;
+}
+int32_t inc_i32p(int32_t* x) {
+  return *x + 1;
+}
+int32_t sub_i32(int32_t a, int32_t b) {
+  return a-b;
+}
+int32_t pack_i32(int32_t a, int32_t b, int32_t c) {
+  return a + b*10 + c*100;
+}
+
+int32_t sub_i32p(int32_t* a, int32_t* b) {
+  return *a - *b;
+}
+int32_t pack_i32p(int32_t* a, int32_t* b, int32_t* c) {
+  return *a + *b*10 + *c*100;
+}

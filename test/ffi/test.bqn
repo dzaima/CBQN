@@ -145,6 +145,33 @@ Section "# Struct of pointers"
   •Show {x‿y: x ⋈ y.Sub p}¨ F {⟨𝕩×1000, (p.Add 𝕩×100).Cast ""⟩}¨ ↕5
 }
 
+Section "# 𝕨/𝕩/>"
+{
+  _case ← {
+    int ← "lib.so" •FFI ⟨"i32",(⊑𝕗)∾"_i32"⟩ ∾ ∾⟜"i32"¨ 1↓𝕗
+    r0 ← 𝕨 Int 𝕩
+    ptr ← "lib.so" •FFI ⟨"i32",(⊑𝕗)∾"_i32p"⟩ ∾ ∾⟜"*i32"¨ 1↓𝕗
+    r1 ← 𝕨 Ptr○(⋈⚇0) 𝕩
+    •Show ⟨𝕨0⊘1@, 𝕗, r0, r1⟩
+  }
+  
+  Auto ← { name 𝕊 args:
+    { 𝕊 onX:
+      wc‿xc ← 2↑/⁼onX
+      { 𝕊 noW‿vW‿wX:
+        sig ← ⟨name⟩ ∾ onX ⊏ (vW‿wX⥊¨'>') ∾¨ "𝕨"‿"𝕩"
+        {
+          noW?                 sig _case ⋈⁼⍟wX onX/args
+          ; (⋈⁼⍟vW onX¬⊸/args) sig _case ⋈⁼⍟wX onX/args
+        }
+      }¨ ⥊↕ 1+⟨wc=0, wc=1, xc=1⟩
+    }¨ ⥊↕ (≠args)⥊2
+  }
+  "inc" Auto ⟨50⟩ # 51
+  "sub" Auto 99‿9 # 90
+  "pack" Auto 9‿8‿7 # 987
+}
+
 
 # erroring:
 
