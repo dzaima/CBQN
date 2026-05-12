@@ -1,40 +1,29 @@
 #include "core.h"
 #include "utils/file.h"
-#include "utils/mem.h"
 #include "utils/talloc.h"
-#include "utils/cstr.h"
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
 
 #if defined(_WIN32)
-  #include <direct.h>
-  #include "windows/utf16.h"
-  // use wide char functions for unicode support / longer paths (potentially)
-  #include "windows/realpath.c"
-#endif
-
-#if !defined(_WIN32)
+  #include "windows/winFile.c"
+#else
+  #include "utils/mem.h"
+  #include "utils/cstr.h"
   typedef char* OsStr;
   #define OS_C(C) C
   #define toOsStr     toCStr
   #define freeOsStr   freeCStr
   #define OsStrDecode0 utf8Decode0
-#else
-  typedef WCHAR* OsStr;
-  #define OS_C(C) L##C
-  #define toOsStr     toWStr
-  #define freeOsStr   freeWStr
-  #define OsStrDecode0 utf16Decode0
-  #define DIR       _WDIR
-  #define dirent    _wdirent
-  #define opendir   _wopendir
-  #define readdir   _wreaddir
-  #define closedir  _wclosedir
-  #define mkdir(P, IGNORE) _wmkdir(P)
-  #define access _waccess
-  #define rename _wrename
-  #define unlink _wunlink
+  #define PREFERRED_SEP '/'
+  static bool isPathSep(uint32_t c) { return c=='/'; }
+  static bool isAbsolutePath(B x) { return o2cG(IGetU(x, 0))=='/'; }
+  static FILE* file_open_impl(B path, char* desc, char* mode) {
+    char* p = toCStr(path);
+    FILE* f = fopen(p, mode);
+    freeCStr(p);
+    return f;
+  }
 #endif
 
 typedef struct FileRef {
@@ -57,19 +46,7 @@ NOINLINE void fileRef_close(FILE* f) {
 }
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
-#if !defined(_WIN32)
-  char* p = toCStr(path);
-  FILE* f = fopen(p, mode);
-  freeCStr(p);
-#else
-  WCHAR wmode[8] = {0};
-  u64 len = strlen(mode);
-  assert(len<(sizeof(wmode)/sizeof(WCHAR)));
-  for (u64 i = 0; i<len; ++i) wmode[i] = (WCHAR)mode[i];
-  WCHAR *p = toWStr(path);
-  FILE* f = _wfopen(p, wmode);
-  freeWStr(p);
-#endif
+  FILE* f = file_open_impl(path, desc, mode);
   if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
   return f;
 }
@@ -81,20 +58,6 @@ static DIR* dir_open(B path) { // doesn't consume
   return f;
 }
 
-#if defined(_WIN32) || defined(_WIN64)
-#define PREFERRED_SEP '\\'
-static bool isPathSep(uint32_t c) { return c=='/' || c=='\\'; }
-static bool isAbsolutePath(B x) {
-  char* p = toCStr(x);
-  bool r = winIsAbsolute(p);
-  freeCStr(p);
-  return r;
-}
-#else
-#define PREFERRED_SEP '/'
-static bool isPathSep(uint32_t c) { return c=='/'; }
-static bool isAbsolutePath(B x) { return o2cG(IGetU(x, 0))=='/'; }
-#endif
 
 
 I8Arr* stream_bytes(FILE* f) {
@@ -160,6 +123,7 @@ B path_lines(B path) { // consumes; TODO rewrite this, it's horrible
 
 
 
+#if !defined(_WIN32)
 B path_rel(B base, B rel, char* name) {
   assert(isArr(base) || q_N(base));
   if (!isStr(rel)) thrF("%U: Path must be a list of characters", name);
@@ -180,18 +144,41 @@ B path_rel(B base, B rel, char* name) {
   decG(rel);
   return r;
 }
+#endif
 
 B path_parent(B path) {
   assert(isStr(path));
   usz pia = IA(path);
   if (pia==0) thrM("•file.Parent: Path must be non-empty");
-  SGetU(path)
-  for (i64 i = (i64)pia-2; i >= 0; i--) {
-    if (isPathSep(o2cG(GetU(path, i)))) return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
+  SGetU(path);
+  
+  i64 i = (i64)pia - 1;
+  i64 prefix = 0;
+  #if defined(_WIN32)
+    WinPathInfo pi = winPathInfo(path);
+    prefix = pi.prefixEnd;
+  #endif
+  i64 prefixX = IMAX(prefix, 1);
+  while (i >= prefixX && isPathSep(o2cG(GetU(path, i)))) i--;
+  while (i >= prefix) {
+    if (isPathSep(o2cG(GetU(path, i)))) {
+      return taga(arr_shVec(TI(path,slice)(path, 0, i+1)));
+    }
+    i--;
   }
-  if (isAbsolutePath(path)) return path;
+  #if defined(_WIN32)
+    if (pi.prefixEnd > 0) {
+      bool hasSep = isPathSep(o2cG(GetU(path, pi.prefixEnd-1)));
+      B r = taga(arr_shVec(TI(path,slice)(path, 0, pi.prefixEnd)));
+      if (pi.absoluteFollows) {
+        return hasSep? r : vec_addN(r, m_c32('\\'));
+      } else { // drive-relative path, "C:" → "C:.\"
+        return vec_join(r, m_c8vec_0(".\\"));
+      }
+    }
+  #endif
   decG(path);
-  u32* rp; B r = m_c32arrv(&rp, 2); rp[0] = '.'; rp[1] = PREFERRED_SEP;
+  u8* rp; B r = m_c8arrv(&rp, 2); rp[0]='.'; rp[1]=PREFERRED_SEP;
   return r;
 }
 B path_name(B path) {
@@ -494,7 +481,7 @@ char path_type(B path) {
   if (S_ISFIFO(mode)) return 'p';
   if (S_ISBLK (mode)) return 'b';
   if (S_ISCHR (mode)) return 'c';
-  #if !defined(_WIN32) && !defined(_WIN64)
+  #if !defined(_WIN32)
     if (S_ISLNK (mode)) return 'l';
     if (S_ISSOCK(mode)) return 's';
   #endif

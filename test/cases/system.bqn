@@ -123,8 +123,6 @@ a←b←0 ⋄ f←•ReBQN{primitives⇐⟨'¨'‿{a+↩1⋄𝕗},'∘'‿{b+↩
 •file.Exists "/dev/file that doesn't exist" %% 0
 !"Couldn't read file ""/dev/file that doesn't exist""" % •FChars "/dev/file that doesn't exist"
 ! (•path∾"/") ≡ •file.Parent •file.At "hi"
-!"•file.Parent: Path must be non-empty" % •file.Parent ""
-!"•file.Name: Path must be non-empty" % •file.Name ""
 
 !"𝕨 •file.Lines 𝕩: 𝕩 must be a list" % "testfile.bqn" •FLines 2‿2⥊<"abcd"
 !"𝕨 •file.Lines 𝕩: 𝕩 must be a list" % "testfile.bqn" •file.Lines <"abcd"
@@ -169,6 +167,17 @@ a←b←0 ⋄ f←•ReBQN{primitives⇐⟨'¨'‿{a+↩1⋄𝕗},'∘'‿{b+↩
 
 !"Failed to resolve ""/dev/file that doesn't exist"": No such file or directory" % •file.RealPath "/dev/file that doesn't exist"
 !"Failed to resolve ""/dev/file that doesn't exist"": No such file or directory" % •Import "/dev/file that doesn't exist"
+
+!"•file.Parent: Path must be non-empty" % •file.Parent ""
+!"•file.Name: Path must be non-empty" % •file.Name ""
+!"File path ended with a slash: ""/foo/bar/""" % •file.Name "/foo/bar/"
+•file.Name "/foo/bar" %% "bar"
+•file.Parent "/foo/bar/baz" %% "/foo/bar/"
+•file.Parent "/foo/bar/baz/" %% "/foo/bar/"
+•file.Parent "/foo/bar/baz//" %% "/foo/bar/"
+•file.Parent "/foo/bar/baz/////" %% "/foo/bar/"
+•file.Parent¨ "/"‿"//"‿"///"‿"////"‿"/////"‿"/a" %% 6⥊<"/"
+•file.Parent "foo" %% "./"
 
 # bad paths
 !"•file.At: Path must be a list of characters" % •file.At 1‿2
