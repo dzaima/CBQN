@@ -94,6 +94,7 @@ enum {
 };
 
 void gc_onVisit(Value* x) {
+  debug_assert(x->type < t_COUNT);
   switch (visit_mode) { default: UD;
     case GC_DEC_REFC:
       if (DEBUG && x->refc==0) fatal("decrementing refc 0");

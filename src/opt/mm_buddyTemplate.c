@@ -123,7 +123,10 @@ void BN(forHeap)(V2v f) {
     Value* s = ci.p;
     Value* e = (Value*)(ci.sz + (u8*)ci.p);
     while (s!=e) {
-      if (vg_def_v(s->type)!=t_empty) f(s);
+      if (vg_def_v(s->type)!=t_empty) {
+        debug_assert(s->type < t_COUNT);
+        f(s);
+      }
       s = (Value*)(BSZ(vg_def_v(s->mmInfo)&63) + (u8*)s);
     }
   }
