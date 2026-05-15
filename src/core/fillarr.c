@@ -62,8 +62,7 @@ static bool fillarr_canStore(B x) { return true; }
 static void fillarr_freeT(Value* x) { FillArr* s=(void*)x; dec(s->fill); decSh(x); mm_free(x); }
 
 static void fillslice_visit(Value* x) { FillSlice* s=(void*)x; mm_visitP(s->p); mm_visit(s->fill); VISIT_SHAPE(x); }
-static void fillslice_freeO(Value* x) { FillSlice* s=(void*)x; ptr_dec(s->p); dec(s->fill); decSh(x); }
-static void fillslice_freeF(Value* x) { fillslice_freeO(x); mm_free(x); }
+DEF_FREE(fillslice)                   { FillSlice* s=(void*)x; ptr_dec(s->p); dec(s->fill); decSh(x); }
 
 void fillarr_init(void) {
   TIi(t_fillarr,get)   = fillarr_get;   TIi(t_fillslice,get)   = fillslice_get;

@@ -750,9 +750,8 @@ void* m_customObj(u64 size, V2v visit, V2v freeO) {
   r->freeO = freeO;
   return r;
 }
-void customObj_visit(Value* v) { ((CustomObj*)v)->visit(v); }
-void customObj_freeO(Value* v) { ((CustomObj*)v)->freeO(v); }
-void customObj_freeF(Value* v) { ((CustomObj*)v)->freeO(v); mm_free(v); }
+static void customObj_visit(Value* v) { ((CustomObj*)v)->visit(v); }
+DEF_FREE(customObj) { ((CustomObj*)x)->freeO(x); }
 
 void def_fallbackTriv(Value* v) { // used while vtables aren't yet fully loaded; should become completely unused after typesFinished_init
   TIv(v,freeF)(v);
