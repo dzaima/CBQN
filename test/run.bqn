@@ -272,11 +272,14 @@ Run ← { 𝕊 testname:
         }
       ;@
     }⍟⊢ o.updMsgs ∨ o.updVals
-    skipm ← (×skipped)/∾⟨" (", •Repr skipped, " skipped)"⟩
+    notes ← ⟨⟩
+    notes∾↩ ((¬o.errm)∧×badMessage)⥊< ∾⟨•Repr badMessage, " mismatched error message", (1≠badMessage)/"s"⟩
+    notes∾↩ (×skipped)⥊< ∾⟨•Repr skipped, " skipped test", (1≠skipped)/"s"⟩
+    notes ↩ {"": 𝕩; ∾⟨" (",2↓𝕩,")"⟩} ∾"; "⊸∾¨ notes
     ran ← (≠tests)-skipped
     {
-      0=badCount? •Out filename∾": "∾(•Repr ran)∾" passed!"∾skipm;
-      •Out ∾⟨•Repr ran-badCount, '/', •Repr ran, skipm⟩ ∾ ((¬o.errm)∧×badMessage)/∾⟨"; ", •Repr badMessage, " mismatched error message", (1≠badMessage)/"s"⟩∾skipm
+      0=badCount? •Out filename∾": "∾(•Repr ran)∾" passed!"∾notes;
+      •Out ∾⟨•Repr ran-badCount, '/', •Repr ran, notes⟩
       exitCode ↩ 1
     }
   }⍟o.run @
