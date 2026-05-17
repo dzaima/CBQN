@@ -204,6 +204,7 @@ DEF_S(void, fill, c16, q_c16(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u
 DEF_S(void, fill, c32, q_c32(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u32* p = ms+(u32*)a; u32 v = o2cG(x); for (usz i = 0; i < l; i++) p[i] = v; }
 DEF_S(void, fill, f64, isF64(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { f64* p = ms+(f64*)a; f64 v = o2fG(x); for (usz i = 0; i < l; i++) p[i] = v; }
 DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
+  if (l==0) return;
   B* p = ms + (B*)a;
   for (usz i = 0; i < l; i++) p[i] = x;
   incBy(x, l);
