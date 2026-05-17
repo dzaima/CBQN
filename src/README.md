@@ -347,6 +347,11 @@ B r = mut_fv(name); // sets shape to a list
 B r = mut_fc(r, x); // copies the shape of x, doesn't consume x
 B r = mut_fcd(r, x); // copies the shape of x and consumes it
 Arr* r = mut_fp(r); // don't allocate/set any shape
+
+// direct data management: (these all are UB if the elements don't fil)
+COPY_TO(void* rp, u8 re, usz rs, B x, usz xs, usz len); // copy `len↑xs↓x` into `len↑xs↓rp`; x's eltype must be a subtype of re, i.e. must have el_or(re, TI(x,elType))==re!
+COPY_TO_FROM(void* rp, u8 re, void* xp, u8 xe, usz len); // copy `len↑xs↓x` into `len↑xs↓rp`; both xe and re must not be el_B
+FILL_TO(void* rp, u8 re, usz rs, B x, usz len); // fill `len↑xs↓rp` with repeated x
 ```
 
 

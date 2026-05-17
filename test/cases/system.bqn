@@ -92,7 +92,7 @@ a←b←0 ⋄ f←•ReBQN{primitives⇐⟨'¨'‿{a+↩1⋄𝕗},'∘'‿{b+↩
 ! ∧´ 2=•Type¨ •wdpath
 
 # •ns
-{abc⇐1 ⋄ dÊF⇐2}•ns.Get¨ ⟨"abc", "ABC", "abC", "abc___", "DêF", "__D__Ê__F__"⟩ %% 1‿1‿1‿1‿2‿2
+%USE eqvar ⋄ {abc⇐1 ⋄ dÊF⇐2}⊸•ns.Get _eqvar¨ ⟨"abc", "ABC", "abC", "abc___", "DêF", "__D__Ê__F__"⟩ %% 1‿1‿1‿1‿2‿2
 !"Field named ""abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþabcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ𝕨𝕨⍉!0123456789"" not found" % {abc⇐1 ⋄ dÊF⇐2}⊸•ns.Get "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞabcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ𝕨𝕨⍉!0123456789_"
 {abc⇐1 ⋄ dÊF⇐2 ⋄ n10⇐3}•ns.Has¨ ⟨"abc", "ABC", "abC", "abc___", "DêF", "__D__Ê__F__", "àbc", "def", "", ↕0, "𝕨", "012", "n10", "n1_0"⟩ %% 1‿1‿1‿1‿1‿1‿0‿0‿0‿0‿0‿0‿1‿1
 ∨´{⇐}•ns.Has¨↑"abc123AEWQE___àÀ𝕨𝕩" %% 0

@@ -1356,19 +1356,19 @@ B getTermNS(void) {
 static bool name_isUpper(u32 c) { return (c>='A' & c<='Z') || (c>=U'À' && c<=U'Þ'); }
 B slash_c2(B, B, B);
 B ne_c2(B, B, B);
-static NOINLINE B name_normalize(B x) {
+static NOINLINE B name_normalize(B x) { // consumes
   usz ia = IA(x); SGetU(x)
   for (ux i = 0; i < ia; i++) {
     u32 c0 = o2cG(GetU(x, i));
     if (name_isUpper(c0) || c0=='_') {
-      u32* rp; B r = m_c32arrv(&rp, ia);
-      COPY_TO(rp, el_c32, 0, x, 0, i);
+      Arr* xa = cpyC32Arr(incG(x));
+      u32* xp = c32arrv_ptr((TyArr*) xa);
       while (i < ia) {
-        u32 c = o2cG(GetU(x, i));
-        rp[i] = name_isUpper(c) && c!=U'×'? c+32 : c;
+        u32 c = xp[i];
+        xp[i] = name_isUpper(c) && c!=U'×'? c+32 : c;
         i++;
       }
-      return C2(slash, C2(ne, x, m_c32('_')), r);
+      return C2(slash, C2(ne, x, m_c32('_')), taga(xa));
     }
   }
   return x;

@@ -352,8 +352,9 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   
   #define COPY_FNS(E, NUM) \
     static void m_copyG_##E(void* a, usz ms, B x, usz xs, usz l) { \
-      if (l==0) return;       \
       u8 xt = TY(x);          \
+      debug_assert(tcopy_##E##_fns[xt] != NULL); \
+      if (l==0) return;       \
       u8* xp = tyany_ptr(x);  \
       tcopy_##E##_fns[xt](ms + (E*)a, (xs << arrTypeWidthLog(xt)) + xp, l, a(x)); \
     }                         \
