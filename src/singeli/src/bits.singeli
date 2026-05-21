@@ -66,7 +66,7 @@ fn blend_arr_arr{E}(rp:*void, zero:*void, one:*void, mask:*void, len:u64) : void
 
 export_tab{'si_blend_arr_arr', each{blend_arr_arr, tup{u1, '!', '!', u8, u16, u32, u64}}}
 
-(if (has_sel{}) {
+if (has_sel{}) {
   fn bitwiden_n_8(src:*void, dst:*void, csz:ux, cam:ux) : void = {
     assert{cam>0}
     assert{(csz>1) & (csz<8)}
@@ -80,9 +80,9 @@ export_tab{'si_blend_arr_arr', each{blend_arr_arr, tup{u1, '!', '!', u8, u16, u3
     }}
   }
   export{'si_bitwiden_n_8', bitwiden_n_8}
-})
+}
 
-(if (hasarch{'AARCH64'}) {
+if (hasarch{'AARCH64'}) {
   fn bitnarrow_8_n(src:*void, dst:*void, csz:ux, cam:ux) : void = {
     assert{cam>0}
     assert{(csz>1) & (csz<8)}
@@ -107,4 +107,4 @@ export_tab{'si_blend_arr_arr', each{blend_arr_arr, tup{u1, '!', '!', u8, u16, u3
     }}
   }
   export{'si_bitnarrow_8_n', bitnarrow_8_n}
-})
+}

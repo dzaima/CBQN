@@ -70,7 +70,7 @@ export_tab{'si_wrap_inds', each{wrap_inds, tup{i8}}}
 
 def inds_buf_max = 64
 export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
-(if (has_sel{}) {
+if (has_sel{}) {
   fn select_rows_fn{TD, nt, ni, G}(inds:*u8, x0:*void, xbump:u64, r0:*void, rbump:u64, r1:*void) : ux = G{inds, *TD~~x0, xbump, *TD~~r0, rbump, r1} # TG,nt,ni args just for prettier names for debugging
   
   def select_rows{TD} = {
@@ -179,7 +179,7 @@ export{'INDS_BUF_MAX_COPY', ux~~inds_buf_max}
     def {S, D} = each{select{tup{u8,u16,u32,u64},.}, tup{t0, t1}}
     select_rows_widen{t1-t0}
   }, select_rows_better, range{4}}}
-})
+}
 
 
 
@@ -266,7 +266,7 @@ export_tab{'si_select_tab', join{table{select_fn,
 
 
 
-(if(has_sel{}) {
+if(has_sel{}) {
   fn simd_select_bool128(w0:*void, x0:*void, r0:*void, wl:u64, xl:u64) : u1 = {
     def TI = i8
     def VI = [arch_defvw{}/8]TI
@@ -313,7 +313,4 @@ export_tab{'si_select_tab', join{table{select_fn,
     }
   }
   export{'si_select_rows_8bit', si_select_rows_8bit}
-})
-
-
-
+}

@@ -375,7 +375,7 @@ B internalTemp_c2(B t, B w, B x) {
         FILL_TO(tyarr_ptr(GetU(x,4)), o2s(GetU(x,0)), o2s(GetU(x,1)), GetU(x,2), o2s(GetU(x,3)));
         return x;
       }
-      case 202: { // test/bitcpy.bqn
+      case 202: { // test/cases/fuzz/bitcpy.bqn
         SGetU(x)
         bit_cpyN(bitarr_ptr(GetU(x,0)), o2s(GetU(x,1)), bitany_ptr(GetU(x,2)), o2s(GetU(x,3)), o2s(GetU(x,4)));
         return x;
