@@ -333,9 +333,9 @@ B hash_c1(B t, B x) {
 
 
 STATIC_GLOBAL Body* rand_ns;
-STATIC_GLOBAL B rand_rangeName;   STATIC_GLOBAL NFnDesc* rand_rangeDesc;
-STATIC_GLOBAL B rand_dealName;    STATIC_GLOBAL NFnDesc* rand_dealDesc;
-STATIC_GLOBAL B rand_subsetName;  STATIC_GLOBAL NFnDesc* rand_subsetDesc;
+STATIC_GLOBAL NFnDesc* rand_rangeDesc;
+STATIC_GLOBAL NFnDesc* rand_dealDesc;
+STATIC_GLOBAL NFnDesc* rand_subsetDesc;
 #define RAND_START Scope* sc = c(NS,nfn_objU(t))->sc; \
                    u64 seed = sc->vars[0].u | sc->vars[1].u<<32;
 #define RAND_END sc->vars[0].u = seed>>32; \
@@ -650,9 +650,9 @@ static NOINLINE void rand_init() {
   rand_ns = m_nnsDesc("seed1", "seed2", "range", "deal", "subset");
   NSDesc* d = rand_ns->nsDesc;
   d->expGIDs[0] = d->expGIDs[1] = -1;
-  rand_rangeName  = m_c8vec_0("range");  gc_add(rand_rangeName);  rand_rangeDesc  = registerNFn(m_c8vec_0("(rand).Range"), rand_range_c1, rand_range_c2);
-  rand_dealName   = m_c8vec_0("deal");   gc_add(rand_dealName);   rand_dealDesc   = registerNFn(m_c8vec_0("(rand).Deal"),   rand_deal_c1, rand_deal_c2);
-  rand_subsetName = m_c8vec_0("subset"); gc_add(rand_subsetName); rand_subsetDesc = registerNFn(m_c8vec_0("(rand).Subset"),       c1_bad, rand_subset_c2);
+  rand_rangeDesc  = registerNFn(m_c8vec_0("(rand).Range"), rand_range_c1, rand_range_c2);
+  rand_dealDesc   = registerNFn(m_c8vec_0("(rand).Deal"),   rand_deal_c1, rand_deal_c2);
+  rand_subsetDesc = registerNFn(m_c8vec_0("(rand).Subset"),       c1_bad, rand_subset_c2);
 }
 B makeRand_c1(B t, B x) {
   if (!isF64(x)) thrM("•MakeRand 𝕩: 𝕩 must be a number");
