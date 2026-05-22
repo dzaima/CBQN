@@ -17,6 +17,9 @@ struct NFnDesc {
   FC2 c2;
 };
 
+typedef NFnDesc* NFnDescPointer;
+#define DEFINE_NFN STATIC_GLOBAL NFnDescPointer
+
 NFnDesc* registerNFn(B name, FC1 c1, FC2 c2); // should be called a constant number of times; consumes name
 B m_nfn(NFnDesc* desc, B obj); // consumes obj
 B nfn_name(B x); // doesn't consume

@@ -333,9 +333,7 @@ B hash_c1(B t, B x) {
 
 
 STATIC_GLOBAL Body* rand_ns;
-STATIC_GLOBAL NFnDesc* rand_rangeDesc;
-STATIC_GLOBAL NFnDesc* rand_dealDesc;
-STATIC_GLOBAL NFnDesc* rand_subsetDesc;
+DEFINE_NFN rand_rangeDesc, rand_dealDesc, rand_subsetDesc;
 #define RAND_START Scope* sc = c(NS,nfn_objU(t))->sc; \
                    u64 seed = sc->vars[0].u | sc->vars[1].u<<32;
 #define RAND_END sc->vars[0].u = seed>>32; \
@@ -674,9 +672,7 @@ B getRandNS(void) {
   }
   return incG(randNS);
 }
-STATIC_GLOBAL NFnDesc* bqnDesc;
-STATIC_GLOBAL NFnDesc* rebqnDesc;
-STATIC_GLOBAL NFnDesc* rebqnResDesc;
+DEFINE_NFN bqnDesc, rebqnDesc, rebqnResDesc;
 B rebqn_c1(B t, B x) {
   if (!isNsp(x)) thrM("•ReBQN 𝕩: Argument must be a namespace");
   B repl = ns_getC(x, "repl");
@@ -721,13 +717,7 @@ B currentError_c1(B t, B x) { thrM("•CurrentError 𝕩: No errors as error cat
 #endif
 
 STATIC_GLOBAL Body* hashmap_ns;
-STATIC_GLOBAL NFnDesc* hashmap_getDesc;
-STATIC_GLOBAL NFnDesc* hashmap_hasDesc;
-STATIC_GLOBAL NFnDesc* hashmap_setDesc;
-STATIC_GLOBAL NFnDesc* hashmap_deleteDesc;
-STATIC_GLOBAL NFnDesc* hashmap_countDesc;
-STATIC_GLOBAL NFnDesc* hashmap_keysDesc;
-STATIC_GLOBAL NFnDesc* hashmap_valuesDesc;
+DEFINE_NFN hashmap_getDesc, hashmap_hasDesc, hashmap_setDesc, hashmap_deleteDesc, hashmap_countDesc, hashmap_keysDesc, hashmap_valuesDesc;
 // Hash object handling defined in search.c
 extern B hashmap_build(B keys, usz n);
 extern B hashmap_lookup(B* vars, B w, B x);
@@ -774,7 +764,7 @@ B hashMap_c2(B t, B w, B x) {
   return ns;
 }
 
-STATIC_GLOBAL NFnDesc* fileAtDesc;
+DEFINE_NFN fileAtDesc;
 B fileAt_c1(B d, B x) {
   return path_rel(nfn_objU(d), x, "•file.At");
 }
@@ -784,7 +774,7 @@ B fileAt_c2(B d, B w, B x) {
   dec(w);
   return r;
 }
-STATIC_GLOBAL NFnDesc* fCharsDesc;
+DEFINE_NFN fCharsDesc;
 B fchars_c1(B d, B x) {
   return path_chars(path_rel(nfn_objU(d), x, "•file.Chars"));
 }
@@ -795,7 +785,7 @@ B fchars_c2(B d, B w, B x) {
   decG(x);
   return p;
 }
-STATIC_GLOBAL NFnDesc* fBytesDesc;
+DEFINE_NFN fBytesDesc;
 B fbytes_c1(B d, B x) {
   TyArr* tf = path_bytes(path_rel(nfn_objU(d), x, "•file.Bytes"));
   assert(tf->type == t_i8arr && reusable(taga(tf)));
@@ -809,7 +799,7 @@ B fbytes_c2(B d, B w, B x) {
   decG(x);
   return p;
 }
-STATIC_GLOBAL NFnDesc* fLinesDesc;
+DEFINE_NFN fLinesDesc;
 B flines_c1(B d, B x) {
   return path_lines(path_rel(nfn_objU(d), x, "•file.Lines"));
 }
@@ -831,7 +821,7 @@ B flines_c2(B d, B w, B x) {
   decG(s);
   return p;
 }
-STATIC_GLOBAL NFnDesc* importDesc;
+DEFINE_NFN importDesc;
 
 
 
@@ -874,18 +864,7 @@ B import_c1(B d, B x) {
 }
 
 
-STATIC_GLOBAL NFnDesc* fTypeDesc;
-STATIC_GLOBAL NFnDesc* fCreatedDesc;
-STATIC_GLOBAL NFnDesc* fAccessedDesc;
-STATIC_GLOBAL NFnDesc* fModifiedDesc;
-STATIC_GLOBAL NFnDesc* fSizeDesc;
-STATIC_GLOBAL NFnDesc* fExistsDesc;
-STATIC_GLOBAL NFnDesc* fListDesc;
-STATIC_GLOBAL NFnDesc* fMapBytesDesc;
-STATIC_GLOBAL NFnDesc* createdirDesc;
-STATIC_GLOBAL NFnDesc* realpathDesc;
-STATIC_GLOBAL NFnDesc* renameDesc;
-STATIC_GLOBAL NFnDesc* removeDesc;
+DEFINE_NFN fTypeDesc, fCreatedDesc, fAccessedDesc, fModifiedDesc, fSizeDesc, fExistsDesc, fListDesc, fMapBytesDesc, createdirDesc, realpathDesc, renameDesc, removeDesc;
 
 B list_c1(B d, B x) {
   return path_list(path_rel(nfn_objU(d), x, "•file.List"));
@@ -1486,7 +1465,7 @@ STATIC_GLOBAL Body* file_nsGen;
   F("rebqn", U"•ReBQN", tagu64(22,VAR_TAG)) \
 /* end of FOR_DEFAULT_SYSVALS */
 
-GLOBAL NFnDesc* ffiloadDesc;
+DEFINE_NFN ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
 B indexOf_c2(B t, B w, B x);
 GLOBAL bool fileInit;

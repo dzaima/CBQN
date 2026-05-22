@@ -3,8 +3,7 @@
 #include "utils/nfns.h"
 
 
-STATIC_GLOBAL NFnDesc* fn_invRegDesc;
-STATIC_GLOBAL NFnDesc* fn_invSwapDesc;
+DEFINE_NFN fn_invRegDesc, fn_invSwapDesc;
 B fn_invReg_c1 (B t,      B x) { B f = nfn_objU(t); return TI(f, fn_im)(f,    x); }
 B fn_invReg_c2 (B t, B w, B x) { B f = nfn_objU(t); return TI(f, fn_ix)(f, w, x); }
 B fn_invSwap_c1(B t,      B x) { B f = nfn_objU(t); return TI(f, fn_is)(f,    x); }

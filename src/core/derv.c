@@ -100,8 +100,7 @@ static B md2D_uc1(B t, B o, B x) {
   return TIv(m,m2_uc1)(m, o, f, g, x);
 }
 
-STATIC_GLOBAL NFnDesc* ucwWrapDesc;
-STATIC_GLOBAL NFnDesc* uc1WrapDesc;
+DEFINE_NFN ucwWrapDesc, uc1WrapDesc;
 
 static B fork_uc1(B t, B o, B x) {
   B f;
