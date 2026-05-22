@@ -422,9 +422,11 @@ usz depthF(B x) { // doesn't consume
   return r+1;
 }
 void tyarr_freeO(Value* x) { decSh(x); } // can't use DEF_FREE because it makes the functions static
-void slice_freeO(Value* x) { ptr_dec(((Slice*)x)->p); decSh(x); }
 void tyarr_freeF(Value* x) { tyarr_freeO(x); mm_free(x); }
-void slice_freeF(Value* x) { slice_freeO(x); mm_free(x); }
+
+void slice_freeO(Value* x) { decSh(x); ptr_dec(((Slice*)x)->p); }
+void slice_freeF(Value* x) { decSh(x); Arr* p = ((Slice*)x)->p; mm_free(x); ptr_dec(p); }
+
 void slice_visit(Value* x) { mm_visitP(((Slice*)x)->p); VISIT_SHAPE(x); }
 void slice_print(B x) { arr_print(x); }
 
