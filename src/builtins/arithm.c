@@ -103,8 +103,8 @@ GC1i("-", sub,    -v,              el_bit, bit_sel(x,m_f64(0),m_f64(-1)), SUB_BO
 GC1i("|", stile,  fabs(v),         el_bit, x, STILE_BODY, return m_f64(hypot(xv.re, xv.im)))
 GC1i("⌊", floor,  floor(v),        el_i32, x, FLOAT_BODY, (thrM("⌊𝕩: TODO complex"),(void)xv))
 GC1i("⌈", ceil,   ceil(v),         el_i32, x, FLOAT_BODY, (thrM("⌈𝕩: TODO complex"),(void)xv))
-GC1i("×", mul,    v==0?0:v>0?1:-1, el_bit, x, SIGN_MAIN, (thrM("×𝕩: TODO complex"),(void)xv))
-GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY, (thrM("¬𝕩: TODO complex"),(void)xv))
+GC1i("×", mul,    v==0?0:v>0?1:-1, el_bit, x, SIGN_MAIN,  f64 m=hypot(xv.re,xv.im); return m_cpx(xv.re/m, xv.im/m))
+GC1i("¬", not,    1-v,             el_bit, bit_negate(x), NOT_BODY, return m_cpx(1-xv.re, -xv.im))
 
 #define GC1f(N, F, CF, MSG) B N##_c1(B t, B x) { \
   if (isF64(x)) { f64 xv=o2fG(x); return m_cpxv(F); } \
