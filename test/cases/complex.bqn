@@ -16,6 +16,9 @@
 %USE eqvar ⋄ %USE approxCpx ⋄ ApproxCpx 3‿3 √_eqvar 3‿¯3 %% 1442‿721i1249
 %USE eqvar ⋄ %USE approxCpx ⋄ ApproxCpx 3‿¯3 ⋆_eqvar 2.2‿2.2 %% 11212‿9070i6590
 %USE eqvar ⋄ %USE approxCpx ⋄ ApproxCpx 2‿¯2 ⋆⁼_eqvar 3‿3 %% 1585‿74i¯333
+%USE eqvar ⋄ %USE approxCpx ⋄ ApproxCpx ×_eqvar ∾⟜(1.2i1.4⊸×) 0‿¯1‿1‿¯1.5‿1.5‿0i1‿0i¯1‿1i1‿¯1i1‿1i¯1‿¯1i¯1 %% 0‿¯1000‿1000‿¯1000‿1000‿0i1000‿0i¯1000‿707i707‿¯707i707‿707i¯707‿¯707i¯707‿0‿¯651i¯759‿651i759‿¯651i¯759‿651i759‿¯759i651‿759i¯651‿¯77i997‿¯997i¯77‿997i77‿77i¯997
+%USE eqvar ⋄ %USE approxCpx ⋄ ApproxCpx {r←¬_eqvar 𝕩 ⋄ !r≡1-𝕩 ⋄ r} 0‿¯1‿1‿¯1.5‿1.5‿0i1‿0i¯1‿1i1‿¯1i1‿1i¯1‿¯1i¯1 %% 1000‿2000‿0‿2500‿¯500‿1000i¯1000‿1000i1000‿0i¯1000‿2000i¯1000‿0i1000‿2000i1000
+%USE rand ⋄ K←•internal.Keep ⋄ ! (×∘K∘× ≡○K ×⍟2∘K) 1i1 ∾ ⍳˝ 2‿10 r.Range 0
 %USE arithdTest ⋄ %USE approxCpx ⋄ ApproxCpx ArithdTestX ⟨2.1i3.3,+ ,5.2i2.1⟩ %% 7300i5400
 %USE arithdTest ⋄ %USE approxCpx ⋄ ApproxCpx ArithdTestX ⟨2.1i3.3,- ,5.2i2.1⟩ %% ¯3100i1200
 %USE arithdTest ⋄ %USE approxCpx ⋄ ApproxCpx ArithdTestX ⟨2.1i3.3,× ,5.2i2.1⟩ %% 3990i21570
