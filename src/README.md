@@ -151,7 +151,7 @@ type field for heap-allocated objects:
   
   t_funWrap, t_md1Wrap, t_md2Wrap // types wrapping builtins for RT_WRAP; see rtwrap.c
 
-See src/h.h for more basic operations
+See src/core/h.h for more basic operations
 ```
 
 An object can be allocated with `mm_alloc(sizeInBytes, t_something)`. The returned object starts with the structure of `Value`, so custom data must be after that. `mm_free` can be used to force-free a heap-allocated object regardless of its reference count.
@@ -188,7 +188,7 @@ TSFREE(stack); // free the stack
 
 All virtual method accesses require that the argument is heap-allocated.
 
-You can get a virtual function of a `B` object with `TI(x, something)`. There's also `TIv(x, something)` for a pointer `x` instead. See `#define FOR_TI` in `src/h.h` for available functions.
+You can get a virtual function of a `B` object with `TI(x, something)`. There's also `TIv(x, something)` for a pointer `x` instead. See `#define FOR_TI` in `src/core/h.h` for available functions.
 
 Call a BQN function object with `c1(f, x)` or `c2(f, w, x)`. A specific builtin can be called by looking up the appropriate name in `src/builtins.h`, adding the `bi_` prefix, and invoking it with `c1`/`c2`. Note that these functions consume `w` and `x`, but leave the refcount of `f` untouched. (usually, which arguments are consumed is specified in a comment after either the function definition or prototype)
 
@@ -350,7 +350,7 @@ Arr* r = mut_fp(r); // don't allocate/set any shape
 
 // direct data management: (these all are UB if the elements don't fil)
 COPY_TO(void* rp, u8 re, usz rs, B x, usz xs, usz len); // copy `len↑xs↓x` into `len↑xs↓rp`; x's eltype must be a subtype of re, i.e. must have el_or(re, TI(x,elType))==re!
-COPY_TO_FROM(void* rp, u8 re, void* xp, u8 xe, usz len); // copy `len↑xs↓x` into `len↑xs↓rp`; both xe and re must not be el_B
+COPY_TO_FROM(void* rp, u8 re, void* xp, u8 xe, usz len); // copy `len↑xs↓x` into `len↑xs↓rp`; both xe and re must not be el_B, and len must not be 0
 FILL_TO(void* rp, u8 re, usz rs, B x, usz len); // fill `len↑xs↓rp` with repeated x
 ```
 
@@ -427,7 +427,7 @@ A fancier message can be created with `thrF(message, …)` with printf-like (but
 %B   a B object, formatted by •Repr (be very very careful to not give a potentially large object, which'd lead to unreadably long messages!)
 %%   "%"
 ```
-See `#define CATCH` in `src/h.h` for how to catch errors.
+See `#define CATCH` in `src/core/h.h` for how to catch errors.
 
 Use `assert(predicate)` for checks (for optimized builds they're replaced with `if (!predicate) invoke_undefined_behavior();` so it's still invoked!!). `UD;` can be used to explicitly invoke undefined behavior (equivalent in behavior to `assert(false);`), which is useful for things like untaken `default` branches in `switch` statements.
 
