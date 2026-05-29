@@ -102,15 +102,15 @@ NOINLINE void farr_print(FILE* f, B x) { // should accept refc=0 arguments for d
   SGetU(x)
   usz ia = IA(x);
   if (r!=1) {
-    if (r==0) {
+    if (r==0 && ia==1) {
       fprintf(f, "<");
       fprintI(f, GetU(x,0));
       return;
     }
-    usz* sh = SH(x);
+    if (r==0) fprintf(f, "⟨⟩");
     for (i32 i = 0; i < r; i++) {
       if(i!=0) fprintCodepoint(f, U'‿');
-      fprintf(f, N64d, (u64)sh[i]);
+      fprintf(f, N64d, (u64)SH(x)[i]);
     }
     fprintCodepoint(f, U'⥊');
   } else if (ia>0) {
