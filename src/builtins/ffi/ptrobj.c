@@ -78,22 +78,31 @@ static bool ty_compat(B a, B b) {
   }
 }
 
-static B ptrobjCast_c1(B t, B x) {
-  B h = nfn_objU(t);
-  vfyStr(x, "ptrObj.Cast", "𝕩");
-  U32Span src = toC32Null(&x, true); B o;
+static NOINLINE B parsePointerType(B x, enum ParseTypeFor kind) { // consumes x
+  U32Span src = toC32Null(&x, kind!=typeFor_value); B o;
   if (src.start != src.end) {
     ArgParseState st;
     st.pc.xp = &x;
     st.pc.xia = 1;
     st.allowMut = st.needFull = false;
     st.outermost = false;
-    o = parseFFIType(&st, 2, src);
+    o = parseFFIType(&st, kind, src);
   } else {
     o = FFIPRIM_VOID;
   }
   decG(x);
-  return m_ptrobj_s(ptrh_ptr(h), o);
+  return o;
+}
+B foreignSizeof_c1(B t, B x) {
+  B type = parsePointerType(vfyStr(x, "•foreign.Sizeof", "𝕩"), typeFor_sizeof);
+  ux size = foreignSize(type);
+  dec(type);
+  return m_f64(size);
+}
+
+static B ptrobjCast_c1(B t, B x) {
+  B h = nfn_objU(t);
+  return m_ptrobj_s(ptrh_ptr(h), parsePointerType(vfyStr(x, "(pointer).Cast", "𝕩"), typeFor_cast));
 }
 static B ptrobjRead_c1(B t, B x) {
   B h = nfn_objU(t);

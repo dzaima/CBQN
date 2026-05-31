@@ -27,7 +27,8 @@
 /*  arithm.c*/M(sin,"•math.Sin") M(cos,"•math.Cos") M(tan,"•math.Tan") M(asin,"•math.Asin") M(acos,"•math.Acos") M(atan,"•math.Atan") \
 /*  arithm.c*/M(sinh,"•math.Sinh") M(cosh,"•math.Cosh") M(tanh,"•math.Tanh") M(asinh,"•math.Asinh") M(acosh,"•math.Acosh") M(atanh,"•math.Atanh") \
 /*  arithm.c*/M(cbrt,"•math.Cbrt") M(log2,"•math.Log2") M(log10,"•math.Log10") M(log1p,"•math.Log1p") M(expm1,"•math.Expm1") M(fact,"•math.Fact") M(logfact,"•math.LogFact") \
-/*  arithm.c*/M(erf,"•math.Erf") M(erfc,"•math.ErfC") M(sum,"•math.Sum")
+/*  arithm.c*/M(erf,"•math.Erf") M(erfc,"•math.ErfC") M(sum,"•math.Sum") \
+/*     ffi.c*/M(foreignSizeof,"•foreign.Sizeof")
 
 #define FOR_PM1(A,M,D) \
 /*    md1.c*/A(tbl,"⌜") A(each,"¨") A(fold,"´") A(scan,"`") A(const,"˙") A(swap,"˜") A(cell,"˘") A(insert,"˝") \

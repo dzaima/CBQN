@@ -12,17 +12,8 @@
 # generally weird
 !"•FFI: 𝕩 must be a list" % @•FFI @
 !"•FFI: 𝕩 must be a list" % @•FFI 2‿2⥊<"a"
-!"•FFI: Path must be a list of characters" % 1‿2 •FFI ""‿"bqn_init"
-!"•FFI: Path must be a list of characters" % (2‿2⥊@) •FFI ""‿"bqn_init"
-!"•FFI: Path must be a list of characters" % ∘‿2 •FFI ""‿"bqn_init"
-!"↑‿path •FFI 𝕩: Path must be a list of characters" % ↑‿2 •FFI ""‿"bqn_init"
-!"↑‿path •FFI 𝕩: Path must be a list of characters" % ⟨↑,'a'‿2⟩ •FFI ""‿"bqn_init"
-!"↑‿path •FFI 𝕩: Path must be a list of characters" % ⟨↑,2‿2⥊"a"⟩ •FFI ""‿"bqn_init"
-!"↑‿path •FFI 𝕩: Path cannot contain slashes" % ↑‿"foo/bar.so" •FFI ""‿"bqn_init"
 !"This function can't be called monadically" % •FFI ""‿"bqn_init"
-!"•FFI: Failed to find symbol: " % @ •FFI⎊{𝕊: ! 29↑•CurrentError@} ""‿"bqn_this symbol doesn't exist"
-!"•FFI: Failed to load library: " % "/dev/file that doesn't exist" •FFI⎊{𝕊: ! 30↑•CurrentError@} ""‿"free"
-!"•FFI: Failed to load library: " % ↑‿"library that doesn't exist" •FFI⎊{𝕊: ! 30↑•CurrentError@} ""‿"free"
+!"This function can't be called monadically" % •foreign.Function ""‿"bqn_init"
 !"•FFI: Symbol name must be a string" % @•FFI "hello"
 !"•FFI: Symbol name must be a string" % @•FFI ""‿1‿"i32"
 !"•FFI: Symbol name must be a string" % @•FFI ""‿["ab","cd"]‿"i32"
@@ -55,6 +46,38 @@
 !"FFI type: Types must not contain null characters; ""→␀i32""‿""bqn_init""" % %USE ErrFFI ⟨@∾"i32", "bqn_init"⟩
 !"FFI type: Unexpected character where type is expected: '.' (@+46); ·‿""bqn_init""‿"">→...""" % %USE ErrFFI ""‿"bqn_init"‿">..."
 !"•FFI: Cannot have multiple instances of ""...""" % @•FFI""‿"bqn_init"‿"..."‿"..."
+
+# bad symbols/library
+!"•FFI: Path must be a list of characters" % 1‿2 •FFI ""‿"bqn_init"
+!"•FFI: Path must be a list of characters" % (2‿2⥊@) •FFI ""‿"bqn_init"
+!"•FFI: Path must be a list of characters" % ∘‿2 •FFI ""‿"bqn_init"
+!"•FFI: Failed to load library: " % "/dev/file that doesn't exist" •FFI⎊{𝕊: ! 30↑•CurrentError@} ""‿"free"
+!"•FFI: Failed to load library: " % ↑‿"library that doesn't exist" •FFI⎊{𝕊: ! 30↑•CurrentError@} ""‿"free"
+!"•foreign.Pointer: Failed to load library: " % "/dev/file that doesn't exist" •foreign.Pointer⎊{𝕊: ! 42↑•CurrentError@} "i32"‿"free"
+
+!"↑‿path •FFI 𝕩: Path must be a list of characters" % ↑‿2 •FFI ""‿"bqn_init"
+!"↑‿path •FFI 𝕩: Path must be a list of characters" % ⟨↑,'a'‿2⟩ •FFI ""‿"bqn_init"
+!"↑‿path •FFI 𝕩: Path must be a list of characters" % ⟨↑,2‿2⥊"a"⟩ •FFI ""‿"bqn_init"
+!"↑‿path •FFI 𝕩: Path cannot contain slashes" % ↑‿"foo/bar.so" •FFI ""‿"bqn_init"
+!"↑‿path •FFI 𝕩: Path cannot contain slashes" % ↑‿"foo/bar.so" •foreign.Function ""‿"bqn_init"
+!"↑‿path •foreign.Pointer 𝕩: Path must be a list of characters" % ↑‿@ •foreign.Pointer "i32"‿"free"
+
+!"•FFI: Failed to find symbol: " % @ •FFI⎊{𝕊: ! 29↑•CurrentError@} ""‿"bqn_this symbol doesn't exist"
+!"•foreign.Value: Failed to find symbol: " % @ •foreign.Value⎊{𝕊: ! 39↑•CurrentError@} ""‿"bqn_this symbol doesn't exist"
+
+# wrong usage of •foreign stuff
+!"•foreign.Sizeof: 𝕩 must be a string" % •foreign.Sizeof 'a'
+!"FFI type: Unexpected character where type is expected: '?' (@+63); at •foreign.Sizeof ""→???""" % •foreign.Sizeof⎊("" %USE _errFFICore) "???"
+!"FFI type: Unexpected character where type is expected: '?' (@+63); at 𝕨 •foreign.Pointer ""→???""‿·" % @ •foreign.Pointer⎊("" %USE _errFFICore) "???"‿"free"
+!"FFI type: Unexpected character where type is expected: '?' (@+63); at 𝕨 •foreign.Value ""→???""‿·" % @ •foreign.Value⎊("" %USE _errFFICore) "???"‿"free"
+!"•foreign.Value: Second element of 𝕩 must be a string" % @ •foreign.Value @‿"free"
+!"•foreign.Value: Symbol name must be a string" % @ •foreign.Value "i32"‿@
+!"•foreign.Value: 𝕩 must be a two-item list" % @ •foreign.Value "i32"‿"i32"‿"i32"
+!"•foreign.Value: 𝕩 must be a two-item list" % @ •foreign.Value ≍"i32"‿"free"
+!"•foreign.Pointer: 𝕩 must be a two-item list" % @ •foreign.Pointer "i32"
+!"•foreign.Pointer: 𝕩 must be a two-item list" % @ •foreign.Pointer @
+!"FFI type: Type string cannot be empty" % @ •foreign.Value ""‿"free"
+
 
 # >/𝕨/𝕩
 !"FFI: '>' specified multiple times on the same arg; ·‿""bqn_init""‿"">→>i32""" % %USE ErrFFI ""‿"bqn_init"‿">>i32"
@@ -151,7 +174,7 @@ f←@•FFI"&"‿"memcpy"‿"&i16"‿"*i8"‿"usize" ⋄ G←{F⟨𝕩,↕0,0⟩
 f←@•FFI"&"‿"memcpy"‿"&{i16}"‿"*i8"‿"usize" ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ⋈¨¯32768‿32767 %% ⋈¨¯32768‿32767
 f←@•FFI"&"‿"memcpy"‿"&f32"‿"*i8"‿"usize" ⋄ G←{F⟨𝕩,↕0,0⟩} ⋄ G ⟨∞,¯∞,∞÷∞⟩∾10÷˜↕10 %% ⟨∞,¯∞,∞÷∞⟩∾0‿0.10000000149011612‿0.20000000298023224‿0.30000001192092896‿0.4000000059604645‿0.5‿0.6000000238418579‿0.699999988079071‿0.800000011920929‿0.8999999761581421
 f←@•FFI"&"‿"memcpy"‿"&i32"‿"*i16:u1"‿"usize" ⋄ F ⟨⋈5, 32⥊1, 4⟩ %% ⋈¯1
-f←@•FFI⟨"&","memcpy","&i8","*i8","usize:u1"⟩ ⋄ F ⟨¯100+↕10, ↕10, (8×%USE sizesize)↑0‿0‿1⟩ %% (↕4)∾4↓¯100+↕10
+f←@•FFI⟨"&","memcpy","&i8","*i8","usize:u1"⟩ ⋄ F ⟨¯100+↕10, ↕10, (8×•foreign.Sizeof"usize")↑0‿0‿1⟩ %% (↕4)∾4↓¯100+↕10
 f←@•FFI"&"‿"memcpy"‿"&i16"‿"*i32"‿"usize" ⋄ F ⟨¯100+↕10, ⟨123+456×2⋆16, ¯2⟩, 8⟩ %% 123‿456‿¯2‿¯1∾4↓¯100+↕10
 f←@•FFI⟨"usize","strlen","*i8"⟩ ⋄ ⟨⟩ F ⋈1‿2‿3‿0 %% 3
 f←@•FFI⟨"&","memcpy","&i8","[4]i8","usize"⟩ ⋄ F ⟨10⥊0, 3+↕4, 4⟩ %% 3‿4‿5‿6‿0‿0‿0‿0‿0‿0
@@ -295,14 +318,14 @@ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿"usize" ⋄ 1⊑F ⟨↕5, "Ah"�
 !"Expected integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Add '!'}}
 !"Expected pointer object or integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Sub '!'}}
 !"Expected non-negative integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Field '!'}}
-!"ptrObj.Cast: 𝕩 must be a string" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Cast '!'}}
+!"(pointer).Cast: 𝕩 must be a string" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Cast '!'}}
 !"Expected integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Read '!'}}
 !"FFI: Improper value for i8: character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Write '!'}}
 
 !"FFI: Cannot pass an array to *i64 in this context, must use pointer objects" % f←@•FFI""‿"bqn_init"‿"&{*i64}" ⋄   F ⟨   3⥊<⋈↕7⟩
-⋄                  f←@•FFI"*i32:u1"‿"memcpy"‿"⥊{*i16}"‿"*{*i64}"‿"usize" ⋄ {((𝕩.Add 1).Cast"i8").Sub 𝕩.Cast"i8"}⚇0 F ⟨3, 3⥊<⋈↕7,     3×%USE sizesize⟩   %% ⟨4,⟨⟨2⟩,⟨2⟩,⟨2⟩⟩⟩
-%USE Walloc {{𝕊al: f←@•FFI"*i32:u1"‿"memcpy"‿"⥊{*i16}"‿"*{*i64}"‿"usize" ⋄ {((𝕩.Add 1).Cast"i8").Sub 𝕩.Cast"i8"}⚇0 F ⟨3, 3⥊<⋈""Al 1, 3×%USE sizesize⟩}} %% ⟨4,⟨⟨2⟩,⟨2⟩,⟨2⟩⟩⟩
-%USE Walloc {{𝕊al: f←@•FFI"*i32:u1"‿"memcpy"‿"⥊{*i16}"‿"&{*i64}"‿"usize" ⋄ {((𝕩.Add 1).Cast"i8").Sub 𝕩.Cast"i8"}⚇0 F ⟨3, 3⥊<⋈""Al 1, 3×%USE sizesize⟩}} %% ⟨4,⟨⟨2⟩,⟨2⟩,⟨2⟩⟩,⟨⟨8⟩,⟨8⟩,⟨8⟩⟩⟩
+⋄                  f←@•FFI"*i32:u1"‿"memcpy"‿"⥊{*i16}"‿"*{*i64}"‿"usize" ⋄ {((𝕩.Add 1).Cast"i8").Sub 𝕩.Cast"i8"}⚇0 F ⟨3, 3⥊<⋈↕7,     3×•foreign.Sizeof"usize"⟩   %% ⟨4,⟨⟨2⟩,⟨2⟩,⟨2⟩⟩⟩
+%USE Walloc {{𝕊al: f←@•FFI"*i32:u1"‿"memcpy"‿"⥊{*i16}"‿"*{*i64}"‿"usize" ⋄ {((𝕩.Add 1).Cast"i8").Sub 𝕩.Cast"i8"}⚇0 F ⟨3, 3⥊<⋈""Al 1, 3×•foreign.Sizeof"usize"⟩}} %% ⟨4,⟨⟨2⟩,⟨2⟩,⟨2⟩⟩⟩
+%USE Walloc {{𝕊al: f←@•FFI"*i32:u1"‿"memcpy"‿"⥊{*i16}"‿"&{*i64}"‿"usize" ⋄ {((𝕩.Add 1).Cast"i8").Sub 𝕩.Cast"i8"}⚇0 F ⟨3, 3⥊<⋈""Al 1, 3×•foreign.Sizeof"usize"⟩}} %% ⟨4,⟨⟨2⟩,⟨2⟩,⟨2⟩⟩,⟨⟨8⟩,⟨8⟩,⟨8⟩⟩⟩
 
 # untyped pointers
 !"(pointer).Field 𝕩: Pointer type must be either array or struct" % %USE WallocE {{𝕊al: ("" Al 99).Field 0}}
@@ -317,8 +340,8 @@ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿"usize" ⋄ 1⊑F ⟨↕5, "Ah"�
 !"FFI type: Expected type to end; at (pointer).Cast ""i32→f32""" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Cast "i32f32"}⎊("" %USE _errFFICore)}
 !"FFI type: Expected type, got end of string; at (pointer).Cast ""{→""" % %USE WallocE {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Cast "{"}⎊("" %USE _errFFICore)}
 !"FFI type: 0-element arrays not supported; at (pointer).Cast ""{[4]i32,[→0]i32}""" % %USE WallocE {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Cast "{[4]i32,[0]i32}"}⎊("" %USE _errFFICore)}
-!"ptrObj.Cast: 𝕩 must be a string" % %USE WallocE {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Cast @}}
-!"ptrObj.Cast: 𝕩 must be a string" % %USE WallocE {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Cast 'i'‿3‿'2'}}
+!"(pointer).Cast: 𝕩 must be a string" % %USE WallocE {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Cast @}}
+!"(pointer).Cast: 𝕩 must be a string" % %USE WallocE {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Cast 'i'‿3‿'2'}}
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Cast 1↓0∾"{i32,*i32}"}} %% 0
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Add 123}} %% ¯123
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Sub 123}} %% 123
@@ -375,3 +398,9 @@ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿"usize" ⋄ 1⊑F ⟨↕5, "Ah"�
 %USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ a ← (p.Add 10).Cast"i16:c8" ⋄ f←@•FFI"*i16"‿"memcpy"‿"&·i16:c8"‿"*i16:c8"‿"usize" ⋄        (F ⟨a, p.Cast"", 8⟩).ReadList 4}} %% ↕4
 %USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ Cpy ⟨(p.Add 10).Cast"i16:c8", p.Cast"", 8⟩ ⋄ p.ReadList 20}} %% ∾⟨↕10, ↕4, 6⥊0⟩
 %USE Walloc {{𝕊al: p ← "i16" Al 99 ⋄ p.Write¨˜ ↕10 ⋄ a ← (p.Add 10).Cast"i16:c8" ⋄ f←@•FFI"*:i8"‿"memcpy"‿"&i16"   ‿"*:i8"   ‿"usize" ⋄ ! a ≡ 1⊑F ⟨a, p.Cast"", 8⟩ ⋄ p.ReadList 20}} %% ∾⟨↕10, ↕4, 6⥊0⟩
+
+# •foreign things
+•foreign.Sizeof¨ "bool"‿"i8"‿"u8"‿"i16"‿"u32"‿"i64" %% 1‿1‿1‿2‿4‿8
+•foreign.Sizeof¨ "[1000000]i16"‿"[1000][100]i64" %% 2000000‿800000
+!"FFI type: Array size too large" % •foreign.Sizeof "[1000000000][1000000000][1000000000]i8"
+(! 1=•Type)¨ •foreign.Sizeof¨ "{{{i8}}}"‿"{i32,i8,*i8,[4]i32}"

@@ -11,7 +11,14 @@ NOINLINE B ffiThrImpl(u32* currOff, ParseContext* pc, char* str, va_list a) {
   
   // B l0 = emptyCVec();
   // l0 = append_fmt(l0, "at 𝕨 •FFI ", pc->curr, pc->xia);
-  B l0 = utf8Decode0(pc->xia==1? "at (pointer).Cast " : "at 𝕨 •FFI ");
+  char* where = "at 𝕨 •FFI ";
+  if (pc->xia == 1) switch (pc->kind) {
+    case typeFor_value: where = "at 𝕨 •foreign.Value "; break;
+    case typeFor_pointer: where = "at 𝕨 •foreign.Pointer "; break;
+    case typeFor_sizeof: where = "at •foreign.Sizeof "; break;
+    case typeFor_cast: where = "at (pointer).Cast "; break;
+  }
+  B l0 = utf8Decode0(where);
   i64 caretPos = -1;
   for (ux i = 0; i < pc->xia; i++) {
     if (i!=0) l0 = vec_addN(l0, m_c32(U'‿'));
@@ -34,6 +41,7 @@ NOINLINE B ffiThrImpl(u32* currOff, ParseContext* pc, char* str, va_list a) {
       l0 = vec_addN(l0, m_c32(U'·'));
     }
   }
+  if (pc->kind==typeFor_value || pc->kind==typeFor_pointer) l0 = append_fmt(l0, "‿·");
   
   
   r = append_fmt(r, "\n%R", l0); decG(l0);
@@ -155,7 +163,7 @@ static B parseFFIType0(ArgParseState* st) {
       if (ptrKind == ptrk_in) {
         if (arrElts==0) if (*c==':' || *c==',' || *c=='}' || *c==0) goto prim_ptr;
       } else {
-        if (!st->allowMut) ffiThrF(pc, "FFI type: \"%cT\" %S", ptrChar, st->kind==0? "cannot be used here" : "can only be used in function argument types");
+        if (!st->allowMut) ffiThrF(pc, "FFI type: \"%cT\" %S", ptrChar, st->pc.kind==typeFor_arg? "cannot be used here" : "can only be used in function argument types");
         st->argMayRead = true;
       }
       st->mayNeedTmpBufs = true;
@@ -184,7 +192,7 @@ static B parseFFIType0(ArgParseState* st) {
       if (*c++!=']') ffiThrOF(c-1, pc, "FFI type: Expected ']'");
       if (arrElts==0) ffiThrOF(c-2, pc, "FFI type: 0-element arrays not supported");
       if (isOutermost) {
-        if (st->kind == 1) ffiThrF(pc, "•FFI: Functions cannot return arrays");
+        if (st->pc.kind == typeFor_ret) ffiThrF(pc, "•FFI: Functions cannot return arrays");
         goto toplevelArray; // TODO maybe could handle here, allowing the buffer to be statically allocated into ScratchMem?
       }
       
@@ -250,7 +258,7 @@ static B parseFFIType0(ArgParseState* st) {
   #undef NESTED_TYPE
 }
 static NOINLINE B parseFFIType(ArgParseState* st, u8 kind, U32Span span) {
-  st->kind = kind;
+  st->pc.kind = kind;
   st->pc.currOff = span.start;
   st->pc.currEnd = span.end;
   B r = parseFFIType0(st);
@@ -402,7 +410,23 @@ static NOINLINE void* foreign_getSymbol(B t, B w, B symName, char* me) { // cons
   return sym;
 }
 
-B ffiload_c2(B t, B w, B x0) {
+static NOINLINE B foreignVal(B t, B w, B x, bool value, char* me) {
+  if (!isArr(x) || RNK(x)!=1 || IA(x)!=2) thrF("%U: 𝕩 must be a two-item list", me);
+  void* sym = foreign_getSymbol(t, w, IGetU(x, 1), me);
+  B type = parsePointerType(vfyStr(IGet(x, 0), me, "Second element of 𝕩"), value? typeFor_value : typeFor_pointer);
+  B r;
+  if (value) {
+    r = foreignToBQN(sym, SM_NONE, type);
+    dec(type);
+  } else {
+    r = m_ptrobj_s(PTR_TO_U64(sym), type);
+  }
+  decG(x);
+  return r;
+}
+B foreignValue_c2(B t, B w, B x) { return foreignVal(t, w, x, true, "•foreign.Value"); }
+B foreignPointer_c2(B t, B w, B x) { return foreignVal(t, w, x, false, "•foreign.Pointer"); }
+B foreignFunction_c2(B t, B w, B x0) {
   if (!isArr(x0) || RNK(x0)!=1) thrM("•FFI: 𝕩 must be a list");
   usz xia = IA(x0);
   if (xia<2) thrM("•FFI: Function specification must have at least two items");
@@ -433,7 +457,7 @@ B ffiload_c2(B t, B w, B x0) {
       pc->curr = 0;
       st.allowMut = st.needFull = false;
       st.outermost = true;
-      retObj = parseFFIType(&st, 1, retSrc);
+      retObj = parseFFIType(&st, typeFor_ret, retSrc);
     }
   }
   ffi_type* retForeign = foreignType(retObj);
@@ -442,6 +466,7 @@ B ffiload_c2(B t, B w, B x0) {
   pc->scratchMemSize = IMAX(retForeign->size, IMAX(sizeof(u64), sizeof(ffi_arg)));
   
   // preprocess args, to find varargs separator and proper arg count (also validating the args being strings, and converting them to null-terminated-c32 form)
+  pc->kind = typeFor_arg;
   i32 fixedArgCount = -1;
   i32 argLengths[2] = {0,0};
   TALLOC(PreprocessedArg, preprocessedArgs, argn0);
@@ -514,7 +539,7 @@ B ffiload_c2(B t, B w, B x0) {
     i32 srcArgIdx = bothScalar && arg0->onW? 1 : positions[arg0->onW]++;
     st.allowMut = st.needFull = true;
     st.outermost = true;
-    B arg = parseFFIType(&st, 0, arg0->rest);
+    B arg = parseFFIType(&st, typeFor_arg, arg0->rest);
     #if GPR6_SYSV64
     gprSysvType(&gprSysvOk, arg);
     #endif

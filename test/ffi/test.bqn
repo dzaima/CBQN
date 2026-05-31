@@ -116,9 +116,9 @@ f ↩ "lib.so"•FFI ⟨"",  "arrstruct2Inc", ">&·"∾as2⟩ ⋄ •Show F arrS
 f ↩ "lib.so"•FFI ⟨"&", "arrstruct2Inc", ">&"∾as2⟩ ⋄ •Out •Repr F arrStruct2v
 f ↩ "lib.so"•FFI ⟨"", "add_int64structarr", "&·{[1]i64,[1]u64}", "i64"⟩ ⋄ •Show F ⟨5⥊<2⥊<⋈1e14, ¯1e15⟩
 
-
-f ↩ "lib.so"•FFI "&"‿"manyargs"‿"{f32,*i8,[5]i8}"‿"*[7]i8"‿"[4]i8"‿"&i8" ⋄ •Show F ⟨⟨31, 10+↕10, 5+↕5⟩, ⟨14+↕7, 21+↕7⟩, 40+↕4, 100+↕13⟩ # ⟨100, 31, 10,19, 5,9 ⋄ 14,20, 21,27, 40,43, 112⟩
-f ↩ "lib.so"•FFI  ""‿"manyargs"‿"{f32,*i8,[5]i8}"‿"*[7]i8"‿"[4]i8"‿"&i8" ⋄ •Show F ⟨⟨31, 10+↕10, 5+↕5⟩, ⟨14+↕7, 21+↕7⟩, 40+↕4, 100+↕13⟩
+manyArgs0 ← "{f32,*i8,[5]i8}"
+f ↩ "lib.so"•FFI "&"‿"manyargs"‿manyArgs0‿"*[7]i8"‿"[4]i8"‿"&i8" ⋄ •Show F ⟨⟨31, 10+↕10, 5+↕5⟩, ⟨14+↕7, 21+↕7⟩, 40+↕4, 100+↕13⟩ # ⟨100, 31, 10,19, 5,9 ⋄ 14,20, 21,27, 40,43, 112⟩
+f ↩ "lib.so"•FFI  ""‿"manyargs"‿manyArgs0‿"*[7]i8"‿"[4]i8"‿"&i8" ⋄ •Show F ⟨⟨31, 10+↕10, 5+↕5⟩, ⟨14+↕7, 21+↕7⟩, 40+↕4, 100+↕13⟩
 
 Section "# nested"
 {
@@ -187,6 +187,15 @@ Section "# size_t"
 {
   f ↩ "lib.so" •FFI "usize"‿"size_type"‿"&isize"‿"usize"‿"isize"
   •Show F ⟨¯1e5‿¯10, 1e8, ¯5⟩
+}
+
+Section "# globals"
+{
+  •Show "lib.so" •foreign.Value "i32"‿"globalI32"
+  f0‿f1‿f2 ← "lib.so" •foreign.Value manyArgs0‿"globalStruct"
+  •Show f0‿f2
+  •Show f1.ReadList 4
+  •Show ("lib.so" •foreign.Pointer "i64"‿"globalArr").ReadList 4
 }
 
 # erroring:

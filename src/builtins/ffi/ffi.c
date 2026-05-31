@@ -22,7 +22,7 @@
   }
   
   STATIC_GLOBAL bool ffiInit;
-  DEFINE_NFN ffiloadDesc, foreignFunctionDesc;
+  DEFINE_NFN ffiloadDesc, foreignFunctionDesc, foreignValueDesc, foreignPointerDesc;
   STATIC_GLOBAL Body* foreign_nsGen;
   STATIC_GLOBAL B nullPointer;
   static void initSysFFIDesc() {
@@ -38,9 +38,11 @@
     TIi(t_unkArr,freeO) = tyarr_freeO;
     TIi(t_unkArr,freeF) = tyarr_freeF;
     
-    ffiloadDesc = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
-    foreignFunctionDesc = registerNFn(m_c32vec_0(U"•foreign.Function"), c1_bad, ffiload_c2);
-    foreign_nsGen = m_nnsDesc("function","null");
+    ffiloadDesc = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, foreignFunction_c2);
+    foreignFunctionDesc = registerNFn(m_c32vec_0(U"•foreign.Function"), c1_bad, foreignFunction_c2);
+    foreignValueDesc = registerNFn(m_c32vec_0(U"•foreign.Value"), c1_bad, foreignValue_c2);
+    foreignPointerDesc = registerNFn(m_c32vec_0(U"•foreign.Pointer"), c1_bad, foreignPointer_c2);
+    foreign_nsGen = m_nnsDesc("function","value","pointer","null","sizeof");
     gc_add(nullPointer = m_ptrobj(0, m_ffiPrim(sty_void, sty_void), 0));
   }
   B getSysFFI(B path, bool namespace) {
@@ -48,13 +50,17 @@
     if (!namespace) return m_nfn(ffiloadDesc, inc(path));
     return m_nns(foreign_nsGen,
       m_nfn(foreignFunctionDesc, inc(path)),
+      m_nfn(foreignValueDesc, inc(path)),
+      m_nfn(foreignPointerDesc, inc(path)),
       incG(nullPointer),
+      incG(bi_foreignSizeof),
     );
   }
 
 #elif !FOR_BUILD
   static void sysffi_init() { }
   B getSysFFI(B path, bool namespace) { fatal("getSysFFI called"); }
+  B foreignSizeof_c1(B t, B x) { fatal("foreignSizeof_c1 called"); }
 #else // whatever build.bqn uses from •FFI
   #include "utils/nfns.h"
   #include "utils/cstr.h"
@@ -155,6 +161,7 @@
     if (namespace) thrM("•foreign isn't supported in bootstrap build");
     return m_nfn(ffiloadDesc, inc(path));
   }
+  B foreignSizeof_c1(B t, B x) { fatal("foreignSizeof_c1 called"); }
 #endif // FOR_BUILD
 
 void ffi_init(void) {

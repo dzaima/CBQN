@@ -494,3 +494,12 @@ double ret_snan64() {
   memcpy(&r, (uint64_t[]){0xFFF7000000000000}, 8);
   return r;
 }
+
+int32_t globalI32 = -123456789;
+static int8_t int8buf[] = {10,20,30,40};
+ManyArgs0 globalStruct = {
+  123.25,
+  int8buf,
+  {9,8,7,6,5}
+};
+int64_t globalArr[] = {1, 10000, 100000000, 1000000000000};

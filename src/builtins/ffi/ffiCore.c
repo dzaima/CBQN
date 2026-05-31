@@ -176,19 +176,26 @@ static uintptr_t ptrh_ptr(B n) { return ptrh_self(n)->ptrh.ptr; }
 static ux ptrh_stride(B n) { return ptrh_self(n)->ptrh.stride; }
 
 
-
+enum ParseTypeFor {
+  typeFor_arg, // •FFI argument type
+  typeFor_ret, // •FFI result type
+  typeFor_cast, // (pointer).Cast
+  typeFor_sizeof, // •foreign.Sizeof
+  typeFor_value, // •foreign.Value
+  typeFor_pointer, // •foreign.Pointer
+};
 typedef struct ParseContext {
   B* xp;
   ux scratchMemSize; // only initialized for function processing, and will just cycle through garbage for other things
   u32* currOff;
   u32* currEnd;
-  u32 xia, curr; // if xia>=2, •FFI; else, xia==1 and curr can be uninitialized
+  u32 xia, curr; // if kind==typeFor_arg or typeFor_ret, xia>=2 and curr is an index in xp; else, xia==1 and curr can be uninitialized
+  u8 kind; // enum ParseTypeFor
 } ParseContext;
 typedef struct ArgParseState {
   ParseContext pc;
   bool mayNeedTmpBufs; // whether tmpBufs in ScratchMemAlloc is necessary
   B* mutList; // list of &T / ⥊T FFICompoundType values
-  u8 kind; // 0: arg; 1: result type; 2: cast
   
   // state mutated in parseFFIType0:
   bool argMayRead; // whether any ⥊T / &T is present in this arg, and as such needs a pass afterwards for computing its offset
@@ -216,6 +223,7 @@ static NOINLINE U32Span toC32Null(B* xp, bool acceptEmpty) { // assumes *xp is a
   return (U32Span) {src, src+ia};
 }
 static B parseFFIType(ArgParseState* st, u8 kind, U32Span span);
+static NOINLINE B parsePointerType(B x, enum ParseTypeFor); // consumes x
 B vfyStr(B x, char* name, char* arg);
 
 
