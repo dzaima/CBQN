@@ -19,6 +19,15 @@
     assert(sizeof(FFIEnt) % sizeof(ffi_type*) == 0);
     assert(8 % _Alignof(ffi_type) == 0);
     assert(sty_u16==sty_u8+1 && sty_u32==sty_u16+1); // assumption made by code for *u8 via el_i8 & co
+  }
+  
+  STATIC_GLOBAL bool ffiInit;
+  DEFINE_NFN ffiloadDesc, foreignFunctionDesc;
+  STATIC_GLOBAL Body* foreign_nsGen;
+  STATIC_GLOBAL B nullPointer;
+  static void initSysFFIDesc() {
+    if (ffiInit) return;
+    ffiInit = true;
     ptrobj_init();
     foreignFnDesc = registerNFn(m_c8vec_0("(foreign function)"), c1_bad, c2_bad);
     TIi(t_ffiType,freeO) = ffiType_freeO; TIi(t_ffiScratchMem,freeO) = ffiScratchMem_freeO;
@@ -28,11 +37,24 @@
     TIi(t_unkArr,visit) = noop_visit;
     TIi(t_unkArr,freeO) = tyarr_freeO;
     TIi(t_unkArr,freeF) = tyarr_freeF;
+    
+    ffiloadDesc = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
+    foreignFunctionDesc = registerNFn(m_c32vec_0(U"•foreign.Function"), c1_bad, ffiload_c2);
+    foreign_nsGen = m_nnsDesc("function","null");
+    gc_add(nullPointer = m_ptrobj(0, m_ffiPrim(sty_void, sty_void), 0));
+  }
+  B getSysFFI(B path, bool namespace) {
+    initSysFFIDesc();
+    if (!namespace) return m_nfn(ffiloadDesc, inc(path));
+    return m_nns(foreign_nsGen,
+      m_nfn(foreignFunctionDesc, inc(path)),
+      incG(nullPointer),
+    );
   }
 
 #elif !FOR_BUILD
   static void sysffi_init() { }
-  B ffiload_c2(B t, B w, B x) { fatal("•FFI called"); }
+  B getSysFFI(B path, bool namespace) { fatal("getSysFFI called"); }
 #else // whatever build.bqn uses from •FFI
   #include "utils/nfns.h"
   #include "utils/cstr.h"
@@ -113,6 +135,7 @@
     return r;
   }
   
+  DEFINE_NFN ffiloadDesc;
   static void sysffi_init() {
     HArr_p a = m_harrUv(8);
     a.a[0] = m_c8vec_0("chdir");
@@ -126,6 +149,11 @@
     NOGC_E;
     ffi_names = a.b; gc_add(ffi_names);
     forbuildDesc = registerNFn(m_c8vec_0("(function for build)"), forbuild_c1, c2_bad);
+    ffiloadDesc = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
+  }
+  B getSysFFI(B path, bool namespace) {
+    if (namespace) thrM("•foreign isn't supported in bootstrap build");
+    return m_nfn(ffiloadDesc, inc(path));
   }
 #endif // FOR_BUILD
 

@@ -271,6 +271,8 @@ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿"usize" ⋄ 1⊑F ⟨↕5, "Ah"�
 %USE Walloc {{𝕊al: 1∘("{i32,i32,i32}" Al 99).Field⎊0¨ ¯2+↕8}} %% 0‿0‿1‿1‿1‿0‿0‿0
 %USE Walloc {{𝕊al: 1∘("[5]u8"         Al 99).Field⎊0¨ ¯2+↕9}} %% 0‿0‿1‿1‿1‿1‿1‿0‿0
 %USE Walloc {{𝕊al: 1∘("[5]u8"         Al 99).Field⎊0¨ ⟨∞,¯∞,0÷0,@,"foo",{⇐}⟩}} %% 6⥊0
+!"Cannot get field 11 of a struct with 3 fields" % (•foreign.null.Cast "{i32,i8,i8}").Field 11
+!"Cannot get pointer to element 111 of an array with 10 elements" % (•foreign.null.Cast "[10][2]{i64,i8}").Field 111
 
 # .Write, .Read
 %USE Walloc {{𝕊al: p←"{i16,i16,i16,i64}" Al 99 ⋄ p.Write ¯4‿10000‿¯30000‿7e12 ⋄ s← +´(2⋆8×↕∘≠)⊸× -○{CpyB 0∾˜⋈˜𝕩}´ ⟨p.Field 2, p⟩ ⋄ Cpy ⟨p.Add 1, p, s⟩ ⋄ p.Read¨ ↕2}} %% ⟨¯4‿10000‿¯30000‿7e12, ¯4‿10000‿0‿0⟩
@@ -284,8 +286,10 @@ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿"usize" ⋄ 1⊑F ⟨↕5, "Ah"�
 %USE Walloc {{𝕊al: p←("" Al 99).Cast "*:i8" ⋄ a←"i32"Al 99 ⋄ a.Write 12345 ⋄ p.Write ar←Cpy a‿a‿0 ⋄ ! ar ≡ p.Read 0 ⋄ a.Read 0}} %% 12345
 %USE Walloc {{𝕊al: p←"i16" Al 99 ⋄ raw ← Cpy 0∾˜⋈˜p.Add 3 ⋄ cpy2←@•FFI"*i16"‿"memcpy"‿"*:i8"‿"*:i8"‿"usize" ⋄ p.Sub Cpy2 raw‿raw‿0 }} %% ¯3
 
-# .WriteList
-!"(pointer).WriteList 𝕩: 𝕩 must be a list" % %USE WallocE {{𝕊al: ("*i32:i32"Al 99).WriteList 0}}
+# .WriteList, .ReadList
+!"(pointer).WriteList 𝕩: 𝕩 must be a list" % •foreign.null.WriteList 0
+!"(pointer).WriteList 𝕩: 𝕩 must be a list" % •foreign.null.WriteList 0‿0⥊0
+!"Out of memory" % (•foreign.null.Cast "i8").ReadList 2⋆50
 
 # garbage arguments
 !"Expected integer, got character" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Add '!'}}
@@ -305,6 +309,9 @@ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿"usize" ⋄ 1⊑F ⟨↕5, "Ah"�
 # %USE Walloc {{𝕊al: p←"i32" Al 99 ⋄ p.Write 123 ⋄ (((p.Cast "").Add 0).Cast"i32").Read 0}} %% 123
 !"Cannot offset an untyped pointer" % %USE WallocE {{𝕊al: ("" Al 99).Add 0}}
 !"Cannot offset an untyped pointer" % %USE WallocE {{𝕊al: ("" Al 99).Add 1}}
+!"(pointer).WriteList 𝕩: pointer must not be untyped" % •foreign.null.WriteList ↕10
+!"Cannot offset an untyped pointer" % •foreign.null.Write 0
+!"Cannot offset an untyped pointer" % •foreign.null.Read 0
 
 # .Add, .Sub, .Cast
 !"FFI type: Expected type to end; at (pointer).Cast ""i32→f32""" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Cast "i32f32"}⎊("" %USE _errFFICore)}
@@ -315,6 +322,7 @@ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿"usize" ⋄ 1⊑F ⟨↕5, "Ah"�
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Cast 1↓0∾"{i32,*i32}"}} %% 0
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Add 123}} %% ¯123
 %USE Walloc {{𝕊al: p←"{i32,*}" Al 1 ⋄ p.Sub p.Sub 123}} %% 123
+•Type¨ •foreign.null.Cast¨ ⟨⟨⟩, ↕0⟩ %% 6‿6
 
 # ptr1.Sub ptr2
 !"(pointer).Sub ptr: Both pointers must be typed" % %USE WallocE {{𝕊al: p←"" Al 1 ⋄ p.Sub p}}

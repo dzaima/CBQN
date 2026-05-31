@@ -1399,6 +1399,7 @@ B getNsNS(void) {
 B getInternalNS(void);
 B getMathNS(void);
 B getBitNS(void);
+B getSysFFI(B path, bool namespace);
 B bitcast_im(Md1D* d, B x);
 
 STATIC_GLOBAL Body* file_nsGen;
@@ -1456,6 +1457,7 @@ STATIC_GLOBAL Body* file_nsGen;
   F(1, flines, U"•FLines") \
   F(1, import, U"•Import") \
   F(FFIOPT, ffi, U"•FFI") \
+  F(FFIOPT, foreign, U"•foreign") \
   F(1, name, U"•name") \
   F(1, path, U"•path") \
   F(1, wdpath, U"•wdpath") \
@@ -1490,10 +1492,8 @@ static char* const dsv_strs[] = {
   #undef F
 };
 
-DEFINE_NFN ffiloadDesc;
-B ffiload_c2(B t, B w, B x);
 B indexOf_c2(B t, B w, B x);
-GLOBAL bool fileInit;
+STATIC_GLOBAL bool fileInit;
 
 
 B invalidFn_c1 (B     t,      B x) { thrM("Using an invalid function"); }
@@ -1524,7 +1524,6 @@ static NOINLINE void initSysDesc() {
   fMapBytesDesc= registerNFn(m_c8vec_0("(file).MapBytes"), mapBytes_c1, c2_bad);
   fExistsDesc  = registerNFn(m_c8vec_0("(file).Exists"), fexists_c1, c2_bad);
   importDesc   = registerNFn(m_c32vec_0(U"•Import"), import_c1, import_c2);
-  ffiloadDesc  = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffiload_c2);
 }
 
 #if HAS_VERSION
@@ -1631,7 +1630,7 @@ B sys_c1(B t, B x) {
       case sys_fbytes:  initSysDesc(); cr = m_nfn(fBytesDesc,  inc(REQ_PATH)); break;
       case sys_flines:  initSysDesc(); cr = m_nfn(fLinesDesc,  inc(REQ_PATH)); break;
       case sys_import:  initSysDesc(); cr = m_nfn(importDesc,  m_hvec2(inc(REQ_PATH), incG(COMPS_CREF(re)))); break;
-      case sys_ffi: initSysDesc(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break;
+      case sys_ffi: case sys_foreign: cr = getSysFFI(REQ_PATH, sys_id(c)==sys_foreign); break;
       case sys_name: if (q_N(name))  thrM("No name present for •name"); cr = inc(name); break;
       case sys_path: if (q_N(path0)) thrM("No path present for •path"); cr = inc(REQ_PATH); break;
       case sys_wdpath: { cr = inc(CACHE_OBJ(wdpath, path_abs(inc(cdPath)))); break; }
@@ -1700,6 +1699,7 @@ INIT_GLOBAL u32* const dsv_text[] = {
   
   U"•file.Accessed",U"•file.At",U"•file.Bytes",U"•file.Chars",U"•file.Created",U"•file.CreateDir",U"•file.Exists",U"•file.Lines",U"•file.List",
   U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.path",U"•file.RealPath",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
+  U"•foreign.Function",U"•foreign.null",
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.GC",U"•internal.HasFill",U"•internal.HeapDump",
   U"•internal.HeapStats",U"•internal.Indistinguishable",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.ObjFlags",
