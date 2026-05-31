@@ -126,9 +126,9 @@ static B ptrobjSub_c1(B t, B x) {
   B t1 = ptrh_elt(h);
   B t2 = ptrh_elt(h2);
   if (t1.u==FFIPRIM_VOID.u || t2.u==FFIPRIM_VOID.u) thrM("(pointer).Sub ptr: Both pointers must be typed");
+  if (!ty_compat(t1, t2)) thrM("(pointer).Sub ptr: Arguments must have compatible types");
   ux stride = ptrh_stride(h);
   if (stride!=ptrh_stride(h2)) thrM("(pointer).Sub ptr: Arguments must have the same stride");
-  if (!ty_compat(t1, t2)) thrM("(pointer).Sub ptr: Arguments must have compatible types");
   ptrdiff_t diff = ptrh_ptr(h) - ptrh_ptr(h2);
   ptrdiff_t eldiff = diff / (ptrdiff_t)stride;
   if (eldiff*stride != diff) thrM("(pointer).Sub ptr: Distance between pointers isn't an exact multiple of stride");

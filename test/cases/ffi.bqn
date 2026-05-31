@@ -353,12 +353,15 @@ f←@•FFI"*"‿"memcpy"‿"&i8"‿"*i8:c8"‿"usize" ⋄ 1⊑F ⟨↕5, "Ah"�
 !"(pointer).Sub ptr: Both pointers must be typed" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ (p.Cast "{{i8,i16},i32}").Sub p.Cast ""}}
 !"(pointer).Sub ptr: Arguments must have the same stride" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ ((p.Cast "{{i8,i16},i32}").Field 0).Sub p.Cast "{i8,i16}"}}
 !"(pointer).Sub ptr: Arguments must have compatible types" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ p.Sub p.Cast "u8"}}
+!"(pointer).Sub ptr: Arguments must have compatible types" % {(𝕩.Cast "i16").Sub 𝕩.Cast "i8"} •foreign.null
 !"(pointer).Sub ptr: Distance between pointers isn't an exact multiple of stride" % %USE WallocE {{𝕊al: p←"i8" Al 1 ⋄ (p.Cast "i32").Sub (p.Add 6).Cast "i32"}}
 
 # type comparison
 %USE Walloc {{𝕊al: p←"i8" Al 1 ⋄ t←"{{i8,i16,**i8,[12]i8,*:i32,i64:u1,*,*f64},i32,i64:c8}" ⋄ (p.Cast t).Sub p.Cast t}} %% 0 # catch-less test of most passing things to run under heapverify
 %DEF TyEq {exp𝕊a‿b: %USE Walloc {{𝕊al: p←"i8" Al 1 ⋄ ! (exp⊑99‿0) ≡ ((p.Cast a).Sub)⎊99 p.Cast b}}}
 1 %USE TyEq ⟨"{*i16}", "{*i16}"⟩
+0 %USE TyEq ⟨"{i16}", "{i16,i16}"⟩
+0 %USE TyEq ⟨"{i16,i16,i16}", "{i16,i16}"⟩
 0 %USE TyEq ⟨"{*i16}", "{*u16}"⟩
 1 %USE TyEq ⟨"{*i16}", "{*}"⟩
 1 %USE TyEq ⟨"{*}",    "{*i16}"⟩
