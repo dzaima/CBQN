@@ -362,20 +362,7 @@ static NOINLINE B ffiFn_lwax_c2(B t, B w, B x) {
   return r;
 }
 
-usz indexOfOne(B l, B e); // from search.c
-B ffiload_c2(B t, B w, B x0) {
-  if (!isArr(x0) || RNK(x0)!=1) thrM("•FFI: 𝕩 must be a list");
-  usz xia = IA(x0);
-  if (xia<2) thrM("•FFI: Function specification must have at least two items");
-  usz argn0 = xia-2;
-  if (argn0 >= U16_MAX) thrM("•FFI: Too many arguments"); // TODO what max
-  Arr* x = cpyHArr(x0); // to allow things to convert to c32arrs, storing the reference of what to free later in this array
-  B* xp = harrv_ptr(x);
-  
-  B symName = xp[1];
-  vfyStr(symName, "•FFI", "Symbol name");
-  if (IA(symName) != indexOfOne(symName, m_c32(0))) thrM("•FFI: Symbol name must not contain a null character");
-  
+static void* foreign_openLib(B t, B w, char* me) { // consumes w
   char* ws = NULL;
   if (w.u != m_c32(0).u) {
     if (isArr(w) && RNK(w)==1 && IA(w)==2) { // ↑‿path
@@ -383,26 +370,48 @@ B ffiload_c2(B t, B w, B x0) {
       B e0 = GetU(w,0);
       if (isFun(e0) && RTID(e0) == n_take) {
         B e1 = GetU(w,1);
-        if (!isStr(e1)) thrM("↑‿path •FFI 𝕩: Path must be a list of characters");
-        if (!path_isSingleComponent(e1)) thrM("↑‿path •FFI 𝕩: Path cannot contain slashes");
+        if (!isStr(e1)) thrF("↑‿path %U 𝕩: Path must be a list of characters", me);
+        if (!path_isSingleComponent(e1)) thrF("↑‿path %U 𝕩: Path cannot contain slashes", me);
         ws = toCStr(e1);
         goto wsSet;
       }
     }
-    w = path_rel(nfn_objU(t), w, "•FFI");
+    w = path_rel(nfn_objU(t), w, me);
     ws = toCStr(w);
     wsSet:;
   }
-  void* dl = dlopen(ws, RTLD_NOW);
   
+  void* dl = dlopen(ws, RTLD_NOW);
   if (ws) freeCStr(ws);
   dec(w);
-  if (dl==NULL) thrF("•FFI: Failed to load library: %S", dlerror());
+  if (dl==NULL) thrF("%U: Failed to load library: %U", me, dlerror());
+  return dl;
+}
+
+usz indexOfOne(B l, B e); // from search.c
+static NOINLINE void* foreign_getSymbol(B t, B w, B symName, char* me) { // consumes w
+  vfyStr(symName, me, "Symbol name");
+  if (IA(symName) != indexOfOne(symName, m_c32(0))) thrF("%U: Symbol name must not contain a null character", me);
+  
+  void* dl = foreign_openLib(t, w, me);
   
   char* nameStr = toCStr(symName);
   void* sym = dlsym(dl, nameStr);
   freeCStr(nameStr);
-  if (sym==NULL) thrF("•FFI: Failed to find symbol: %S", dlerror());
+  if (sym==NULL) thrF("%U: Failed to find symbol: %U", me, dlerror());
+  return sym;
+}
+
+B ffiload_c2(B t, B w, B x0) {
+  if (!isArr(x0) || RNK(x0)!=1) thrM("•FFI: 𝕩 must be a list");
+  usz xia = IA(x0);
+  if (xia<2) thrM("•FFI: Function specification must have at least two items");
+  usz argn0 = xia-2;
+  if (argn0 >= U16_MAX) thrM("•FFI: Too many arguments"); // could probably allow more arguments, but... there's no reason to
+  Arr* x = cpyHArr(x0); // to allow things to convert to c32arrs, storing the reference of what to free later in this array
+  B* xp = harrv_ptr(x);
+  
+  void* sym = foreign_getSymbol(t, w, xp[1], "•FFI");
   
   ArgParseState st;
   ParseContext* pc = &st.pc;

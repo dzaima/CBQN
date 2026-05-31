@@ -21,6 +21,8 @@
 !"↑‿path •FFI 𝕩: Path cannot contain slashes" % ↑‿"foo/bar.so" •FFI ""‿"bqn_init"
 !"This function can't be called monadically" % •FFI ""‿"bqn_init"
 !"•FFI: Failed to find symbol: " % @ •FFI⎊{𝕊: ! 29↑•CurrentError@} ""‿"bqn_this symbol doesn't exist"
+!"•FFI: Failed to load library: " % "/dev/file that doesn't exist" •FFI⎊{𝕊: ! 30↑•CurrentError@} ""‿"free"
+!"•FFI: Failed to load library: " % ↑‿"library that doesn't exist" •FFI⎊{𝕊: ! 30↑•CurrentError@} ""‿"free"
 !"•FFI: Symbol name must be a string" % @•FFI "hello"
 !"•FFI: Symbol name must be a string" % @•FFI ""‿1‿"i32"
 !"•FFI: Symbol name must be a string" % @•FFI ""‿["ab","cd"]‿"i32"
