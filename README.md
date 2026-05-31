@@ -83,7 +83,8 @@ Alternatively, `build/build` (aka build.bqn) can be invoked manually, though not
 - `make static-bin` - build a statically linked executable (for a fully standalone binary, try `make static-bin CC=musl-gcc REPLXX=0`)
 - `make static-lib` - build a static library archive
 
-All of the above will go through build.bqn. If that causes problems, `make o3-makeonly` or `make c-makeonly` can be used. These still enable REPLXX by default, but do not support Singeli. Furthermore, these targets don't support some of the build flags that the others do.
+All of the above (and plain `make`) will go through one bootstrap build for running `build/src/build.bqn`.  
+`make o3-makeonly` and `make c-makeonly` are available for a very stripped-down makefile-only build, though those are only intended for debugging, and are missing features and configurability.
 
 ## Limitations
 
@@ -95,7 +96,10 @@ All of the above will go through build.bqn. If that causes problems, `make o3-ma
 
 ## Requirements
 
-CBQN requires either gcc (≥ 9) or clang (≥ 10) as the C compiler (by default it attempts `clang` as things are primarily optimized for clang, but, if unavailable, it'll fall back to `cc`; override with `CC=your-cc`), and, optionally, libffi for `•FFI` and C++ (requires ≥C++11; defaults to `c++`, override with `CXX=your-c++`) for replxx.
+CBQN requires:
+- either gcc (≥ 9) or clang (≥ 10) as the C compiler (by default it attempts `clang` as things are primarily optimized for clang, but, if unavailable, it'll fall back to `cc`; override with `CC=your-cc`);
+- libffi (≥ 3.3) for `•FFI`;
+- for replxx, a C++ compiler (≥C++11; defaults to `c++`, override with `CXX=your-c++`).
 
 Though other configurations are expected to work (except 32-bit x86 without SSE2[^x87-miscompilation]), here are some that CBQN is tested on by dzaima:
 
