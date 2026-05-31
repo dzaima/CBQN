@@ -153,12 +153,14 @@ Run ← { 𝕊 testname:
       
       {
         enabled ⇐ ¬ (¬o.slow) ∧ Flag "%SLOW"
-        enabled∧↩ ¬ o.debug ∧ Flag "%!DEBUG"
-        enabled∧↩ ¬ o.heapverify ∧ Flag "%!HEAPVERIFY"
-        enabled∧↩ {0‿0: 1; 1‿0: o.properFills; 0‿1: ¬o.properFills} Flag¨ "%PROPER_FILLS"‿"%!PROPER_FILLS"
-        enabled∧↩ {0‿0: 1; 1‿0: o.eachFills  ; 0‿1: ¬o.eachFills  } Flag¨ "%EACH_FILLS"‿"%!EACH_FILLS"
-        enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%USZ64"
-        enabled∧↩ {0‿0: 1; 1‿0: o.usz=32; 0‿1: o.usz=64} Flag¨ "%USZ32"‿"%EACHFILLS"
+        EnabledBy ← {enabled∧↩𝕩} {⟨Flag "%"∾𝕩, Flag "%!"∾𝕩⟩}⊸{0‿0𝕊𝕩: 1; 1‿0𝕊𝕩: 𝕩; 0‿1𝕊𝕩: ¬𝕩}
+        "DEBUG" EnabledBy o.debug
+        "HEAPVERIFY" EnabledBy o.heapverify
+        "PROPER_FILLS" EnabledBy o.properFills
+        "EACH_FILLS" EnabledBy o.eachFills
+        "USZ32" EnabledBy o.usz=32
+        "USZ64" EnabledBy o.usz=64
+        ! ∨´ o.usz=32‿64
         enabled∧↩ ¬ o.noerr ∧ (⊑'⎊'∊str) ∧ ¬Flag "%ALLOW_CATCH"
         
         ln ⇐ i-1

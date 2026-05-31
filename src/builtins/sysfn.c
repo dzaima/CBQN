@@ -1412,58 +1412,83 @@ STATIC_GLOBAL Body* file_nsGen;
 #define NATIVE_COMPILER 0
 #endif
 
-#define OPTSYS_0(X)
-#define OPTSYS_1(X) X
-#define OPTSYS(COND) JOIN0(OPTSYS_,COND)
+#define OPTIONAL_0(...)
+#define OPTIONAL_1(...) __VA_ARGS__
+#define OPTIONAL_VAL(COND) JOIN0(OPTIONAL_,COND)
 
-#define FOR_DEFAULT_SYSVALS(F) \
-  F("out", U"•Out", bi_out) \
-  F("show", U"•Show", bi_show) \
-  F("exit", U"•Exit", bi_exit) \
-  F("getline", U"•GetLine", bi_getLine) \
-  F("type", U"•Type", bi_type) \
-  OPTSYS(HAS_SH)(F("sh", U"•SH", bi_sh)) \
-  F("decompose", U"•Decompose", bi_decp) \
-  F("while", U"•_while_", bi_while) \
-  F("cmp", U"•Cmp", bi_cmp) \
-  F("unixtime", U"•UnixTime", bi_unixTime) \
-  F("monotime", U"•MonoTime", bi_monoTime) \
-  F("timed", U"•_timed", bi_timed) \
-  F("delay", U"•Delay", bi_delay) \
-  F("hash", U"•Hash", bi_hash) \
-  F("repr", U"•Repr", bi_repr) \
-  F("parsefloat", U"•ParseFloat", bi_parseFloat) \
-  F("fmt", U"•Fmt", bi_fmt) \
-  F("glyph", U"•Glyph", bi_glyph) \
-  F("makerand", U"•MakeRand", bi_makeRand) \
-  F("fromutf8", U"•FromUTF8", bi_fromUtf8) \
-  F("toutf8", U"•ToUTF8", bi_toUtf8) \
-  F("currenterror", U"•CurrentError", bi_currentError) \
-  F("hashmap", U"•HashMap", bi_hashMap) \
-  F("math", U"•math", tagu64(0,VAR_TAG)) \
-  F("rand", U"•rand", tagu64(1,VAR_TAG)) \
-  F("term", U"•term", tagu64(2,VAR_TAG)) \
-  F("bit", U"•bit", tagu64(3,VAR_TAG)) \
-  F("primitives", U"•primitives", tagu64(4,VAR_TAG)) \
-  F("internal", U"•internal", tagu64(5,VAR_TAG)) \
-  F("fchars", U"•FChars", tagu64(6,VAR_TAG)) \
-  F("fbytes", U"•FBytes", tagu64(7,VAR_TAG)) \
-  F("flines", U"•FLines", tagu64(8,VAR_TAG)) \
-  F("import", U"•Import", tagu64(9,VAR_TAG)) \
-  OPTSYS(FFIOPT)(F("ffi", U"•FFI", tagu64(10,VAR_TAG))) \
-  F("name", U"•name", tagu64(11,VAR_TAG)) \
-  F("path", U"•path", tagu64(12,VAR_TAG)) \
-  F("wdpath", U"•wdpath", tagu64(13,VAR_TAG)) \
-  F("file", U"•file", tagu64(14,VAR_TAG)) \
-  F("state", U"•state", tagu64(15,VAR_TAG)) \
-  F("args", U"•args", tagu64(16,VAR_TAG)) \
-  F("listsys", U"•listsys", tagu64(17,VAR_TAG)) \
-  OPTSYS(NATIVE_COMPILER)(F("compobj", U"•CompObj", tagu64(18,VAR_TAG))) \
-  F("ns", U"•ns", tagu64(19,VAR_TAG)) \
-  F("platform", U"•platform", tagu64(20,VAR_TAG)) \
-  F("bqn", U"•BQN", tagu64(21,VAR_TAG)) \
-  F("rebqn", U"•ReBQN", tagu64(22,VAR_TAG)) \
-/* end of FOR_DEFAULT_SYSVALS */
+
+
+#define FOR_CONSTANT_SYSVALS(F) \
+  F(1, "out", U"•Out", out) \
+  F(1, "show", U"•Show", show) \
+  F(1, "exit", U"•Exit", exit) \
+  F(1, "getline", U"•GetLine", getLine) \
+  F(1, "type", U"•Type", type) \
+  F(HAS_SH, "sh", U"•SH", sh) \
+  F(1, "decompose", U"•Decompose", decp) \
+  F(1, "while", U"•_while_", while) \
+  F(1, "cmp", U"•Cmp", cmp) \
+  F(1, "unixtime", U"•UnixTime", unixTime) \
+  F(1, "monotime", U"•MonoTime", monoTime) \
+  F(1, "timed", U"•_timed", timed) \
+  F(1, "delay", U"•Delay", delay) \
+  F(1, "hash", U"•Hash", hash) \
+  F(1, "repr", U"•Repr", repr) \
+  F(1, "parsefloat", U"•ParseFloat", parseFloat) \
+  F(1, "fmt", U"•Fmt", fmt) \
+  F(1, "glyph", U"•Glyph", glyph) \
+  F(1, "makerand", U"•MakeRand", makeRand) \
+  F(1, "fromutf8", U"•FromUTF8", fromUtf8) \
+  F(1, "toutf8", U"•ToUTF8", toUtf8) \
+  F(1, "currenterror", U"•CurrentError", currentError) \
+  F(1, "hashmap", U"•HashMap", hashMap) \
+  OPTIONAL_VAL(DEBUG)(F(0, "testsysval2", U"•TestSysval2", testsysval2)) // end of FOR_CONSTANT_SYSVALS
+
+#define FOR_COMPUTED_SYSVALS(F) \
+  F(1, math, U"•math") \
+  F(1, rand, U"•rand") \
+  F(1, term, U"•term") \
+  F(1, bit, U"•bit") \
+  F(1, primitives, U"•primitives") \
+  F(1, internal, U"•internal") \
+  F(1, fchars, U"•FChars") \
+  F(1, fbytes, U"•FBytes") \
+  F(1, flines, U"•FLines") \
+  F(1, import, U"•Import") \
+  F(FFIOPT, ffi, U"•FFI") \
+  F(1, name, U"•name") \
+  F(1, path, U"•path") \
+  F(1, wdpath, U"•wdpath") \
+  F(1, file, U"•file") \
+  F(1, state, U"•state") \
+  F(1, args, U"•args") \
+  F(1, listsys, U"•listsys") \
+  F(NATIVE_COMPILER, compobj, U"•CompObj") \
+  F(1, ns, U"•ns") \
+  F(1, platform, U"•platform") \
+  F(1, bqn, U"•BQN") \
+  F(1, rebqn, U"•ReBQN") \
+  OPTIONAL_VAL(DEBUG)(F(0, testsysval1, U"•TestSysval1")) // end of FOR_COMPUTED_SYSVALS
+
+enum ComputedSys {
+  #define F(ON, NAME, FMT) sys_##NAME,
+  FOR_COMPUTED_SYSVALS(F)
+  #undef F
+  #define F(ON, NAME, FMT, BUILTIN) sys_##BUILTIN,
+  FOR_CONSTANT_SYSVALS(F)
+  #undef F
+  sys_COUNT,
+  sys_undefStart,
+};
+
+static char* const dsv_strs[] = {
+  #define F(ON, NAME, FMT) #NAME,
+  FOR_COMPUTED_SYSVALS(F)
+  #undef F
+  #define F(ON, NAME, FMT, BUILTIN) NAME,
+  FOR_CONSTANT_SYSVALS(F)
+  #undef F
+};
 
 DEFINE_NFN ffiloadDesc;
 B ffiload_c2(B t, B w, B x);
@@ -1567,10 +1592,11 @@ static B getPlatformNS(void) {
 }
 
 
+static u32 sys_id(B v) { assert(isVar(v)); return (u32)v.u; }
 B sys_c1(B t, B x) {
   assert(isArr(x));
   B tmp[2]; comps_getSysvals(tmp);
-  B curr_ns = tmp[0];
+  B curr_ns = tmp[0]; ux curr_n = IA(curr_ns);
   B curr_vs = tmp[1]; SGetU(curr_vs)
   B idxs = C2(indexOf, incG(curr_ns), incG(x)); SGetU(idxs)
   
@@ -1589,27 +1615,27 @@ B sys_c1(B t, B x) {
   M_HARR(r, IA(x))
   for (ux i = 0; i < IA(x); i++) {
     i32 ci = o2iG(GetU(idxs,i));
-    if (ci>=IA(curr_vs)) thrF("Unknown system function •%R", IGetU(x,i));
+    if (ci >= curr_n) thrF("Unknown system function •%R", IGetU(x,i));
     B c = GetU(curr_vs,ci);
     B cr;
     if (!isVar(c)) {
       cr = inc(c);
-    } else switch ((u32)c.u) { default: thrM("Bad dynamically-loaded system value");
-      case 0: cr = getMathNS(); break; // •math
-      case 1: cr = getRandNS(); break; // •rand
-      case 2: cr = getTermNS(); break; // •term
-      case 3: cr = getBitNS(); break; // •bit
-      case 4: cr = comps_getPrimitives(); break; // •primitives
-      case 5: cr = getInternalNS(); break; // •internal
-      case 6:  initSysDesc(); cr = m_nfn(fCharsDesc,  inc(REQ_PATH)); break; // •FChars
-      case 7:  initSysDesc(); cr = m_nfn(fBytesDesc,  inc(REQ_PATH)); break; // •FBytes
-      case 8:  initSysDesc(); cr = m_nfn(fLinesDesc,  inc(REQ_PATH)); break; // •FLines
-      case 9:  initSysDesc(); cr = m_nfn(importDesc,  m_hvec2(inc(REQ_PATH), incG(COMPS_CREF(re)))); break; // •Import
-      case 10: initSysDesc(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break; // •FFI
-      case 11: if (q_N(name))  thrM("No name present for •name"); cr = inc(name); break; // •name
-      case 12: if (q_N(path0)) thrM("No path present for •path"); cr = inc(REQ_PATH); break; // •path
-      case 13: { cr = inc(CACHE_OBJ(wdpath, path_abs(inc(cdPath)))); break; } // •wdpath
-      case 14: { // •file
+    } else switch (sys_id(c)) {
+      case sys_math: cr = getMathNS(); break;
+      case sys_rand: cr = getRandNS(); break;
+      case sys_term: cr = getTermNS(); break;
+      case sys_bit: cr = getBitNS(); break;
+      case sys_primitives: cr = comps_getPrimitives(); break;
+      case sys_internal: cr = getInternalNS(); break; // 
+      case sys_fchars:  initSysDesc(); cr = m_nfn(fCharsDesc,  inc(REQ_PATH)); break;
+      case sys_fbytes:  initSysDesc(); cr = m_nfn(fBytesDesc,  inc(REQ_PATH)); break;
+      case sys_flines:  initSysDesc(); cr = m_nfn(fLinesDesc,  inc(REQ_PATH)); break;
+      case sys_import:  initSysDesc(); cr = m_nfn(importDesc,  m_hvec2(inc(REQ_PATH), incG(COMPS_CREF(re)))); break;
+      case sys_ffi: initSysDesc(); cr = m_nfn(ffiloadDesc, inc(REQ_PATH)); break;
+      case sys_name: if (q_N(name))  thrM("No name present for •name"); cr = inc(name); break;
+      case sys_path: if (q_N(path0)) thrM("No path present for •path"); cr = inc(REQ_PATH); break;
+      case sys_wdpath: { cr = inc(CACHE_OBJ(wdpath, path_abs(inc(cdPath)))); break; }
+      case sys_file: {
         #define F(X) m_nfn(X##Desc, inc(path))
         cr = incG(CACHE_OBJ(fileNS, ({
           initSysDesc();
@@ -1619,24 +1645,37 @@ B sys_c1(B t, B x) {
         #undef F
         break;
       }
-      case 15: { // •state
+      case sys_state: {
         if (q_N(args)) thrM("No arguments present for •state");
         if (q_N(name)) thrM("No name present for •state");
         if (q_N(path0)) thrM("No path present for •state");
         cr = m_hvec3(inc(REQ_PATH), inc(name), inc(args));
         break;
       }
-      case 16: { // •args
+      case sys_args: {
         if (q_N(args)) thrM("No arguments present for •args");
         cr = inc(args);
         break;
       }
-      case 17: cr = incG(curr_ns); break; // •listsys
-      case 18: cr = incG(bi_compObj); break; // •CompObj
-      case 19: cr = getNsNS(); break; // •ns
-      case 20: cr = getPlatformNS(); break; // •platform
-      case 21: cr = incG(CACHE_OBJ(bqn,   m_nfn(bqnDesc,   incG(COMPS_CREF(re))))); break; // •BQN
-      case 22: cr = incG(CACHE_OBJ(rebqn, m_nfn(rebqnDesc, incG(COMPS_CREF(re))))); break; // •ReBQN
+      case sys_listsys: {
+        cr = emptyHVec(); SGet(curr_ns); B cv;
+        for (ux i = 0; i < curr_n; i++) {
+          if (!isVar(cv = GetU(curr_vs,i)) || sys_id(cv) < sys_COUNT) {
+            cr = vec_addN(cr, Get(curr_ns, i));
+          }
+        }
+        break;
+      }
+      case sys_compobj: cr = incG(bi_compObj); break;
+      case sys_ns: cr = getNsNS(); break;
+      case sys_platform: cr = getPlatformNS(); break;
+      case sys_bqn:   cr = incG(CACHE_OBJ(bqn,   m_nfn(bqnDesc,   incG(COMPS_CREF(re))))); break;
+      case sys_rebqn: cr = incG(CACHE_OBJ(rebqn, m_nfn(rebqnDesc, incG(COMPS_CREF(re))))); break;
+      default: {
+        u32 cu = sys_id(c) - sys_undefStart;
+        if (cu >= sys_COUNT) thrM("Bad dynamically-loaded system value");
+        thrF("System value •%U is not available in this CBQN build", dsv_strs[ci]);
+      }
     }
     HARR_ADD(r, i, cr);
   }
@@ -1650,17 +1689,12 @@ B sys_c1(B t, B x) {
   return HARR_FCD(r, x);
 }
 
-
-static char* const dsv_strs[] = {
-  #define F(L,N,B) L,
-  FOR_DEFAULT_SYSVALS(F)
-  #undef F
-};
-
-
 INIT_GLOBAL u32* const dsv_text[] = {
-  #define F(L,N,B) N,
-  FOR_DEFAULT_SYSVALS(F)
+  #define F(ON, NAME, FMT) OPTIONAL_VAL(ON)(FMT,)
+  FOR_COMPUTED_SYSVALS(F)
+  #undef F
+  #define F(ON, NAME, FMT, BUILTIN) OPTIONAL_VAL(ON)(FMT,)
+  FOR_CONSTANT_SYSVALS(F)
   #undef F
   U"•bit._add",U"•bit._and",U"•bit._cast",U"•bit._mul",U"•bit._neg",U"•bit._not",U"•bit._or",U"•bit._sub",U"•bit._xor",
   
@@ -1685,15 +1719,21 @@ INIT_GLOBAL u32* const dsv_text[] = {
 
 GLOBAL B def_sysNames, def_sysVals;
 void sysfn_init(void) {
-  usz dsv_num = sizeof(dsv_strs)/sizeof(char*);
-  usz i = 0;
-  HArr_p dsv_ns0 = m_harrUv(dsv_num); def_sysNames=dsv_ns0.b; gc_add(def_sysNames);
-  for (usz i = 0; i < dsv_num; i++) dsv_ns0.a[i] = m_c8vec_0(dsv_strs[i]);
+  HArr_p dsv_ns0 = m_harrUv(sys_COUNT);
+  gc_add(def_sysNames = dsv_ns0.b);
+  for (usz i = 0; i < sys_COUNT; i++) dsv_ns0.a[i] = m_c8vec_0(dsv_strs[i]);
   NOGC_E;
   
-  HArr_p dsv_vs0 = m_harrUv(dsv_num); def_sysVals=dsv_vs0.b; gc_add(def_sysVals);
-  #define F(L,N,B) dsv_vs0.a[i] = inc(B); i++;
-  FOR_DEFAULT_SYSVALS(F)
+  HArr_p dsv_vs0 = m_harrUv(sys_COUNT);
+  gc_add(def_sysVals = dsv_vs0.b);
+  #if DEBUG
+  B bi_testsysval2 = bi_N;
+  #endif
+  #define F(ON, NAME, FMT, BUILTIN) dsv_vs0.a[sys_##BUILTIN] = ON? inc(bi_##BUILTIN) : tagu64(sys_undefStart + sys_##BUILTIN, VAR_TAG);
+  FOR_CONSTANT_SYSVALS(F)
+  #undef F
+  #define F(ON, NAME, FMT) dsv_vs0.a[sys_##NAME] = tagu64(sys_##NAME + (ON? 0 : sys_undefStart), VAR_TAG);
+  FOR_COMPUTED_SYSVALS(F)
   #undef F
   NOGC_E;
   
@@ -1701,7 +1741,7 @@ void sysfn_init(void) {
   lastErrMsg = bi_N;
   gc_add_ref(&lastErrMsg);
   #endif
-  cdPath = m_c8vec(".", 1); gc_add(cdPath);
+  gc_add(cdPath = m_c8vec(".", 1));
   
   gc_add_ref(&thrownMsg);
   

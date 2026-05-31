@@ -26,7 +26,10 @@
 !"No arguments present for •state" % •BQN"•state"
 ! •path‿""‿"" ≡ ⟨•path⟩•BQN"•state"
 ! ""‿"" ≡ ¯2↑⟨⟩•BQN"•state"
-"args"‿"path"‿"name"‿"helloworld"‿"state"∊•BQN"•listsys" %% 1‿1‿1‿0‿1
+"args"‿"path"‿"name"‿"helloworld"‿"state"‿"rebqn"‿"hashmap"‿"testsysval1"‿"testsysval2"∊•BQN"•listsys" %% 1‿1‿1‿0‿1‿1‿1‿0‿0
+!"System value •testsysval1 is not available in this CBQN build" % •testsysval1 %DEBUG
+!"System value •testsysval2 is not available in this CBQN build" % •testsysval2 %DEBUG
+!"Unknown system function •testsysval9" % •testsysval9
 !"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•path"
 !"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•state"
 ⟨"path that doesn't exist"⟩•BQN"2+2" %% 4

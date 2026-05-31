@@ -33,10 +33,12 @@ tests:
   )
 
 # flags addable anywhere in code to restrict when it's run:
-  %SLOW # enable only if 'slow' argument present
-  %!DEBUG # disable if 'debug' argument present
-  %!HEAPVERIFY # disable if 'heapverify' argument present
+  %SLOW          # enable only if 'slow' argument present
+  %DEBUG         # enable only if 'debug' argument is present
+  %HEAPVERIFY    # enable only if 'heapverify' argument present
+  %PROPER_FILLS  # enable only if build has PROPER_FILLS enabled
+  %EACH_FILLS    # enable only if build has EACH_FILLS enabled
+  %USZ32, %USZ64 # enable only if usz width is the specific one
+  %!DEBUG, %!HEAPVERIFY, %!PROPER_FILLS, %!EACH_FILLS, %!USZ32, %!USZ64 # negations of the above
   %ALLOW_CATCH # allow running in noerr mode even if ⎊ is present
-  %!PROPER_FILLS # enable only if has PROPER_FILLS==0
-  %PROPER_FILLS # enable only if has PROPER_FILLS==1
 ```
