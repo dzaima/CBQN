@@ -426,16 +426,21 @@ static NOINLINE B foreignVal(B t, B w, B x, bool value, char* me) {
 }
 B foreignValue_c2(B t, B w, B x) { return foreignVal(t, w, x, true, "•foreign.Value"); }
 B foreignPointer_c2(B t, B w, B x) { return foreignVal(t, w, x, false, "•foreign.Pointer"); }
-B foreignFunction_c2(B t, B w, B x0) {
-  if (!isArr(x0) || RNK(x0)!=1) thrM("•FFI: 𝕩 must be a list");
+B foreignFunction_impl(B t, B w, B x0, char* me) {
+  if (!isArr(x0) || RNK(x0)!=1) thrF("%U: 𝕩 must be a list", me);
   usz xia = IA(x0);
-  if (xia<2) thrM("•FFI: Function specification must have at least two items");
+  if (xia<2) thrF("%U: Function specification must have at least two items", me);
   usz argn0 = xia-2;
-  if (argn0 >= U16_MAX) thrM("•FFI: Too many arguments"); // could probably allow more arguments, but... there's no reason to
+  if (argn0 >= U16_MAX) thrF("%U: Too many arguments", me); // could probably allow more arguments, but... there's no reason to
   Arr* x = cpyHArr(x0); // to allow things to convert to c32arrs, storing the reference of what to free later in this array
   B* xp = harrv_ptr(x);
   
-  void* sym = foreign_getSymbol(t, w, xp[1], "•FFI");
+  void* sym;
+  if (q_N(w)) {
+    sym = PTR_FROM_INT(void, ptrh_ptr(ptrobj_checkget(xp[1], 3)));
+  } else {
+    sym = foreign_getSymbol(t, w, xp[1], me);
+  }
   
   ArgParseState st;
   ParseContext* pc = &st.pc;
@@ -445,7 +450,7 @@ B foreignFunction_c2(B t, B w, B x0) {
   B retObj;
   u8 resType = 0; // 0: some value; 1: void - ""; 2: "&"
   {
-    vfyStr(xp[0], "•FFI", "Result type specifier");
+    vfyStr(xp[0], me, "Result type specifier");
     U32Span retSrc = toC32Null(xp+0, true);
     if (retSrc.start == retSrc.end) {
       resType = 1;
@@ -462,7 +467,7 @@ B foreignFunction_c2(B t, B w, B x0) {
   }
   ffi_type* retForeign = foreignType(retObj);
   
-  if (retForeign->alignment > 8) thrF("•FFI: Return values with %z-byte alignment not implemented", (ux)retForeign->alignment);
+  if (retForeign->alignment > 8) thrF("%U: Return values with %z-byte alignment not implemented", me, (ux)retForeign->alignment);
   pc->scratchMemSize = IMAX(retForeign->size, IMAX(sizeof(u64), sizeof(ffi_arg)));
   
   // preprocess args, to find varargs separator and proper arg count (also validating the args being strings, and converting them to null-terminated-c32 form)
@@ -473,11 +478,11 @@ B foreignFunction_c2(B t, B w, B x0) {
   PreprocessedArg* currArg = preprocessedArgs;
   for (ux i = 0; i < argn0; i++) {
     B* val = xp+i+2;
-    vfyStr(*val, "•FFI", "Argument type specifier");
+    vfyStr(*val, me, "Argument type specifier");
     pc->curr = i+2;
     *currArg = preprocessArg(pc, val);
     if (currArg->varargsSeparator) {
-      if (fixedArgCount != -1) thrM("•FFI: Cannot have multiple instances of \"...\"");
+      if (fixedArgCount != -1) thrF("%U: Cannot have multiple instances of \"...\"", me);
       // leave currArg unchanged, compacting away the "..."
       fixedArgCount = i;
     } else {
@@ -485,7 +490,7 @@ B foreignFunction_c2(B t, B w, B x0) {
       if (currArg->wholeArg) {
         if (*len != 0) { mixedMix:;
           char* side = currArg->onW? "𝕨" : "𝕩";
-          thrF("•FFI: Cannot use \">%U\" with multiple arguments on %U", side, side);
+          thrF("%U: Cannot use \">%U\" with multiple arguments on %U", me, side, side);
         }
         *len = -1;
       } else {
@@ -553,7 +558,7 @@ B foreignFunction_c2(B t, B w, B x0) {
   TFREE(preprocessedArgs);
   
   usz mutCount = IA(mutList);
-  if (resType==2 && mutCount!=1) thrF("•FFI: Can only have result type of \"&\" when exactly one object is mutated, but %ui are", mutCount);
+  if (resType==2 && mutCount!=1) thrF("%U: Can only have result type of \"&\" when exactly one object is mutated, but %ui are", me, mutCount);
   if (mutCount != 0) debug_assert(st.mayNeedTmpBufs);
   
   #if GPR6_SYSV64
@@ -595,7 +600,16 @@ B foreignFunction_c2(B t, B w, B x0) {
   else               libffiOk(ffi_prep_cif_var(&r->cif, FFI_DEFAULT_ABI, fixedArgCount, argCount, retForeign, r->cif_args));
   
   ptr_dec(x);
-  if (pc->scratchMemSize >= U32_MAX) thrM("•FFI: Too much static data");
+  if (pc->scratchMemSize >= U32_MAX) thrF("%U: Too much static data", me);
   r->scratchMemSize = pc->scratchMemSize;
   return tag(r, FUN_TAG);
+}
+static B foreignFunction_c1(B t, B x) {
+  return foreignFunction_impl(t, bi_N, x, "•foreign.Function");
+}
+static B foreignFunction_c2(B t, B w, B x) {
+  return foreignFunction_impl(t, w, x, "•foreign.Function");
+}
+static B ffi_c2(B t, B w, B x) {
+  return foreignFunction_impl(t, w, x, "•FFI");
 }

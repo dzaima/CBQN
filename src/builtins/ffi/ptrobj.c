@@ -36,10 +36,10 @@ static uintptr_t ptrh_ptrOff(B h, B off, bool negate) { // doesn't consume h, of
   if (negate) el = -el;
   return ptr + el * (i64)ptrh_stride(h);
 }
-static char* const couldAlsoBes[] = { "", " or array", " or integer" };
+static char* const ptrobj_messages[] = { "Expected pointer object", "Expected pointer object or array", "Expected pointer object or integer", "•foreign.Function 𝕩: Second element must be a pointer object" };
 static NOINLINE B ptrobj_checkget(B x, u8 couldAlsoBe) { // doesn't consume
-  if (!isNsp(x)) thrF("Expected pointer object%S, got %S", couldAlsoBes[couldAlsoBe], genericDesc(x));
-  if (c(NS,x)->desc != ptrobj_ns->nsDesc) thrF("Expected pointer object%S, got some other kind of namespace", couldAlsoBes[couldAlsoBe]);
+  if (!isNsp(x)) thrF("%U, got %S", ptrobj_messages[couldAlsoBe], genericDesc(x));
+  if (c(NS,x)->desc != ptrobj_ns->nsDesc) thrF("%U, got some other kind of namespace", ptrobj_messages[couldAlsoBe]);
   return nfn_objU(c(NS,x)->sc->vars[0]);
 }
 static bool ty_compat(B a, B b) {

@@ -196,6 +196,9 @@ Section "# globals"
   •Show f0‿f2
   •Show f1.ReadList 4
   •Show ("lib.so" •foreign.Pointer "i64"‿"globalArr").ReadList 4
+  fns ← "lib.so" •foreign.Pointer "*"‿"globalFnPointers"
+  •Show (•foreign.Function ⟨"i64", fns.Read 0, "i64", "i64"⟩) {𝕎𝕩} 111111111111111‿¯11
+  •Show (•foreign.Function ⟨"i64", fns.Read 1, "i64", "i64"⟩) {𝕎𝕩} 123456789123‿1000
 }
 
 # erroring:

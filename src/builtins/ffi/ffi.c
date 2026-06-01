@@ -38,8 +38,8 @@
     TIi(t_unkArr,freeO) = tyarr_freeO;
     TIi(t_unkArr,freeF) = tyarr_freeF;
     
-    ffiloadDesc = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, foreignFunction_c2);
-    foreignFunctionDesc = registerNFn(m_c32vec_0(U"•foreign.Function"), c1_bad, foreignFunction_c2);
+    ffiloadDesc = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffi_c2);
+    foreignFunctionDesc = registerNFn(m_c32vec_0(U"•foreign.Function"), foreignFunction_c1, foreignFunction_c2);
     foreignValueDesc = registerNFn(m_c32vec_0(U"•foreign.Value"), c1_bad, foreignValue_c2);
     foreignPointerDesc = registerNFn(m_c32vec_0(U"•foreign.Pointer"), c1_bad, foreignPointer_c2);
     foreign_nsGen = m_nnsDesc("function","value","pointer","null","sizeof");

@@ -454,6 +454,11 @@ uint64_t add_u64ret(uint64_t a, int64_t b) {
   return a+b;
 }
 
+typedef int64_t (*int64fn)(int64_t, int64_t);
+static int64_t mul_i64ret(int64_t a, int64_t b) {
+  return a * b;
+}
+int64fn globalFnPointers[] = {add_i64ret, mul_i64ret};
 
 size_t size_type(ssize_t* buf, size_t a, ssize_t b) {
   buf[0]+= a+1;

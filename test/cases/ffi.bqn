@@ -13,7 +13,6 @@
 !"•FFI: 𝕩 must be a list" % @•FFI @
 !"•FFI: 𝕩 must be a list" % @•FFI 2‿2⥊<"a"
 !"This function can't be called monadically" % •FFI ""‿"bqn_init"
-!"This function can't be called monadically" % •foreign.Function ""‿"bqn_init"
 !"•FFI: Symbol name must be a string" % @•FFI "hello"
 !"•FFI: Symbol name must be a string" % @•FFI ""‿1‿"i32"
 !"•FFI: Symbol name must be a string" % @•FFI ""‿["ab","cd"]‿"i32"
@@ -59,13 +58,15 @@
 !"↑‿path •FFI 𝕩: Path must be a list of characters" % ⟨↑,'a'‿2⟩ •FFI ""‿"bqn_init"
 !"↑‿path •FFI 𝕩: Path must be a list of characters" % ⟨↑,2‿2⥊"a"⟩ •FFI ""‿"bqn_init"
 !"↑‿path •FFI 𝕩: Path cannot contain slashes" % ↑‿"foo/bar.so" •FFI ""‿"bqn_init"
-!"↑‿path •FFI 𝕩: Path cannot contain slashes" % ↑‿"foo/bar.so" •foreign.Function ""‿"bqn_init"
+!"↑‿path •foreign.Function 𝕩: Path cannot contain slashes" % ↑‿"foo/bar.so" •foreign.Function ""‿"bqn_init"
 !"↑‿path •foreign.Pointer 𝕩: Path must be a list of characters" % ↑‿@ •foreign.Pointer "i32"‿"free"
 
 !"•FFI: Failed to find symbol: " % @ •FFI⎊{𝕊: ! 29↑•CurrentError@} ""‿"bqn_this symbol doesn't exist"
 !"•foreign.Value: Failed to find symbol: " % @ •foreign.Value⎊{𝕊: ! 39↑•CurrentError@} ""‿"bqn_this symbol doesn't exist"
 
 # wrong usage of •foreign stuff
+!"•foreign.Function 𝕩: Second element must be a pointer object, got array" % •foreign.Function ""‿"bqn_init"
+!"•foreign.Function 𝕩: Second element must be a pointer object, got some other kind of namespace" % •foreign.Function ""‿{⇐}
 !"•foreign.Sizeof: 𝕩 must be a string" % •foreign.Sizeof 'a'
 !"FFI type: Unexpected character where type is expected: '?' (@+63); at •foreign.Sizeof ""→???""" % •foreign.Sizeof⎊("" %USE _errFFICore) "???"
 !"FFI type: Unexpected character where type is expected: '?' (@+63); at 𝕨 •foreign.Pointer ""→???""‿·" % @ •foreign.Pointer⎊("" %USE _errFFICore) "???"‿"free"
@@ -77,6 +78,7 @@
 !"•foreign.Pointer: 𝕩 must be a two-item list" % @ •foreign.Pointer "i32"
 !"•foreign.Pointer: 𝕩 must be a two-item list" % @ •foreign.Pointer @
 !"FFI type: Type string cannot be empty" % @ •foreign.Value ""‿"free"
+!"FFI: Expected list 𝕩, but 𝕩 was an atom" % {𝕏@} •foreign.Function ⟨"i32", •foreign.null⟩
 
 
 # >/𝕨/𝕩
