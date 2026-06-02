@@ -211,6 +211,30 @@ static B ptrobjWriteList_c1(B t, B x) {
   return m_i32(1);
 }
 
+static NOINLINE char* strptr_get(B x, char* me) { // consumes
+  B h = ptrobj_checkget(x, 0);
+  B elt = ptrh_elt(h);
+  if (!isFFIPrim(elt)) badElt: thrF("%U: 𝕩 must be either an untyped pointer, or point to a size-1 primitive", me);
+  if (ffiPrimTy(elt) != sty_void) {
+    if (ptrh_stride(h) != 1) thrF("%U: 𝕩 must be either untyped or have stride 1", me); // implicitly also checks that element type is i8/u8
+    u8 conv = ffiPrimConv(elt);
+    if (conv!=sty_void && conv!=sty_c8) goto badElt;
+  }
+  char* r = PTR_FROM_INT(char, ptrh_ptr(h));
+  decG(x);
+  return r;
+}
+B foreignReadBytesTo0_c1(B t, B x) { char* s = strptr_get(x, "•foreign.ReadBytesTo0 𝕩"); return m_c8vec_0(s); }
+B foreignReadCharsTo0_c1(B t, B x) { char* s = strptr_get(x, "•foreign.ReadCharsTo0 𝕩"); return utf8Decode0(s); }
+#define READ_TO_0_C2(ME, MAKE) \
+  usz l = o2s(w);              \
+  char* s = strptr_get(x, ME); \
+  ux len = strnlen(s, l);      \
+  if (len == l) thrF("%U: Length limit reached before null byte was found", ME); \
+  return MAKE(s, len);
+B foreignReadBytesTo0_c2(B t, B w, B x) { READ_TO_0_C2("𝕨 •foreign.ReadBytesTo0 𝕩", m_c8vec) }
+B foreignReadCharsTo0_c2(B t, B w, B x) { READ_TO_0_C2("𝕨 •foreign.ReadCharsTo0 𝕩", utf8Decode) }
+
 
 
 static void ptrobj_init() {

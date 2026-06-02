@@ -79,6 +79,11 @@
 !"•foreign.Pointer: 𝕩 must be a two-item list" % @ •foreign.Pointer @
 !"FFI type: Type string cannot be empty" % @ •foreign.Value ""‿"free"
 !"FFI: Expected list 𝕩, but 𝕩 was an atom" % {𝕏@} •foreign.Function ⟨"i32", •foreign.null⟩
+!  "•foreign.ReadBytesTo0 𝕩: 𝕩 must be either an untyped pointer, or point to a size-1 primitive" %   •foreign.ReadBytesTo0 •foreign.null.Cast "*i8:c8"
+!  "•foreign.ReadCharsTo0 𝕩: 𝕩 must be either an untyped pointer, or point to a size-1 primitive" %   •foreign.ReadCharsTo0 •foreign.null.Cast "i8:i8"
+!"𝕨 •foreign.ReadBytesTo0 𝕩: 𝕩 must be either an untyped pointer, or point to a size-1 primitive" % 0 •foreign.ReadBytesTo0 •foreign.null.Cast "i8:u1"
+!"𝕨 •foreign.ReadCharsTo0 𝕩: 𝕩 must be either untyped or have stride 1" % 0 •foreign.ReadCharsTo0 •foreign.null.Cast "i16:c8"
+!  "•foreign.ReadBytesTo0 𝕩: 𝕩 must be either untyped or have stride 1" %   •foreign.ReadBytesTo0 (•foreign.null.Cast "{i8,i8}").Field 0
 
 
 # >/𝕨/𝕩

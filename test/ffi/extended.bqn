@@ -130,6 +130,25 @@ FillOf ← •internal.HasFill◶'e'‿{⊑1↑0⥊𝕩}
     (basePtrNZ.Cast nnz ArrTy baseType).Read _expErr 0
   }⍟⊢ ⊑baseType<⊸∊"i64"‿"u64"
   
+  # string tests; these don't use baseType
+  ·←{
+    base ← (end.Cast "i8:c8").Sub n
+    base.WriteList n⥊'a'
+    n •foreign.ReadBytesTo0 _expErr base
+    n •foreign.ReadCharsTo0 _expErr base
+  }
+  ·←{
+    baseNZ ← (end.Cast "i8:c8").Sub nnz
+    chars ← "1¨⍉𝕨"⊏˜¯1+ {-⟜» ⍷ 𝕩⌊ +` 1+ 𝕩 rnd.Range 4} nnz-1
+    bytes ← •ToUTF8 chars
+    baseNZ.WriteList bytes∾@
+    ! bytes ≡    •foreign.ReadBytesTo0 baseNZ.Cast "i8:c8"
+    ! bytes ≡    •foreign.ReadBytesTo0 baseNZ.Cast ""
+    ! bytes ≡ nnz•foreign.ReadBytesTo0 baseNZ.Cast "i8"
+    ! chars ≡ nnz•foreign.ReadCharsTo0 baseNZ.Cast "u8"
+    ! chars ≡    •foreign.ReadCharsTo0 baseNZ.Cast "u8:c8"
+  }
+  
   lptr ← (end.Cast baseType).Sub n
   
   ! (1+hasConvs) ≤ +´ { 𝕊 conv‿convw:

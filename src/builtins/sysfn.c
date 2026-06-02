@@ -1699,7 +1699,7 @@ INIT_GLOBAL u32* const dsv_text[] = {
   
   U"•file.Accessed",U"•file.At",U"•file.Bytes",U"•file.Chars",U"•file.Created",U"•file.CreateDir",U"•file.Exists",U"•file.Lines",U"•file.List",
   U"•file.MapBytes",U"•file.Modified",U"•file.Name",U"•file.Parent",U"•file.path",U"•file.RealPath",U"•file.Remove",U"•file.Rename",U"•file.Size",U"•file.Type",
-  U"•foreign.Function",U"•foreign.null",U"•foreign.Pointer",U"•foreign.Sizeof",U"•foreign.Value",
+  U"•foreign.Function",U"•foreign.null",U"•foreign.Pointer",U"•foreign.ReadBytesTo0",U"•foreign.ReadCharsTo0",U"•foreign.Sizeof",U"•foreign.Value",
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.GC",U"•internal.HasFill",U"•internal.HeapDump",
   U"•internal.HeapStats",U"•internal.Indistinguishable",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.ObjFlags",

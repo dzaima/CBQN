@@ -42,7 +42,7 @@
     foreignFunctionDesc = registerNFn(m_c32vec_0(U"•foreign.Function"), foreignFunction_c1, foreignFunction_c2);
     foreignValueDesc = registerNFn(m_c32vec_0(U"•foreign.Value"), c1_bad, foreignValue_c2);
     foreignPointerDesc = registerNFn(m_c32vec_0(U"•foreign.Pointer"), c1_bad, foreignPointer_c2);
-    foreign_nsGen = m_nnsDesc("function","value","pointer","null","sizeof");
+    foreign_nsGen = m_nnsDesc("function","value","pointer","null","sizeof","readbytesto0","readcharsto0");
     gc_add(nullPointer = m_ptrobj(0, m_ffiPrim(sty_void, sty_void), 0));
   }
   B getSysFFI(B path, bool namespace) {
@@ -54,13 +54,14 @@
       m_nfn(foreignPointerDesc, inc(path)),
       incG(nullPointer),
       incG(bi_foreignSizeof),
+      incG(bi_foreignReadBytesTo0),
+      incG(bi_foreignReadCharsTo0),
     );
   }
 
 #elif !FOR_BUILD
   static void sysffi_init() { }
   B getSysFFI(B path, bool namespace) { fatal("getSysFFI called"); }
-  B foreignSizeof_c1(B t, B x) { fatal("foreignSizeof_c1 called"); }
 #else // whatever build.bqn uses from •FFI
   #include "utils/nfns.h"
   #include "utils/cstr.h"
@@ -161,8 +162,15 @@
     if (namespace) thrM("•foreign isn't supported in bootstrap build");
     return m_nfn(ffiloadDesc, inc(path));
   }
-  B foreignSizeof_c1(B t, B x) { fatal("foreignSizeof_c1 called"); }
 #endif // FOR_BUILD
+
+#if !FFI
+  B foreignSizeof_c1(B t, B x) { fatal("foreignSizeof_c1 called"); }
+  B foreignReadBytesTo0_c1(B t, B x) { fatal("foreignReadBytesTo0_c1 called"); }
+  B foreignReadCharsTo0_c1(B t, B x) { fatal("foreignReadCharsTo0_c1 called"); }
+  B foreignReadBytesTo0_c2(B t, B w, B x) { fatal("foreignReadBytesTo0_c2 called"); }
+  B foreignReadCharsTo0_c2(B t, B w, B x) { fatal("foreignReadCharsTo0_c2 called"); }
+#endif
 
 void ffi_init(void) {
   sysffi_init(); // •FFI

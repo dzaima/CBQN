@@ -76,6 +76,8 @@ Error message: FFI: u64 result ≥ 2⋆53
 Error message: FFI: u64 result ≥ 2⋆53
 Error message: FFI: Improper value for u64: 9.007199254740992e15
 ### *
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: * fac=1
 Error message: Expected pointer object, got character
 Error message: Expected pointer object, got character
@@ -125,12 +127,16 @@ Error message: FFI: Array provided for *:c16 needs to have a length that's a mul
 Error message: FFI: Array provided for *:c32 needs to have a length that's a multiple of 2, but array had shape ⟨1⟩
 Error message: FFI: Array provided for *:c32 needs to have a length that's a multiple of 2, but array had shape ⟨1⟩
 ### bool
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: bool fac=1
 Error message: FFI: Improper value for bool: ¯1
 Error message: FFI: Improper value for bool: ¯1
 Error message: FFI: Improper value for bool: 2
 Error message: FFI: Improper value for bool: 2
 ### f32
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: f32 fac=1
 Error message: FFI: Improper value for f32: character
 Error message: FFI: Improper value for f32: character
@@ -174,6 +180,8 @@ Error message: FFI: Array provided for f32:c16 needs to have a length that's a m
 Error message: FFI: Array provided for f32:c16 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
   conv c32: f32:c32 fac=1
 ### f64
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: f64 fac=1
 Error message: FFI: Improper value for f64: character
 Error message: FFI: Improper value for f64: character
@@ -221,6 +229,8 @@ Error message: FFI: Array provided for f64:c16 needs to have a length that's a m
 Error message: FFI: Array provided for f64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
 Error message: FFI: Array provided for f64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
 ### i8
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: i8 fac=1
 Error message: FFI: Improper value for i8: ¯129
 Error message: FFI: Improper value for i8: ¯129
@@ -242,6 +252,8 @@ Error message: FFI: Improper value for i8: 128
 Error message: FFI: Improper value for c8: @+256
 Error message: FFI: Improper value for c8: @+256
 ### i16
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: i16 fac=1
 Error message: FFI: Improper value for i16: ¯32769
 Error message: FFI: Improper value for i16: ¯32769
@@ -275,6 +287,8 @@ Error message: FFI: Array provided for i16:c8 needs to have a length that's a mu
 Error message: FFI: Improper value for c16: @+65536
 Error message: FFI: Improper value for c16: @+65536
 ### i32
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: i32 fac=1
 Error message: FFI: Improper value for i32: ¯2147483649
 Error message: FFI: Improper value for i32: ¯2147483649
@@ -323,6 +337,8 @@ Error message: FFI: i64 result absolute value ≥ 2⋆53
 Error message: FFI: i64 result absolute value ≥ 2⋆53
 Error message: FFI: i64 result absolute value ≥ 2⋆53
 Error message: FFI: i64 result absolute value ≥ 2⋆53
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: i64 fac=1
 Error message: FFI: Improper value for i64: ¯9.007199254740992e15
 Error message: FFI: Improper value for i64: ¯9.007199254740992e15
@@ -370,6 +386,8 @@ Error message: FFI: Array provided for i64:c16 needs to have a length that's a m
 Error message: FFI: Array provided for i64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
 Error message: FFI: Array provided for i64:c32 needs to have a length that's a multiple of 2, but array had shape ⟨3⟩
 ### u8
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: u8 fac=1
 Error message: FFI: Improper value for u8: ¯1
 Error message: FFI: Improper value for u8: ¯1
@@ -391,6 +409,8 @@ Error message: FFI: Improper value for i8: 128
 Error message: FFI: Improper value for c8: @+256
 Error message: FFI: Improper value for c8: @+256
 ### u16
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: u16 fac=1
 Error message: FFI: Improper value for u16: ¯1
 Error message: FFI: Improper value for u16: ¯1
@@ -424,6 +444,8 @@ Error message: FFI: Array provided for u16:c8 needs to have a length that's a mu
 Error message: FFI: Improper value for c16: @+65536
 Error message: FFI: Improper value for c16: @+65536
 ### u32
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: u32 fac=1
 Error message: FFI: Improper value for u32: ¯1
 Error message: FFI: Improper value for u32: ¯1
@@ -472,6 +494,8 @@ Error message: FFI: u64 result ≥ 2⋆53
 Error message: FFI: u64 result ≥ 2⋆53
 Error message: FFI: u64 result ≥ 2⋆53
 Error message: FFI: u64 result ≥ 2⋆53
+Error message: 𝕨 •foreign.ReadBytesTo0 𝕩: Length limit reached before null byte was found
+Error message: 𝕨 •foreign.ReadCharsTo0 𝕩: Length limit reached before null byte was found
   conv none: u64 fac=1
 Error message: FFI: Improper value for u64: ¯1
 Error message: FFI: Improper value for u64: ¯1
