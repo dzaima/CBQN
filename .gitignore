@@ -30,8 +30,8 @@ cbqn-jit.bqn
 # test temporary files
 /test/ffi/*.o
 /test/ffi/*.got
-/test/ffi/sharedTest
-/test/ffi/staticTest
+/test/ffi/sharedTest*
+/test/ffi/staticTest*
 /test/ffi/sharedLibFolder
 /test/ffi/staticLibFolder
 /test/ffi/lib.so
