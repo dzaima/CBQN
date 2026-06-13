@@ -37,6 +37,7 @@
     TIi(t_unkArr,visit) = noop_visit;
     TIi(t_unkArr,freeO) = tyarr_freeO;
     TIi(t_unkArr,freeF) = tyarr_freeF;
+    if (sizeof(size_t) != sizeof(ssize_t)) fatal("unexpected ssize_t size");
     
     ffiloadDesc = registerNFn(m_c32vec_0(U"•FFI"), c1_bad, ffi_c2);
     foreignFunctionDesc = registerNFn(m_c32vec_0(U"•foreign.Function"), foreignFunction_c1, foreignFunction_c2);

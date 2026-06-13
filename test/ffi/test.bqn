@@ -188,6 +188,11 @@ Section "# size_t"
   f ↩ "lib.so" •FFI "usize"‿"size_type"‿"&isize"‿"usize"‿"isize"
   •Show F ⟨¯1e5‿¯10, 1e8, ¯5⟩
 }
+Section "# long"
+{
+  f ↩ "lib.so" •FFI "ilong"‿"long_type"‿"ilong"‿"ulong"‿"&ilong"‿"&ulong"
+  •Show F ⟨¯1000, 1234, (↕3) - 3⥊1e9, (↕3) + 3⥊1e8⟩
+}
 
 Section "# globals"
 {

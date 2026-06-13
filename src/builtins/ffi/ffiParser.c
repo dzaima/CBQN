@@ -111,12 +111,16 @@ static B parseFFIType0(ArgParseState* st) {
       u8 qual = *c++;
       u32 w;
       if (!(*c >= '0' && *c <= '9')) {
-        if (qual!='f' && c[0]=='s' && c[1]=='i' && c[2]=='z' && c[3]=='e') {
+        if (qual=='f') badInt: ffiThrF(pc, "FFI type: Expected '%c' to be followed by either a number, or the text \"size\" or \"long\"", qual);
+        if (c[0]=='s' && c[1]=='i' && c[2]=='z' && c[3]=='e') {
           c+= 4;
           w = sizeof(size_t) * 8;
           goto gotWidth;
-        }
-        ffiThrF(pc, "FFI type: Expected '%c' to be followed by either a number, or the text \"size\"", qual);
+        } else if (c[0]=='l' && c[1]=='o' && c[2]=='n' && c[3]=='g') {
+          c+= 4;
+          w = sizeof(long) * 8;
+          goto gotWidth;
+        } else goto badInt;
       }
       w = readUInt(pc, &c);
       gotWidth:;

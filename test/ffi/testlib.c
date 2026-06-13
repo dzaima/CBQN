@@ -465,6 +465,11 @@ size_t size_type(ssize_t* buf, size_t a, ssize_t b) {
   buf[1]+= a+2;
   return a + b;
 }
+long long_type(long sgn, unsigned long uns, long* psgn, unsigned long* puns) {
+  psgn[1]+= sgn;
+  puns[1]+= uns;
+  return psgn[2];
+}
 
 Struct64 add_int64structret(Struct64 a, int64_t b) {
   return (Struct64) { .sgn = a.sgn+b, .uns = a.uns+b };

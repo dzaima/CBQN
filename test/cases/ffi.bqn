@@ -4,9 +4,9 @@
 %DEF _errFFICore {𝕨 p _𝕣 𝕩: m←(@+10)=s←•CurrentError@ ⋄ "TEST FAIL: expected 2 newlines"!2=+´m ⋄ msg‿l0‿l1 ← m(⊢-˜+`×¬)⊸⊔s ⋄ ! msg∾"; "∾ ∾ (""‿"→"⊏˜" ^"⊐ (' '¨p)∾⁼ l1»' '¨l0) ∾¨ p∾⁼l0}
 %DEF ErrFFI @⊸•FFI⎊("at 𝕨 •FFI " %USE _errFFICore)
 
-•Type @•FFI {1↓0∾𝕩}¨   ""‿"bqn_init"‿"*i8" %% 3
-•Type @•FFI {1↓0∾𝕩}¨   ⟨⟩‿"bqn_init"‿"*i8" %% 3
-•Type @•FFI {1↓0∾𝕩}¨ (↕0)‿"bqn_init"‿"*i8" %% 3
+•Type @•FFI {1↓0∾𝕩}¨⌾(1⊸↓)   ""‿"bqn_init"‿"*i8"‿"usize" %% 3
+•Type @•FFI {1↓0∾𝕩}¨⌾(1⊸↓)   ⟨⟩‿"bqn_init"‿"*i8"‿"ulong" %% 3
+•Type @•FFI {1↓0∾𝕩}¨⌾(1⊸↓) (↕0)‿"bqn_init"‿"*i8"‿"ilong" %% 3
 
 # bad •FFI invocation
 # generally weird
@@ -24,7 +24,7 @@
 !"FFI type: Expected type, got end of string; ·‿""bqn_init""‿""[1]→""" % %USE ErrFFI ""‿"bqn_init"‿"[1]"
 !"FFI type: expected number; ·‿""bqn_init""‿""[→]i32""" % %USE ErrFFI ""‿"bqn_init"‿"[]i32"
 !"FFI type: Expected type, got end of string; ·‿""bqn_init""‿""{→""" % %USE ErrFFI ""‿"bqn_init"‿"{"
-!"FFI type: Expected 'i' to be followed by either a number, or the text ""size""; ·‿""bqn_init""‿""→i""" % %USE ErrFFI ""‿"bqn_init"‿"i"
+!"FFI type: Expected 'i' to be followed by either a number, or the text ""size"" or ""long""; ·‿""bqn_init""‿""→i""" % %USE ErrFFI ""‿"bqn_init"‿"i"
 !"FFI type: Unsupported width in f80; ·‿""bqn_init""‿""→f80""" % %USE ErrFFI ""‿"bqn_init"‿"f80"
 !"FFI type: Unsupported width in f128; ·‿""bqn_init""‿""→f128""" % %USE ErrFFI ""‿"bqn_init"‿"f128"
 !"FFI type: Unsupported width in f16; ·‿""bqn_init""‿""→f16""" % %USE ErrFFI ""‿"bqn_init"‿"f16"
@@ -40,7 +40,7 @@
 !"FFI type: Types must not contain null characters; ·‿""bqn_init""‿""{i32,→␀i32}""" % %USE ErrFFI ⟨"", "bqn_init", "{i32,"∾@∾"i32}"⟩
 !"FFI type: Types must not contain null characters; ·‿""bqn_init""‿""i32→␀""""hello""""""" % %USE ErrFFI ⟨"", "bqn_init", "i32"∾@∾"""hello"""⟩
 !"•FFI: Symbol name must not contain a null character" % @•FFI ⟨"", "bqn_init"∾@⟩
-!"FFI type: Expected 'i' to be followed by either a number, or the text ""size""; ""→invalid""‿""bqn_init""‿·‿·‿·‿·‿·‿·‿·‿·‿·‿·" % %USE ErrFFI ⟨"invalid", "bqn_init", ↑, ↑, ↓, ↓, <, >, <, >, ⌊, ⍉⟩
+!"FFI type: Expected 'i' to be followed by either a number, or the text ""size"" or ""long""; ""→invalid""‿""bqn_init""‿·‿·‿·‿·‿·‿·‿·‿·‿·‿·" % %USE ErrFFI ⟨"invalid", "bqn_init", ↑, ↑, ↓, ↓, <, >, <, >, ⌊, ⍉⟩
 !"FFI: '>' specified multiple times on the same arg; ·‿""bqn_init""‿·‿"">→>i32""‿·‿·" % %USE ErrFFI ⟨"i32", "bqn_init", "i32", ">>i32", @, 5⟩
 !"FFI type: Types must not contain null characters; ""→␀i32""‿""bqn_init""" % %USE ErrFFI ⟨@∾"i32", "bqn_init"⟩
 !"FFI type: Unexpected character where type is expected: '.' (@+46); ·‿""bqn_init""‿"">→...""" % %USE ErrFFI ""‿"bqn_init"‿">..."
