@@ -26,7 +26,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•ParseFloat` | Should exactly round floats with up to 17 significant digits, but won't necessarily round correctly with more |
 | `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN`; has extensions |
 | `•SH`         | See [•SH](#sh) |
-| `•FFI`        | see [FFI](#ffi) |
+| `•FFI`        | see [FFI](#ffi); also `•foreign` |
 | `•platform`   | |
 | `•Type`       | |
 | `•Glyph`      | |
@@ -118,15 +118,26 @@ Namespace of various internal functions. May change at any time.
 
 # FFI
 
-Currently there is no support for nested pointers, and limited support of structs.
+(also see [general BQN documentation](https://mlochbaum.github.io/BQN/doc/ffi.html) and [specification](https://mlochbaum.github.io/BQN/spec/system.html#foreign-function-interface-ffi))
 
-That is, the supported types are:
-- scalars (e.g. `i8`, `u64`);
-- pointers to scalars (e.g. `*i8`, `&u64`);
-- conversions of either scalars, pointers to scalars, or opaque pointers (e.g. `u64:i32`, `*i64:i32`, `*:i8`, `**:c8`);
-- arrays of scalars or structs (e.g. `[2]i32`, `[4]{i32,i32}`);
-- structs of any of the above (except `&`-pointers) or other structs (e.g. `{*i8,*{*u32:i8,u64:i32}}`), except structs that are within `&` themselves cannot contain any pointers other than converted opaque pointers (e.g. `*{*i32,u64}`, `&{*:i32,u64}`, and `&{i32,u64}` are fine, but `&{*i32,u64}` is not);
-- the `a` type, which maps to `BQNV` from [bqnffi.h](../include/bqnffi.h) (example usage in [FFI tests](../test/ffi/)).
+The supported types are:
+- primitive scalars `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `f32`, `f64`, `*`, and some aliases (`ulong`, `ilong`, `usize`, `isize` for C `long` & `size_t` & `ssize_t`);
+- conversions of primitive scalars (e.g. `u64:i32`, `*i64:i32`, `*:i8`, `usize:u1`), valid conversions being `:u1`, `:i8`, `:i16`, `:i32`, `:c8`, `:c16`, `:c32`;
+- `bool` (C `bool`), and `a` (which maps to `BQNV` from [bqnffi.h](../include/bqnffi.h));
+- arrays `[n]T` or structs `{T,U,V,...}` or pointers `*T` of the above, arbitrarily nested (e.g. `*f64`, `*i8:c8`, `[2]{i32,*i8,*{*i8,[3]f32,{f64,f32},**i32:i8}}`);
+- `&T` / `⥊T` / `&·T` / `⥊·T`, which can only be used in function arguments, only at top level, potentially through structs (e.g. `"&i8"` and `"{&i8,&{f32,[2]i32}}"` are allowed as arguments, but `[2]&i32` or `*{⥊i32}` aren't); pointers within the element type of these can only be passed pointer objects, not direct arrays.
+
+For `u64` and `i64` (and `ulong`/`usize`/etc on platforms where those are 64-bit), supplying or receiving a value `v ≥ 2⋆53` (or `v ≤ -2⋆53` for `i64`) will result in an error; a conversion (e.g. `i64:u1`, `u64:i32`) must be used if desiring to handle such values.
+
+`•foreign` contains:
+- `•foreign.Function`: dyadically, same as `•FFI`; monadically, takes a pointer object instead of a symbol name
+- `𝕨 •foreign.Pointer type‿name`: pointer to symbol `name` in shared library `𝕨`
+- `𝕨 •foreign.Value type‿name`: equivalent to `(𝕨 •foreign.Pointer type‿name).Read 0`
+- `•foreign.null`: untyped null-pointer
+- `•foreign.Sizeof type`: size, in bytes, of the given type
+- `•foreign.ReadBytesTo0`, `•foreign.ReadCharsTo0`: read a null-terminated string ("C string") from pointer `𝕩`, either as bytes or UTF-8; optionally taking `𝕨` as the maximum length to read (erroring if there's no null byte in the first `𝕨` bytes)
+
+Additionally, `𝕨` of `•FFI` / `•foreign.Function` / `•foreign.Pointer` / `•foreign.Value` can be `↑‿"libfoo.so"` to find the library via a platform-specific automatic mechanism, as opposed to it being a `•path`-resolved path when it's a string.
 
 # `•SH`
 
