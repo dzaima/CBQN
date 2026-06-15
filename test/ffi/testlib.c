@@ -179,18 +179,20 @@ void incInts(int32_t* a, int16_t* b, int8_t* c) {
   (*c)++;
 }
 
-void incNativeElements(
-   int8_t* pi8,  int16_t* pi16,  int32_t* pi32,
-  uint8_t* pu8, uint16_t* pu16, uint32_t* pu32,
+void incPrimitiveElements(
+   int8_t* pi8,  int16_t* pi16,  int32_t* pi32,  int64_t* pi64,
+  uint8_t* pu8, uint16_t* pu16, uint32_t* pu32, uint64_t* pu64,
   float* pf64, double* pf32
 ) {
-  printf("%d %d %d\n", *pi8, *pi16, *pi32);
-  printf("%u %u %u\n", *pu8, *pu16, *pu32);
+  printf("%d %d %d %lld\n", *pi8, *pi16, *pi32, (long long)*pi64);
+  printf("%u %u %u %llu\n", *pu8, *pu16, *pu32, (unsigned long long)*pu64);
   (*pi8 )++; (*pu8 )++;
   (*pi16)++; (*pu16)++;
   (*pi32)++; (*pu32)++;
+  (*pi64)++; (*pu64)++;
   (*pf32)++; (*pf64)++;
 }
+
 
 void incInt64(int64_t* pi64, uint64_t* pu64) {
   printf("%llx %llx\n", (long long)*pi64, (long long)*pu64);

@@ -57,9 +57,9 @@ f ↩ "lib.so" •FFI ⟨"","incInts","&i32", "𝕨&i16","&i8"⟩ ⋄ •Show �
 f ↩ "lib.so" •FFI ⟨"","incInts","&i32",">𝕨&i16","&i8"⟩ ⋄ •Show ⟨20⟩ F ⥊¨ 10‿30
 
 Section "# mutate all element types"
-f ↩ "lib.so" •FFI ⟨"","incNativeElements"⟩∾ "&"⊸∾¨ "f32"‿"f64"∾˜ ⥊"i"‿"u" ∾⌜ "8"‿"16"‿"32" ⋄ •Show F 1‿2⊸⥊¨ 0.5⊸+⌾(¯2⊸↑) 10+↕8
-f ↩ "lib.so" •FFI ⟨"","incNativeElements"⟩∾ "&"⊸∾¨ "f32"‿"f64"∾˜ ⥊"i"‿"u" ∾⌜ "8"‿"16"‿"32" ⋄ •Show F 8⥊< 1‿2⥊0
-f ↩ "lib.so" •FFI ⟨"","incNativeElements"⟩∾ "&"⊸∾¨ "f32"‿"f64"∾˜ ⥊"i"‿"u" ∾⌜ "8"‿"16"‿"32" ⋄ •Show F 1‿2⊸⥊¨ ¯100‿¯30000‿¯2e9‿200‿60000‿4e9 ∾ 1e38‿1e300
+f ↩ "lib.so" •FFI ⟨"","incPrimitiveElements"⟩∾ "&"⊸∾¨ "f32"‿"f64"∾˜ ⥊"i"‿"u" ∾⌜ "8"‿"16"‿"32"‿"64" ⋄ •Show F 1‿2⊸⥊¨ 0.5⊸+⌾(¯2⊸↑) 10+↕10
+f ↩ "lib.so" •FFI ⟨"","incPrimitiveElements"⟩∾ "&"⊸∾¨ "f32"‿"f64"∾˜ ⥊"i"‿"u" ∾⌜ "8"‿"16"‿"32"‿"64" ⋄ •Show F 10⥊< 1‿2⥊0
+f ↩ "lib.so" •FFI ⟨"","incPrimitiveElements"⟩∾ "&"⊸∾¨ "f32"‿"f64"∾˜ ⥊"i"‿"u" ∾⌜ "8"‿"16"‿"32"‿"64" ⋄ •Show F 1‿2⊸⥊¨ ¯100‿¯30000‿¯2e9‿¯1e15‿200‿60000‿4e9‿9e15 ∾ 1e38‿1e300
 f ↩ "lib.so" •FFI ⟨"","incInt64","&u64:i16","&i64:i16"⟩ ⋄ •Show F 2⥊< 2‿4⥊¯1‿¯1‿6‿0
 
 Section "# u64 & i64 tests"
