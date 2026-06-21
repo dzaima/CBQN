@@ -43,7 +43,7 @@ def ar_chk2{F==__mul, M, w:T=[_](i16), x:T if hasarch{'X86_64'}} = {
   tup{rl, tup{'anyne', rh, rl>>15}}
 }
 def ar_chk2{F==__mul, M, w:T=[_](i32), x:T if hasarch{'X86_64'}} = {
-  max:= re_el{f32, (ty_u{T})**0x4efffffe}
+  max:= re_el{f32, ty_u{T}**0x4efffffe}
   f32mul:= cvt{f32,w} * cvt{f32,x}
   tup{w*x, tup{'any_hom', M{__abs{f32mul} >= max}}}
   # TODO fallback to the below if the above fails

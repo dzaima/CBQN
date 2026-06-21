@@ -17,22 +17,25 @@ def __le{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vclez', T}, a}
 def __gt{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgtz', T}, a}
 def __ge{a:T, 0 if nvecs{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vcgez', T}, a}
 def __eq{a:T, 0 if nveci{T} or nvecf{T}} = emit{ty_u{T}, ntyp{'vceqz', T}, a}
+def __ne{a:T, 0 if nveci{T}            } = emit{ty_u{T}, ntyp{'vtst',  T}, a, a}
 
-local def widening_op{root, el} = { def extend _{lo, hi, lh} = {
-  def lo{a:T=[_]E, b:T if w64{T}  and el{E}} = emit{el_d{T}, ntyp{root, T}, a, b}
-  def hi{a:T=[_]E, b:T if w128{T} and el{E}} = emit{el_m{T}, ntyp0{merge{root,'_high'}, T}, a, b}
-  def lh{a:T=[_]E, b:T if w128{T} and el{E}} = tup{lo{half{a,0}, half{b,0}}, hi{a,b}}
+local def widening_op{root, post, el, bval} = { def extend _{lo, hi, lh} = {
+  def lo{a:T=[_]E, b if w64{T}  and el{E} and bval{b,T}} = emit{el_d{T}, ntyp{merge{root, post}, T}, a, b}
+  def hi{a:T=[_]E, b if w128{T} and el{E} and bval{b,T}} = emit{el_m{T}, ntyp0{merge{root,'_high',post}, T}, a, b}
+  def lh{a:T=[_]E, b if w128{T} and el{E} and bval{b,T}} = tup{lo{half{a,0}, if (knum{b}) b else half{b,0}}, hi{a,b}}
 }}
-extend (widening_op{'vmull', {E} => isint{E} and width{E}<=32}){mulw, mulw_upper, mulw_split}
-extend (widening_op{'vaddl', isint}){addw, addw_upper, addw_split}
-extend (widening_op{'vsubl', isint}){subw, subw_upper, subw_split}
+local def int_lt32{E} = isint{E} and width{E}<=32
+local def shiftam{b,[_]E} = int_idx{b,width{E}}
+extend (widening_op{'vshll', '_n', int_lt32, shiftam}){shlw, shlw_upper, shlw_split}
+extend (widening_op{'vmull', '',   int_lt32, hastype}){mulw, mulw_upper, mulw_split}
+extend (widening_op{'vaddl', '',   isint,    hastype}){addw, addw_upper, addw_split}
+extend (widening_op{'vsubl', '',   isint,    hastype}){subw, subw_upper, subw_split}
 
 def shrn{a:T, s      if w128i{T} and elwidth{T}>8} = { def H=el_h{T}; emit{H, ntyp0{'vshrn_n', T}, a, s} } # a>>s, narrowed
 def shrm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsri', '_n', T}, d, a, s} # (a>>s) | (d & (mask of new zeroes))
 def shlm{a:T, s, d:T if nvecu{T}} = emit{T, ntyp{'vsli', '_n', T}, d, a, s} # (a<<s) | (d & (mask of new zeroes))
 
-def addpw {              x:T if nveci{T} and elwidth{T}<=32} = emit{el_m{T}, ntyp{'vpaddl', T},    x} # add pairwise widening
-def addpwa{a:D==el_m{T}, x:T if nveci{T} and elwidth{T}<=32} = emit{D,       ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
+def addpwa{a:D==el_m{T}, x:T if nveci{T} and elwidth{T}<=32} = emit{D, ntyp{'vpadal', T}, a, x} # add pairwise widening + accumulate
 
 # narrowing add/subtract, high half
 local def narrowing_op{name} = { def extend _{lower, upper} = {
