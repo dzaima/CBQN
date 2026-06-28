@@ -371,10 +371,9 @@ static B select_depth2_impl(ux wia, B w, B x) { // wia<=1 only if invalid; or if
   ux rr = wi.rank;
   
   B r0;
-  if (wi.prod==0) {
+  if (wi.prod==0 || IA(x)==0) {
     r0 = taga(emptyArr(x, rr));
   } else {
-    assert(IA(x)!=0);
     Spans ws = select_depth2_inds(w, x, wi.lastMaybeRange);
     r0 = select_depth2_select(ws, x);
   }

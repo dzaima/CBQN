@@ -168,12 +168,18 @@ w←1‿1⥊1 ⋄ x←2⥊1 ⋄ w‿x <¨↩   ⋄ {! (∾⟨"𝕨",•Repr𝕩,
 )
 0‿0‿0 ⊏ 1‿3⥊↕10 %%% 3‿3⥊0‿1‿2
 ≢¨ ⟨(2‿0‿3‿4‿5⥊1)⊏9‿8‿0‿7⥊0 ⋄ ⟨⟩⊏0‿8‿0‿7⥊0 ⋄ (2‿3‿0‿4⥊1)⊏↕10⟩ %%% ⟨2‿0‿3‿4‿5‿8‿0‿7,0‿8‿0‿7,2‿3‿0‿4⟩
+⟨1‿2, 3‿4‿0⟩ ⊏ 5‿5‿0⥊0 %%% 2‿3‿0⥊0
+⟨1‿2, 2‿3‿4⟩ ⊏ 5‿5‿0⥊0 %%% 2‿3‿0⥊0
+⟨<4, <2⟩ ⊏ 5‿5‿0⥊0 %%% ↕0
+⟨<4, <2⟩ ⊏ 5‿5‿0‿8‿9⥊0 %%% 0‿8‿9⥊0
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ 0‿0 ⊏_evar ↕0
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ 0‿0 ⊏_evar 0‿2⥊1
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ [0‿0,0‿0] ⊏_evar ↕0
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ [0‿0,0‿0] ⊏_evar 0‿0⥊1
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ ⟨0‿0⟩ ⊏_evar 0‿2⥊1
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ ⟨0‿0⟩ ⊏_evar ↕0
+!"𝕨⊏𝕩: Indexing out-of-bounds along axis 0 (40 ∊ 0⊑𝕨, 5‿5‿0‿8‿9≡≢𝕩)" % %USE evar ⋄ ⟨<40, <2⟩ ⊏_evar 5‿5‿0‿8‿9⥊0
+!"𝕨⊏𝕩: Indexing out-of-bounds along axis 1 (7 ∊ 1⊑𝕨, 5‿5‿0‿8‿9≡≢𝕩)" % %USE evar ⋄ ⟨2‿3, 7‿8‿9⟩ ⊏_evar 5‿5‿0‿8‿9⥊0
 !"𝕨⊏𝕩: Indexing out-of-bounds along axis 1 (0 ∊ 1⊑𝕨, 2‿0≡≢𝕩)" % %USE evar ⋄ ⟨0‿0,0‿0⟩ ⊏_evar 2‿0⥊1
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ ⟨0⟩ ⊏_evar ↕0
 !"𝕨⊏𝕩: Indexing out-of-bounds (0∊𝕨, 0≡≠𝕩)" % %USE evar ⋄ ⟨⋈0⟩ ⊏_evar ↕0
