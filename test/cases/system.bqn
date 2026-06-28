@@ -20,6 +20,8 @@
 !"•BQN: Filename must be a string" % ⟨•path, 1‿2⟩ •BQN "2+2"
 ⟨•path, "abc/def"⟩ •BQN "•name" %% "abc/def"
 !"•BQN: 𝕩 must be a string" % •BQN ↕3
+!"𝕨 •BQN 𝕩: 𝕨 must be a list with at most 3 items, but had shape ⟨4⟩" % (↕4) •BQN "123"
+!"𝕨 •BQN 𝕩: 𝕨 must be a list with at most 3 items, but had shape 2‿2" % (2‿2⥊↕4) •BQN "123"
 !"No path present for •path" % •BQN"•path"
 !"No arguments present for •args" % •BQN"•args"
 !"No name present for •name" % •BQN"•name"
@@ -38,6 +40,7 @@
 # •ReBQN
 !"REPL: Filename must be a string" % f←•ReBQN{⇐} ⋄ ⟨•path, 1‿2⟩ F "2+2"
 !"REPL: Path must be a string" % f←•ReBQN{⇐} ⋄ ⟨1‿2⟩ F "2+2"
+!"𝕨 REPL 𝕩: 𝕨 must be a list with at most 3 items, but had shape ⟨4⟩" % f←•ReBQN{⇐} ⋄ (↕4) F "123"
 f←•ReBQN{⇐} ⋄ ! ⟨•path, "custom-name", "arg"⟩ ≡ ⟨•path,"custom-name", "arg"⟩ F "•state"
 
 f←•ReBQN {system⇐"all"} ⋄ F "•internal.Type ↕10" %% "i8arr"

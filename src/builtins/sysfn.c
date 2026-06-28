@@ -286,7 +286,7 @@ NOINLINE B vfyStr(B x, char* name, char* arg) {
 
 GLOBAL B cdPath;
 static NOINLINE B prep_state(B w, char* name) { // consumes w, returns ⟨path,name,args⟩
-  if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("𝕨%U𝕩: 𝕨 must be a list with at most 3 items, but had shape %H", name, w);
+  if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("𝕨 %U 𝕩: 𝕨 must be a list with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w); SGet(w)
   HArr_p r = m_harr0v(3);
   r.a[0] = ia>0? vfyStr(Get(w,0),name,"Path"    ) : inc(cdPath);
