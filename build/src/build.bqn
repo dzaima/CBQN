@@ -343,8 +343,13 @@ po ← { # parsed options
   }⍟(""≡⊢) output
   {𝕊: "Output location: "∾𝕩}_verboseLog output
   
-  pie ⇐ {(¬sharedLib∨staticLib)∧linux∧arch≡"X86_64"? 0; 1} DOpt "pie"
-  {𝕊: pie ↩ 0}⍟⊢ wasm
+  pie ← {wasm∨windows? @; (¬lib)∧linux∧arch≡"X86_64"? 0; macos∧arch≡"AARCH64"? @; 1} DOpt "pie"
+  pieCompileFlags ← {
+    sharedLib? (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩;
+    pie≡0? ⟨"-fno-pie"⟩;
+    pie≡1? ⟨"-fPIE"⟩;
+    pie≡@? ⟨⟩
+  }
   
   ffi ⇐ ((¬windows)∧¬wasm) DOpt "FFI"
   
@@ -382,10 +387,11 @@ po ← { # parsed options
         "-Wno-pass-failed" # vfor
       ⟩ ∾ (¬wasm)/⟨"-mllvm", "--x86-cmov-converter=0"⟩ # thing that converts `cmov`s to branching sometimes (?), but we don't want that
     ⟩
+    args∾↩ minCCFlags
     args∾↩ 0⊑GetLibs@
     
-    args∾↩ minCCFlags
     args∾↩ ubsanFlags
+    args∾↩ pieCompileFlags
     args∾↩ (singeli ∧ arch≡ "X86_64") / ⟨"-DSINGELI_X86_64"⟩ ∾ {singeli? ⟨"-mavx2"⟩ ∊ singeliCFlags; 0} / ⋈"-DSINGELI_AVX2"
     args∾↩ (singeli ∧ arch≡"AARCH64") / ⟨"-DSINGELI_NEON"⟩
     args∾↩ (singeli ∧ ⊑arch<⊸∊"X86_64"‿"AARCH64") / ⟨"-DSINGELI_SIMD"⟩
@@ -398,10 +404,7 @@ po ← { # parsed options
     args∾↩ (           debug) / ⟨"-DDEBUG"⟩
     args∾↩ (        rtverify) / ⟨"-DRT_VERIFY"⟩
     args∾↩ (      heapverify) / ⟨"-DHEAP_VERIFY", "-DUSE_SETJMP=0"⟩
-    args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
-    args∾↩ (pie ∧ ¬sharedLib) / ⟨"-fPIE"⟩
     args∾↩ (             lib) / ⟨"-DCBQN_LIB"⟩
-    args∾↩ (       sharedLib) / (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
     args∾↩ (         windows) / ⟨"-DNO_MMAP"⟩
     args∾↩ (replxx ∧ windows) / ⟨"-DUSE_REPLXX_IO"⟩
     args∾↩ (   @≢versionName) / ⟨"-DHAS_VERSION"⟩
@@ -415,12 +418,10 @@ po ← { # parsed options
   
   REPLXXc ⇐ { 𝕊:
     args ← ⟨cxx, "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩
+    args∾↩ pieCompileFlags
     args∾↩ GetOpt "REPLXX_FLAGS"
     args∾↩ GetOpt "CXXFLAGS"
-    args∾↩ (            ¬pie) / ⟨"-fno-pie"⟩
     args∾↩ allFlags
-    args∾↩ (pie ∧ ¬sharedLib) / ⟨"-fPIE"⟩
-    args∾↩ (       sharedLib) / (¬GetOpt"no_fPIC")/⟨"-fPIC"⟩
     {"REPLXX C++ compiler: "∾•Repr 𝕩} _verboseLog args
     replxxc ↩ args
   }
@@ -460,8 +461,7 @@ po ← { # parsed options
         args∾↩ (sharedLib∧¬wasi) / ⟨"-shared"⟩
         args∾↩ (sharedLib∧macos) / ⟨"-install_name", "@rpath/libcbqn.dylib"⟩
         args∾↩ (       rdynamic) / ⟨"-rdynamic"⟩
-        args∾↩ ((¬wasm)∧   ¬pie) / ⟨"-no-pie"⟩
-        args∾↩ (pie∧ ¬sharedLib) / ⟨"-fPIE", "-pie"⟩
+        args∾↩ {sharedLib? ⟨⟩; pie≡0? ⟨"-no-pie"⟩; pie≡1? ⟨"-fPIE", "-pie"⟩; pie≡@? ⟨⟩}
         args∾↩ (        windows) / ⟨"-lpthread"⟩
         args∾↩ (      staticBin) / ⟨"-static"⟩
         args∾↩ ( debuginfo∧emcc) / ⟨"-gsource-map"⟩

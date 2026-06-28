@@ -105,10 +105,10 @@ Though other configurations are expected to work (except 32-bit x86 without SSE2
 
 ```
 x86-64 (Linux):
-  gcc 9.5; gcc 14.2.0; clang 10.0.0; clang 21.0.0; clang 22 prerelease (++20260105081943+212527c00ba6-1~exp1~20260105082109.1379)
+  gcc 9.5; gcc 14.2.0; clang 10.0.0; clang 22; clang 23 prerelease (++20260601033445+ef7cbc5f9c40-1~exp1~20260601153641.3163)
   libffi 3.4.6
   CPU microarchitecture: Haswell
-  replxx: g++ 14.0.1; clang++ 21.0.0
+  replxx: g++ 14.0.1; clang++ 22
 x86 with SSE2 (Linux; running on the above x86-64 system, compiled with `make target_from_cc=1 REPLXX=0 FFI=0 CCFLAGS='-m32 -msse2' usz=32`):
   clang 21.0.0; gcc 14.2.0
 AArch64 ARMv8-A (within Termux, Android 16):
