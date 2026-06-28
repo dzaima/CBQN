@@ -390,7 +390,7 @@ po ← { # parsed options
     args∾↩ (singeli ∧ arch≡"AARCH64") / ⟨"-DSINGELI_NEON"⟩
     args∾↩ (singeli ∧ ⊑arch<⊸∊"X86_64"‿"AARCH64") / ⟨"-DSINGELI_SIMD"⟩
     args∾↩ (            wasm) / ⟨"-DWASM"⟩
-    args∾↩ (            wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DUSE_SETJMP=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasi"⟩
+    args∾↩ (            wasi) / ⟨"-DWASI", "-DNO_MMAP", "-DUSE_SETJMP=0", "-D_WASI_EMULATED_MMAN", "--target=wasm32-wasip1"⟩
     args∾↩ (            emcc) / ⟨"-DEMCC", "-O3"⟩
     args∾↩ (          replxx) / ⟨"-DUSE_REPLXX", "-DREPLXX_STATIC=1", "-I"∾replxxDir∾"/include"⟩ # TODO maybe move to main.c only, and have it be in its own separate cache dir, so that adding replxx doesn't recompile everything?
     args∾↩ (       debuginfo) / ⟨"-g"⟩
