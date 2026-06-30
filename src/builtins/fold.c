@@ -603,7 +603,7 @@ B insert_c1(Md1D* d, B x) { B f = d->f;
         rsh = m_shArr(xr-1);
         usz* xsh = SH(x);
         shcpy(rsh->a+1, xsh+2, xr-2);
-        rsh->a[0] = xsh[0] * xsh[1];
+        rsh->a[0] = uszMul(xsh[0], xsh[1]);
       }
       Arr* r = TI(x,slice)(x, 0, IA(x));
       if (xr>2) arr_shSetUG(r, xr-1, rsh);
@@ -671,7 +671,7 @@ B insert_cells_join(B x, usz* xsh, ur cr, ur k) {
   ShArr* rsh;
   rsh = m_shArr(rr);
   shcpy(rsh->a, xsh, k);
-  rsh->a[k] = xsh[k] * xsh[k+1];
+  rsh->a[k] = uszMul(xsh[k], xsh[k+1]);
   shcpy(rsh->a+k+1, xsh+k+2, cr-2);
   Arr* r = TI(x,slice)(x, 0, IA(x));
   arr_shSetUG(r, rr, rsh);

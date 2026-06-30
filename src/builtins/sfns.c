@@ -1061,7 +1061,9 @@ B join_c2(B t, B w, B x) {
       }
       rsh[i] = s;
     }
-    rsh[0] = (wr==c? wsh[0] : 1) + (xr==c? xsh[0] : 1);
+    usz v = wr==c? wsh[0] : 1;
+    if (ADD_ON(v, xr==c? xsh[0] : 1)) thrM("𝕨∾𝕩: Length too large");
+    rsh[0] = v;
     if (rnk0>1) decShObj(sh0);
   }
   

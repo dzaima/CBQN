@@ -155,6 +155,11 @@ static usz shProd(usz* sh, usz s, usz e) { // doesn't check for overflow; be car
   PLAINLOOP for (i32 i = s; i < e; i++) r*= sh[i];
   return r;
 }
+static usz shProdChk(usz* sh, usz s, usz e) {
+  usz r = 1;
+  PLAINLOOP for (i32 i = s; i < e; i++) r = uszMul(r, sh[i]);
+  return r;
+}
 static usz arr_csz(B x) { // if 0=≠x, may overflow, returning a meaningless value
   ur xr = RNK(x);
   if (xr<=1) return 1;

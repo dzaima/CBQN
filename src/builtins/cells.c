@@ -440,7 +440,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
       case n_ltack: case n_rtack:
         return x;
       case n_lt:
-        if (cam==0) goto noCells; // toCells/toKCells don't set outer array fill
+        if (cam==0 && IA(x)==0) goto noCells; // toCells/toKCells don't set outer array fill
         return k==1 && RNK(x)>1? toCells(x) : k==0? m_unit(x) : toKCells(x, k);
       case n_select:
         if (IA(x)==0) goto noSpecial;
@@ -462,7 +462,7 @@ B for_cells_c1(B f, u32 xr, u32 cr, u32 k, B x, u32 chr) { // F⎉cr x; array x,
       case n_shape: {
         if (cr==1) return x;
         Arr* r = cpyWithShape(x); xsh=PSH(r);
-        usz csz = shProd(xsh, k, xr);
+        usz csz = shProdChk(xsh, k, xr);
         ShArr* rsh = m_shArr(k+1);
         shcpy(rsh->a, xsh, k);
         rsh->a[k] = csz;
