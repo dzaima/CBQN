@@ -494,11 +494,13 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 !"𝕨⥊𝕩: Result rank too large (301 ≡ ≠𝕨)" % (0∾300⥊2)⥊0
 !"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 1.1}¨_eqerr 63-↕10 %USZ64
 !"Out of memory" % %USE eqerr ⋄ {(𝕩⥊2) ⥊ 7⥊1.1}¨_eqerr 63-↕10 %USZ64
-1e8‿1e8‿⌊‿1e8‿1e8⥊↕5 %% 1e8‿1e8‿0‿1e8‿1e8⥊0 %USZ64
+1e16‿1e16‿⌊‿1e16‿1e16⥊↕5 %% 1e16‿1e16‿0‿1e16‿1e16⥊0 %USZ64
+1e8‿1e8‿⌊‿1e8‿1e8⥊↕5 %% 1e8‿1e8‿0‿1e8‿1e8⥊0
 1e4‿1e4‿⌊‿1e4‿1e4⥊↕5 %% 1e4‿1e4‿0‿1e4‿1e4⥊0 %USZ32
-⍷ {1e8‿1e8‿𝕩‿1e8‿1e8⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e8‿1e8‿0‿1e8‿1e8⥊0 %USZ64
-⍷ {1e4‿1e4‿𝕩‿1e4‿1e4⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e4‿1e4‿0‿1e4‿1e4⥊0 %USZ32
-!"𝕨⥊𝕩: 𝕨 too large" % %USE eqerr ⋄ {1e8‿1e8‿𝕩‿1e8‿1e8⥊"foo"}_eqerr ∘‿⌽‿↑
+⍷ {1e16‿1e16‿𝕩‿1e16‿1e16⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e16‿1e16‿0‿1e16‿1e16⥊0 %USZ64
+⍷ {  1e8‿1e8‿𝕩‿1e8‿1e8  ⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e8‿1e8‿0‿1e8‿1e8⥊0
+⍷ {  1e4‿1e4‿𝕩‿1e4‿1e4  ⥊↕0}¨ ∘‿⌽‿↑ %% ⋈ 1e4‿1e4‿0‿1e4‿1e4⥊0 %USZ32
+!"𝕨⥊𝕩: 𝕨 too large" % %USE eqerr ⋄ {1e8‿1e8‿𝕩‿1e8‿1e8⥊"foo"}_eqerr ∘‿⌽‿↑‿!‿¨
 
 !"𝕨⥊𝕩: 𝕨 must be a list or unit (4 ≡ =𝕩)" % %USE eqerr ⋄ ⟨3‿1‿4‿1⥊2⟩ ⥊_eqerr ⟨↕10, ↕0, 4⟩
 !"𝕨⥊𝕩: Empty 𝕩 and non-empty result" % %USE eqerr ⋄ ⟨10‿10, 1, ⟨⟩, ⋈1⟩ ⥊_eqerr ⟨↕0, "", 0‿0⥊0, 10‿0⥊"", 0‿10⥊<"hi"⟩

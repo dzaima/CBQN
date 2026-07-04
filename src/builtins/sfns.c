@@ -253,7 +253,7 @@ B shape_c2(B t, B w, B x) {
     return shape_c2_listw(t, w, x);
   }
 }
-NOINLINE B shape_c2_listw(B t, B w, B x) {
+NOINLINE B shape_c2_listw(B t, B w, B x) { // not necessarily list w, but expected to be such
   if (RARE(isAtm(w))) return shape_c2_01(2, w, x);
   if (RNK(w) > 1) thrF("𝕨⥊𝕩: 𝕨 must be a list or unit (%i ≡ =𝕩)", RNK(w));
   usz wia = IA(w);
@@ -267,7 +267,6 @@ NOINLINE B shape_c2_listw(B t, B w, B x) {
   SGetU(w)
   i32 unkPos = -1;
   i32 unkID ONLY_GCC(=0);
-  usz xia ONLY_GCC(=0);
   bool bad=false, good=false;
   for (i32 i = 0; i < nr; i++) {
     B c = GetU(w, i);
@@ -281,15 +280,20 @@ NOINLINE B shape_c2_listw(B t, B w, B x) {
       if (unkPos!=-1) thrM("𝕨⥊𝕩: 𝕨 contained multiple computed axes");
       unkPos = i;
       unkID = RTID(c);
-      xia = isArr(x)? IA(x) : 1;
-      good|= xia==0 | unkID==n_floor;
     }
   }
-  if (bad && !good) thrM("𝕨⥊𝕩: 𝕨 too large");
+  if (bad && !good) { // nia is non-zero, but overflowed
+    if (unkPos!=-1) {
+      if (unkID==n_floor) { empty_res: nia = (usz) -1; goto has_unk; } // fixed shape overflows, equivalent to it being larger than x for ⌊
+      if (isArr(x) && IA(x)==0) goto empty_res; // non-⌊ computed components can go to 0 only if x is empty; need to just make sure that nia isn't 0, reuse the n_floor value
+    }
+    thrM("𝕨⥊𝕩: 𝕨 too large");
+  }
   
-  if (unkPos!=-1) {
+  if (unkPos!=-1) { has_unk:;
     SHAPE_C2_PRIM1(unkID, GetU(w,unkPos));
     if (nia==0) thrM("𝕨⥊𝕩: Can't compute axis when the rest of the shape is empty");
+    usz xia = isArr(x)? IA(x) : 1;
     usz div = xia/nia;
     usz mod = xia%nia;
     usz item;
@@ -314,6 +318,7 @@ NOINLINE B shape_c2_listw(B t, B w, B x) {
       return truncReshape(x, nia, nia, nr, sh); // could be improved
     }
   }
+  
   decG(w);
   return taga(arr_shSetUO(reshape_unshaped(nia, x), nr, sh));
 }
