@@ -273,20 +273,42 @@ B find_c2(B t, B w, B x) {
   ur wr = isAtm(w) ? 0 : RNK(w);
   ur xr = isAtm(x) ? 0 : RNK(x);
   if (wr > xr) thrF("𝕨⍷𝕩: Rank of 𝕨 must be at most rank of 𝕩 (%i≡=𝕨, %i≡=𝕩)", wr, xr);
-  u8 xe, we ONLY_GCC(= 0);
   B r;
-  if (xr==1 && (xe=TI(x,elType))!=el_B && (isAtm(w) || (we=TI(w,elType))!=el_B)) {
-    if (xe == el_bit) {
-      x = taga(cpyI8Arr(x));
-      xe = el_i8;
+  if (xr==1) {
+    if (isAtm(w)) {
+      if (TI(x,arrD1)) return C2(eq, w, x);
+      else w = m_unit(w);
     }
-    if (wr == 0) return C2(eq, w, x);
+    // now, both w and x are arrays, which may or may not be typed
+    
     usz wl = IA(w);
     usz xl = IA(x);
     if (wl > xl) { r = emptyIVec(); goto dec_ret; }
     if (wl == 0) { r = taga(arr_shVec(allOnesFl(xl+1))); goto dec_ret; }
-    // Compare elements of w to slices of x
-    usz rl = xl - wl + 1; // Result length
+    usz rl = xl - wl + 1; // result length
+    
+    if (HEURISTIC(false)) { generic_lists:;
+      B* wp = TO_BPTR(w);
+      B* xp = TO_BPTR(x);
+      u64* rp; r = m_bitarrv(&rp, rl);
+      for (ux ri = 0; ri < rl; ri++) {
+        bool ok = true;
+        for (ux wi = 0; wi < wl; wi++) {
+          if (!equal(wp[wi], xp[ri+wi])) { ok=false; break; }
+        }
+        bitp_set(rp, ri, ok);
+      }
+      goto dec_ret;
+    }
+    
+    u8 we = TI(w,elType); if (MAY_T(we==el_B)) { w=squeeze_any(w); we=TI(w,elType); if (we==el_B) goto generic_lists; }
+    u8 xe = TI(x,elType); if (MAY_T(xe==el_B)) { x=squeeze_any(x); xe=TI(x,elType); if (xe==el_B) goto generic_lists; }
+    
+    // core typed array implementation; first, compare elements of w to slices of x, until few candidates remain
+    if (xe == el_bit) {
+      x = taga(cpyI8Arr(x));
+      xe = el_i8;
+    }
     u8* xp = tyany_ptr(x);
     u64* rp; r = m_bitarrv(&rp, rl);
     CmpASFn eq = CMP_AS_FN(eq, xe);
@@ -296,19 +318,19 @@ B find_c2(B t, B w, B x) {
     usz xw = elWidth(xe);
     usz rb = BIT_N(rl);
     TALLOC(u64, eq_res, rb);
-    for (usz i = 1; i < wl; i++) {
+    for (ux i = 1; i < wl; i++) {
       CMP_AS_CALL(eq, eq_res, xp + i*xw, GetU(w,i), rl);
-      for (usz b = 0; b < rb; b++) rp[b] &= eq_res[b];
-      usz s = bit_sum(rp, rl);
+      for (ux b = 0; b < rb; b++) rp[b] &= eq_res[b];
+      ux s = bit_sum(rp, rl);
       if (s == 0) break;
-      // Switch to verifying matches individually
+      // switch to verifying matches individually
       if (s < rl/16 && rl <= I32_MAX && we != el_bit) {
         B ind = toI32Any(C1(slash, incG(r)));
         usz ni = IA(ind);
         i32* ip = i32any_ptr(ind);
         u8* wp = (u8*)tyany_ptr(w) + i*elWidth(we);
         MatchFnObj match = MATCH_GET(we, xe);
-        for (usz ii = 0; ii < ni; ii++) {
+        for (ux ii = 0; ii < ni; ii++) {
           usz j = ip[ii];
           if (!MATCH_CALL(match, wp, xp + (i+j)*xw, wl-i)) bitp_set(rp, j, 0);
         }
@@ -319,7 +341,8 @@ B find_c2(B t, B w, B x) {
     TFREE(eq_res);
     goto dec_ret;
   }
-  if (wr==0) { assert(wr==0); return eachd_fn(bi_feq, w, x, feq_c2); }
+  
+  if (wr==0) return eachd_fn(bi_feq, w, x, feq_c2);
   assert(wr>0 && xr>0);
   
   if (IA(x)==0) {
