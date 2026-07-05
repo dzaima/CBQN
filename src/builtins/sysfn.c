@@ -1633,7 +1633,7 @@ B sys_c1(B t, B x) {
       case sys_ffi: case sys_foreign: cr = getSysFFI(REQ_PATH, sys_id(c)==sys_foreign); break;
       case sys_name: if (q_N(name))  thrM("No name present for •name"); cr = inc(name); break;
       case sys_path: if (q_N(path0)) thrM("No path present for •path"); cr = inc(REQ_PATH); break;
-      case sys_wdpath: { cr = inc(CACHE_OBJ(wdpath, path_abs(inc(cdPath)))); break; }
+      case sys_wdpath: cr = inc(CACHE_OBJ(wdpath, path_withTrailingSlash(path_abs(m_c8vec_0("."))))); break;
       case sys_file: {
         #define F(X) m_nfn(X##Desc, inc(path))
         cr = incG(CACHE_OBJ(fileNS, ({

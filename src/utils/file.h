@@ -7,6 +7,7 @@ B path_parent(B path); // consumes; returns the containing directory, with trail
 B path_name(B path); // consumes; returns filename from a path
 B path_abs(B path); // consumes; returns absolute version of the path; propagates bi_N
 bool path_isSingleComponent(B path); // doesn't consume; returns whether path doesn't contain slashes
+B path_withTrailingSlash(B path); // consumes; adds a trailing slash if there isn't already one; doesn't do anything for empty input
 
 FILE* file_open(B path, char* desc, char* mode); // doesn't consume path
 I8Arr* path_bytes(B path); // consumes

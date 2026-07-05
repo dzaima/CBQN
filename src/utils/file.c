@@ -204,6 +204,10 @@ bool path_isSingleComponent(B path) {
   }
   return true;
 }
+B path_withTrailingSlash(B path) {
+  if (IA(path)>0 && !isPathSep(o2cG(IGetU(path,IA(path)-1)))) path = vec_addN(path, m_c32(PREFERRED_SEP));
+  return path;
+}
 
 B path_abs(B path) {
   assert(isStr(path));

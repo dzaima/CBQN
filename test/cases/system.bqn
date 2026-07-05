@@ -96,6 +96,7 @@ a←b←0 ⋄ f←•ReBQN{primitives⇐⟨'¨'‿{a+↩1⋄𝕗},'∘'‿{b+↩
 
 # •wdpath
 ! ∧´ 2=•Type¨ •wdpath
+¯1⊑•wdpath %% '/'
 
 # •ns
 %USE eqvar ⋄ {abc⇐1 ⋄ dÊF⇐2}⊸•ns.Get _eqvar¨ ⟨"abc", "ABC", "abC", "abc___", "DêF", "__D__Ê__F__"⟩ %% 1‿1‿1‿1‿2‿2
