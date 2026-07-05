@@ -175,11 +175,11 @@ BQN_EXP BQNV bqn_call2(BQNV f, BQNV w, BQNV x) {
 
 BQN_EXP BQNV bqn_eval(BQNV src) {
   Run r = run_start();
-  return RUN_END_R(bv_mk(bqn_exec(inc(bv_get(src)), bi_N)));
+  return RUN_END_R(bv_mk(bqn_exec(inc(bv_get(src)), defaultUnknownState())));
 }
 BQN_EXP BQNV bqn_evalCStr(const char* str) {
   Run r = run_start();
-  return RUN_END_R(bv_mk(bqn_exec(utf8Decode0(str), bi_N)));
+  return RUN_END_R(bv_mk(bqn_exec(utf8Decode0(str), defaultUnknownState())));
 }
 
 

@@ -284,21 +284,20 @@ NOINLINE B vfyStr(B x, char* name, char* arg) {
   return x;
 }
 
-GLOBAL B cdPath;
-static NOINLINE B prep_state(B w, char* name) { // consumes w, returns ⟨path,name,args⟩
+NOINLINE HArr* prep_state(B w, char* name) { // consumes w, returns ⟨path,name,args⟩
   if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("𝕨 %U 𝕩: 𝕨 must be a list with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w); SGet(w)
   HArr_p r = m_harr0v(3);
-  r.a[0] = ia>0? vfyStr(Get(w,0),name,"Path"    ) : inc(cdPath);
+  r.a[0] = ia>0? vfyStr(Get(w,0),name,"Path")     : m_c8vec_0(".");
   r.a[1] = ia>1? vfyStr(Get(w,1),name,"Filename") : emptyCVec();
   r.a[2] = ia>2?        Get(w,2)                  : emptySVec();
   decG(w);
-  return r.b;
+  return r.c;
 }
 
 B bqn_c1(B t, B x) {
   vfyStr(x, "•BQN", "𝕩");
-  return rebqn_exec(x, bi_N, nfn_objU(t));
+  return rebqn_exec(x, defaultUnknownState(), nfn_objU(t));
 }
 
 B bqn_c2(B t, B w, B x) {
@@ -680,7 +679,7 @@ B rebqn_c1(B t, B x) {
   if (replVal==0) {
     scVal = bi_N;
   } else {
-    Block* initBlock = bqn_comp(m_c8vec_0("\"(REPL initializer)\""), bi_N, def_re, NULL, COMP_UNK, false, false);
+    Block* initBlock = bqn_comp(m_c8vec_0("\"(REPL initializer)\""), defaultUnknownState(), def_re, NULL, COMP_UNK, false, false);
     Scope* sc = m_scope(initBlock->bodies[0], NULL, 0, 0, NULL);
     scVal = tag(sc,OBJ_TAG);
     ptr_dec(initBlock);
@@ -693,8 +692,7 @@ B rebqn_c1(B t, B x) {
   return m_nfn(rebqnResDesc, d.b);
 }
 B repl_c2(B t, B w, B x) {
-  vfyStr(x, "REPL", "𝕩");
-  return rerepl_exec(x, prep_state(w, "REPL"), nfn_objU(t));
+  return rerepl_exec(x, w, nfn_objU(t));
 }
 B repl_c1(B t, B x) {
   return repl_c2(t, emptyHVec(), x);
@@ -1596,12 +1594,12 @@ B sys_c1(B t, B x) {
   B name = COMPS_CREF(name);
   B args = COMPS_CREF(args);
   
-  #define CACHED(F) F(fileNS)F(path)F(wdpath)F(bqn)F(rebqn)
+  #define CACHED(F) F(fileNS)F(path)F(wdpath)F(bqn)F(rebqn)F(re_path)
+  #define CACHE_OBJ(NAME, COMP) ({ if (q_z(NAME)) NAME = (COMP); NAME; })
   #define F(X) B X = bi_z;
   CACHED(F)
   #undef F
   
-  #define CACHE_OBJ(NAME, COMP) ({ if (q_z(NAME)) NAME = (COMP); NAME; })
   #define REQ_PATH CACHE_OBJ(path, q_N(path0)? bi_N : path_abs(incG(path0)))
   
   M_HARR(r, IA(x))
@@ -1661,8 +1659,12 @@ B sys_c1(B t, B x) {
       case sys_compobj: cr = incG(bi_compObj); break;
       case sys_ns: cr = getNsNS(); break;
       case sys_platform: cr = getPlatformNS(); break;
-      case sys_bqn:   cr = incG(CACHE_OBJ(bqn,   m_nfn(bqnDesc,   incG(COMPS_CREF(re))))); break;
-      case sys_rebqn: cr = incG(CACHE_OBJ(rebqn, m_nfn(rebqnDesc, incG(COMPS_CREF(re))))); break;
+      case sys_bqn: case sys_rebqn: {
+        B ref = incG(CACHE_OBJ(re_path, incG(COMPS_CREF(re))));
+        if (sys_id(c)==sys_bqn) cr = incG(CACHE_OBJ(bqn,   m_nfn(bqnDesc,   ref)));
+        else                    cr = incG(CACHE_OBJ(rebqn, m_nfn(rebqnDesc, ref)));
+        break;
+      }
       default: {
         u32 cu = sys_id(c) - sys_undefStart;
         if (cu >= sys_COUNT) thrM("Bad dynamically-loaded system value");
@@ -1734,8 +1736,6 @@ void sysfn_init(void) {
   lastErrMsg = bi_N;
   gc_add_ref(&lastErrMsg);
   #endif
-  gc_add(cdPath = m_c8vec(".", 1));
-  
   gc_add_ref(&thrownMsg);
   
   bqnDesc   = registerNFn(m_c32vec_0(U"•BQN"), bqn_c1, bqn_c2);

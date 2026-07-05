@@ -362,7 +362,7 @@ B internalTemp_c2(B t, B w, B x) {
       }
       case 101: {
         switchComp();
-        B r = bqn_exec(x, bi_N);
+        B r = bqn_exec(x, defaultUnknownState());
         switchComp();
         return r;
       }

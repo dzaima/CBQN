@@ -576,7 +576,6 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
   }
 #endif
 
-B m_state(B path, B name, B args);
 NOINLINE B gsc_exec_inplace(B src, char* name, B args) {
   Block* block = bqn_comp(src, m_state(incG(replPath), m_c8vec_0(name), args), def_re, gsc, COMP_UNK, true, false);
   ptr_dec(gsc->body); // redirect new errors to the newly executed code; initial scope had 0 vars, so this is safe
@@ -600,7 +599,7 @@ void switchComp(void);
 STATIC_GLOBAL B escape_parser;
 static B simple_unescape(B x) {
   if (RARE(escape_parser.u == 0)) {
-    escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), bi_N);
+    escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), defaultUnknownState());
     gc_add(escape_parser);
   }
   return c1(escape_parser, x);

@@ -1,5 +1,6 @@
 #include "core.h"
 #include "utils/file.h"
+#include "utils/calls.h"
 #include "vm/vm.h"
 #include "core/ns.h"
 #include "builtins.h"
@@ -207,18 +208,12 @@ B bqn_fmt(B x) { return x; }
 B bqn_repr(B x) { return x; }
 #endif
 
-static NOINLINE void comps_push(B src, B state, B re, u8 kind) {
+static NOINLINE void comps_push(B src, HArr* state, B re, u8 kind) {
   assert(comps_curr == NULL);
   HArr* r = m_harr0v(comps_max).c;
-  if (q_N(state)) {
-    COMPS_REF(r,path) = COMPS_REF(r,name) = COMPS_REF(r,args) = bi_N;
-  } else {
-    SGet(state)
-    COMPS_REF(r, path) = Get(state,0);
-    COMPS_REF(r, name) = Get(state,1);
-    COMPS_REF(r, args) = Get(state,2);
-    decG(state);
-  }
+  COMPS_REF(r, path) = inc(state->a[0]);
+  COMPS_REF(r, name) = inc(state->a[1]);
+  COMPS_REF(r, args) = inc(state->a[2]);
   COMPS_REF(r, src)    = inc(src);
   COMPS_REF(r, re)     = inc(re);
   COMPS_REF(r, envPos) = m_f64(envCurr-envStart);
@@ -232,10 +227,11 @@ static NOINLINE void comps_push(B src, B state, B re, u8 kind) {
 
 #define COMPS_POP ({ ptr_dec(comps_curr); comps_curr = NULL; })
 
-NOINLINE Block* bqn_comp(B str, B state, B re, Scope* sc, u8 kind, bool loose, bool noNS) {
+B vfyStr(B x, char* name, char* arg);
+NOINLINE Block* bqn_comp(B source, HArr* state, B re, Scope* sc, u8 kind, bool loose, bool noNS) {
   if (loose && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
-  str = squeeze_chrOut(str);
-  COMPS_PUSH(str, state, re, kind);
+  source = squeeze_chrOut(source);
+  COMPS_PUSH(source, state, re, kind);
   
   B vName = emptyHVec();
   B vDepth = emptyIVec();
@@ -251,15 +247,17 @@ NOINLINE Block* bqn_comp(B str, B state, B re, Scope* sc, u8 kind, bool loose, b
   }
   
   B* o = harr_ptr(re);
+  ptr_dec(state);
+  
   B args = m_hvec4N(incG(o[re_rt]), incG(bi_sys), vName, vDepth);
-  Block* r = load_buildBlock(c2G(o[re_compFn], args, inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), sc, sc!=NULL? (noNS? -1 : 1) : 0);
+  Block* r = load_buildBlock(c2G(o[re_compFn], args, inc(source)), source, COMPS_CREF(path), COMPS_CREF(name), sc, sc!=NULL? (noNS? -1 : 1) : 0);
   r->comp->kind = kind; // TODO push down into an arg of compileAll
   COMPS_POP; popCatch();
   return r;
 }
 
-B bqn_exec(B str, B state) { // consumes all
-  return evalFunBlockConsume(bqn_comp(str, state, def_re, NULL, COMP_UNK, false, false));
+B bqn_exec(B code, HArr* state) { // consumes code,state
+  return evalFunBlockConsume(bqn_comp(code, state, def_re, NULL, COMP_UNK, false, false));
 }
 
 GLOBAL B str_all, str_none;
@@ -393,22 +391,24 @@ void comps_getSysvals(B* res) {
   res[1] = o[re_sysVals];
 }
 
-B rebqn_exec(B str, B state, B re) {
-  return evalFunBlockConsume(bqn_comp(str, state, re, NULL, COMP_UNK, false, false));
+B rebqn_exec(B code, HArr* state, B re) {
+  return evalFunBlockConsume(bqn_comp(code, state, re, NULL, COMP_UNK, false, false));
 }
-B rerepl_exec(B str, B state, B re) {
+B rerepl_exec(B source, B state, B re) {
+  B code = vfyStr(source, "REPL", "𝕩");
+  HArr* state1 = prep_state(state, "REPL");
   B* op = harr_ptr(re);
   i32 replMode = o2iG(op[re_mode]);
   if (replMode>0) {
     Scope* sc = c(Scope, op[re_scope]);
-    Block* block = bqn_comp(str, state, re, sc, COMP_UNK, replMode==2, true);
+    Block* block = bqn_comp(code, state1, re, sc, COMP_UNK, replMode==2, true);
     ptr_dec(sc->body);
     sc->body = ptr_inc(block->bodies[0]);
     B res = execBlockInplace(block, sc);
     ptr_dec(block);
     return res;
   } else {
-    return rebqn_exec(str, state, re);
+    return rebqn_exec(source, state1, re);
   }
 }
 
@@ -611,16 +611,22 @@ void load_init() { // very last init function
   #endif // PRECOMP
 }
 
-NOINLINE B m_state(B path, B name, B args) { return m_hvec3N(path, name, args); }
-static NOINLINE B fileState(B path, B args) { // consumes args
+STATIC_GLOBAL HArr* defStateVal;
+NOINLINE HArr* defaultUnknownState() {
+  if (defStateVal==NULL) gc_add(taga(defStateVal = (HArr*) a(m_hvec3N(bi_N, bi_N, bi_N))));
+  return ptr_inc(defStateVal);
+}
+NOINLINE HArr* m_state(B path, B name, B args) { return c(HArr, m_hvec3N(path, name, args)); }
+static NOINLINE HArr* fileState(B path, B args) { // consumes args
   return m_state(path_parent(inc(path)), path_name(inc(path)), args);
 }
 B bqn_execFileRe(B path, B args, B re) {
-  B state = fileState(path, args);
-  return evalFunBlockConsume(bqn_comp(path_chars(path), state, re, NULL, COMP_UNK, false, false));
+  HArr* state = fileState(path, args);
+  B code = path_chars(path);
+  return evalFunBlockConsume(bqn_comp(code, state, re, NULL, COMP_UNK, false, false));
 }
 B bqn_execFile(B path, B args) { // consumes both
-  B state = fileState(path, args);
+  HArr* state = fileState(path, args);
   return bqn_exec(path_chars(path), state);
 }
 
@@ -637,7 +643,7 @@ void bqn_exit(i32 code) {
 }
 
 STATIC_GLOBAL B load_explain;
-B bqn_explain(B str, B vars) { // consumes str & vars
+B bqn_explain(B code, B vars) { // consumes code,vars
   #if NO_EXPLAIN
     thrM("Explainer not included in this CBQN build");
   #else
@@ -650,13 +656,15 @@ B bqn_explain(B str, B vars) { // consumes str & vars
       load_explain = gc_add(evalFunBlockConsume(expl_b));
     }
     
-    COMPS_PUSH(str, bi_N, def_re, COMP_REPL);
+    HArr* st = defaultUnknownState();
+    COMPS_PUSH(code, st, def_re, COMP_REPL);
     B vDepth = i64EachDec(-1, incG(vars));
     B compOpts = m_hvec4N(incG(o[re_rt]), incG(bi_sys), vars, vDepth);
-    B c = c2(o[re_compFn], compOpts, inc(str));
+    B c = c2(o[re_compFn], compOpts, inc(code));
     COMPS_POP; popCatch();
+    ptr_dec(st);
     
-    B ret = c2(load_explain, c, str);
+    B ret = c2(load_explain, c, code);
     return ret;
   #endif
 }
