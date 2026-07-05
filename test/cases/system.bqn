@@ -60,6 +60,10 @@ f←•ReBQN{⇐} ⋄ ! ⟨•path, "custom-name", "arg"⟩ ≡ ⟨•path,"cust
 ! (⋈˜•path⋈1‿2) ≡ {⟨•path, @, 1‿2⟩ 𝕏 "•path‿•args"}¨ ⟨•BQN, {⇐}{•ReBQN𝕗}⟩
 ⟨•path,"hello"⟩ {⇐}{•ReBQN𝕗} "•args" %%% 0⥊<""
 ⟨•path,"hello"⟩ {⇐}{•ReBQN𝕗} "•name" %% "hello"
+f←•ReBQN {Remap⇐{𝕊: args⇐"foo"‿𝕨}} ⋄ F "•args" %%% ⟨"foo", 0⥊<""⟩
+f←•ReBQN {Remap⇐{𝕊: args⇐'!'∾˜𝕨}} ⋄ ! ⟨"world!", •path‿"hello"‿"world!"⟩ ≡ •path‿"hello"‿"world" F "•args‿•state"
+Eq←!•internal.Indistinguishable ⋄ G←{𝕩} ⋄ f←•ReBQN {Remap⇐{𝕊: 𝕨 Eq 0⥊<"" ⋄ args⇐g}} ⋄ ⟨g, •path‿"foo"‿g⟩ Eq ⟨"./.","foo"    ⟩ F "•args‿•state"
+Eq←!•internal.Indistinguishable ⋄ G←{𝕩} ⋄ f←•ReBQN {Remap⇐{𝕊: 𝕨 Eq 1‿2   ⋄ args⇐g}} ⋄ ⟨g, •path‿"bar"‿g⟩ Eq ⟨"./.","bar",1‿2⟩ F "•args‿•state"
 
 f←•ReBQN {system⇐"all"} ⋄ F "•internal.Type ↕10" %% "i8arr"
 !"Unknown system function •internal" % f←•ReBQN {system⇐"none"} ⋄ F "•internal.Type ↕10"
@@ -93,7 +97,35 @@ f←•ReBQN{primitives⇐⋈'÷'‿- ⋄ system⇐⟨"primitives", "foo"‿⋈,
 f←•ReBQN{system⇐⟨"e1"⋈↕0, "e2"⋈"", "e3"⋈0⥊<"hi"⟩ ⋄ primitives⇐⟨'+',(<"")⊸∾⟩‿⟨'-',(<↕0)⊸∾⟩} ⋄ (⊑1↑⊢)¨ F "+-•e2‿•e1‿•e3" %% ⟨' ', 0, ' ', 0, "  "⟩
 a←b←0 ⋄ f←•ReBQN{primitives⇐⟨'¨'‿{a+↩1⋄𝕗},'∘'‿{b+↩1⋄𝕘},'⊢'‿⊢⟩} ⋄ g←F "{⊢∘⊢𝕨 ⋄ ⊢¨𝕩}" ⋄ G¨˜ ↕10 ⋄ a‿b %% 10‿10
 
-# TODO test stacktrace of {𝕏"!0"}•ReBQN{⇐}
+# •ReBQN remap
+!"REPL: Result of •ReBQN remap must be a namespace" % f←•ReBQN {Remap⇐{𝕊: 0}} ⋄ F "2+2"
+!"Cannot call a 1-modifier as a function" % f←•ReBQN {_remap⇐¨} ⋄ F "2+2"
+!"REPL: Source map must be present in remap if code is set" % f←•ReBQN {remap⇐{code⇐"2+2+2"}} ⋄ F "2+2"
+!"REPL: Remapped code must be a string" % f←•ReBQN {Remap⇐{𝕊: code⇐2, map⇐⋈˜⋈0}} ⋄ F "2+2"
+!"REPL: 𝕩 must be a string" % f←•ReBQN {Remap⇐{𝕊: code⇐"2+2"}} ⋄ F 2
+!"REPL: Source mapping must be 2-item list" % f←•ReBQN {Remap⇐{𝕊: map⇐3⥊<↕3}} ⋄ F "2+2"
+!"REPL: Source mapping must be 2-item list" % f←•ReBQN {Remap⇐{𝕊: map⇐1‿2⥊<↕3}} ⋄ F "2+2"
+!"REPL: Elements of source mapping must be lists of integers of length equal to code" % f←•ReBQN {Remap⇐{𝕊: map⇐⋈˜↕4}} ⋄ F "2+2"
+!"REPL: Elements of source mapping must be lists of integers of length equal to code" % f←•ReBQN {remap⇐{map⇐⟨↕3, 0⟩}} ⋄ F "2+2"
+!"REPL: Source mapping contained number that's not a valid offset in source" % f←•ReBQN {remap⇐{map⇐⟨0‿0‿0, 2‿4‿2⟩}} ⋄ F "2+2"
+!"REPL: Source mapping contained number that's not a valid offset in source" % f←•ReBQN {remap⇐{map⇐⟨0‿¯1‿0, 2‿2‿2⟩}} ⋄ F "2+2"
+!"REPL: Source mapping contained number that's not a valid offset in source" % f←•ReBQN {remap⇐{map⇐⟨0‿0‿1, 1‿1‿1.5⟩}} ⋄ F "2+2"
+!"REPL: Source mapping start must not be greater than end" % f←•ReBQN {remap⇐{map⇐⟨0‿2‿0, 1‿1‿1⟩}} ⋄ F "2+2"
+!"oh no" % f←•ReBQN{Remap ⇐ {𝕊: ! "oh no"}} ⋄ F "2+2"
+f←•ReBQN {remap⇐{map⇐⋈˜0‿1‿3}} ⋄ F "2+2" %% 4
+f←•ReBQN {⇐} ⋄ F "{Remap⇐{code⇐""2×""∾𝕩, map⇐⋈⟜(1⊸+) 0‿0∾↕≠𝕩}} {•ReBQN𝕗} ""123""" %% 246
+f←•ReBQN {Remap⇐{code⇐"2×"∾𝕩, map⇐⋈⟜(1⊸+) 0‿0∾↕≠𝕩}} ⋄ F "•BQN ""123""" %% 492
+f←•ReBQN {Remap⇐{code⇐"2×"∾𝕩, map⇐⋈⟜(1⊸+) 0‿0∾↕≠𝕩}} ⋄ F "{⇐}{•ReBQN𝕗} ""123""" %% 492
+!"•ReBQN: Recursive remapping not supported" % f←•ReBQN {Remap⇐{code⇐"2×"∾𝕩, map⇐⋈⟜(1⊸+) 0‿0∾↕≠𝕩}} ⋄ F "{remap⇐{⇐}} {•ReBQN𝕗} ""123"""
+!"•ReBQN: Recursive remapping not supported" % f←•ReBQN {remap⇐{⇐}} ⋄ F "{remap⇐{⇐}} {•ReBQN𝕗} ""123"""
+# TODO test stacktraces of the below, plus regular {⇐}{•ReBQN𝕗}"!0"
+!"Empty program" % f←•ReBQN {remap⇐{code⇐"" ⋄ map⇐⋈˜↕0}} ⋄ F "2+2"
+!"Assertion error" % f←•ReBQN {remap⇐{code⇐"!0" ⋄ map⇐⋈˜0‿0}} ⋄ F ""
+!"Assertion error" % f←•ReBQN {remap⇐{map⇐⋈˜2⥊2}} ⋄ F "!0"
+!"Assertion error" % f←•ReBQN {remap⇐{code⇐"         !0",map⇐(≠code)⥊¨1‿3}} ⋄ F "abcde"
+!{"Undefined identifier"∾𝕩∾"at aBCde"∾𝕩∾"    ^^"}@+10 % f←•ReBQN{remap⇐{code⇐"        foo",map⇐(≠code)⥊¨1‿3}} ⋄ F "aBCde"
+
+
 
 # •primitives
 !∧´2=•Type¨ ⊑¨•primitives

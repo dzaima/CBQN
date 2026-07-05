@@ -149,13 +149,13 @@ GLOBAL HArr* comps_curr;
 
 GLOBAL B rt_undo, rt_slash, rt_depth,
          rt_group, rt_under, rt_find;
-Block* load_buildBlock(B x, B src, B path, B name, Scope* sc, i32 nsResult) { // consumes x,src
+Block* load_buildBlock(B x, B indices, B source, B path, B name, Scope* sc, i32 nsResult) { // consumes x,indices,source
   B fullpath = load_fullpath(path, name);
   SGet(x)
   usz xia = IA(x);
   if (xia!=6 & xia!=4) thrM("load_buildBlock: bad item count");
-  Block* r = xia==6? compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),Get(x,4),Get(x,5), src, fullpath, sc, nsResult)
-                   : compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),bi_N,    bi_N,     src, fullpath, sc, nsResult);
+  Block* r = xia==6? compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),indices,Get(x,5), source, fullpath, sc, nsResult)
+                   : compileAll(Get(x,0),Get(x,1),Get(x,2),Get(x,3),indices, bi_N,    source, fullpath, sc, nsResult);
   decG(x);
   return r;
 }
@@ -186,7 +186,7 @@ void switchComp(void) {
 }
 #endif
 B compObj_c1(B t, B x) {
-  return evalFunBlockConsume(load_buildBlock(x, bi_N, bi_N, bi_N, NULL, 0));
+  return evalFunBlockConsume(load_buildBlock(x, bi_N, bi_N, bi_N, bi_N, NULL, 0));
 }
 B compObj_c2(B t, B w, B x) {
   change_def_comp(x);
@@ -218,6 +218,7 @@ static NOINLINE void comps_push(B src, HArr* state, B re, u8 kind) {
   COMPS_REF(r, re)     = inc(re);
   COMPS_REF(r, envPos) = m_f64(envCurr-envStart);
   COMPS_REF(r, kind)   = m_f64(kind);
+  COMPS_REF(r, sourceMap) = bi_N;
   comps_curr = r;
 }
 
@@ -228,6 +229,7 @@ static NOINLINE void comps_push(B src, HArr* state, B re, u8 kind) {
 #define COMPS_POP ({ ptr_dec(comps_curr); comps_curr = NULL; })
 
 B vfyStr(B x, char* name, char* arg);
+usz indexOfOne(B l, B e); // from search.c
 NOINLINE Block* bqn_comp(B source, HArr* state, B re, Scope* sc, u8 kind, bool loose, bool noNS) {
   if (loose && (!sc || sc->psc)) thrM("VM compiler: REPL mode must be used at top level scope");
   source = squeeze_chrOut(source);
@@ -247,10 +249,73 @@ NOINLINE Block* bqn_comp(B source, HArr* state, B re, Scope* sc, u8 kind, bool l
   }
   
   B* o = harr_ptr(re);
+  B remapper = o[re_remap];
+  B sourceMap = bi_N;
+  B code = incG(source);
+  if (!q_N(remapper)) {
+    B map = c2(remapper, inc(state->a[2]), code); // consumes code, which is re-set afterwards
+    if (!isNsp(map)) thrM("REPL: Result of •ReBQN remap must be a namespace");
+    sourceMap = inc(ns_getC(map, "map"));
+    code = ns_getC(map, "code");
+    if (!q_N(code) && q_N(sourceMap)) thrM("REPL: Source map must be present in remap if code is set");
+    code = inc(q_N(code)? source : vfyStr(code, "REPL", "Remapped code"));
+    B args1 = ns_getC(map, "args");
+    if (!q_N(args1)) {
+      B* cargs = &COMPS_CREF(args);
+      dec(*cargs);
+      *cargs = inc(args1);
+    }
+    decG(map);
+  }
   ptr_dec(state);
   
+  HArr_p newInds;
+  bool hasMap = !q_N(sourceMap);
+  if (hasMap) {
+    ux codeLen = IA(code);
+    if (!isArr(sourceMap) || RNK(sourceMap)!=1 || IA(sourceMap)!=2) thrM("REPL: Source mapping must be 2-item list");
+    newInds = harrP_parts((HArr*) cpyHArr(sourceMap));
+    for (ux i = 0; i < 2; i++) {
+      B cm = newInds.a[i];
+      if (!isArr(cm) || RNK(cm)!=1 || IA(cm)!=codeLen) bad_map_type: thrM("REPL: Elements of source mapping must be lists of integers of length equal to code");
+      incByG(cm, 2); // three refs in total - gt, ne, select
+      u8 cme = TI(cm,elType);
+      if (!elInt(cme)) { cm = squeeze_numTry(cm,&cme,SQ_NUM); if (!elNum(cme)) goto bad_map_type; }
+      if (codeLen > 0) {
+        i64 bounds[2];
+        if (!getRange_fns[cme](tyany_ptr(cm), bounds, codeLen) || bounds[0]<0 || bounds[1]>IA(source)) thrM("REPL: Source mapping contained number that's not a valid offset in source");
+      }
+    }
+    B bad = C2(gt, newInds.a[0], newInds.a[1]);
+    if (indexOfOne(bad, m_f64(1)) != codeLen) thrM("REPL: Source mapping start must not be greater than end");
+    decG(bad);
+    COMPS_CREF(sourceMap) = newInds.b;
+  }
+  
+  
   B args = m_hvec4N(incG(o[re_rt]), incG(bi_sys), vName, vDepth);
-  Block* r = load_buildBlock(c2G(o[re_compFn], args, inc(source)), source, COMPS_CREF(path), COMPS_CREF(name), sc, sc!=NULL? (noNS? -1 : 1) : 0);
+  B comp = c2G(o[re_compFn], args, code);
+  COMPS_CREF(sourceMap) = bi_N;
+  
+  B inds;
+  #if NATIVE_COMPILER
+    if (IA(comp) < 5) { inds = bi_N; goto noInds; }
+  #endif
+  inds = IGetU(comp, 4);
+  if (hasMap) {
+    B neq = C2(ne, newInds.a[0], newInds.a[1]);
+    for (ux i = 0; i < 2; i++) {
+      B cm = newInds.a[i];
+      if (i==1) cm = C2(ceil, m_f64(0), C2(sub, cm, neq));
+      newInds.a[i] = C2(select, IGet(inds,i), cm);
+    }
+    inds = newInds.b;
+  } else {
+    incG(inds);
+  }
+  noInds: MAYBE_UNUSED;
+  
+  Block* r = load_buildBlock(comp, inds, source, COMPS_CREF(path), COMPS_CREF(name), sc, sc!=NULL? (noNS? -1 : 1) : 0);
   r->comp->kind = kind; // TODO push down into an arg of compileAll
   COMPS_POP; popCatch();
   return r;
@@ -261,8 +326,14 @@ B bqn_exec(B code, HArr* state) { // consumes code,state
 }
 
 GLOBAL B str_all, str_none;
-void init_comp(B* new_re, B* prev_re, B prim, B sys) {
+void init_comp(B* new_re, B* prev_re, B prim, B sys, B remap) {
   new_re[re_map] = m_importMap();
+  if (q_N(remap)) {
+    new_re[re_remap] = inc(prev_re[re_remap]);
+  } else {
+    if (!q_N(prev_re[re_remap])) thrM("•ReBQN: Recursive remapping not supported");
+    new_re[re_remap] = inc(remap);
+  }
   if (q_N(prim)) {
     new_re[re_compFn]   = inc(prev_re[re_compFn]);
     new_re[re_rt]       = inc(prev_re[re_rt]);
@@ -394,11 +465,10 @@ void comps_getSysvals(B* res) {
 B rebqn_exec(B code, HArr* state, B re) {
   return evalFunBlockConsume(bqn_comp(code, state, re, NULL, COMP_UNK, false, false));
 }
-B rerepl_exec(B source, B state, B ref) {
-  B* refp = harr_ptr(ref);
-  B re = refp[0];
+B rerepl_exec(B source, B state, B* ref) {
+  B re = ref[0];
   B code = vfyStr(source, "REPL", "𝕩");
-  HArr* state1 = prep_state(state, refp[1], "REPL");
+  HArr* state1 = prep_state(state, ref[1], "REPL");
   B* op = harr_ptr(re);
   i32 replMode = o2iG(op[re_mode]);
   if (replMode>0) {
@@ -592,6 +662,7 @@ void load_init() { // very last init function
     HArr_p ps = m_harr0v(re_max);
     ps.a[re_compFn] = load_comp;
     ps.a[re_rt] = load_rt;
+    ps.a[re_remap] = bi_N;
     ps.a[re_map] = m_importMap();
     ps.a[re_glyphs] = load_glyphs;
     ps.a[re_sysNames] = incG(def_sysNames);

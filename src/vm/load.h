@@ -7,6 +7,7 @@ enum {
   comps_kind, // vm.h COMP_*
   comps_src,
   comps_re, // HArr of re_* values (re_mode & re_scope have unspecified values)
+  comps_sourceMap, // bi_N, or HArr of source remap starts & ends; must not be retained
   comps_envPos,
   comps_max
 };
@@ -34,10 +35,10 @@ B bqn_execFile(B path, B args); // consumes both
 B bqn_execFileRe(B path, B args, B re); // consumes path,args
 Block* bqn_comp   (B source, HArr* state, B re, Scope* sc, u8 kind, bool loose, bool noNS); // consumes source,state; noNS: fail to compile if result would be a namespace
 B      rebqn_exec (B source, HArr* state, B re); // consumes source,state; runs in a new environment
-B      rerepl_exec(B source, B state0, B re); // consumes source,state0; uses re_mode and re_scope
+B      rerepl_exec(B source, B state0, B* ref); // consumes source,state0; uses re_mode and re_scope
 NOINLINE HArr* m_state(B path, B name, B args);
 HArr* prep_state(B w, B path0, char* name); // check & expand state; consumes w, returns ⟨path,name,args⟩
-void init_comp(B* new_re, B* prev_re, B prim, B sys); // doesn't consume; writes re_* compiling info into new_re
+void init_comp(B* new_re, B* prev_re, B prim, B sys, B remap); // doesn't consume; writes re_* compiling info into new_re
 
 void cbqn_init(void);
 NORETURN void bqn_exit(i32 code);

@@ -5,7 +5,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | function      | notes |
 |---------------|-------|
 | `•BQN`        | |
-| `•ReBQN`      | Supported options: `repl`; `primitives`; `system` except `"safe"`, and list value can contain pairs `"name"‿value` |
+| `•ReBQN`      | Supported options: `repl`; `primitives`; `system` except `"safe"`; plus [extensions](#rebqn) |
 | `•primitives` | |
 | `•_while_`    | |
 | `•Import`     | |
@@ -43,6 +43,71 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•bit`        | input elements must be valid (e.g. `8‿1•bit._cast ⋈255` results in unspecified behavior), and converting an input of a signaling NaN bit pattern to float is undefined behavior |
 
 # CBQN-specific system values and extensions
+
+## `•ReBQN`
+
+### System values
+
+The `system` option can include elements defining new system values, provided as `"name"‿value`.  
+Note that this can be different from a plain inherited system value, for example:
+```bqn
+f ← •ReBQN {system ⇐ ⟨"args"⟩}
+⟨@, @, "hello"⟩ F "•args" # gives "hello"
+
+g ← •ReBQN {system ⇐ ⟨"args"‿•args⟩}
+⟨@, @, "hello"⟩ F "•args" # effectively ignores the provided args in 𝕨, always giving the •args of the outer script
+```
+There's currently no way to define custom dynamically-generated system values.
+
+### Source remapping
+
+A `Remap` option can be supplied for remapping the input string (which need not be valid BQN code) to BQN code to actually evaluate, while retaining the original input as the source displayed in stacktraces or similar.
+
+`Remap` will be called with with the input string as `𝕩`, and the provided state `•args` value as `𝕨`.
+
+The result should be a namespace, which can have these fields:
+
+- `code`: BQN code to actually evaluate
+- `map`: source mapping: a two-item list of `≠remapResult.code`-item lists, giving a source range (start included, end excluded) for each code character to map to
+- `args`: a replacement value for `args`; this allows passing in additional custom information besides the input source to the remapper, while allowing `•args` to remain unchanged
+
+Example with hard-coded values for evaluating `two plus args` as `2+•args`:
+
+```bqn
+eval ← •ReBQN {
+   Remap ⇐ { 𝕨𝕊𝕩:
+      ! 𝕩 ≡ "two plus args" # what this example is made for; in typical code you'd use this (and/or arguments provided in 𝕨) to compute the result code/map
+      code ⇐ "2+•args" # the code that will be evaluated
+      map ⇐ ⟨
+         #2  +   •  a  r  g  s  # what this mapping is for
+         ⟨0, 4,  9, 9, 9, 9, 9⟩ # start indices in "two plus args", inclusive
+         ⟨3, 8, 13,13,13,13,13⟩ #   end indices in "two plus args", exclusive
+         #                                          01234567890123
+      ⟩
+   }
+}
+
+•Show ⟨@,@,10⟩ Eval "two plus args" # 2+10 → 12
+•Show ⟨@,@, ∘⟩ Eval "two plus args" # error from trying to do arithmetic with a modifier; should give a stacktrace pointing to "plus" in "two plus args"
+```
+
+Using a custom `•args`, same example as above:
+```bqn
+eval ← •ReBQN {
+   Remap ⇐ { ⟨codeToEvaluate, exampleMapping, realArgs⟩ 𝕊 𝕩:
+      code ⇐ codeToEvaluate
+      map ⇐ exampleMapping
+      args ⇐ realArgs
+   }
+}
+
+config ← {
+   codeToEvaluate ⇐ "2+•args"
+   exampleMapping ⇐ ⟨0‿4‿9‿9‿9‿9‿9, 3‿8‿13‿13‿13‿13‿13⟩
+   realArgs ⇐ 10
+}
+•Show @‿@‿config Eval "two plus args" # 2+10 → 12
+```
 
 ## `•term`
 
@@ -109,7 +174,7 @@ Namespace of various internal functions. May change at any time.
 | `•internal.ListVariations`    | List the possible type variations of the argument array |
 | `•internal.Variation`         | Convert `𝕩` to the variation specified in `𝕨` |
 | `•internal.ClearRefs`         | Clear references `•internal.Variation` made for `*Inc` variations |
-| `•internal.Unshare`           | Get a unique, reference count 1 version of the argument; recursively unshares array items, doesn't touch namespaces |
+| `•internal.Unshare`           | Get a unique, reference count 1 version of the argument; recursively unshares array items but leaves atoms (incl. namespace fields, derived modifier operands) unchanged |
 | `•internal.EEqual`            | Exactly equal (`𝕨≡𝕩` but NaN equals NaN) |
 | `•internal.Indistinguishable` | Semantically indistinguishable (`•internal.EEqual`, plus checking fills) |
 | `•internal.Temp`              | Place to test new features or temporarily expose some internal function |

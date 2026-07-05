@@ -221,6 +221,12 @@ B asrt_c2(B t, B w, B x) {
   dec(x);
   thr(w);
 }
+static NOINLINE usz mapPoint(B v0, bool end) {
+  usz v = o2s(v0);
+  B map = COMPS_CREF(sourceMap);
+  if (q_N(map)) return v + end;
+  return o2s(IGet(harr_ptr(map)[end], v));
+}
 B casrt_c2(B t, B w, B x) {
   if (LIKELY(q_fval(x,1))) { dec(w); return x; }
   B fullpath = COMPS_ACTIVE() && o2i(COMPS_CREF(kind))!=COMP_REPL? load_fullpath(COMPS_CREF(path), COMPS_CREF(name)) : bi_N;
@@ -231,22 +237,21 @@ B casrt_c2(B t, B w, B x) {
     if (q_f64(w0)) {
       B s = IGet(w,1);
       AFMT("\n");
-      usz pos = o2s(w0);
-      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, pos, pos+1);
+      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, mapPoint(w0,0), mapPoint(w0,1));
       decG(w);
       thr(s);
     }
     if (isArr(w0) && RNK(w0)==1 && IA(w0)>=1) {
       B s = IGet(w,1); AFMT("\n");
-      usz pos = o2s(IGetU(w0,0));
-      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, pos, pos+1);
+      B w00 = IGetU(w0,0);
+      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, mapPoint(w00,0), mapPoint(w00,1));
       decG(w);
       thr(s);
     }
     if (isArr(w0) && RNK(w0)==2 && IA(w0)>=2) {
       B s = IGet(w,1); AFMT("\n");
       SGetU(w0)
-      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, o2s(GetU(w0,0)), o2s(GetU(w0,1))+1);
+      s = vm_fmtPoint(COMPS_CREF(src), s, fullpath, mapPoint(GetU(w0,0),0), mapPoint(GetU(w0,1),1));
       decG(w);
       thr(s);
     }
@@ -674,6 +679,7 @@ B rebqn_c1(B t, B x) {
   B repl = ns_getC(x, "repl");
   B prim = ns_getC(x, "primitives");
   B sys = ns_getC(x, "system");
+  B remap = ns_getC(x, "remap");
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN 𝕩: Invalid repl value");
   B scVal;
@@ -689,12 +695,12 @@ B rebqn_c1(B t, B x) {
   HArr_p d = m_harr0v(re_max);
   d.a[re_mode] = m_i32(replVal);
   d.a[re_scope] = scVal;
-  init_comp(d.a, harr_ptr(ref[0]), prim, sys);
+  init_comp(d.a, harr_ptr(ref[0]), prim, sys, remap);
   decG(x);
   return m_nfn(rebqnResDesc, m_hvec2N(d.b, inc(ref[1])));
 }
 B repl_c2(B t, B w, B x) {
-  return rerepl_exec(x, w, nfn_objU(t));
+  return rerepl_exec(x, w, harr_ptr(nfn_objU(t)));
 }
 B repl_c1(B t, B x) {
   return repl_c2(t, emptyHVec(), x);
