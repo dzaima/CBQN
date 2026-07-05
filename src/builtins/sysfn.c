@@ -287,10 +287,10 @@ NOINLINE B vfyStr(B x, char* name, char* arg) {
 NOINLINE HArr* prep_state(B w, B path0, char* name) { // consumes w, returns ⟨path,name,args⟩
   if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("𝕨 %U 𝕩: 𝕨 must be a list with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w); SGet(w)
-  HArr_p r = m_harr0v(3);
-  r.a[0] = ia>0? path_rel(path0, Get(w,0), name)   : bi_N;
-  r.a[1] = ia>1? vfyStr(Get(w,1),name,"Filename")  : bi_N;
-  r.a[2] = ia>2?        Get(w,2)                   : emptySVec();
+  HArr_p r = m_harr0v(3); B c;
+  r.a[0] = ia>0 && !q_cval(c=Get(w,0),0)? squeeze_chrOut(path_rel(path0,c,name))    : bi_N;
+  r.a[1] = ia>1 && !q_cval(c=Get(w,1),0)? squeeze_chrOut(vfyStr(c,name,"Filename")) : bi_N;
+  r.a[2] = ia>2? Get(w,2) : emptySVec();
   decG(w);
   return r.c;
 }

@@ -40,11 +40,26 @@ t←⟨•path                     ⟩•BQN"•path                   " ⋄ ! t
 !"•BQN: Using relative path with no absolute base path known" % f←•BQN "•BQN" ⋄ ⟨"."⟩ F "•path"
 f←•BQN "•BQN" ⋄ ! •path ≡ ⟨•path⟩ F "•path"
 
+! (•file.RealPath•file.At "../..") ≡ ⟨".."⟩ •BQN "⟨""..""⟩ •BQN ""•path"""
+! (•file.RealPath•file.At "..")    ≡ ⟨".."⟩ •BQN "⟨""."" ⟩ •BQN ""•path"""
+! (•file.RealPath•file.At "../..") ≡ ⟨".."⟩ {⇐}{•ReBQN𝕗} "⟨""..""⟩ {⇐}{•ReBQN𝕗} ""•path"""
+! (•file.RealPath•file.At "..")    ≡ ⟨".."⟩ {⇐}{•ReBQN𝕗} "⟨""."" ⟩ {⇐}{•ReBQN𝕗} ""•path"""
+
 # •ReBQN
 !"REPL: Filename must be a string" % f←•ReBQN{⇐} ⋄ ⟨•path, 1‿2⟩ F "2+2"
 !"REPL: Path must be a list of characters" % f←•ReBQN{⇐} ⋄ ⟨1‿2⟩ F "2+2"
 !"𝕨 REPL 𝕩: 𝕨 must be a list with at most 3 items, but had shape ⟨4⟩" % f←•ReBQN{⇐} ⋄ (↕4) F "123"
 f←•ReBQN{⇐} ⋄ ! ⟨•path, "custom-name", "arg"⟩ ≡ ⟨•path,"custom-name", "arg"⟩ F "•state"
+!"No path present for •path" % ⟨      ⟩ {⇐}{•ReBQN𝕗} "•path"
+!"No name present for •name" % ⟨@,   @⟩ {⇐}{•ReBQN𝕗} "•name"
+!"No path present for •path" % ⟨@,   @⟩         •BQN "•path"
+!"No name present for •name" % ⟨•path ⟩ {⇐}{•ReBQN𝕗} "•name"
+!"No name present for •name" % ⟨".", @⟩ {⇐}{•ReBQN𝕗} "•name"
+!"No name present for •name" % ⟨".", @, '?'⟩    •BQN "•name"
+! ⟨"foo", •path‿"", •path‿"ab/cd"⟩ •internal.Indistinguishable ⟨@‿"foo" •BQN"•name", ⟨1↓1∾•path, ⟨⟩⟩•BQN"•path‿•name", ⟨•path, 1↓1∾"ab/cd"⟩ {⇐}{•ReBQN𝕗} "•path‿•name"⟩
+! (⋈˜•path⋈1‿2) ≡ {⟨•path, @, 1‿2⟩ 𝕏 "•path‿•args"}¨ ⟨•BQN, {⇐}{•ReBQN𝕗}⟩
+⟨•path,"hello"⟩ {⇐}{•ReBQN𝕗} "•args" %%% 0⥊<""
+⟨•path,"hello"⟩ {⇐}{•ReBQN𝕗} "•name" %% "hello"
 
 f←•ReBQN {system⇐"all"} ⋄ F "•internal.Type ↕10" %% "i8arr"
 !"Unknown system function •internal" % f←•ReBQN {system⇐"none"} ⋄ F "•internal.Type ↕10"
