@@ -284,25 +284,26 @@ NOINLINE B vfyStr(B x, char* name, char* arg) {
   return x;
 }
 
-NOINLINE HArr* prep_state(B w, char* name) { // consumes w, returns ⟨path,name,args⟩
+NOINLINE HArr* prep_state(B w, B path0, char* name) { // consumes w, returns ⟨path,name,args⟩
   if (!isArr(w) || RNK(w)!=1 || IA(w)>3) thrF("𝕨 %U 𝕩: 𝕨 must be a list with at most 3 items, but had shape %H", name, w);
   usz ia = IA(w); SGet(w)
   HArr_p r = m_harr0v(3);
-  r.a[0] = ia>0? vfyStr(Get(w,0),name,"Path")     : m_c8vec_0(".");
-  r.a[1] = ia>1? vfyStr(Get(w,1),name,"Filename") : emptyCVec();
-  r.a[2] = ia>2?        Get(w,2)                  : emptySVec();
+  r.a[0] = ia>0? path_rel(path0, Get(w,0), name)   : bi_N;
+  r.a[1] = ia>1? vfyStr(Get(w,1),name,"Filename")  : bi_N;
+  r.a[2] = ia>2?        Get(w,2)                   : emptySVec();
   decG(w);
   return r.c;
 }
 
 B bqn_c1(B t, B x) {
   vfyStr(x, "•BQN", "𝕩");
-  return rebqn_exec(x, defaultUnknownState(), nfn_objU(t));
+  return rebqn_exec(x, defaultUnknownState(), *harr_ptr(nfn_objU(t)));
 }
 
 B bqn_c2(B t, B w, B x) {
   vfyStr(x, "•BQN", "𝕩");
-  return rebqn_exec(x, prep_state(w, "•BQN"), nfn_objU(t));
+  B* ref = harr_ptr(nfn_objU(t));
+  return rebqn_exec(x, prep_state(w, ref[1], "•BQN"), ref[0]);
 }
 
 B cmp_c2(B t, B w, B x) {
@@ -676,6 +677,7 @@ B rebqn_c1(B t, B x) {
   i32 replVal = q_N(repl) || eqStr(repl,U"none")? 0 : eqStr(repl,U"strict")? 1 : eqStr(repl,U"loose")? 2 : 3;
   if (replVal==3) thrM("•ReBQN 𝕩: Invalid repl value");
   B scVal;
+  B* ref = harr_ptr(nfn_objU(t));
   if (replVal==0) {
     scVal = bi_N;
   } else {
@@ -687,9 +689,9 @@ B rebqn_c1(B t, B x) {
   HArr_p d = m_harr0v(re_max);
   d.a[re_mode] = m_i32(replVal);
   d.a[re_scope] = scVal;
-  init_comp(d.a, harr_ptr(nfn_objU(t)), prim, sys);
+  init_comp(d.a, harr_ptr(ref[0]), prim, sys);
   decG(x);
-  return m_nfn(rebqnResDesc, d.b);
+  return m_nfn(rebqnResDesc, m_hvec2N(d.b, inc(ref[1])));
 }
 B repl_c2(B t, B w, B x) {
   return rerepl_exec(x, w, nfn_objU(t));
@@ -1660,7 +1662,7 @@ B sys_c1(B t, B x) {
       case sys_ns: cr = getNsNS(); break;
       case sys_platform: cr = getPlatformNS(); break;
       case sys_bqn: case sys_rebqn: {
-        B ref = incG(CACHE_OBJ(re_path, incG(COMPS_CREF(re))));
+        B ref = incG(CACHE_OBJ(re_path, m_hvec2N(incG(COMPS_CREF(re)), inc(REQ_PATH))));
         if (sys_id(c)==sys_bqn) cr = incG(CACHE_OBJ(bqn,   m_nfn(bqnDesc,   ref)));
         else                    cr = incG(CACHE_OBJ(rebqn, m_nfn(rebqnDesc, ref)));
         break;

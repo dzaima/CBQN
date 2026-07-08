@@ -1,4 +1,4 @@
-%DEF test bin←(⊑•args).Bin@ ⋄ Test←{{132: 1; 𝕩}⌾⊑ {(n←2+≠bin)≤≠𝕩? (bin∾": ")≡n↑𝕩? "(self-bin): "∾n↓𝕩; 𝕩}⌾(2⊸⊑) {'␊'¨⌾((𝕩=@+10)⊸/)𝕩}¨⌾(1⊸↓) (𝕨{s𝕊𝕩: stdin⇐s; ⇐}@) •SH ⟨bin⟩∾𝕩} ⋄ lf←@+10
+%DEF test bin←(⊑•args).Bin@ ⋄ Test←{{132:1; 134:1; 𝕩}⌾⊑ {(n←2+≠bin)≤≠𝕩? (bin∾": ")≡n↑𝕩? "(self-bin): "∾n↓𝕩; 𝕩}⌾(2⊸⊑) {'␊'¨⌾((𝕩=@+10)⊸/)𝕩}¨⌾(1⊸↓) (𝕨{s𝕊𝕩: stdin⇐s; ⇐}@) •SH ⟨bin⟩∾𝕩} ⋄ lf←@+10
 
 %DEF t0 %USE test ⋄ c0←"•Show ¯4" ⋄ c1←"!0" ⋄ c2←"aa" ⋄ c3←"a⇐1"
 

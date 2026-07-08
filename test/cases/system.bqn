@@ -12,34 +12,37 @@
 # •BQN
 %USE eqvar ⋄    •BQN _eqvar "1↑""""" %% " "
 %USE eqvar ⋄ ⟨⟩ •BQN _eqvar "1↑""""" %% " "
-! ≡´ t←⟨•path,"custom-name", "arg"⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ ! ⟨•path, "custom-name", "arg"⟩ ≡ ⊑t
-! ≡´ t←⟨•path,"custom-name"       ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ ! ⟨•path, "custom-name", ⟨⟩⟩    ≡ ⊑t
-! ≡´ t←⟨•path                     ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ ! ⟨•path, "",            ⟨⟩⟩    ≡ ⊑t
-! ≡´ t←⟨                          ⟩•BQN"⟨•path‿•name‿•args ⋄ •state⟩" ⋄ !        ⟨"",            ⟨⟩⟩    ≡ 1↓⊑t
-!"•BQN: Path must be a string" % ⟨1‿2⟩ •BQN "2+2"
+t←⟨•path,"custom-name", "arg"⟩•BQN"•path‿•name‿•args‿•state" ⋄ ! t ≡ ∾⟜⋈ ⟨•path, "custom-name", "arg"⟩
+t←⟨•path,"custom-name"       ⟩•BQN"•path‿•name             " ⋄ ! t ≡     ⟨•path, "custom-name"⟩
+t←⟨•path                     ⟩•BQN"•path                   " ⋄ ! t ≡      •path
+!"•BQN: Path must be a list of characters" % ⟨1‿2⟩ •BQN "2+2"
 !"•BQN: Filename must be a string" % ⟨•path, 1‿2⟩ •BQN "2+2"
 ⟨•path, "abc/def"⟩ •BQN "•name" %% "abc/def"
 !"•BQN: 𝕩 must be a string" % •BQN ↕3
 !"𝕨 •BQN 𝕩: 𝕨 must be a list with at most 3 items, but had shape ⟨4⟩" % (↕4) •BQN "123"
 !"𝕨 •BQN 𝕩: 𝕨 must be a list with at most 3 items, but had shape 2‿2" % (2‿2⥊↕4) •BQN "123"
 !"No path present for •path" % •BQN"•path"
-!"No arguments present for •args" % •BQN"•args"
+•BQN"•args" %%% 0⥊<""
 !"No name present for •name" % •BQN"•name"
-!"No arguments present for •state" % •BQN"•state"
-! •path‿""‿"" ≡ ⟨•path⟩•BQN"•state"
-! ""‿"" ≡ ¯2↑⟨⟩•BQN"•state"
+!"No name present for •state" % •BQN"•state"
+!"No name present for •state" % ⟨⟩•BQN"•state"
+!"No name present for •state" % ⟨•path⟩•BQN"•state"
+! ⟨•path, "foo", 0⥊<""⟩ •internal.Indistinguishable ⟨•path,"foo"⟩•BQN"•state"
 "args"‿"path"‿"name"‿"helloworld"‿"state"‿"rebqn"‿"hashmap"‿"testsysval1"‿"testsysval2"∊•BQN"•listsys" %% 1‿1‿1‿0‿1‿1‿1‿0‿0
 !"System value •testsysval1 is not available in this CBQN build" % •testsysval1 %DEBUG
 !"System value •testsysval2 is not available in this CBQN build" % •testsysval2 %DEBUG
 !"Unknown system function •testsysval9" % •testsysval9
-!"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•path"
-!"Failed to resolve ""path that doesn't exist"": No such file or directory" % ⟨"path that doesn't exist"⟩•BQN"•state"
-⟨"path that doesn't exist"⟩•BQN"2+2" %% 4
+!"Failed to resolve ""/path that doesn't exist"": No such file or directory" % ⟨"/path that doesn't exist"      ⟩•BQN"•path"
+!"Failed to resolve ""/path that doesn't exist"": No such file or directory" % ⟨"/path that doesn't exist","",⟨⟩⟩•BQN"•state"
+⟨"/path that doesn't exist"⟩•BQN"2+2" %% 4
 !"•file.Chars: Using relative path with no absolute base path known" % f←•BQN"•FChars" ⋄ F "a"
+
+!"•BQN: Using relative path with no absolute base path known" % f←•BQN "•BQN" ⋄ ⟨"."⟩ F "•path"
+f←•BQN "•BQN" ⋄ ! •path ≡ ⟨•path⟩ F "•path"
 
 # •ReBQN
 !"REPL: Filename must be a string" % f←•ReBQN{⇐} ⋄ ⟨•path, 1‿2⟩ F "2+2"
-!"REPL: Path must be a string" % f←•ReBQN{⇐} ⋄ ⟨1‿2⟩ F "2+2"
+!"REPL: Path must be a list of characters" % f←•ReBQN{⇐} ⋄ ⟨1‿2⟩ F "2+2"
 !"𝕨 REPL 𝕩: 𝕨 must be a list with at most 3 items, but had shape ⟨4⟩" % f←•ReBQN{⇐} ⋄ (↕4) F "123"
 f←•ReBQN{⇐} ⋄ ! ⟨•path, "custom-name", "arg"⟩ ≡ ⟨•path,"custom-name", "arg"⟩ F "•state"
 

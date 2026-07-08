@@ -394,9 +394,11 @@ void comps_getSysvals(B* res) {
 B rebqn_exec(B code, HArr* state, B re) {
   return evalFunBlockConsume(bqn_comp(code, state, re, NULL, COMP_UNK, false, false));
 }
-B rerepl_exec(B source, B state, B re) {
+B rerepl_exec(B source, B state, B ref) {
+  B* refp = harr_ptr(ref);
+  B re = refp[0];
   B code = vfyStr(source, "REPL", "𝕩");
-  HArr* state1 = prep_state(state, "REPL");
+  HArr* state1 = prep_state(state, refp[1], "REPL");
   B* op = harr_ptr(re);
   i32 replMode = o2iG(op[re_mode]);
   if (replMode>0) {
@@ -613,7 +615,7 @@ void load_init() { // very last init function
 
 STATIC_GLOBAL HArr* defStateVal;
 NOINLINE HArr* defaultUnknownState() {
-  if (defStateVal==NULL) gc_add(taga(defStateVal = (HArr*) a(m_hvec3N(bi_N, bi_N, bi_N))));
+  if (defStateVal==NULL) gc_add(taga(defStateVal = (HArr*) a(m_hvec3N(bi_N, bi_N, emptySVec()))));
   return ptr_inc(defStateVal);
 }
 NOINLINE HArr* m_state(B path, B name, B args) { return c(HArr, m_hvec3N(path, name, args)); }

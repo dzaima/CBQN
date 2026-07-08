@@ -36,7 +36,7 @@ Block* bqn_comp   (B source, HArr* state, B re, Scope* sc, u8 kind, bool loose, 
 B      rebqn_exec (B source, HArr* state, B re); // consumes source,state; runs in a new environment
 B      rerepl_exec(B source, B state0, B re); // consumes source,state0; uses re_mode and re_scope
 NOINLINE HArr* m_state(B path, B name, B args);
-HArr* prep_state(B w, char* name); // check & expand state; consumes w, returns ⟨path,name,args⟩
+HArr* prep_state(B w, B path0, char* name); // check & expand state; consumes w, returns ⟨path,name,args⟩
 void init_comp(B* new_re, B* prev_re, B prim, B sys); // doesn't consume; writes re_* compiling info into new_re
 
 void cbqn_init(void);
