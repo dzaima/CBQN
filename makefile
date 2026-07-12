@@ -143,4 +143,8 @@ clean-submodules:
 clean-obj2:
 	rm -rf build/obj2
 
+clean-test:
+	rm -rf test/testDir/
+	"${MAKE}" -C test/ffi clean
+
 clean: clean-build clean-obj2

@@ -4,6 +4,8 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #if defined(_WIN32)
   #include "windows/winFile.c"
@@ -47,25 +49,26 @@ NOINLINE void fileRef_close(FILE* f) {
 
 FILE* file_open(B path, char* desc, char* mode) { // doesn't consume
   FILE* f = file_open_impl(path, desc, mode);
-  if (f==NULL) thrF("Couldn't %S file \"%R\"", desc, path);
+  if (f==NULL) thrF("Couldn't open file for %S: \"%R\"", desc, path);
   return f;
 }
 static DIR* dir_open(B path) { // doesn't consume
   OsStr p = toOsStr(path);
   DIR* f = opendir(p);
   freeOsStr(p);
-  if (f==NULL) thrF("Couldn't open directory \"%R\"", path);
+  if (f==NULL) thrF("Couldn't open directory: \"%R\"", path);
   return f;
 }
 
 
 
-I8Arr* stream_bytes(FILE* f) {
-  B r = emptyIVec();
+#define DEBUG_FILE_READ 0
+static NOINLINE I8Arr* stream_bytes_prefixed(B r, FILE* f) {
   u64 SZ = 8192;
   TALLOC(i8, t, SZ);
   while(true) {
     u64 read = fread(t, 1, SZ, f);
+    if (DEBUG_FILE_READ) print_fmt("fread %l → %l\n", SZ, read);
     if (read==0) break;
     i8* ap; B a = m_i8arrv(&ap, read);
     memcpy(ap, t, read);
@@ -74,19 +77,34 @@ I8Arr* stream_bytes(FILE* f) {
   TFREE(t);
   return toI8Arr(r);
 }
+I8Arr* stream_bytes(FILE* f) {
+  return stream_bytes_prefixed(emptyIVec(), f);
+}
 
 I8Arr* path_bytes(B path) { // consumes
-  FILE* f = fileRef_open(file_open(path, "read", "rb"));
-  int seekRes = fseek(f, 0, SEEK_END);
+  FILE* f = fileRef_open(file_open(path, "reading", "rb"));
+  struct stat st;
+  int fstat_err = fstat(fileno(f), &st);
+  if (DEBUG_FILE_READ) print_fmt("reading path '%R': fstat=%i isreg=%i, size=%l\n", path, fstat_err, S_ISREG(st.st_mode), st.st_size);
+  if (fstat_err) thrF("Couldn't get file information: \"%R\"", path);
   I8Arr* src;
-  if (seekRes==-1) {
-    src = stream_bytes(f);
-  } else {
-    i64 len = ftell(f);
-    fseek(f, 0, SEEK_SET);
+  if (S_ISREG(st.st_mode)) {
+    u64 len = st.st_size;
+    u64 len_ext = len + 1; // attempt reading one more byte than expected, to catch st_size being incorrect
     i8* rp;
-    src = (I8Arr*) a(m_i8arrv(&rp, len));
-    if (fread((char*)src->a, 1, len, f)!=len) thrF("Error reading file \"%R\"", path);
+    src = (I8Arr*) a(m_i8arrv(&rp, len_ext));
+    ux got = fread((char*)src->a, 1, len_ext, f);
+    if (DEBUG_FILE_READ) print_fmt("fread %z → %z\n", len_ext, got);
+    if (got == len) {
+      src->ia--; // nothing got written to the tail byte so no need to reinitialize it
+    } else {
+      if (got != len_ext) thrF("File size decreased during read: \"%R\"", path);
+      src = stream_bytes_prefixed(taga(src), f);
+    }
+  } else if (S_ISDIR(st.st_mode)) {
+    thrF("Attempting to read a directory as a file: \"%R\"", path);
+  } else {
+    src = stream_bytes(f);
   }
   dec(path);
   fileRef_close(f);
@@ -250,13 +268,13 @@ void free_chars(CharBuf b) {
 }
 
 static u64 file_openWriteClose(B path, char* data, u64 len) {
-  FILE* f = file_open(path, "write to", "wb");
+  FILE* f = file_open(path, "writing", "wb");
   u64 written = fwrite(data, 1, len, f);
   fclose(f);
   return written;
 }
 static void file_checkWritten(B path, u64 written, u64 len) {
-  if (written != len) thrF("Error writing to file \"%R\"", path);
+  if (written != len) thrF("Error during writing to file: \"%R\"", path);
 }
 
 void path_wChars(B path, B x) { // consumes path
@@ -432,9 +450,6 @@ void mmap_init(void) {
 B mmap_file(B path) { thrM("CBQN was compiled without •file.MapBytes support"); }
 void mmap_init() { }
 #endif
-
-#include <sys/types.h>
-#include <sys/stat.h>
 
 bool dir_create(B path) {
   OsStr p = toOsStr(path);

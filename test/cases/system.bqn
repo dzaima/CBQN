@@ -115,6 +115,7 @@ a←b←0 ⋄ f←•ReBQN{primitives⇐⟨'¨'‿{a+↩1⋄𝕗},'∘'‿{b+↩
 
 
 # files; tests are ordered!
+%DEF _noPath {𝔽⎊{𝕊: !(¬·≠`⊸>'"'⊸=)⊸/ •CurrentError@}}
 {•file.Exists 𝕩? ⊑•SH⟨"rmdir", •file.At 𝕩⟩; 0} "testdirNested" %% 0
 •file.Remove⍟•file.Exists¨ "testfile.bqn"‿"testfile2.bqn"‿"testfile3B.bqn"‿"badwrite" ⋄ 1 %% 1
 •file.At "/a/b" %% "/a/b"
@@ -125,7 +126,8 @@ a←b←0 ⋄ f←•ReBQN{primitives⇐⟨'¨'‿{a+↩1⋄𝕗},'∘'‿{b+↩
 "a/b/" •file.At "/c/d" %% "/c/d"
 "a/b" •file.At "/c/d/" %% "/c/d/"
 •file.Exists "/dev/file that doesn't exist" %% 0
-!"Couldn't read file ""/dev/file that doesn't exist""" % •FChars "/dev/file that doesn't exist"
+!"Couldn't open file for reading: ""/dev/file that doesn't exist""" % •FChars "/dev/file that doesn't exist"
+!"Couldn't open file for writing: """"" % "folder that doesn't exist/file in that folder" •FBytes %USE _noPath "hello"
 ! (•path∾"/") ≡ •file.Parent •file.At "hi"
 
 !"𝕨 •file.Lines 𝕩: 𝕩 must be a list" % "testfile.bqn" •FLines 2‿2⥊<"abcd"
@@ -160,6 +162,8 @@ a←b←0 ⋄ f←•ReBQN{primitives⇐⟨'¨'‿{a+↩1⋄𝕗},'∘'‿{b+↩
 •file.Exists¨ "testfile.bqn"‿"nontestfile.bqn"‿"testfile3.bqn"‿"testfile3B.bqn" %% 1‿0‿0‿1
 ¯22↑•file.Createdir "testdirNested" %% "/testDir/testdirNested"
 ¯8↑•file.RealPath "testdirNested/.././" %% "/testDir"
+!"Attempting to read a directory as a file: """"" % •FBytes %USE _noPath ""
+!"Attempting to read a directory as a file: """"" % •FBytes %USE _noPath "testdirNested"
 !"•file.CreateDir 𝕩: Failed to create directory" % •file.Createdir "testdirNested"
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List "." %% 1‿1‿0‿1‿1
 "testfile.bqn"‿"testfile2.bqn"‿"testfile3.bqn"‿"testfile3B.bqn"‿"testdirNested" ∊ •file.List •file.path %% 1‿1‿0‿1‿1
