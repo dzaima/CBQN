@@ -340,7 +340,7 @@ NORETURN B c2_bad(B f, B w, B x);
 
 // squeeze
 B squeeze_any(B x); // consumes; accepts any array, returns one with the smallest type (doesn't recurse!)
-B squeeze_deep(B x); // consumes; accepts any object, returns an object with all parts necessary for equality checking & hashing squeezed; if this function errors due to OOM, the argument won't yet be consumed
+B squeeze_deep(B x); // consumes; accepts any object, returns an object with arrays squeezed where possible, while remaining indistinguishable from the original value
 
 typedef struct { B r; u8 re; } SqRes;
 
@@ -359,8 +359,8 @@ B squeeze_chrNew(B x); // consumes; doesn't try using any existing flags; primar
 
 static B squeeze_numNewTy(u8 xe, B x) { debug_assert(TI(x,elType)==xe); return squeeze_numNew(x); } // squeeze_numNew but with a known eltype; currently eltype isn't used for anything
 
-static B squeeze_numTry(B x, u8* re_out, u32 req) { SQ_UNPACK(squeeze_numTry) } // consumes; always returns bitarr for IA(x)==0; utilizes squoze/sortedness flags
-static B squeeze_chrTry(B x, u8* re_out, u32 req) { SQ_UNPACK(squeeze_chrTry) } // consumes; always returns bitarr for IA(x)==0; utilizes squoze flag
+static B squeeze_numTry(B x, u8* re_out, u32 req) { SQ_UNPACK(squeeze_numTry) } // consumes; always returns (potentially-reused) bitarr for IA(x)==0; utilizes squoze/sortedness flags
+static B squeeze_chrTry(B x, u8* re_out, u32 req) { SQ_UNPACK(squeeze_chrTry) } // consumes; always returns (potentially-reused) c8arr for IA(x)==0; utilizes squoze flag
 // req parameter options (these matter for heuristic randomization, but otherwise are unused):
 #define SQ_ANY 0 // no requirements placed on result, i.e. can be a no-op or even widen type
 #define SQ_INT 1 // must squeeze to elInt(xe) if possible

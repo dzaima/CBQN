@@ -303,6 +303,7 @@ helpers ← {
   
   shouldNotError ⇐ o.noerr
   slow ⇐ o.slow
+  randomizedHeuristics ⇐ o.randomizeHeuristics
   
   EqvarEq ← Indistinguishable
   Classify ← {(≢𝕩)⥊ ⊐EqvarEq⌜˜ ⥊𝕩}

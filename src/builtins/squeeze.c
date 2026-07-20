@@ -293,21 +293,20 @@ SqRes squeeze_chrTryImpl(B x) {
 B squeeze_numOut(B x) { return squeeze_numTryImpl(x).r; }
 B squeeze_chrOut(B x) { return squeeze_chrTryImpl(x).r; }
 
-
-
 B squeeze_deep(B x) {
   if (!isArr(x)) return x;
-  x = squeeze_any(x);
-  if (TI(x,elType)!=el_B) return x;
+  // x = squeeze_any(x);
+  B xf = getFillR(x); u8 xe;
+  if      (numFill(xf)) { x = squeeze_numTry(x, &xe, SQ_ANY); if (xe!=el_B) return x; }
+  else if (chrFill(xf)) { x = squeeze_chrTry(x, &xe, SQ_ANY); if (xe!=el_B) return x; }
   usz ia = IA(x);
   M_HARR(r, ia)
   B* xp = arr_bptr(x);
-  B xf = getFillR(x);
   if (xp!=NULL) {
     for (ux i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(inc(xp[i]))); }
   } else {
     SGet(x);
     for (ux i=0; i<ia; i++) { HARR_ADD(r, i, squeeze_deep(Get(x,i))); }
   }
-  return squeeze_any(qWithFill(HARR_FCD(r, x), xf));
+  return qWithFill(HARR_FCD(r, x), xf);
 }

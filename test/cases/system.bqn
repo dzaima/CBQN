@@ -493,7 +493,16 @@ a←•internal.Unshare ↕10 ⋄ b←10⥊<a ⋄ ! 11 ≡ •internal.Refc a �
 a←"Ai32"•internal.Variation ↕10 ⋄ •internal.Type •internal.Squeeze a %% "i8arr"
 {! 𝕩 ≡ •internal.Squeeze 𝕩}¨ {0≥•Cmp´0‿¯1⊏𝕩? 𝕩⍋@; 𝕩⍒@}⊸⊢¨ ∾{∨´1e9≤|0‿¯1⊏𝕩? ⟨𝕩⟩; ⟨𝕩,"Ai32"•internal.Variation 𝕩⟩}¨ 1‿1000⊸/¨ ∾{⟨0‿𝕩,𝕩‿0⟩}¨ 1‿2‿¯1 ∾ ¯1⊸-⊸∾ ⥊ 0‿¯1 +⌜ 2⋆7‿15‿31
 # •internal.DeepSqueeze
-a←⋈"Ai32"•internal.Variation ↕10 ⋄ •internal.Type ⊑•internal.DeepSqueeze a %% "i8arr"
+a ← •internal.DeepSqueeze ⋈"Ai32"•internal.Variation ↕10 ⋄ !⍟(¬(⊑•args).randomizedHeuristics) "i8arr"≡•internal.Type ⊑a ⋄ ! (⋈↕10) •internal.Indistinguishable a
+(
+  vs0 ← ∾{•internal.Variation⟜𝕩¨ "f"•internal.ListVariations 𝕩}¨ •internal.WithFill´¨ ⟨@⋈2‿2⥊"abcd", 0⋈"hello", 0⋈↕5, @⋈2‿3⥊↕5, "ab"⋈↕5, 1‿2⋈"ab", @⋈1‿@, 0⋈1‿@, ⋈˜1‿@⟩
+  vs ← ⟨vs0⟩∾vs0
+  Eq ← ! •internal.Indistinguishable
+  {𝕩 Eq •internal.DeepSqueeze 𝕩}¨ vs
+  ns ← ('a'∾•Repr)¨ ↕≠vs
+  f ← •ReBQN { system ⇐ ⟨"args"⟩∾ ns ⋈¨ vs }
+  (⟨vs⟩∾vs) Eq •path‿""‿vs F "⟨•args,"∾ '⟩'∾˜ ∾ ",•"⊸∾¨ ns
+)
 # •internal.ClearRefs
 •internal.ClearRefs@ ⋄ •internal.Variation⟜(↕10)¨ 10⥊<"Ai32Inc" ⋄ •internal.ClearRefs "foo" %% 10
 # •internal.Unshare
