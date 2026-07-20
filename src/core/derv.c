@@ -88,10 +88,10 @@ B fork_c2(B t, B w, B x) {
   return c(Fun,t)->c2(t, w, x);
 }
 
-static B md1D_decompose(B x) { B r=m_hvec3(m_i32(4),inc(c(Md1D,x)->f),tag(ptr_inc(c(Md1D,x)->m1),MD1_TAG)                   ); decR(x); return r; }
-static B md2D_decompose(B x) { B r=m_hvec4(m_i32(5),inc(c(Md2D,x)->f),tag(ptr_inc(c(Md2D,x)->m2),MD2_TAG), inc(c(Md2D,x)->g)); decR(x); return r; }
-static B fork_decompose(B x) { B r=m_hvec4(m_i32(3),inc(c(Fork,x)->f),        inc(c(Fork,x)->g ),          inc(c(Fork,x)->h)); decR(x); return r; }
-static B atop_decompose(B x) { B r=m_hvec3(m_i32(2),                          inc(c(Atop,x)->g ),          inc(c(Atop,x)->h)); decR(x); return r; }
+static B md1D_decompose(B x) { B r=m_hvec3N(m_i32(4),inc(c(Md1D,x)->f),tag(ptr_inc(c(Md1D,x)->m1),MD1_TAG)                   ); decR(x); return r; }
+static B md2D_decompose(B x) { B r=m_hvec4N(m_i32(5),inc(c(Md2D,x)->f),tag(ptr_inc(c(Md2D,x)->m2),MD2_TAG), inc(c(Md2D,x)->g)); decR(x); return r; }
+static B fork_decompose(B x) { B r=m_hvec4N(m_i32(3),inc(c(Fork,x)->f),        inc(c(Fork,x)->g ),          inc(c(Fork,x)->h)); decR(x); return r; }
+static B atop_decompose(B x) { B r=m_hvec3N(m_i32(2),                          inc(c(Atop,x)->g ),          inc(c(Atop,x)->h)); decR(x); return r; }
 
 static B md2D_uc1(B t, B o, B x) {
   Md2* m = c(Md2D, t)->m2;

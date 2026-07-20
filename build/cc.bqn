@@ -51,7 +51,7 @@ FmtComp ← {
   
   intarrCache ← Cache 1
   Li ← intarrCache.Add
-  _Lo ← {{∾⟨"m_lvB_", F≠𝕩, "(", List 𝕩, ")"⟩} 𝔽¨𝕩}
+  _Lo ← {{∾⟨"m_hvec", F≠𝕩, "N(", List 𝕩, ")"⟩} 𝔽¨𝕩}
   OStr2C ← { # A BQN string
     a←∧´𝕩<128+@
     ∾⟨a⊑"m_c32vec"‿"m_c8vec","(",a¬⊸⥊"U","",CStr𝕩,",",•Repr U32Len 𝕩,")"⟩

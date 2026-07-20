@@ -49,6 +49,12 @@ Arr* m_fillarr0p(usz ia) {
   return r;
 }
 
+NOINLINE B m_hvec1N(B a               ) { return m_hvec1(a); }
+NOINLINE B m_hvec2N(B a, B b          ) { return m_hvec2(a,b); }
+NOINLINE B m_hvec3N(B a, B b, B c     ) { return m_hvec3(a,b,c); }
+NOINLINE B m_hvec4N(B a, B b, B c, B d) { return m_hvec4(a,b,c,d); }
+
+
 
 static Arr* m_hslice(Arr* p, B* ptr, usz ia) {
   HSlice* r = m_arr(sizeof(HSlice), t_hslice, ia);

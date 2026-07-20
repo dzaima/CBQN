@@ -129,7 +129,7 @@ NOINLINE B nc_tokenize(B prims, B sysvs, u32* chars, usz len, bool* hasBlock) {
         u32* np; B name = m_c32arrv(&np, ia);
         PLAINLOOP for (usz j = 0; j < ia; j++) np[j] = chars[i0+j] + (nc_up(chars[i0+j])? 32 : 0);
         if (sys) {
-          B sysRes = C1(sys, m_hvec1(name));
+          B sysRes = C1(sys, m_hvec1N(name));
           val = nc_literal(IGet(sysRes, 0)); // won't have the class the user entered but ¯\_(ツ)_/¯
           decG(sysRes);
         } else {
@@ -480,14 +480,14 @@ B nativeComp_c2(B t, B w, B x) {
   // build result
   B res;
   if (fnBlock) {
-    res = m_hvec4(
+    res = m_hvec4N(
       bytecode,
       objs,
       m_hvec2(nc_ivec3(0, 1, 0), nc_ivec3(0, 0, 1)),
       m_hvec2(nc_ivec2(0, 0), nc_ivec2(3, varCount))
     );
   } else {
-    res = m_hvec4(
+    res = m_hvec4N(
       bytecode,
       objs,
       m_hvec1(nc_ivec3(0, 1, 0)),

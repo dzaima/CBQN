@@ -106,13 +106,8 @@ B rtWrap_wrap(B x, bool nnbi); // consumes
 void rtWrap_print(void);
 
 static NOINLINE B* m_lvBn(B* dst, ux n) { HArr_p p = m_harr0v(n); *dst = p.b; return p.a; } // m_harrUv might be fine for initial init as it doesn't run with GC, but explain is loaded later
-static NOINLINE B m_lvB_0(                  ) { return emptyHVec(); }
-static NOINLINE B m_lvB_1(B a               ) { return m_hvec1(a); }
-static NOINLINE B m_lvB_2(B a, B b          ) { return m_hvec2(a,b); }
-static NOINLINE B m_lvB_3(B a, B b, B c     ) { return m_hvec3(a,b,c); }
-static NOINLINE B m_lvB_4(B a, B b, B c, B d) { return m_hvec4(a,b,c,d); }
 static NOINLINE B m_blockinfo(ux info, B c, B d) {
-  return m_lvB_3(m_f64(info&3), m_f64(info>>2), m_lvB_2(c, d));
+  return m_hvec3N(m_f64(info&3), m_f64(info>>2), m_hvec2N(c, d));
 }
 
 #ifndef __has_builtin
@@ -256,7 +251,7 @@ NOINLINE Block* bqn_comp(B str, B state, B re, Scope* sc, u8 kind, bool loose, b
   }
   
   B* o = harr_ptr(re);
-  B args = m_lvB_4(incG(o[re_rt]), incG(bi_sys), vName, vDepth);
+  B args = m_hvec4N(incG(o[re_rt]), incG(bi_sys), vName, vDepth);
   Block* r = load_buildBlock(c2G(o[re_compFn], args, inc(str)), str, COMPS_CREF(path), COMPS_CREF(name), sc, sc!=NULL? (noNS? -1 : 1) : 0);
   r->comp->kind = kind; // TODO push down into an arg of compileAll
   COMPS_POP; popCatch();
@@ -385,7 +380,7 @@ B comps_getPrimitives(void) {
     usz l = IA(gg[gi]);
     u32* gp = c32arr_ptr(gg[gi]);
     for (usz i = 0; i < l; i++) {
-      HARR_ADDA(ph, m_lvB_2(m_c32(gp[i]), inc(pr[i])));
+      HARR_ADDA(ph, m_hvec2N(m_c32(gp[i]), inc(pr[i])));
     }
     pr+= l;
   }
@@ -494,7 +489,7 @@ void load_init() { // very last init function
     B setPrims = Get(rtRes,1);
     B setInv = Get(rtRes,2);
     decG(rtRes);
-    dec(c1G(setPrims, m_lvB_2(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
+    dec(c1G(setPrims, m_hvec2N(incG(bi_decp), incG(bi_primInd)))); decG(setPrims);
     dec(c2G(setInv, incG(bi_setInvSwap), incG(bi_setInvReg))); decG(setInv);
     
     
@@ -573,7 +568,7 @@ void load_init() { // very last init function
     #endif
     bqn_exit(0);
   #else // use compiler
-    B load_glyphs = m_lvB_3(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
+    B load_glyphs = m_hvec3N(m_c32vec_0(U"+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"), m_c32vec_0(U"˙˜˘¨⌜⁼´˝`"), m_c32vec_0(U"∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"));
     
     B load_comp;
     #if ONLY_NATIVE_COMP
@@ -616,7 +611,7 @@ void load_init() { // very last init function
   #endif // PRECOMP
 }
 
-NOINLINE B m_state(B path, B name, B args) { return m_lvB_3(path, name, args); }
+NOINLINE B m_state(B path, B name, B args) { return m_hvec3N(path, name, args); }
 static NOINLINE B fileState(B path, B args) { // consumes args
   return m_state(path_parent(inc(path)), path_name(inc(path)), args);
 }
@@ -657,7 +652,7 @@ B bqn_explain(B str, B vars) { // consumes str & vars
     
     COMPS_PUSH(str, bi_N, def_re, COMP_REPL);
     B vDepth = i64EachDec(-1, incG(vars));
-    B compOpts = m_lvB_4(incG(o[re_rt]), incG(bi_sys), vars, vDepth);
+    B compOpts = m_hvec4N(incG(o[re_rt]), incG(bi_sys), vars, vDepth);
     B c = c2(o[re_compFn], compOpts, inc(str));
     COMPS_POP; popCatch();
     

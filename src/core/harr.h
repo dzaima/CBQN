@@ -116,4 +116,7 @@ static B m_hvec1(B a               ) { HArr_p r = m_harrUv(1); r.a[0] = a;      
 static B m_hvec2(B a, B b          ) { HArr_p r = m_harrUv(2); r.a[0] = a; r.a[1] = b;                         NOGC_E; return r.b; }
 static B m_hvec3(B a, B b, B c     ) { HArr_p r = m_harrUv(3); r.a[0] = a; r.a[1] = b; r.a[2] = c;             NOGC_E; return r.b; }
 static B m_hvec4(B a, B b, B c, B d) { HArr_p r = m_harrUv(4); r.a[0] = a; r.a[1] = b; r.a[2] = c; r.a[3] = d; NOGC_E; return r.b; }
-
+B m_hvec1N(B a               );
+B m_hvec2N(B a, B b          );
+B m_hvec3N(B a, B b, B c     );
+B m_hvec4N(B a, B b, B c, B d);

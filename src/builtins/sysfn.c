@@ -46,8 +46,8 @@ B type_c1(B t, B x) {
 }
 
 B decp_c1(B t, B x) {
-  if (!isVal(x)) return m_hvec2(m_i32(-1), x);
-  if (isPrim(x)) return m_hvec2(m_i32(0), x);
+  if (!isVal(x)) return m_hvec2N(m_i32(-1), x);
+  if (isPrim(x)) return m_hvec2N(m_i32(0), x);
   return TI(x,decompose)(x);
 }
 
@@ -1247,7 +1247,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
       s_outObj = utf8Decode((char*)c8any_ptr(s_outRaw), IA(s_outRaw)); decG(s_outRaw);
       s_errObj = utf8Decode((char*)c8any_ptr(s_errRaw), IA(s_errRaw)); decG(s_errRaw);
     }
-    return m_hvec3(m_i32(code), s_outObj, s_errObj);
+    return m_hvec3N(m_i32(code), s_outObj, s_errObj);
   }
 #else
   B sh_c2(B t, B w, B x) { thrM("•SH: CBQN was compiled without <spawn.h>"); }
@@ -1629,7 +1629,7 @@ B sys_c1(B t, B x) {
       case sys_fchars:  initSysDesc(); cr = m_nfn(fCharsDesc,  inc(REQ_PATH)); break;
       case sys_fbytes:  initSysDesc(); cr = m_nfn(fBytesDesc,  inc(REQ_PATH)); break;
       case sys_flines:  initSysDesc(); cr = m_nfn(fLinesDesc,  inc(REQ_PATH)); break;
-      case sys_import:  initSysDesc(); cr = m_nfn(importDesc,  m_hvec2(inc(REQ_PATH), incG(COMPS_CREF(re)))); break;
+      case sys_import:  initSysDesc(); cr = m_nfn(importDesc,  m_hvec2N(inc(REQ_PATH), incG(COMPS_CREF(re)))); break;
       case sys_ffi: case sys_foreign: cr = getSysFFI(REQ_PATH, sys_id(c)==sys_foreign); break;
       case sys_name: if (q_N(name))  thrM("No name present for •name"); cr = inc(name); break;
       case sys_path: if (q_N(path0)) thrM("No path present for •path"); cr = inc(REQ_PATH); break;
@@ -1648,7 +1648,7 @@ B sys_c1(B t, B x) {
         if (q_N(args)) thrM("No arguments present for •state");
         if (q_N(name)) thrM("No name present for •state");
         if (q_N(path0)) thrM("No path present for •state");
-        cr = m_hvec3(inc(REQ_PATH), inc(name), inc(args));
+        cr = m_hvec3N(inc(REQ_PATH), inc(name), inc(args));
         break;
       }
       case sys_args: {
