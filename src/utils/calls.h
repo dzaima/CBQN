@@ -40,3 +40,4 @@ extern INIT_GLOBAL RangeFn getRange_fns[el_f64+1]; // limited to ≤el_f64
 
 typedef void (*BitSelFn)(void*,u64*,u64,u64,u64);
 extern INIT_GLOBAL BitSelFn* bitselFns;
+usz indexOfOne(B l, B e); // index of element equal to e in list l; doesn't consume

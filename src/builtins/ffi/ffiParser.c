@@ -400,7 +400,6 @@ static void* foreign_openLib(B t, B w, char* me) { // consumes w
   return dl;
 }
 
-usz indexOfOne(B l, B e); // from search.c
 static NOINLINE void* foreign_getSymbol(B t, B w, B symName, char* me) { // consumes w
   vfyStr(symName, me, "Symbol name");
   if (IA(symName) != indexOfOne(symName, m_c32(0))) thrF("%U: Symbol name must not contain a null character", me);
