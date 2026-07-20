@@ -451,7 +451,6 @@ B internalGC_c1(B t, B x) {
 
 
 void heap_printInfoStr(char* str);
-B vfyStr(B x, char* name, char* arg);
 B heapStats_c1(B t, B x) {
   if (isC32(x)) {
     f64* rp; B r = m_f64arrv(&rp, 2);

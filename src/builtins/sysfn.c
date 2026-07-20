@@ -769,8 +769,7 @@ B fileAt_c1(B d, B x) {
   return path_rel(nfn_objU(d), x, "•file.At");
 }
 B fileAt_c2(B d, B w, B x) {
-  vfyStr(w,"•file.At","𝕨");
-  B r = path_rel(w, x, "•file.At");
+  B r = path_rel(vfyStr(w,"•file.At","𝕨"), x, "•file.At");
   dec(w);
   return r;
 }
@@ -1370,16 +1369,14 @@ B nKeys_c1(B t, B x) {
 }
 B nGet_c2(B t, B w, B x) {
   if (!isNsp(w)) thrM("𝕨 •ns.Get 𝕩: 𝕨 must be a namespace");
-  vfyStr(x, "•ns.Get", "𝕩");
-  x = name_normalize(x);
+  x = name_normalize(vfyStr(x, "•ns.Get", "𝕩"));
   B r = ns_getNU(w, x, true);
   decG(w); decG(x);
   return inc(r);
 }
 B nHas_c2(B t, B w, B x) {
   if (!isNsp(w)) thrM("𝕨 •ns.Has 𝕩: 𝕨 must be a namespace");
-  vfyStr(x, "•ns.Has", "𝕩");
-  x = name_normalize(x);
+  x = name_normalize(vfyStr(x, "•ns.Has", "𝕩"));
   B r = ns_getNU(w, x, false);
   decG(w); decG(x);
   return m_i32(!q_N(r));

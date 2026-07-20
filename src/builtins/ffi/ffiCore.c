@@ -224,7 +224,6 @@ static NOINLINE U32Span toC32Null(B* xp, bool acceptEmpty) { // assumes *xp is a
 }
 static B parseFFIType(ArgParseState* st, u8 kind, U32Span span);
 static NOINLINE B parsePointerType(B x, enum ParseTypeFor); // consumes x
-B vfyStr(B x, char* name, char* arg);
 
 
 

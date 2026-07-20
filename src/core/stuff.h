@@ -324,6 +324,7 @@ char* eltype_repr(u8 u);
 char* genericDesc(B x); // doesn't consume
 bool isPureFn(B x); // doesn't consume
 bool isStr(B x); // doesn't consume; returns if x is a rank 1 array of characters (includes any empty array)
+B vfyStr(B x, char* name, char* arg); // doesn't consume, returns x; throws if it's not a string, with message of "[name]: [arg] must be a string"
 
 B def_fn_uc1(B t,    B o,           B x);  B def_fn_ucw(B t,    B o,           B w, B x);
 B def_m1_uc1(Md1* t, B o, B f,      B x);  B def_m1_ucw(Md1* t, B o, B f,      B w, B x);
