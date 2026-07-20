@@ -490,6 +490,7 @@ FORCE_INLINE bool q_beq(B w, B x) { return w.u == x.u; } // bitwise-equal B valu
 FORCE_INLINE bool q_N   (B x) { return q_beq(x, bi_N); } // is ·
 FORCE_INLINE bool noFill(B x) { return q_beq(x, bi_noFill); }
 FORCE_INLINE bool q_z(B x) { return q_beq(x, bi_z); }
+FORCE_INLINE bool q_c0(B x) { return q_beq(x, m_c32(0)); }
 
 
 NORETURN void expI_f64(f64 what); NORETURN void expI_B(B what);

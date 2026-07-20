@@ -491,7 +491,7 @@ B iPureKeep_c1(B t, B x) { return x; }
 B iKeep_c1(B t, B x) { return x; }
 
 B iProperties_c2(B t, B w, B x) {
-  if (w.u!=m_c32(0).u || x.u != m_c32(0).u) thrM("𝕨 •internal.Properties 𝕩: bad arg");
+  if (!q_c0(w) || !q_c0(x)) thrM("𝕨 •internal.Properties 𝕩: bad arg");
   i32* rp;
   B r = m_i32arrv(&rp, 8);
   rp[0] = sizeof(usz)*8;
