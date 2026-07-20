@@ -111,7 +111,7 @@ static char* sty_name(u8 sty) {
 
 static NOINLINE void trackTemp(ScratchMem sm, B v) {
   B* a = &sm.objPtr->tmpBufs;
-  if ((*a).u == bi_z.u) {
+  if (q_z(*a)) {
     HArr_p t = m_harrUv(4);
     t.c->ia = 1;
     t.a[0] = v;
@@ -484,7 +484,7 @@ static NOINLINE B foreignCtyToBQN(void* mem, ScratchMem sm, FFICompoundType* ct)
       extraRetRet = foreignToBQN(mem, sm, ct->a[0].o);
       freeTmpBufs:;
       B tmpBufs = sm.objPtr->tmpBufs;
-      if (tmpBufs.u != bi_z.u) { decG(tmpBufs); } NOGC_S;
+      if (!q_z(tmpBufs)) { decG(tmpBufs); } NOGC_S;
       return extraRetRet;
     }
     
@@ -498,7 +498,7 @@ static NOINLINE B foreignCtyToBQN(void* mem, ScratchMem sm, FFICompoundType* ct)
         data = *AT_SM(void*, ct->a[0].ptr.dataPtrOffset);
         if (ptrk == ptrk_mut) {
           B ptrObj = *AT_SM(B, ct->a[0].ptr.ptrObjRefOffset);
-          if (ptrObj.u != bi_z.u) return ptrObj;
+          if (!q_z(ptrObj)) return ptrObj;
         }
         TyArr* arr = RFLD(data,TyArr,a);
         debug_assert(IS_DIRECT_TYARR(PTY(arr)) || PTY(arr)==t_unkArr);

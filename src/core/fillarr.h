@@ -35,12 +35,12 @@ static B qWithFill(B x, B fill) { // consumes both
 
 NOINLINE bool fillEqualF(B w, B x);
 static bool fillEqual(B w, B x) {
-  if (w.u==x.u) return true;
+  if (q_beq(w, x)) return true;
   if (isAtm(w)|isAtm(x)) return false;
   return fillEqualF(w, x);
 }
 
-static bool numFill(B x) { return x.u == m_f64(0).u; }
+static bool numFill(B x) { return q_beq(x, m_f64(0)); }
 static bool chrFill(B x) { return isC32(x); }
 
 static B getFillN(B x) { // doesn't consume, returns unowned value; will return bi_noFill if fill is unknown

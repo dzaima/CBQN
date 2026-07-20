@@ -24,7 +24,7 @@ static NOINLINE B homFil1(B f, B r, B xf) {
 static NOINLINE B homFil2(B f, B r, B wf, B xf) {
   assert(EACH_FILLS);
   if (isPureFn(f)) {
-    if (f.u==bi_feq.u || f.u==bi_fne.u) { dec(wf); dec(xf); return squeeze_numNew(r); }
+    if (q_beq(f,bi_feq) || q_beq(f,bi_fne)) { dec(wf); dec(xf); return squeeze_numNew(r); }
     if (!noFill(wf) && !noFill(xf)) {
       if (CATCH) { freeThrown(); return r; }
       B rf = c2(f, wf, xf);

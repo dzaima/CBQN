@@ -141,7 +141,7 @@ static NOINLINE B evalFunBlockConsume(Block* block) {
 }
 
 NOINLINE B load_fullpath(B path, B name) {
-  return q_N(name)? inc(path) : q_N(path)? inc(name) : IA(path)==1 && IGetU(path,0).u==m_c32('.').u? inc(name) : path_rel(path, inc(name), "(load_fullpath)");
+  return q_N(name)? inc(path) : q_N(path)? inc(name) : IA(path)==1 && q_beq(IGetU(path,0), m_c32('.'))? inc(name) : path_rel(path, inc(name), "(load_fullpath)");
 }
 
 GLOBAL HArr* comps_curr;
@@ -181,7 +181,7 @@ static void change_def_comp(B comp) { // consumes
 #include "opt/comp.c"
 B load_fullComp;
 void switchComp(void) {
-  change_def_comp(harr_ptr(def_re)[re_compFn].u==load_fullComp.u? incG(native_comp) : incG(load_fullComp));
+  change_def_comp(q_beq(harr_ptr(def_re)[re_compFn], load_fullComp)? incG(native_comp) : incG(load_fullComp));
 }
 #endif
 B compObj_c1(B t, B x) {

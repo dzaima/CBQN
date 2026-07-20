@@ -38,7 +38,7 @@ B type_c1(B t, B x) {
   else if (isMd2(x)) r = 5;
   else if (isNsp(x)) r = 6;
   if (RARE(r==-1)) {
-    if (x.u == bi_optOut.u) thrM("Reading variable that was optimized out by F↩ after error");
+    if (q_beq(x, bi_optOut)) thrM("Reading variable that was optimized out by F↩ after error");
     printI(x); fatal(": getting type");
   }
   decR(x);
@@ -732,7 +732,7 @@ B hashmap_set_c2(B t, B w, B x) { hashmap_set(VARS, w, x); return inc(nfn_objU(t
 B hashmap_delete_c1(B t, B x  ) { hashmap_delete(VARS, x); return inc(nfn_objU(t)); }
 B hashmap_has_c1(B t, B x) {
   B l = hashmap_lookup(VARS, bi_noVar, x);
-  if (l.u==bi_noVar.u) return m_f64(0);
+  if (q_beq(l, bi_noVar)) return m_f64(0);
   dec(l); return m_f64(1);
 }
 B hashmap_count_c1(B t, B x) { dec(x); return m_usz(hashmap_count(VARS[2])); }
@@ -840,8 +840,8 @@ B import_c1(B d, B x) {
   B tag_none    = tagu64(100000000, C32_TAG);
   B tag_running = tagu64(100000001, C32_TAG);
   B prevVal = c2(ns_getC(map, "get"), tag_none, incG(path));
-  if (prevVal.u == tag_running.u) thrF("•Import 𝕩: cyclic import of \"%R\"", path);
-  if (prevVal.u != tag_none.u) {
+  if (q_beq(prevVal, tag_running)) thrF("•Import 𝕩: cyclic import of \"%R\"", path);
+  if (!q_beq(prevVal, tag_none)) {
     // print_fmt("cached: %R @ %i/%i\n", path, prevIdx, IA(importKeyList));
     decG(path);
     return prevVal;

@@ -545,8 +545,8 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
 
 NOINLINE NORETURN void v_tagError(B x, bool write) {
   char* act = write? "Assignment: Attempting to modify" : "Attempting to read";
-  if (x.u == bi_noVar.u) thrF("%S variable which is not yet defined", act);
-  if (x.u == bi_optOut.u) thrF("%S variable which isn't available due to incomplete or aborted F↩", act);
+  if (q_beq(x, bi_noVar)) thrF("%S variable which is not yet defined", act);
+  if (q_beq(x, bi_optOut)) thrF("%S variable which isn't available due to incomplete or aborted F↩", act);
   fatal("Unexpected v_tagError argument");
 }
 NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
@@ -573,7 +573,7 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
     }
     SGet(x)
     for (u64 i = 0; i < ia; i++) v_set(pscs, sp[i], Get(x,i), upd, true, false, true);
-  } else if (s.u == bi_N.u) {
+  } else if (q_N(s)) {
     return;
   } else if (isObj(s)) {
     if      (TY(s) == t_arrMerge) v_merge(pscs, s, x, upd, false);

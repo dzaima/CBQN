@@ -231,7 +231,7 @@ typedef struct { B obj; void* data; } DirectArr;
 // returns an array with elType==re, with same shape/elements/fill as x, and its data pointer
 DirectArr toEltypeArr(B x, u8 re); // consumes
 
-// returns array with same shape & fill as x, returning x itself if possible (iff so, x.u==obj.u).
+// returns array with same shape & fill as x, returning x itself if possible (iff so, q_beq(x,obj)).
 // If reused, the object is untouched besides having its refcount incremented and flags cleared.
 // As such, if an el_B array is reused, all elements effectively have 1 more refcount than they should as x's elements never get freed
 // Otherwise, functionality is the same as if a regular new array was made (i.e. uninitialized elements, may start NOGC)
@@ -398,7 +398,7 @@ static i32 compare(B w, B x) { // doesn't consume; -1 if w<x, 1 if w>x, 0 if wâ‰
 NOINLINE bool atomEqualF(B w, B x);
 static bool atomEqual(B w, B x) { // doesn't consume
   if(isF64(w)) return isF64(x) && o2fG(w) == o2fG(x);
-  if (w.u==x.u) return true;
+  if (q_beq(w, x)) return true;
   if (!isVal(w) | !isVal(x)) return false;
   return atomEqualF(w, x);
 }

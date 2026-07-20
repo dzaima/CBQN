@@ -347,6 +347,6 @@ FORCE_INLINE bool v_seth(Scope* pscs[], B s, B x) { // doesn't consume; s cannot
     v_setI(pscs[V_DEPTH(s)], V_POS(s), inc(x), false, false);
     return true;
   }
-  if (s.u == bi_N.u) return true;
+  if (q_N(s)) return true;
   return v_sethF(pscs, s, x);
 }

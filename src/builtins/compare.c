@@ -17,7 +17,7 @@ NOINLINE i32 compareF(B w, B x) {
     return (c<=0)^atmNeg? -1 : 1;
   }
   if (isAtm(x)) { B t=w; w=x; x=t; atmNeg=1; goto atmW; }
-  if (w.u==x.u && TI(w,arrD1)) return 0;
+  if (q_beq(w,x) && TI(w,arrD1)) return 0;
   
   ur wr=RNK(w); usz* wsh=SH(w);
   ur xr=RNK(x); usz* xsh=SH(x);
@@ -86,7 +86,7 @@ static bool atomEEqual(B w, B x) { // doesn't consume
 }
 
 bool indistinguishable(B w, B x) {
-  if (w.u == x.u) return true;
+  if (q_beq(w, x)) return true;
   if (isAtm(w)) {
     if (!isAtm(x)) return false;
     if (isF64(w)) return isF64(x) && floatIndistinguishable(o2fG(w), o2fG(x));
@@ -245,6 +245,6 @@ NOINLINE bool equal(B w, B x) { // doesn't consume
 
 bool eequal(B w, B x) { // doesn't consume
   NOGC_CHECK("cannot use eequal(w,x) during noAlloc");
-  if (w.u==x.u) return true;
+  if (q_beq(w, x)) return true;
   MATCH_IMPL(atomEEqual, eequalSlow, MATCHR_GET);
 }

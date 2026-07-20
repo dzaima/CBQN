@@ -99,7 +99,7 @@ static u64 elRange(u8 eltype) { return 1ull<<(1<<elwBitLog(eltype)); }
   void* ip = tyany_ptr(IN);                                                  \
   void* fp = tyany_ptr(FOR);                                                 \
   /* Initialize */                                                           \
-  if (IN.u != FOR.u) {                                                       \
+  if (!q_beq(IN, FOR)) {                                                     \
     if (FOR##e==el_i16 && n<ft/(64/sizeof(TY)))                              \
          { for (usz i=0; i<n; i++) tab[((i16*)fp)[i]]=INIT; }                \
     else { memset_##TY(tab-(ft/2-(ft==2)), INIT, ft); }                      \
@@ -170,7 +170,7 @@ static NOINLINE B2 splitCells(B n, B p, u8 mode) { // 0:∊ 1:⊐ 2:⊒
       u8 meb = IMAX(neb, peb);
       ux rb = csz<<meb;
       if (rb!=0 && rb<=62) {
-        if (n.u == p.u) { decG(p); n=toIntCell(n,rb,1); return (B2){.n=n, .p=incG(n)}; }
+        if (q_beq(n, p)) { decG(p); n=toIntCell(n,rb,1); return (B2){.n=n, .p=incG(n)}; }
         if      (neb!=meb) n = cpyToElLog(n, ne, meb);
         else if (peb!=meb) p = cpyToElLog(p, pe, meb);
         return (B2){.n=toIntCell(n,rb,nco), .p=toIntCell(p,rb,1)};
@@ -577,11 +577,11 @@ B asNormalized(B x, usz n, bool nanBad) {
     vfor (; i < n; i++) rp[i] = normalizeFloat(fp[i]);
   }
   
-  if (r.u!=x.u) decG(x);
+  if (!q_beq(r,x)) decG(x);
   return r;
   
   bad:
-  if (r.u!=x.u) mm_free(v(r));
+  if (!q_beq(r,x)) mm_free(v(r));
   return bi_z;
 }
 

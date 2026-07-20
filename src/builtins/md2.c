@@ -290,9 +290,9 @@ B arr_blend(B m, B w, B x, ux ia);
 #endif
 B under_c2(Md2D* d, B w, B x) { B f=d->f; B g=d->g;
   #if SINGELI_SIMD
-  if (d->f.u == bi_ltack.u && isFun(d->g) && TY(d->g) == t_md2D) {
+  if (q_beq(d->f, bi_ltack) && isFun(d->g) && TY(d->g) == t_md2D) {
     Md2D* g = c(Md2D, d->g);
-    if (PRTID(g->m2) == n_before && g->g.u == bi_slash.u) {
+    if (PRTID(g->m2) == n_before && q_beq(g->g, bi_slash)) {
       B mask = g->f;
       if (isAtm(mask) || RNK(mask)!=1 || TI(mask,elType)!=el_bit) goto not_blend;
       usz ia = IA(mask);

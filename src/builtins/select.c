@@ -700,7 +700,7 @@ B select_replace(u32 chr, B w, B x, B rep, usz wia, usz cam, usz csz) { // consu
   // w = taga(cpyF64Arr(w)); we = el_f64; // test the float path
   DIRECTARR_COPY(r, re, x);
   B rb = r.obj;
-  SLOWIF(rb.u!=x.u && cam>100 && wia<cam/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
+  SLOWIF(!q_beq(rb,x) && cam>100 && wia<cam/50) SLOW2("⌾(𝕨⊸⊏)𝕩 or ⌾(𝕨⊸⊑)𝕩 because not reusable", w, x);
   
   if (we==el_f64) {
     f64* wp = f64any_ptr(w);

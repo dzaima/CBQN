@@ -108,7 +108,7 @@ void validateFill(B x) {
       }
     }
   } else if (isF64(x)) {
-    assert(numFill(x) && x.u == m_f64(0).u);
+    assert(numFill(x) && q_beq(x, m_f64(0)));
   } else if (isC32(x)) {
     assert(' '==(u32)x.u);
   } else {

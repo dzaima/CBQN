@@ -30,7 +30,7 @@ static B m_ptrobj_s(uintptr_t ptr, B elt) { // consumes
 }
 
 static uintptr_t ptrh_ptrOff(B h, B off, bool negate) { // doesn't consume h, off's refcounting doesn't matter
-  if (ptrh_elt(h).u == FFIPRIM_VOID.u) thrM("Cannot offset an untyped pointer");
+  if (q_beq(ptrh_elt(h), FFIPRIM_VOID)) thrM("Cannot offset an untyped pointer");
   uintptr_t ptr = ptrh_ptr(h);
   i64 el = o2i64(off);
   if (negate) el = -el;
@@ -125,7 +125,7 @@ static B ptrobjSub_c1(B t, B x) {
   B h2 = ptrobj_checkget(x, 2);
   B t1 = ptrh_elt(h);
   B t2 = ptrh_elt(h2);
-  if (t1.u==FFIPRIM_VOID.u || t2.u==FFIPRIM_VOID.u) thrM("(pointer).Sub ptr: Both pointers must be typed");
+  if (q_beq(t1, FFIPRIM_VOID) || q_beq(t2, FFIPRIM_VOID)) thrM("(pointer).Sub ptr: Both pointers must be typed");
   if (!ty_compat(t1, t2)) thrM("(pointer).Sub ptr: Arguments must have compatible types");
   ux stride = ptrh_stride(h);
   if (stride!=ptrh_stride(h2)) thrM("(pointer).Sub ptr: Arguments must have the same stride");
@@ -178,7 +178,7 @@ static B ptrobjWriteList_c1(B t, B x) {
   if (!isArr(x) || RNK(x)!=1) thrM("(pointer).WriteList 𝕩: 𝕩 must be a list");
   B h = nfn_objU(t);
   B elt = ptrh_elt(h);
-  if (elt.u == FFIPRIM_VOID.u) thrM("(pointer).WriteList 𝕩: pointer must not be untyped");
+  if (q_beq(elt, FFIPRIM_VOID)) thrM("(pointer).WriteList 𝕩: pointer must not be untyped");
   ux elsz = foreignSize(elt);
   ux stride = ptrh_stride(h);
   void* mem = PTR_FROM_INT(void, ptrh_ptr(h));

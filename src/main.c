@@ -591,7 +591,7 @@ void switchComp(void);
 
 STATIC_GLOBAL B escape_parser;
 static B simple_unescape(B x) {
-  if (RARE(escape_parser.u==0)) {
+  if (RARE(escape_parser.u == 0)) {
     escape_parser = bqn_exec(utf8Decode0("{m←\"Expected surrounding quotes\" ⋄ m!2≤≠𝕩 ⋄ m!\"\"\"\"\"\"≡0‿¯1⊏𝕩 ⋄ s←¬e←<`'\\'=𝕩 ⋄ i‿o←\"\\\"\"nr\"⋈\"\\\"\"\"∾@+10‿13 ⋄ 1↓¯1↓{n←i⊐𝕩 ⋄ \"Unknown escape\"!∧´n≠≠i ⋄ n⊏o}⌾((s/»e)⊸/) s/𝕩}"), bi_N);
     gc_add(escape_parser);
   }

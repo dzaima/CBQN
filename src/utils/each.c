@@ -184,7 +184,7 @@ static FillRes fill_updateCore(B x, FillRes (*fn)(B x)) {
     RET_FILL(withFill(squeeze_any(incG(x)), f.r), FI_NEW|FI_UPD);
   } else {
     B sq = squeeze_any(incG(x));
-    if (sq.u == x.u) {
+    if (q_beq(sq, x)) {
       decG(sq);
       RET_FILL(x, FI_REF);
     } else {

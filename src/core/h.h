@@ -486,9 +486,10 @@ FORCE_INLINE bool q_ubit(u64 x) { return x==0 | x==1; }
 FORCE_INLINE bool q_c8 (B x) { return x.u>>8  == ((u64)C32_TAG)<<40; }
 FORCE_INLINE bool q_c16(B x) { return x.u>>16 == ((u64)C32_TAG)<<32; }
 FORCE_INLINE bool q_c32(B x) { return isC32(x); }
-FORCE_INLINE bool q_N   (B x) { return x.u==bi_N.u; } // is ·
-FORCE_INLINE bool noFill(B x) { return x.u==bi_noFill.u; }
-FORCE_INLINE bool q_z(B x) { return x.u==bi_z.u; }
+FORCE_INLINE bool q_beq(B w, B x) { return w.u == x.u; } // bitwise-equal B values
+FORCE_INLINE bool q_N   (B x) { return q_beq(x, bi_N); } // is ·
+FORCE_INLINE bool noFill(B x) { return q_beq(x, bi_noFill); }
+FORCE_INLINE bool q_z(B x) { return q_beq(x, bi_z); }
 
 
 NORETURN void expI_f64(f64 what); NORETURN void expI_B(B what);

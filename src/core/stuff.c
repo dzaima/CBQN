@@ -155,11 +155,11 @@ NOINLINE void fprintI(FILE* f, B x) {
   }
   else if (isVar(x)) fprintf(f, "(var d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
   else if (isExt(x)) fprintf(f, "(extvar d=%d i=%d)", (u16)(x.u>>32), (i32)x.u);
-  else if (x.u==bi_N.u) fprintf(f, "(native ·)");
-  else if (x.u==bi_optOut.u) fprintf(f, "(value optimized out)");
-  else if (x.u==bi_noVar.u) fprintf(f, "(unset variable placeholder)");
-  else if (x.u==bi_okHdr.u) fprintf(f, "(accepted SETH placeholder)");
-  else if (x.u==bi_noFill.u) fprintf(f, "(no fill placeholder)");
+  else if (q_beq(x, bi_N)) fprintf(f, "(native ·)");
+  else if (q_beq(x, bi_optOut)) fprintf(f, "(value optimized out)");
+  else if (q_beq(x, bi_noVar)) fprintf(f, "(unset variable placeholder)");
+  else if (q_beq(x, bi_okHdr)) fprintf(f, "(accepted SETH placeholder)");
+  else if (q_beq(x, bi_noFill)) fprintf(f, "(no fill placeholder)");
   else fprintf(f, "(todo tag "N64x")", x.u>>48);
 }
 
