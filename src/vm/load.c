@@ -315,7 +315,7 @@ void init_comp(B* new_re, B* prev_re, B prim, B sys) {
     new_re[re_sysVals]  = inc(prev_re[re_sysVals]);
   } else {
     if (!isArr(sys) || RNK(sys)!=1) thrM("•ReBQN: 𝕩.system must be a list");
-    if (str_all.u==0) { gc_add(str_all = m_c8vec("all",3)); gc_add(str_none = m_c8vec("none",4)); }
+    if (str_all.u==0) { str_all = gc_add(m_c8vec("all",3)); str_none = gc_add(m_c8vec("none",4)); }
     if (equal(sys, str_all)) goto inherit_sys;
     if (equal(sys, str_none)) {
       new_re[re_sysNames] = new_re[re_sysVals] = emptyHVec();
@@ -498,12 +498,12 @@ void load_init() { // very last init function
     HArr_p runtimeH = m_harrUc(rtObjRaw);
     SGet(rtObjRaw)
     
-    gc_add(rt_undo    = Get(rtObjRaw, n_undo  ));
-    gc_add(rt_slash   = Get(rtObjRaw, n_slash ));
-    gc_add(rt_group   = Get(rtObjRaw, n_group ));
-    gc_add(rt_under   = Get(rtObjRaw, n_under ));
-    gc_add(rt_find    = Get(rtObjRaw, n_find  ));
-    gc_add(rt_depth   = Get(rtObjRaw, n_depth ));
+    rt_undo  = gc_add(Get(rtObjRaw, n_undo ));
+    rt_slash = gc_add(Get(rtObjRaw, n_slash));
+    rt_group = gc_add(Get(rtObjRaw, n_group));
+    rt_under = gc_add(Get(rtObjRaw, n_under));
+    rt_find  = gc_add(Get(rtObjRaw, n_find ));
+    rt_depth = gc_add(Get(rtObjRaw, n_depth));
     
     for (usz i = 0; i < RT_LEN; i++) {
       #if RT_WRAP
@@ -580,7 +580,7 @@ void load_init() { // very last init function
         #include PRECOMPILED_FILE(compiles)
       });
       runtime[n_asrt] = prevAsrt;
-      gc_add(load_compgen = evalFunBlockConsume(comp_b));
+      load_compgen = gc_add(evalFunBlockConsume(comp_b));
       
       load_comp = c1(load_compgen, incG(load_glyphs));
       #if NATIVE_COMPILER
@@ -594,7 +594,7 @@ void load_init() { // very last init function
     ps.a[re_glyphs] = load_glyphs;
     ps.a[re_sysNames] = incG(def_sysNames);
     ps.a[re_sysVals] = incG(def_sysVals);
-    gc_add(def_re = ps.b);
+    def_re = gc_add(ps.b);
     
     #if FORMATTER
       Block* fmt_b = ({
@@ -603,8 +603,8 @@ void load_init() { // very last init function
       B fmtM = evalFunBlockConsume(fmt_b);
       B fmtR = c1(fmtM, m_caB(4, (B[]){incG(bi_type), incG(bi_decp), incG(bi_glyph), incG(bi_repr)}));
       decG(fmtM); SGet(fmtR)
-      gc_add(load_fmt  = Get(fmtR, 0));
-      gc_add(load_repr = Get(fmtR, 1));
+      load_fmt  = gc_add(Get(fmtR, 0));
+      load_repr = gc_add(Get(fmtR, 1));
       decG(fmtR);
     #endif
     
@@ -647,7 +647,7 @@ B bqn_explain(B str, B vars) { // consumes str & vars
       Block* expl_b = ({
         #include PRECOMPILED_FILE(explain)
       });
-      gc_add(load_explain = evalFunBlockConsume(expl_b));
+      load_explain = gc_add(evalFunBlockConsume(expl_b));
     }
     
     COMPS_PUSH(str, bi_N, def_re, COMP_REPL);
@@ -766,8 +766,7 @@ static NOINLINE B m_bfn(FC1 c1, FC2 c2, u8 nid) {
   f->is = funBI_isInit;
   f->rtInvReg  = bi_z;
   f->rtInvSwap = bi_z;
-  B r = tag(f,FUN_TAG); gc_add(r);
-  return r;
+  return gc_add(tag(f,FUN_TAG));
 }
 static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 nid) {
   BMd1* m = mm_alloc(sizeof(BMd1), t_md1BI);
@@ -777,8 +776,7 @@ static NOINLINE B m_bm1(D1C1 c1, D1C2 c2, u8 nid) {
   m->im = def_m1_im;
   m->iw = def_m1_iw;
   m->ix = def_m1_ix;
-  B r = tag(m,MD1_TAG); gc_add(r);
-  return r;
+  return gc_add(tag(m,MD1_TAG));
 }
 
 static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 nid) {
@@ -791,8 +789,7 @@ static NOINLINE B m_bm2(D2C1 c1, D2C2 c2, u8 nid) {
   m->ix = def_m2_ix;
   m->uc1 = def_m2_uc1;
   m->ucw = def_m2_ucw;
-  B r = tag(m,MD2_TAG); gc_add(r);
-  return r;
+  return gc_add(tag(m,MD2_TAG));
 }
 
 void base_init() { // very first init function

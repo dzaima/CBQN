@@ -1717,12 +1717,12 @@ INIT_GLOBAL u32* const dsv_text[] = {
 GLOBAL B def_sysNames, def_sysVals;
 void sysfn_init(void) {
   HArr_p dsv_ns0 = m_harrUv(sys_COUNT);
-  gc_add(def_sysNames = dsv_ns0.b);
+  def_sysNames = gc_add(dsv_ns0.b);
   for (usz i = 0; i < sys_COUNT; i++) dsv_ns0.a[i] = m_c8vec_0(dsv_strs[i]);
   NOGC_E;
   
   HArr_p dsv_vs0 = m_harrUv(sys_COUNT);
-  gc_add(def_sysVals = dsv_vs0.b);
+  def_sysVals = gc_add(dsv_vs0.b);
   #if DEBUG
   B bi_testsysval2 = bi_N;
   #endif

@@ -27,10 +27,11 @@ void gc_addFn(vfn f) {
 
 GLOBAL Value* gc_rootObjs[512];
 GLOBAL u32 gc_rootObjSz;
-void gc_add(B x) {
+B gc_add(B x) {
   assert(isVal(x));
   if (gc_rootObjSz>=512) fatal("Too many GC root objects");
   gc_rootObjs[gc_rootObjSz++] = v(x);
+  return x;
 }
 
 GLOBAL B* gc_rootBRefs[64]; GLOBAL u32 gc_rootBRefsSz;

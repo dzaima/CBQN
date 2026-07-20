@@ -1297,8 +1297,8 @@ void comp_init(void) {
   TIi(t_funBl,fn_iw) = funBl_iw; TIi(t_md1Bl,m1_iw) = md1Bl_iw; TIi(t_md2Bl,m2_iw) = md2Bl_iw;
   TIi(t_funBl,fn_ix) = funBl_ix; TIi(t_md1Bl,m1_ix) = md1Bl_ix; TIi(t_md2Bl,m2_ix) = md2Bl_ix;
   
-  gc_add(oomMessage = m_c8vec_0("Out of memory"));
-  gc_add(emptyARMM = m_wrappedObj(emptyHVec(), t_arrMerge));
+  oomMessage = gc_add(m_c8vec_0("Out of memory"));
+  emptyARMM = gc_add(m_wrappedObj(emptyHVec(), t_arrMerge));
   
   
   #ifndef GS_REALLOC

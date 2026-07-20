@@ -113,5 +113,5 @@ void harr_init(void) {
   TIi(t_harr,print) = farr_print;  TIi(t_hslice,print) = farr_print;
   TIi(t_harr,isArr) = true;        TIi(t_hslice,isArr) = true;
   TIi(t_harr,canStore) = harr_canStore;
-  bi_emptyHVec = m_harrUv(0).b; gc_add(bi_emptyHVec);
+  bi_emptyHVec = gc_add(m_harrUv(0).b);
 }

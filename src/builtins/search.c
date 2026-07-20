@@ -593,8 +593,8 @@ bool getRangeBool(void* xp, i64* res, u64 ia) {
   return true;
 }
 void search_init(void) {
-  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p= 0;    gc_add(enclosed_0=taga(a)); }
-  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p=~0ULL; gc_add(enclosed_1=taga(a)); }
+  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p= 0;    enclosed_0=gc_add(taga(a)); }
+  { u64* p; Arr* a=m_bitarrp(&p, 1); arr_shAtm(a); *p=~0ULL; enclosed_1=gc_add(taga(a)); }
   getRange_fns[0] = getRangeBool;
   #if SINGELI
     for (i32 i=0; i<4; i++) getRange_fns[i+1] = simd_getRangeRaw[i];

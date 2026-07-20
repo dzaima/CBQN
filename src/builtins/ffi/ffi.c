@@ -44,7 +44,7 @@
     foreignValueDesc = registerNFn(m_c32vec_0(U"•foreign.Value"), c1_bad, foreignValue_c2);
     foreignPointerDesc = registerNFn(m_c32vec_0(U"•foreign.Pointer"), c1_bad, foreignPointer_c2);
     foreign_nsGen = m_nnsDesc("function","value","pointer","null","sizeof","readbytesto0","readcharsto0");
-    gc_add(nullPointer = m_ptrobj(0, m_ffiPrim(sty_void, sty_void), 0));
+    nullPointer = gc_add(m_ptrobj(0, m_ffiPrim(sty_void, sty_void), 0));
   }
   B getSysFFI(B path, bool namespace) {
     initSysFFIDesc();

@@ -341,7 +341,7 @@ typedef struct Arr {
 typedef void (*V2v)(Value*);
 typedef void (*vfn)(void);
 
-void gc_add(B x); // add permanent root object
+B gc_add(B x); // add permanent root object; returns x
 void gc_addFn(vfn f); // add function that calls mm_visit/mm_visitP for dynamic roots
 void gc_add_ref(B* x); // add x as a root reference
 bool gc_maybeGC(bool toplevel); // gc if that seems necessary; returns if did gc

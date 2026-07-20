@@ -32,8 +32,8 @@ STATIC_GLOBAL bool repl_initialized = false;
 static NOINLINE void repl_init() {
   if (repl_initialized) return;
   cbqn_init();
-  replPath = m_c8vec_0("."); gc_add(replPath);
-  replName = m_c8vec_0("(REPL)"); gc_add(replName);
+  replPath = gc_add(m_c8vec_0("."));
+  replName = gc_add(m_c8vec_0("(REPL)"));
   Body* body = m_nnsDesc();
   B ns = m_nns(body);
   gsc = ptr_inc(c(NS, ns)->sc); gc_add(tag(gsc,OBJ_TAG));
@@ -516,7 +516,7 @@ static NOINLINE i64 readInt(char** p) {
   
   static void cbqn_init_replxx() {
     B cfg = get_config_path(true, "cbqn_repl.txt");
-    cfg_path = cfg; gc_add(cfg);
+    cfg_path = gc_add(cfg);
     
     if (path_type(incG(cfg_path))==0) {
       cfg_set_theme(1, false);
@@ -539,8 +539,8 @@ static NOINLINE i64 readInt(char** p) {
       cfg_set_keyboard(cfg_enableKeyboard, false);
     }
     
-    gc_add(b_key = m_c32vec_0(U"\"`1234567890-=~!@#$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'ASDFGHJKL:|zxcvbnm,./ZXCVBNM<>? "));
-    gc_add(b_val = m_c32vec_0( U"˙˜˘¨⁼⌜´˝7∞¯•÷×¬⎉⚇⍟◶⊘⎊⍎⍕⟨⟩√⋆⌽𝕨∊↑∧y⊔⊏⊐π←→↙𝕎⍷𝕣⍋YU⊑⊒⍳⊣⊢⍉𝕤↕𝕗𝕘⊸∘○⟜⋄↩↖𝕊D𝔽𝔾«J⌾»·|⥊𝕩↓∨⌊n≡∾≍≠⋈𝕏C⍒⌈N≢≤≥⇐‿"));
+    b_key = gc_add(m_c32vec_0(U"\"`1234567890-=~!@#$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'ASDFGHJKL:|zxcvbnm,./ZXCVBNM<>? "));
+    b_val = gc_add(m_c32vec_0( U"˙˜˘¨⁼⌜´˝7∞¯•÷×¬⎉⚇⍟◶⊘⎊⍎⍕⟨⟩√⋆⌽𝕨∊↑∧y⊔⊏⊐π←→↙𝕎⍷𝕣⍋YU⊑⊒⍳⊣⊢⍉𝕤↕𝕗𝕘⊸∘○⟜⋄↩↖𝕊D𝔽𝔾«J⌾»·|⥊𝕩↓∨⌊n≡∾≍≠⋈𝕏C⍒⌈N≢≤≥⇐‿"));
     sysvalNames = emptyHVec();
     sysvalNamesNorm = emptyHVec();
     u32* const* c = dsv_text;

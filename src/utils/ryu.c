@@ -637,9 +637,9 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result) {
 }
 
 void ryu_init(void) {
-  gc_add(fmt_nan = m_c8vec("NaN", 3));
-  gc_add(fmt_zero = m_c8vec("0", 1));
-  { u16* d; B c = m_c16arrv(&d, 1);            d[0]=U'∞'; gc_add(c); fmt_inf[0]  = c; }
-  { u16* d; B c = m_c16arrv(&d, 2); d[0]=U'¯'; d[1]=U'∞'; gc_add(c); fmt_inf[1]  = c; }
+  fmt_nan = gc_add(m_c8vec("NaN", 3));
+  fmt_zero = gc_add(m_c8vec("0", 1));
+  { u16* d; B c = m_c16arrv(&d, 1);            d[0]=U'∞'; fmt_inf[0] = gc_add(c); }
+  { u16* d; B c = m_c16arrv(&d, 2); d[0]=U'¯'; d[1]=U'∞'; fmt_inf[1] = gc_add(c); }
 }
 #endif

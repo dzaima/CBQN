@@ -64,6 +64,6 @@ void sort_init() {
     for (ux i = el_i8; i <= el_c32; i++) is_sorted[i] = si_is_sorted[i-el_i8];
   #endif
   
-  { i8* p; B a=m_i8arrv(&p, 2); p[0]=0; p[1]=1; int2x[0] = a; gc_add(a); }
-  { i8* p; B a=m_i8arrv(&p, 2); p[0]=1; p[1]=0; int2x[1] = a; gc_add(a); }
+  { i8* p; B a=m_i8arrv(&p, 2); p[0]=0; p[1]=1; int2x[0] = gc_add(a); }
+  { i8* p; B a=m_i8arrv(&p, 2); p[0]=1; p[1]=0; int2x[1] = gc_add(a); }
 }
