@@ -803,7 +803,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
       }
       case n_transp: {
         usz a;
-        if (q_usz(&a, w) && a<xcr) return transp_cells(a+xk, xk, x);
+        if (q_uszo(&a, w) && a<xcr) return transp_cells(a+xk, xk, x);
         break;
       }
       default: if (isPervasiveDy(f)) {

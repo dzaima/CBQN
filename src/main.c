@@ -677,7 +677,7 @@ void cbqn_runLine0(char* ln, i64 read) {
         if (!ryu_s2d_n((u8*)cmdE, chrs, &am)) { printf("Bad timing repetition count\n"); return; }
         if (am==0) { printf("Timing repetition count cannot be zero\n"); return; }
         if (*repE == 's') { repE++; mode=3; timeNanos=am*1e9; }
-        else if (!q_fi64(&timeRep, am)) { if (am>1e18) goto largeRep; else printf("Timing repetition count must be an integer\n"); return; }
+        else if (!q_fi64o(&timeRep, am)) { if (am>1e18) goto largeRep; else printf("Timing repetition count must be an integer\n"); return; }
       #endif
       code = utf8Decode0(repE);
       output = 0;

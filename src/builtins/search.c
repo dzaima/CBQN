@@ -60,7 +60,7 @@ INIT_GLOBAL RangeFn getRange_fns[el_f64+1];
   GETRANGE(i8, max,)
   GETRANGE(i16, max,)
   GETRANGE(i32, max,)
-  GETRANGE(f64, ({ i64 ci; if (!q_fi64(&ci,max)) return 0; ci; }), i64 ci; if (!q_fi64(&ci,c)) return 0)
+  GETRANGE(f64, ({ i64 ci; if (!q_fi64o(&ci,max)) return 0; ci; }), i64 ci; if (!q_fi64o(&ci,c)) return 0)
 #endif
 #if SINGELI_AVX2
   extern void (**const avx2_member_sort)(uint64_t*,void*,uint64_t,void*,uint64_t);

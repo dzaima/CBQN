@@ -78,7 +78,7 @@ static char* sty_name(u8 sty) {
     PLAINLOOP for (ux i = 0; i < ia; i++) {
       B c = GetU(x,i); i64 v;
       if (!q_f64(c)) ffi_improperValue(sty, c);
-      if (max!=0 && (!q_i64(&v, c) || v<min || v>max)) ffi_improperValue(sty, c);
+      if (max!=0 && (!q_i64o(&v, c) || v<min || v>max)) ffi_improperValue(sty, c);
     }
     fatal("expected ffi_numRange to error");
   }
@@ -207,7 +207,7 @@ static uintptr_t foreignMemCtyPtrFromBQN(ScratchMem sm, FFICompoundType* ct, B x
   if (!isArr(x)) {
     if (ptrKind == ptrk_out) {
       u64 n;
-      if (!q_u64(&n, x)) thrF("FFI: A non-negative integer must be passed to ⥊T, but got %S", isF64(x)? "invalid number" : genericDesc(x));
+      if (!q_u64o(&n, x)) thrF("FFI: A non-negative integer must be passed to ⥊T, but got %S", isF64(x)? "invalid number" : genericDesc(x));
       TyArr* a = m_arrUnchecked(fsizeof(TyArr,a,u8,n*foreignSize(el)), t_unkArr, n); // need to use a special type to avoid debug builds complaining about wrong initialization state
       arr_shVec((Arr*) a);
       trackTemp(sm, taga(a));
@@ -372,8 +372,8 @@ FORCE_INLINE u64 foreignPrimFromBQNImpl(ScratchMem sm, void* mem, PrimType sty, 
     case sty_i16: if(!q_fi16(f)) goto improper_sty; VAL(i16, f);
     case sty_u32: if(!q_fu32(f)) goto improper_sty; VAL(u32, f);
     case sty_i32: if(!q_fi32(f)) goto improper_sty; VAL(i32, f);
-    case sty_u64: { u64 i; if(!q_fu64(&i,f) || i          >=(1ULL<<53)) goto improper_sty; VAL(u64,i); }
-    case sty_i64: { i64 i; if(!q_fi64(&i,f) || IABS(u64,i)>=(1ULL<<53)) goto improper_sty; VAL(i64,i); }
+    case sty_u64: { u64 i; if(!q_fu64o(&i,f) || i          >=(1ULL<<53)) goto improper_sty; VAL(u64,i); }
+    case sty_i64: { i64 i; if(!q_fi64o(&i,f) || IABS(u64,i)>=(1ULL<<53)) goto improper_sty; VAL(i64,i); }
     case sty_f32: assert(!retGPR); if(!q_f64(x)) goto improper_sty; *(f32*)mem = f; return 0;
     case sty_f64: assert(!retGPR); if(!q_f64(x)) goto improper_sty; *(f64*)mem = f; return 0;
     improper_sty: ffi_improperValue(sty, x);

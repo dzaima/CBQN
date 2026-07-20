@@ -506,7 +506,7 @@ static u64 lcm_u64(u64 a, u64 b) {
 B gcd_c2(B t, B w, B x) {
   if (isNum(w) && isNum(x)) {
     u64 wu, xu;
-    if (!q_u64(&wu, w) || !q_u64(&xu, x)) thrM("𝕨 •math.GCD 𝕩: Inputs other than natural numbers not yet supported");
+    if (!q_u64o(&wu, w) || !q_u64o(&xu, x)) thrM("𝕨 •math.GCD 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(gcd_u64(wu, xu));
   }
   P2(gcd, A_B)
@@ -515,7 +515,7 @@ B gcd_c2(B t, B w, B x) {
 B lcm_c2(B t, B w, B x) {
   if (isNum(w) && isNum(x)) {
     u64 wu, xu;
-    if (!q_u64(&wu, w) || !q_u64(&xu, x)) thrM("𝕨 •math.LCM 𝕩: Inputs other than natural numbers not yet supported");
+    if (!q_u64o(&wu, w) || !q_u64o(&xu, x)) thrM("𝕨 •math.LCM 𝕩: Inputs other than natural numbers not yet supported");
     return m_f64(lcm_u64(wu, xu));
   }
   P2(lcm, A_B)

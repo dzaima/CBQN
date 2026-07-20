@@ -232,7 +232,7 @@ B shape_c2_01(usz wia, B w, B x) {
       w = TO_GET(w,0);
       // fallthrough
       usz wu;
-      if (q_usz(&wu, w)) {
+      if (q_uszo(&wu, w)) {
         return taga(arr_shVec(reshape_unshaped(wu, x)));
       }
     case 2: // atom
@@ -247,7 +247,7 @@ B shape_c2_01(usz wia, B w, B x) {
 B shape_c2_listw(B t, B w, B x);
 B shape_c2(B t, B w, B x) {
   usz wu;
-  if (q_usz(&wu, w)) {
+  if (q_uszo(&wu, w)) {
     return taga(arr_shVec(reshape_unshaped(wu, x)));
   } else {
     return shape_c2_listw(t, w, x);
@@ -271,7 +271,7 @@ NOINLINE B shape_c2_listw(B t, B w, B x) { // not necessarily list w, but expect
   for (i32 i = 0; i < nr; i++) {
     B c = GetU(w, i);
     usz cu;
-    if (q_usz(&cu, c)) {
+    if (q_uszo(&cu, c)) {
       sh->a[i] = cu;
       if (RARE(MUL_ON(nia, cu))) bad = true;
       good|= cu==0;
@@ -433,7 +433,7 @@ static NOINLINE void checkIndexList(B w, ur xr) {
 
 static i64 pick_convFloat(f64 f) {
   i64 fi;
-  if (LIKELY(q_fi64(&fi, f))) return fi;
+  if (LIKELY(q_fi64o(&fi, f))) return fi;
   thrM("𝕨⊑𝕩: 𝕨 contained a non-integer");
 }
 

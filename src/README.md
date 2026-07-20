@@ -114,9 +114,9 @@ Functions for converting/using atom types:
   q_fi8o (&v,x) q_i8o (&v,x) // these also store the converted value to v for convenience; v is always written, though the value will be garbage if the result is false
   q_fi16o(&v,x) q_i16o(&v,x)
   q_fi32o(&v,x) q_i32o(&v,x)
-  q_fi64 (&v,x) q_i64 (&v,x) // v must be used instead of a separate convert to avoid potential problems on x≡2⋆63, for which the query might arbitrarily return true (for such, v here will be ¯1+2⋆63, but a separate conversion cannot guarantee that)
-  q_fu64 (&v,x) q_u64 (&v,x) // ↑ except x≡2⋆64 & v→¯1+2⋆64
-  q_fusz (&v,x) q_usz (&v,x) // also here, though the problematic case doesn't exist on usz=32
+  q_fi64o(&v,x) q_i64o(&v,x) // v must be used instead of a separate convert to avoid potential problems on x≡2⋆63, for which the query might arbitrarily return true (for such, v here will be ¯1+2⋆63, but a separate conversion cannot guarantee that)
+  q_fu64o(&v,x) q_u64o(&v,x) // ↑ except x≡2⋆64 & v→¯1+2⋆64
+  q_fuszo(&v,x) q_uszo(&v,x) // also here, though the problematic case doesn't exist on usz=32
   
   q_N(x)    // query if x is · (i.e. x≡bi_N)
   noFill(x) // query if x represents unknown fill (i.e. x≡bi_noFill; see getFill*)

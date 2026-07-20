@@ -464,21 +464,21 @@ FLOAT_UB FORCE_INLINE bool q_fi32(f64 x) { return x==(f64)FLOAT_TO_INT(i32, x); 
 FLOAT_UB FORCE_INLINE bool q_fu8 (f64 x) { return x==(f64)(u8 )(i32)x; }
 FLOAT_UB FORCE_INLINE bool q_fu16(f64 x) { return x==(f64)(u16)(i32)x; }
 FLOAT_UB FORCE_INLINE bool q_fu32(f64 x) { return x==(f64)FLOAT_TO_INT(u32, x); }
-FLOAT_UB FORCE_INLINE bool q_fi64(i64* out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(i64, x)); }
-FLOAT_UB FORCE_INLINE bool q_fu64(u64* out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(u64, x)); }
-FLOAT_UB FORCE_INLINE bool q_fusz(usz* out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(usz, x)); }
-FLOAT_UB FORCE_INLINE bool q_fi8o(i8*  out, f64 x) { return x == (f64) (*out = (i8) (i32)x); }
-FLOAT_UB FORCE_INLINE bool q_fi16o(i16*out, f64 x) { return x == (f64) (*out = (i16)(i32)x); }
-FLOAT_UB FORCE_INLINE bool q_fi32o(i32*out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(i32, x)); }
+FLOAT_UB FORCE_INLINE bool q_fi64o(i64* out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(i64, x)); }
+FLOAT_UB FORCE_INLINE bool q_fu64o(u64* out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(u64, x)); }
+FLOAT_UB FORCE_INLINE bool q_fuszo(usz* out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(usz, x)); }
+FLOAT_UB FORCE_INLINE bool q_fi8o (i8*  out, f64 x) { return x == (f64) (*out = (i8) (i32)x); }
+FLOAT_UB FORCE_INLINE bool q_fi16o(i16* out, f64 x) { return x == (f64) (*out = (i16)(i32)x); }
+FLOAT_UB FORCE_INLINE bool q_fi32o(i32* out, f64 x) { return x == (f64) (*out = FLOAT_TO_INT(i32, x)); }
 
 FORCE_INLINE bool q_bit(B x) { return isF64(x) & (x.f==0 | x.f==1); }
 FORCE_INLINE bool q_i8 (B x) { return q_fi8 (x.f); }
 FORCE_INLINE bool q_i16(B x) { return q_fi16(x.f); }
 FORCE_INLINE bool q_i32(B x) { return q_fi32(x.f); }
 FORCE_INLINE bool q_f64(B x) { return isF64(x); }
-FORCE_INLINE bool q_i64(i64* out, B x) { return q_fi64(out, x.f); }
-FORCE_INLINE bool q_u64(u64* out, B x) { return q_fu64(out, x.f); }
-FORCE_INLINE bool q_usz(usz* out, B x) { return q_fusz(out, x.f); }
+FORCE_INLINE bool q_i64o(i64* out, B x) { return q_fi64o(out, x.f); }
+FORCE_INLINE bool q_u64o(u64* out, B x) { return q_fu64o(out, x.f); }
+FORCE_INLINE bool q_uszo(usz* out, B x) { return q_fuszo(out, x.f); }
 FORCE_INLINE bool q_i32o(i32*out, B x) { return q_fi32o(out, x.f); }
 
 FORCE_INLINE bool q_ibit(i64 x) { return x==0 | x==1; }
@@ -507,9 +507,9 @@ FORCE_INLINE bool  o2b(B x) { i32 t; if(!q_i32o(&t,x) || (u32)t >= 2) thrM("Expe
 FORCE_INLINE f64   o2f(B x) { if (!q_f64(x)) thrM("Expected number");    return o2fG(x); }
 FORCE_INLINE u32   o2c(B x) { if (!isC32(x)) thrM("Expected character"); return o2cG(x); }
 FORCE_INLINE i32   o2i(B x) { if (!q_i32(x)) expI_B(x);                  return o2iG(x); }
-FORCE_INLINE usz   o2s(B x) { usz v; if (!q_usz(&v, x)) expU_B(x);       return v; }
-FORCE_INLINE i64 o2i64(B x) { i64 v; if (!q_i64(&v, x)) expI_B(x);       return v; }
-FORCE_INLINE u64 o2u64(B x) { u64 v; if (!q_u64(&v, x)) expU_B(x);       return v; }
+FORCE_INLINE usz   o2s(B x) { usz v; if (!q_uszo(&v, x)) expU_B(x);       return v; }
+FORCE_INLINE i64 o2i64(B x) { i64 v; if (!q_i64o(&v, x)) expI_B(x);       return v; }
+FORCE_INLINE u64 o2u64(B x) { u64 v; if (!q_u64o(&v, x)) expU_B(x);       return v; }
 
 // some aliases for macro-generated code
 typedef u8 c8; typedef u16 c16; typedef u32 c32;

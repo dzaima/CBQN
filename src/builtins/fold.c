@@ -104,7 +104,7 @@ static i64 bit_diff(u64* x, u64 am) {
     usz b=1<<(M-W); i64 lim = (1ull<<53) - (1ull<<M);            \
     T* xp = xv;                                                  \
     f64 r=init; i64 c; usz i0=ia;                                \
-    if (q_fi64(&c, init)) {                                      \
+    if (q_fi64o(&c, init)) {                                     \
       while (i0>0 && -lim<=c && c<=lim) {                        \
         usz e=i0; i0=(i0-1)&~(b-1);                              \
         c+=sum_small_##T(xp+i0, e-i0);                           \
@@ -438,7 +438,7 @@ u64 usum(B x) { // doesn't consume; will error on non-integers, or elements <0, 
     for (usz i = 0; i < xia; i++) {
       f64 c = p[i];
       u64 ci;
-      if (!q_fu64(&ci, c)) expU_f64(c);
+      if (!q_fu64o(&ci, c)) expU_f64(c);
       if (ADD_ON(r,ci)) goto overflow;
     }
   } else {

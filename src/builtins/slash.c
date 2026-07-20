@@ -686,8 +686,8 @@ B slash_c2(B t, B w, B x) {
       MAKE_MUT_INIT_COPYFILL(r0, ria, TI(x,elType), x); MUTG_INIT(r0);
       SGetU(w)
       B wc; usz ri=0, wcu;
-      if (csz!=1) {   for (ux i=0; i<wia; i++) { if (!q_usz(&wcu, wc=GetU(w,i))) goto pfree; for(ux j=0;j<wcu;j++) { mut_copyG(r0, ri, x, i*csz, csz);   ri+= csz; } } }
-      else { SGetU(x) for (ux i=0; i<wia; i++) { if (!q_usz(&wcu, wc=GetU(w,i))) goto pfree; if (wcu)              { mut_fillG(r0, ri, GetU(x, i), wcu); ri+= wcu; } } }
+      if (csz!=1) {   for (ux i=0; i<wia; i++) { if (!q_uszo(&wcu, wc=GetU(w,i))) goto pfree; for(ux j=0;j<wcu;j++) { mut_copyG(r0, ri, x, i*csz, csz);   ri+= csz; } } }
+      else { SGetU(x) for (ux i=0; i<wia; i++) { if (!q_uszo(&wcu, wc=GetU(w,i))) goto pfree; if (wcu)              { mut_fillG(r0, ri, GetU(x, i), wcu); ri+= wcu; } } }
       if (0) { pfree: mut_pfree(r0, ri); expI_B(wc); }
       Arr* ra = mut_fp(r0);
       usz* rsh = arr_shAlloc(ra, xr);
@@ -1007,8 +1007,8 @@ B slash_im(B t, B x) {
     case el_f64: {
       f64* xp = f64any_ptr(x);
       usz i,j; f64 max=-1; usz cu;
-      for (i = 0; i < xia; i++) { f64 c=xp[i]; if (!q_fusz(&cu, c)) slash_im_bad(c); if (c<=max) break; max=c; }
-      for (j = i; j < xia; j++) { f64 c=xp[j]; if (!q_fusz(&cu, c)) slash_im_bad(c); max=c>max?c:max; }
+      for (i = 0; i < xia; i++) { f64 c=xp[i]; if (!q_fuszo(&cu, c)) slash_im_bad(c); if (c<=max) break; max=c; }
+      for (j = i; j < xia; j++) { f64 c=xp[j]; if (!q_fuszo(&cu, c)) slash_im_bad(c); max=c>max?c:max; }
       if (max >= USZ_MAX-1) thrOOM();
       usz ria = max+1;
       if (i==xia) {
