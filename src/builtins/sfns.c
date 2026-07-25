@@ -1752,7 +1752,7 @@ B join_powd(bool aft, i64 am, B w, B x) {
     if (aft) { B t=w; w=x; x=t; }
     C2(join, w, x); fatal("expected join_c2 to error");
   }
-  usz wc = wr? *SH(w) : 1; if (MUL_ON(wc, am)) thrOOM();
+  usz wc = wr && wr>=xr? *SH(w) : 1; if (MUL_ON(wc, am)) thrOOM();
   if (isAtm(w)) { w = taga(arr_shVec(reshape_one(wc, w))); wc = 0; } // suppress join_cycled reshape
   if (isAtm(x)) x = m_unit(x);
   return join_cycled(aft, wc, w, x, SH(x)+xr-cr, cr);

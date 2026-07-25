@@ -91,6 +91,8 @@ a ← 3‿2‿1⥊↓"hello" ⋄ ! ⥊‿↑‿↓‿⌽‿⍉ ({1‿2𝕎⍟�
 (4‿0⥊0) ∾⍟3 5‿0⥊0 %% 17‿0⥊0
 (4‿0⥊0) ∾˜⍟3 ↕0 %% 13‿0⥊0
 ∾ ∾⟜(⋈¨"xyz")⍟2 ⋈¨"ab" %% "abxyzxyz"
+9‿8⊸∾⍟5 3‿2⥊"abcdef" %% 5‿1‿1‿1/[9‿8,"ab","cd","ef"]
+∾⟜(2‿2⥊1‿0)⍟3 0‿2‿2⥊0 %% 3‿2‿2⥊1‿0
 ⟨»⍟2 1‿'a'‿2, «⍟5 1‿'a'‿2⟩ %!PROPER_FILLS %% ⟨0‿0‿1, 0‿0‿0⟩
 !"»𝕩: Fill element of 𝕩 not known" % %USE r1 ⋄ »_r1_ 2 1‿'a'‿2 %PROPER_FILLS
 !"«𝕩: Fill element of 𝕩 not known" % %USE r1 ⋄ «_r1_ 5 1‿'a'‿2 %PROPER_FILLS
