@@ -5,7 +5,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | function      | notes |
 |---------------|-------|
 | `•BQN`        | |
-| `•ReBQN`      | Supported options: `repl`; `primitives`; `system` that's not `"safe"` |
+| `•ReBQN`      | Supported options: `repl`; `primitives`; `system` except `"safe"`, and list value can contain pairs `"name"‿value` |
 | `•primitives` | |
 | `•_while_`    | |
 | `•Import`     | |
@@ -24,7 +24,7 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•Repr`       | |
 | `•Fmt`        | |
 | `•ParseFloat` | Should exactly round floats with up to 17 significant digits, but won't necessarily round correctly with more |
-| `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN`; has extensions |
+| `•term`       | Fields: `Flush`, `RawMode`, `CharB`, `CharN`, plus extensions (see [•term](#term)) |
 | `•SH`         | See [•SH](#sh) |
 | `•FFI`        | see [FFI](#ffi); also `•foreign` |
 | `•platform`   | |
@@ -38,9 +38,9 @@ See [the BQN specification](https://mlochbaum.github.io/BQN/spec/system.html) fo
 | `•Delay`      | |
 | `•_timed`     | |
 | `•math`       | Fields: `Acos`, `Acosh`, `Asin`, `Asinh`, `Atan`, `Atan2`, `Atanh`, `Cbrt`, `Comb`, `Cos`, `Cosh`, `Erf`, `ErfC`, `Expm1`, `Fact`, `GCD`, `Hypot`, `LCM`, `Log10`, `Log1p`, `Log2`, `LogFact`, `Sin`, `Sinh`, `Sum`, `Tan`, `Tanh`; `⁼` supported for trigonometry functions and between `Expm1` & `Log1p` |
-| `•MakeRand`   | uses wyhash, **not** cryptographically secure; Result fields: `Range`, `Deal`, `Subset` |
+| `•MakeRand`   | **not** cryptographically secure (uses wyhash currently); Result fields: `Range`, `Deal`, `Subset` |
 | `•rand`       | seeds with system time (can be hard-coded by setting the C macro `RANDSEED`), same algorithm as `•MakeRand` |
-| `•bit`        | Fields: `_cast`; casting an sNaN bit pattern to a float is undefined behavior |
+| `•bit`        | input elements must be valid (e.g. `8‿1•bit._cast ⋈255` results in unspecified behavior), and converting an input of a signaling NaN bit pattern to float is undefined behavior |
 
 # CBQN-specific system values and extensions
 
@@ -82,7 +82,7 @@ May be removed or renamed in the future.
 
 Get the current error message while within the catch side of `⎊`. Dynamically-scoped.
 
-Argument must not be a namespace, as that is reserved for future changes.
+Argument must not be a namespace, as that is reserved for future extensions.
 
 ## `•internal`
 
