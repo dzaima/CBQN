@@ -91,54 +91,6 @@
   #define SIMD_SELECT(WE, XL) ({ AUTO we_=(WE); AUTO xl_=(XL); assert(we_>=el_i8 && we_<=el_i32 && xl_>=3 && xl_<=6); si_select_tab[4*(we_-el_i8)+xl_-3]; })
 #endif
 
-typedef void (*CFn)(void* r, ux rs, void* x, ux xs, ux data);
-typedef struct {
-  CFn fn;
-  ux data;
-  ux mul;
-} CFRes;
-
-static void cf_0(void* r, ux rs, void* x, ux xs, ux d) { }
-static void cf_1(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 1); }
-static void cf_2(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 2); }
-static void cf_3(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 3); }
-static void cf_4(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 4); }
-static CFn const cfs_0_4[] = {cf_0, cf_1, cf_2, cf_3, cf_4};
-static void cf_8(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 8); }
-static void cf_16(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 16); }
-static void cf_5_7  (void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 4);  memcpy(r+d, x+d, 4); }
-static void cf_9_16 (void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 8);  memcpy(r+d, x+d, 8); }
-static void cf_17_24(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 16); memcpy(r+d, x+d, 8); }
-static void cf_25_32(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 24); memcpy(r+d, x+d, 8); }
-static void cf_arb(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, d); }
-
-static void cfb_1(void* r, ux rs, void* x, ux xs, ux d) { bitp_set(r, rs, bitp_get(x, xs)); }
-static void cfb_arb(void* r, ux rs, void* x, ux xs, ux d) { bit_cpy(r, rs, x, xs, d); }
-
-NOINLINE CFRes cf_get(usz count, usz cszBits) {
-  if ((cszBits&7)==0) {
-    ux cszBytes = cszBits/8;
-    ux bytes = cszBytes * (ux)count;
-    if (bytes<5)   return (CFRes){.mul=cszBytes, .fn = cfs_0_4[bytes]};
-    if (bytes<8)   return (CFRes){.mul=cszBytes, .fn = cf_5_7,   .data=bytes-4};
-    if (bytes==8)  return (CFRes){.mul=cszBytes, .fn = cf_8};
-    if (bytes==16) return (CFRes){.mul=cszBytes, .fn = cf_16};
-    if (bytes<=16) return (CFRes){.mul=cszBytes, .fn = cf_9_16,  .data=bytes-8};
-    if (bytes<=24) return (CFRes){.mul=cszBytes, .fn = cf_17_24, .data=bytes-8};
-    if (bytes<=32) return (CFRes){.mul=cszBytes, .fn = cf_25_32, .data=bytes-8};
-    return                (CFRes){.mul=cszBytes, .fn = cf_arb,   .data=bytes};
-  }
-  ux bits = count*(ux)cszBits;
-  if (bits==1) return (CFRes){.mul=cszBits, .fn = cfb_1};
-  else         return (CFRes){.mul=cszBits, .fn = cfb_arb, .data=bits};
-}
-
-FORCE_INLINE void cf_call(CFRes f, void* r, ux rs, void* x, ux xs) {
-  f.fn(r, rs, x, xs, f.data);
-}
-
-
-
 FORCE_INLINE B first_cell(ur dr, B x, ur xr, usz* xsh) {
   usz ia = shProd(xsh, dr, xr);
   Arr* r = TI(x,slice)(incG(x), 0, ia);
@@ -338,24 +290,14 @@ static NOINLINE B select_depth2_select(Spans ws, B x) { // consumes ws.starts
     ux sia = IA(wst);
     UntaggedArr r = m_arrp_copyFill(x, sia*span);
     SGetU(wst)
+    CFRes f = cf_get(span, a(x), 1);
     ux ro = 0;
-    if (xe != el_B) {
-      void* xp = tyany_ptr(x);
-      u8 ewb = elwBitLog(xe);
-      CFRes f = cf_get(span, 1<<ewb);
-      for (ux i = 0; i < sia; i++) {
-        ux xi = ws.add + ws.mul*o2sG(GetU(wst,i));
-        cf_call(f, r.data, ro, xp, xi*f.mul);
-        ro+= span*f.mul;
-      }
-    } else {
-      for (ux i = 0; i < sia; i++) {
-        ux xi = ws.add + ws.mul*o2sG(GetU(wst,i));
-        COPY_TO(r.data, xe, ro, x, xi, span);
-        ro+= span;
-      }
-      NOGC_E;
+    for (ux i = 0; i < sia; i++) {
+      ux xi = ws.add + ws.mul*o2sG(GetU(wst,i));
+      cf_call(f, r.data, ro, xi*f.mul);
+      ro+= span*f.mul;
     }
+    if (xe==el_B) NOGC_E;
     decG(wst);
     r0 = taga(r.obj);
   } else {
@@ -624,31 +566,24 @@ B select_c2(B t, B w, B x) {
   generic_l: {
     if (xia==0) goto emptyRes;
     SLOW2("𝕨⊏𝕩", w, x);
-    SGetU(w)
-    usz csz = arr_csz(x);
-    CFRes f = cf_get(1, csz<<elwBitLog(xe));
-    
     MAKE_MUT_INIT_WITHFILL(rm, ria, xe, xf);
-    usz i = 0;
-    if (xe<el_B && elInt(we)) {
-      void* wp = tyany_ptr(w);
-      void* xp = tyany_ptr(x);
-      ux ri = 0;
-      switch(we) { default: UD;
-        case el_bit:               for (; i<wia; i++) { ux c = bitp_get(wp,i);           if (c >= xn) { goto bad1; }   cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; }   break; // TODO something better
-        case el_i8:  { i8*  w0=wp; for (i8*  wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } } break;
-        case el_i16: { i16* w0=wp; for (i16* wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } } break;
-        case el_i32: { i32* w0=wp; for (i32* wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rm->a, ri, xp, c*f.mul); ri+= f.mul; } } break;
-      }
-    } else {
-      MUTG_INIT(rm);
-      for (; i < wia; i++) {
-        B cw = GetU(w, i); // assumed number from previous squeeze
-        i64 cwi;
-        if (!q_i64o(&cwi, cw)) { bad_cw: goto bad1; }
-        usz c = WRAP(cwi, xn, goto bad_cw; );
-        mut_copyG(rm, i*csz, x, csz*c, csz);
-      }
+    void* rp = rm->a;
+    usz csz = arr_csz(x);
+    CFRes f = cf_get(1, a(x), csz);
+    ux scl = f.mul;
+    void* wp = tyany_ptr(w);
+    ux ri = 0, i = 0; // i is used for bad1 message
+    switch(we) { default: UD;
+      case el_bit:               for (; i<wia; i++) { ux c = bitp_get(wp,i);           if (c >= xn) { goto bad1; }   cf_call(f, rp, ri, c*scl); ri+= scl; }   break; // TODO something better
+      case el_i8:  { i8*  w0=wp; for (i8*  wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rp, ri, c*scl); ri+= scl; } } break;
+      case el_i16: { i16* w0=wp; for (i16* wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rp, ri, c*scl); ri+= scl; } } break;
+      case el_i32: { i32* w0=wp; for (i32* wc=w0; wc<w0+wia; wc++) { usz c = WRAP(*wc, xn, { i=wc-w0; goto bad1; }); cf_call(f, rp, ri, c*scl); ri+= scl; } } break;
+      case el_f64: { f64* w0=wp; for (f64* wc=w0; wc<w0+wia; wc++) {
+        i64 cwi; if (!q_fi64o(&cwi, *wc)) { bad_wf64: i=wc-w0; goto bad1; }
+        usz c = WRAP(cwi, xn, goto bad_wf64);
+        cf_call(f, rp, ri, c*scl);
+        ri+= scl;
+      }} break;
     }
     r = mut_fp(rm);
     goto setsh;

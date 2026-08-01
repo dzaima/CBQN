@@ -1,6 +1,17 @@
 #include "core.h"
 #include "utils/mut.h"
 
+static NOINLINE void copy_B_generic(B* rp, Arr* xa, ux xs, ux l) {
+  SLOW1("copying generic array segment", x);
+  AS2B get = TIv(xa, get);
+  for (ux i = 0; i < l; i++) rp[i] = get(xa, xs+i);
+}
+
+static void copy_B_direct(B* rp, B* xp, ux l) {
+  incEach(xp, l);
+  memcpy(rp, xp, l*sizeof(B));
+}
+
 SHOULD_INLINE UntaggedArr mut_make_arr(u64 ia, u8 type, u8 el, u8 fillMode, B fillSource) {
   if (DEBUG && el!=el_B && fillMode!=0) {
     B fill = fillMode==1? fillSource : getFillN(fillSource);
@@ -211,7 +222,6 @@ DEF_G(void, fill, B  ,              (void* a, usz ms, B x, usz l), ms, x, l) {
   return;
 }
 
-
 #if SINGELI_SIMD
   #define DEF_COPY(T, BODY) DEF0(void, copy, T, u8 xe=TI(x,elType); u8 ne=el_or(xe,el_##T);, ne==el_##T, ne, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l)
 #else
@@ -270,11 +280,6 @@ DEF_COPY(c32, { u32* rp = ms+(u32*)a; void* xp = tyany_ptr(x);
   }
 })
 DEF_E(void, copy, MAX, false, x, (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) { fatal("m_copyG_MAX"); }
-NOINLINE void m_copyG_B_generic(void* a, B* mpo, B x, usz xs, usz l) {
-  SLOW1("copyG", x);
-  SGet(x)
-  for (usz i = 0; i < l; i++) mpo[i] = Get(x,i+xs);
-}
 DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, xs, l) {
   B* mpo = ms+(B*)a;
   switch(TY(x)) {
@@ -286,16 +291,14 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
     case t_c16arr: case t_c16slice: { u16* xp = c16any_ptr(x); vfor (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
     case t_c32arr: case t_c32slice: { u32* xp = c32any_ptr(x); vfor (usz i = 0; i < l; i++) mpo[i] = m_c32(xp[i+xs]); return; }
     case t_harr: case t_hslice: case t_fillarr: case t_fillslice:;
-      B* xp = arr_bptrG(x)+xs;
-      incEach(xp, l);
-      memcpy(mpo, xp, l*sizeof(B));
+      copy_B_direct(mpo, arr_bptrG(x) + xs, l);
       return;
     case t_f64arr: case t_f64slice:
       assert(B_DIRECT_F64);
       memcpy(mpo, f64any_ptr(x)+xs, l*sizeof(B));
       return;
     default: {
-      m_copyG_B_generic(a, mpo, x, xs, l);
+      copy_B_generic(mpo, a(x), xs, l);
       return;
     }
   }
@@ -958,6 +961,83 @@ void directSetRange_c32(void* data, ux rs, B x, ux xs, ux l) { COPY_TO(data, el_
 void directSetRange_B  (void* data, ux rs, B x, ux xs, ux l) {
   for (ux i = 0; i < l; i++) dec(((B*)data)[rs+i]);
   COPY_TO(data, el_B, rs, x, xs, l);
+}
+
+
+// uses vectors instead of char buf[N] because for those clang fails to move out of stack for >16 bytes
+#define MEMCPY2(R, X, S1, O, S2) { \
+  char buf1 __attribute__((vector_size(S1))); memcpy(&buf1, X,   S1); \
+  char buf2 __attribute__((vector_size(S2))); memcpy(&buf2, X+O, S2); \
+  memcpy(R  , &buf1, S1); \
+  memcpy(R+O, &buf2, S2); \
+}
+static void cf8_0(void* r, ux rs, void* x, ux xs, ux d) { }
+static void cf8_1(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 1); }
+static void cf8_2(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 2); }
+static void cf8_3(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 3); }
+static void cf8_4(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 4); }
+static CFn const cf8s_0_4[] = {cf8_0, cf8_1, cf8_2, cf8_3, cf8_4};
+static void cf8_8(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 8); }
+static void cf8_16(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, 16); }
+static void cf8_5_7  (void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; MEMCPY2(r, x, 4, d, 4); }
+static void cf8_9_16 (void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; MEMCPY2(r, x, 8, d, 8); }
+static void cf8_17_32(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; MEMCPY2(r, x, 16, d, 16); }
+static void cf8_33_64(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; MEMCPY2(r, x, 32, d, 32); }
+static void cf8_arb(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, d); }
+
+static void cf1_1(void* r, ux rs, void* x, ux xs, ux d) {
+  u8* rb = (u8*)r + (rs>>3); rs&= 7;
+  u8* xb = (u8*)x + (xs>>3); xs&= 7;
+  *rb = *rb ^ ((((*xb >> xs) ^ (*rb >> rs)) & 1) << rs);
+}
+static void cf1_arb(void* r, ux rs, void* x, ux xs, ux d) {
+  bit_cpy(r, rs, x, xs, d);
+}
+
+static void cfB_direct(void* r, ux rs, void* x, ux xs, ux d) {
+  copy_B_direct(rs+(B*)r, xs+(B*)x, d);
+}
+static void cfB_obj(void* r, ux rs, void* x, ux xs, ux d) {
+  copy_B_generic(rs + (B*)r, x, xs, d);
+}
+
+static CFRes cf_get_direct(ux count, void* xp, ux cszBits) {
+  CFRes r;
+  r.source = xp;
+  if ((cszBits & 7) != 0) {
+    r.mul = cszBits;
+    r.data = count * cszBits;
+    r.fn = count==1 && cszBits==1? cf1_1 : cf1_arb;
+  } else {
+    ux cszBytes = cszBits / 8;
+    ux bytes = cszBytes * (ux)count;
+    r.mul = cszBytes;
+    if      (bytes<5)   { r.fn = cf8s_0_4[bytes]; }
+    else if (bytes<8)   { r.fn = cf8_5_7;   r.data=bytes-4; }
+    else if (bytes==8)  { r.fn = cf8_8; }
+    else if (bytes==16) { r.fn = cf8_16; }
+    else if (bytes<=16) { r.fn = cf8_9_16;  r.data=bytes-8; }
+    else if (bytes<=32) { r.fn = cf8_17_32; r.data=bytes-16; }
+    else if (bytes<=64) { r.fn = cf8_33_64; r.data=bytes-32; }
+    else                { r.fn = cf8_arb;   r.data=bytes; }
+  }
+  return r;
+}
+SRET_DEF(CFRes, cf_get_impl, ux count, Arr* x, ux csz) {
+  u8 xe = TIv(x,elType);
+  if (xe != el_B) SRET_RET(cf_get_direct(count, tyanyv_ptr(x), csz<<elwBitLog(xe)));
+  CFRes r;
+  B* ptr = arrv_bptrG(x); // guarantee that r.source is the same for multiple calls with the same array
+  r.data = count*csz;
+  if (ptr != NULL) {
+    r.source = ptr;
+    r.fn = cfB_direct;
+  } else {
+    r.source = x;
+    r.fn = cfB_obj;
+  }
+  r.mul = csz;
+  SRET_RET(r);
 }
 
 INIT_GLOBAL CopyRangeFn copyFns[el_MAX];

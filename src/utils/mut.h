@@ -272,3 +272,22 @@ extern INIT_GLOBAL DirectSetRange directSetRange[el_MAX];
 #define DIRECTARR_GETU(R, I) R##_getU(R.data, I)
 #define DIRECTARR_REPLACE(R, I, V) R##_set(R.data, I, V)
 #define DIRECTARR_REPLACE_RANGE(R, RS, X, XS, L) R##_setRange(R.data, RS, X, XS, L)
+
+typedef void (*CFn)(void* rp, ux rs, void* xp, ux xs, ux data);
+typedef struct {
+  CFn fn;
+  ux data;
+  ux mul;
+  void* source;
+} CFRes;
+SRET_DEF(CFRes, cf_get_impl, ux elts, Arr* x, ux scale);
+
+// copy elts*scale elements, at offsets multiplied by scale
+static CFRes cf_get(ux elts, Arr* x, ux scale) { return SRET_CALL(CFRes, cf_get_impl, elts, x, scale); }
+
+FORCE_INLINE void cf_call(CFRes f, void* r, ux rs, ux xs) { // xs & rs are offsets that the caller must multiply with f.mul
+  f.fn(r, rs, f.source, xs, f.data);
+}
+FORCE_INLINE void cf_call_x(CFRes f, void* r, ux rs, void* xp, ux xs) { // cf_call, except custom source data pointer
+  f.fn(r, rs, xp, xs, f.data);
+}
