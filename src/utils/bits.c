@@ -136,8 +136,8 @@ B arr_blend(B m, B w, B x, ux ia) { // consumes w,x; takes on the fill of x, use
 static inline u64 rbuu64(u64* p, ux off) { // read bit-unaligned u64; aka 64↑off↓p
   ux p0 = off>>6;
   ux m0 = off&63;
-  u64 v0 = p[p0];
-  u64 v1 = p[p0+1];
+  u64 v0 = loadu_u64(p + p0);
+  u64 v1 = loadu_u64(p + p0+1);
   #if HAS_U128
     u128 v = v0 | ((u128)v1)<<64;
     return v>>m0;
@@ -155,7 +155,9 @@ typedef struct {
   ux off;
 } ABState;
 static ABState ab_new(u64* p) { return (ABState){.ptr=p, .tmp=0, .off=0}; }
-static void ab_done(ABState s) { if (s.off) *s.ptr = s.tmp; }
+static void ab_done(ABState s) {
+  if (s.off) *s.ptr = (*s.ptr & -(1ULL << s.off)) | s.tmp;
+}
 FORCE_INLINE void ab_add(ABState* state, u64 val, ux count) { // assumes bits past count are 0
   assert(count==64 || (val>>count)==0);
   ux off0 = state->off;
@@ -278,7 +280,7 @@ NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for no
         case  8: for (ux i=0; i<cam; i++) ((u8* )rp)[i] = rbuu58(xp, i*xcsz)&tmsk; break;
         case 16: for (ux i=0; i<cam; i++) ((u16*)rp)[i] = rbuu58(xp, i*xcsz)&tmsk; break;
         case 32: for (ux i=0; i<cam; i++) ((u32*)rp)[i] = rbuu58(xp, i*xcsz)&tmsk; break;
-        case 64: for (ux i=0; i<cam; i++) ((u64*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break;
+        case 64: for (ux i=0; i<cam; i++) ((u64*)rp)[i] = rbuu64(xp, i*xcsz)&tmsk; break; // TODO could rbuu58 for xcsz∊60∾↕59; also in FAST_PDEP
       }
     #endif
   } else {

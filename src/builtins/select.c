@@ -808,18 +808,17 @@ B select_cells_single(usz ind, B x, usz cam, usz l, usz csz) { // ⥊ ind ⊏˘ 
     u8 xl = multWidthLog(csz, ewl);
     usz ria = cam*csz;
     if (xl>=7 || (xl<3 && xl>0)) { // generic case
-      MAKE_MUT_INIT(rm, ria, TI(x,elType)); MUTG_INIT(rm);
-      usz jump = l * csz;
-      usz xi = csz*ind;
-      usz ri = 0;
+      UntaggedArr r = m_arrp_copyFill(x, ria);
+      CFRes f = cf_get(1, a(x), csz);
+      usz xi = ind*f.mul, ri = 0;
       for (usz i = 0; i < cam; i++) {
-        mut_copyG(rm, ri, x, xi, csz);
-        xi+= jump;
-        ri+= csz;
+        cf_call(f, r.data, ri, xi);
+        xi+= l*f.mul;
+        ri+= f.mul;
       }
-      ra = mut_fp(rm);
-      arr_shVec(ra);
-      goto copyFill;
+      NOGC_E;
+      ra = r.obj;
+      return taga(arr_shVec(ra));
     } else if (xe==el_B) {
       assert(csz == 1);
       SGet(x)

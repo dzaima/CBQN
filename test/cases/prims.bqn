@@ -481,6 +481,8 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 0‿0↕3‿3⥊1 %% 4‿4‿0‿0⥊0
 1↕↕2‿3 %% 2‿1‿3⥊↕2‿3
 0↕↕3 %% 4‿0⥊0
+%USE eqvar ⋄ 3‿5 ↕_eqvar 5‿6‿7⥊↕210 %% +⌜´ ⟨0‿42‿84,0‿7,0‿42‿84,0‿7‿14‿21‿28,0‿1‿2‿3‿4‿5‿6⟩
+%USE eqvar ⋄ 2‿3 ↕_eqvar 6‿5⥊↕30 %% +⌜´ ⟨5×↕5, ↕3, 0‿5, ↕3⟩
 
 # ≡𝕩
 ≡¨ ⟨⟨⟩, ↕0, ""⟩ %% 1‿1‿1
@@ -504,7 +506,7 @@ b←1↓1∾a←"hello" ⋄ b ⌽⎊'e' ⥊⟜1⍟2 5 ⋄ a ≡○•Hash b %% 1
 
 !"𝕨⥊𝕩: 𝕨 must be a list or unit (4 ≡ =𝕩)" % %USE eqerr ⋄ ⟨3‿1‿4‿1⥊2⟩ ⥊_eqerr ⟨↕10, ↕0, 4⟩
 !"𝕨⥊𝕩: Empty 𝕩 and non-empty result" % %USE eqerr ⋄ ⟨10‿10, 1, ⟨⟩, ⋈1⟩ ⥊_eqerr ⟨↕0, "", 0‿0⥊0, 10‿0⥊"", 0‿10⥊<"hi"⟩
-!"𝕨⥊𝕩: Empty 𝕩 and non-empty result" % %USE eqvar ⋄ (↕0) ⥊_eqvar ↕0
+!"𝕨⥊𝕩: Empty 𝕩 and non-empty result" % %USE evar ⋄ (↕0) ⥊_evar ↕0
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained namespace)" % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩} {⇐}) ⥊_eqerr ⟨↕0, 1, ↕10⟩
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained function)"  % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}{+¨}) ⥊_eqerr ⟨↕0, 1, ↕10⟩
 !"𝕨⥊𝕩: 𝕨 must consist of natural numbers or ∘ ⌊ ⌽ ↑ (contained function)"  % %USE eqerr ⋄ ({⟨𝕩,⋈𝕩,1‿𝕩⟩}•out) ⥊_eqerr ⟨↕0, 1, ↕10⟩

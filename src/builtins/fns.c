@@ -156,7 +156,7 @@ B ud_c2(B t, B w, B x) {
   }
   ur xr;
   if (isAtm(x) || (xr=RNK(x))<wia) thrM("𝕨↕𝕩: Length of 𝕨 must be at most rank of 𝕩");
-  if (xr+wia > UR_MAX) thrM("𝕨↕𝕩: Result rank too large");
+  if (xr+(u64)wia > UR_MAX) thrM("𝕨↕𝕩: Result rank too large");
   ur wr = wia;
   ur rr = xr + wr;
   ShArr* sh = m_shArr(rr);
@@ -166,20 +166,20 @@ B ud_c2(B t, B w, B x) {
     wsh[0] = o2s(w);
   } else {
     SGetU(w)
-    for (usz i=0; i<wr; i++) wsh[i] = o2s(GetU(w, i));
+    for (ux i=0; i<wr; i++) wsh[i] = o2s(GetU(w, i));
     decG(w);
   }
 
   usz* xsh = SH(x);
   bool empty = IA(x)==0;
-  for (usz i=0; i<wr; i++) {
+  for (ux i=0; i<wr; i++) {
     usz l = xsh[i] + 1;
     usz m = wsh[i];
     if (l<m) thrM("𝕨↕𝕩: Window length 𝕨 must be at most axis length plus one");
     empty|= m==0 | m==l;
     rsh[i] = l - m;
   }
-  PLAINLOOP for (usz i=wr; i<xr; i++) wsh[i] = xsh[i];
+  PLAINLOOP for (ux i=wr; i<xr; i++) wsh[i] = xsh[i];
   
   if (empty) {
     Arr* ra = arr_shSetUG(m_fillarrpEmpty(getFillR(x)), rr, sh);
@@ -193,35 +193,38 @@ B ud_c2(B t, B w, B x) {
   
   ur fr=2*wr; // Frame rank in result
   usz cia=1; // Cell length
-  for (usz i=fr; i<rr; i++) if (MUL_ON(cia, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
-  usz ria=cia;
-  for (usz i=0;  i<fr; i++) if (MUL_ON(ria, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
+  for (ux i=fr; i<rr; i++) if (MUL_ON(cia, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
+  usz fia=1;
+  for (ux i=0;  i<fr; i++) if (MUL_ON(fia, rsh[i])) thrM("𝕨↕𝕩: result shape too large");
+  usz ria = cia; if (MUL_ON(ria, fia)) thrM("𝕨↕𝕩: result shape too large");
   TALLOC(usz, ri, fr-1);
-  MAKE_MUT_INIT_COPYFILL(r, ria, TI(x,elType), x);
-  MUTG_INIT(r);
-  usz k = cia*rsh[fr-1];
+  UntaggedArr r = m_arrp_copyFill(x, ria);
+  usz k = rsh[fr-1];
+  CFRes f = cf_get(k, a(x), cia);
+  ux end = fia * f.mul;
   if (wr==1) {
-    for (usz i=0, j=0; i<ria; i+=k, j+=cia) mut_copyG(r, i, x, j, k);
+    for (ux i=0, j=0; i<end; i+=k*f.mul, j+=f.mul) cf_call(f, r.data, i, j);
   } else {
-    for (usz i=0; i<fr-1; i++) ri[i]=0;
-    for (usz i=0, j=0;;) {
-      mut_copyG(r, i, x, j, k);
-      usz str = cia*xsh[wr-1];
-      i+= k;
-      if (i == ria) break;
+    for (ux i=0; i<fr-1; i++) ri[i] = 0;
+    for (ux i=0, j=0;;) {
+      cf_call(f, r.data, i, j*f.mul);
+      usz str = xsh[wr-1];
+      i+= k*f.mul;
+      if (i == end) break;
       j+= str;
-      for (usz a=fr-2, b=wr-2; RARE(++ri[a] == rsh[a]); ) {
+      for (ux a=fr-2, b=wr-2; RARE(++ri[a] == rsh[a]); ) {
         ri[a] = 0;
         j-= rsh[a] * str;
-        str *= xsh[b]; if (!b) { str=cia; b=wr; }
+        str *= xsh[b]; if (!b) { str=1; b=wr; }
         a--; b--;
         j+= str;
       }
     }
   }
+  NOGC_E;
   TFREE(ri);
   decG(x);
-  return taga(arr_shSetUG(mut_fp(r), rr, sh));
+  return taga(arr_shSetUG(r.obj, rr, sh));
 }
 
 B ltack_c1(B t,      B x) {         return x; }

@@ -683,11 +683,18 @@ B slash_c2(B t, B w, B x) {
       usz csz = arr_csz(x);
       MUL_ON(ria, csz);
       if (s>=USZ_MAX) thrOOM();
-      MAKE_MUT_INIT_COPYFILL(r0, ria, TI(x,elType), x); MUTG_INIT(r0);
+      MAKE_MUT_INIT_COPYFILL(r0, ria, TI(x,elType), x);
       SGetU(w)
       B wc; usz ri=0, wcu;
-      if (csz!=1) {   for (ux i=0; i<wia; i++) { if (!q_uszo(&wcu, wc=GetU(w,i))) goto pfree; for(ux j=0;j<wcu;j++) { mut_copyG(r0, ri, x, i*csz, csz);   ri+= csz; } } }
-      else { SGetU(x) for (ux i=0; i<wia; i++) { if (!q_uszo(&wcu, wc=GetU(w,i))) goto pfree; if (wcu)              { mut_fillG(r0, ri, GetU(x, i), wcu); ri+= wcu; } } }
+      #define FOR_W(BODY) for (ux i = 0; i < wia; i++) { if (!q_uszo(&wcu, wc=GetU(w,i))) goto pfree; BODY }
+      if (csz!=1) {
+        CFRes f = cf_get(1,a(x),csz);
+        FOR_W(for(ux j = 0; j < wcu; j++) { cf_call(f, r0->a, ri, i*f.mul); ri+= f.mul; })
+      } else {
+        MUTG_INIT(r0); SGetU(x)
+        FOR_W(if (wcu) { mut_fillG(r0, ri, GetU(x, i), wcu); ri+= wcu; })
+      }
+      #undef FOR_W
       if (0) { pfree: mut_pfree(r0, ri); expI_B(wc); }
       Arr* ra = mut_fp(r0);
       usz* rsh = arr_shAlloc(ra, xr);
@@ -760,12 +767,13 @@ B slash_c2(B t, B w, B x) {
     if (xl>6 || (xl<3 && xl!=0) || TI(x,elType)==el_B) {
       B xf = getFillR(x);
       if (xr!=1) {
-        MAKE_MUT_INIT(r0, IA(x) * wv, TI(x,elType)); MUTG_INIT(r0);
+        MAKE_MUT_INIT(r0, IA(x) * wv, TI(x,elType));
         usz csz = arr_csz(x);
+        CFRes f = cf_get(1, a(x), csz);
         ux ri = 0;
         for (ux i = 0; i < xlen; i++) for (ux j = 0; j < wv; j++) {
-          mut_copyG(r0, ri, x, i*csz, csz);
-          ri+= csz;
+          cf_call(f, r0->a, ri, i*f.mul);
+          ri+= f.mul;
         }
         r = withFill(mut_fv(r0), xf);
         r = taga(TI(r,slice)(r, 0, IA(r)));

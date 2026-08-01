@@ -348,7 +348,7 @@ B transp_c2(B t, B w, B x) {
   }
 
   u8 xe = TI(x,elType);
-  #define AXIS_LOOP(N_AX, I_INC, DO_INNER) \
+  #define AXIS_LOOP(N_AX, I_INC, I_END, DO_INNER) \
     ur a0 = N_AX - 1;                                           \
     usz* ri = st+na; PLAINLOOP for (usz i=0; i<a0; i++) ri[i]=0;\
     usz l = rsh[a0];                                            \
@@ -360,7 +360,7 @@ B transp_c2(B t, B w, B x) {
         usz j=j0+k*str; DO_INNER;                               \
         i += I_INC;                                             \
       }                                                         \
-      if (i == ria) break;                                      \
+      if (i == I_END) break;                                    \
       /* Update result index starting with last axis finished */\
       while (1) {                                               \
         str = st[--a];                                          \
@@ -373,8 +373,9 @@ B transp_c2(B t, B w, B x) {
   u8 xlw = elwBitLog(xe);
   if (csz >= (32*8) >> xlw) { // cell >= 32 bytes
     usz ria = csz * shProd(rsh, 0, na);
-    MAKE_MUT_INIT(rm, ria, xe); MUTG_INIT(rm);
-    AXIS_LOOP(na, csz, mut_copyG(rm, i, x, j, csz));
+    MAKE_MUT_INIT(rm, ria, xe);
+    CFRes f = cf_get(csz, a(x), 1);
+    AXIS_LOOP(na, csz*f.mul, ria*f.mul, cf_call(f, rm->a, i, j*f.mul));
     Arr* ra = mut_fp(rm);
     arr_shSetUO(ra, rr, sh);
     r = withFill(taga(ra), getFillR(x));

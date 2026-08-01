@@ -656,13 +656,14 @@ NOINLINE B takedrop_highrank(bool take, B w, B x) {
           }
         }
         
+        CFRes f = cf_get(cellWrite, a(x), 1);
         usz pri = 0;
         while (true) {
           if (anyFill) { // TODO if cellWrite is a small enough number of bytes (limit possibly higher for el_bit) & elType<el_B, write all the fills at the start at once
             if (ri!=pri) mut_fillG(rm, pri, xf, ri-pri);
             pri = ri+cellWrite;
           }
-          mut_copyG(rm, ri, x, xi, cellWrite); // TODO could use cf_
+          cf_call(f, rm->a, ri*f.mul, xi*f.mul);
           usz cr = cellStart-1;
           if (0 == --lcv[cr]) {
             do {
@@ -1181,59 +1182,66 @@ B shifta_c2(B t, B w, B x) {
   return mut_fcd(r, x);
 }
 
+static bool is_simple_cell(ux cszb) { // assumes ≤64, gives true for 0,1,8,16,32,64
+  debug_assert(cszb <= 64);
+  return (0x0000000100010103 >> (cszb&63)) & 1;
+}
 B reverse_c1(B t, B x) {
   if (isAtm(x) || RNK(x)==0) thrM("⌽𝕩: 𝕩 cannot be a unit");
   usz n = *SH(x);
   if (n<=1) return x;
-  u8 xl = cellWidthLog(x);
-  u8 xt = arrNewType(TY(x));
-  if (xl<=6 && (xl>=3 || xl==0)) {
-    void* xv = tyany_ptr(x);
-    B r;
-    switch(xl) { default: UD; break;
-      case 0: {
-        u64* rp; r = m_bitarrc(&rp, x);
-        u64* xp=xv; usz g = BIT_N(n); usz e = g-1;
-        vfor (usz i = 0; i < g; i++) rp[i] = bit_reverse64(xp[e-i]);
-        if (n&63) {
-          u64 sh=(-n)&63;
-          vfor (usz i=0; i<e; i++) rp[i]=rp[i]>>sh|rp[i+1]<<(64-sh);
-          rp[e]>>=sh;
+  usz csz = arr_csz(x);
+  u8 xe = TI(x,elType);
+  ux cszb = csz << elwBitLog(xe);
+  DirectArr r = m_directarrAs(x, xe);
+  if (cszb <= 64) {
+    if (!is_simple_cell(cszb)) {
+      B x2 = widenBitArr(x, 1);
+      debug_assert(TY(x2)==t_bitarr && reusable(x2) && RNK(x2)==2); // definitely gets widened, so should have these properties
+      ux wide_cszb = SH(x2)[1];
+      B r2 = C1(reverse, x2);
+      bitnarrow(r.data, cszb, tyarr_ptr(r2), wide_cszb, n);
+      x = r2;
+      goto dec_ret;
+    }
+    void* xp0 = tyany_ptr(x);
+    switch(cszb) { default: UD; break;
+      case 0: NOGC_E; break;
+      case 1: {
+        u64* rpb = r.data;
+        usz g = BIT_N(n); usz e = g-1;
+        vfor (usz i = 0; i < g; i++) rpb[i] = bit_reverse64(((u64*)xp0)[e-i]);
+        if (n & 63) {
+          u64 sh = (-n) & 63;
+          vfor (usz i=0; i<e; i++) rpb[i] = rpb[i]>>sh | rpb[i+1]<<(64-sh);
+          rpb[e] >>= sh;
         }
         break;
       }
-      case 3:                         { u8*  xp=xv; u8*  rp = m_tyarrc(&r, 1, x, xt); vfor (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 4:                         { u16* xp=xv; u16* rp = m_tyarrc(&r, 2, x, xt); vfor (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 5:                         { u32* xp=xv; u32* rp = m_tyarrc(&r, 4, x, xt); vfor (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
-      case 6: if (TI(x,elType)!=el_B) { u64* xp=xv; u64* rp = m_tyarrc(&r, 8, x, xt); vfor (ux i=0; i<n; i++) rp[i]=xp[n-i-1]; break; }
+      case  8:               { vfor (ux i=0; i<n; i++) ((u8* )r.data)[i] = ((u8* )xp0)[n-i-1]; break; }
+      case 16:               { vfor (ux i=0; i<n; i++) ((u16*)r.data)[i] = ((u16*)xp0)[n-i-1]; break; }
+      case 32:               { vfor (ux i=0; i<n; i++) ((u32*)r.data)[i] = ((u32*)xp0)[n-i-1]; break; }
+      case 64: if (xe!=el_B) { vfor (ux i=0; i<n; i++) ((u64*)r.data)[i] = ((u64*)xp0)[n-i-1]; break; }
       else {
-        HArr_p rp = m_harrUc(x);
         B* xp = arr_bptr(x);
-        if (xp!=NULL)  for (ux i=0; i<n; i++) rp.a[i] = inc(xp[n-i-1]);
-        else { SGet(x) for (ux i=0; i<n; i++) rp.a[i] = Get(x, n-i-1); }
+        if (xp!=NULL)  for (ux i=0; i<n; i++) ((B*)r.data)[i] = inc(xp[n-i-1]);
+        else { SGet(x) for (ux i=0; i<n; i++) ((B*)r.data)[i] = Get(x, n-i-1); }
         NOGC_E;
-        r = rp.b;
-        B xf = getFillR(x);
-        decG(x);
-        return withFill(r, xf);
       }
     }
-    decG(x);
-    return r;
+  } else {
+    SLOW1("⌽𝕩", x);
+    CFRes f = cf_get(1, a(x), csz);
+    ux rp = 0, ip = n*f.mul;
+    while (true) {
+      ip-= f.mul;
+      cf_call(f, r.data, rp, ip);
+      if (ip==0) break;
+      rp+= f.mul;
+    }
+    NOGC_E;
   }
-  B xf = getFillR(x);
-  SLOW1("⌽𝕩", x);
-  usz csz = arr_csz(x);
-  usz cam = SH(x)[0];
-  usz rp = 0;
-  usz ip = IA(x);
-  MAKE_MUT_INIT_WITHFILL(r, ip, TI(x,elType), xf); MUTG_INIT(r);
-  for (usz i = 0; i < cam; i++) {
-    ip-= csz;
-    mut_copyG(r, rp, x, ip, csz);
-    rp+= csz;
-  }
-  return mut_fcd(r, x);
+  dec_ret:; decG(x); return r.obj;
 }
 
 
@@ -1309,13 +1317,14 @@ NOINLINE B rotate_highrank(bool inv, B w, B x) {
     ccsz*= xshc;
   }
   
-  MAKE_MUT_INIT_COPYFILL(rm, IA(x), TI(x,elType), x); MUTG_INIT(rm);
+  DirectArr r0 = m_directarrAs(x, TI(x,elType)); r = r0.obj;
   
-  usz n0 = csz*rot0;
-  usz n1 = csz*(l0-rot0);
+  usz n0 = csz*rot0;      CFRes f0 = cf_get(n0, a(x), 1);
+  usz n1 = csz*(l0-rot0); CFRes f1 = cf_get(n1, a(x), 1);
+  debug_assert(f0.source == f1.source);
   while (true) {
-    mut_copyG(rm, ri+n1, x, xi, n0);
-    mut_copyG(rm, ri, x, xi+n0, n1);
+    cf_call_x(f0, r0.data, (ri+n1)*f0.mul, f0.source, (xi)*f0.mul);
+    cf_call_x(f1, r0.data, (ri   )*f1.mul, f0.source, (xi+n0)*f1.mul);
     usz c = cr-1;
     while (true) {
       if (xsh[c] == ++pos[c]) { xi-=xcv[c]*pos[c]; pos[c]=0; }
@@ -1328,8 +1337,9 @@ NOINLINE B rotate_highrank(bool inv, B w, B x) {
   }
   endCopy:;
   
+  NOGC_E;
   TFREE(tmp);
-  r = mut_fcd(rm, x);
+  decG(x);
   
   decW_ret: decG(w);
   return r;
