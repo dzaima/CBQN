@@ -1186,16 +1186,17 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   assert(csz*cam == IA(x));
   if (csz==0) goto generic;
   if (cam<=1) {
-    if (cam==0) return taga(emptyVec(x));
+    if (cam==0) goto retEmpty;
     return C2(select, inds, taga(arr_shVec(TI(x,slice)(x, 0, IA(x)))));
   }
   
   ux in = IA(inds);
-  if (in == 0) return taga(emptyVec(x));
+  B r;
+  if (in == 0) { retEmpty:; r = taga(emptyVec(x)); goto decret_inds_x; }
   if (in == 1) {
     B w = IGetU(inds,0); if (!q_f64(w)) goto generic;
-    B r = select_cells_single(WRAP_SELECT_ONE(o2i64(w), csz, "%R", w), x, cam, csz, 1);
-    decG(x); decG(inds); return r;
+    r = select_cells_single(WRAP_SELECT_ONE(o2i64(w), csz, "%R", w), x, cam, csz, 1);
+    goto decret_inds_x;
   }
   u8 ie = TI(inds,elType);
   if (csz<=2? ie!=el_bit : csz<=128? ie>el_i8 : !elInt(ie)) {
@@ -1204,12 +1205,14 @@ B select_rows_B(B x, ux csz, ux cam, B inds) { // consumes inds,x; ⥊ inds⊸�
   }
   void* ip = tyany_ptr(inds);
   
-  B r = select_rows_direct(x, csz, cam, (u8*)ip, in, ie);
-  decG(inds);
-  return r;
+  r = select_rows_direct(x, csz, cam, (u8*)ip, in, ie);
+  goto decret_inds;
   
   generic:;
   return select_cells_base(inds, x, csz, cam);
+  decret_inds_x: decG(x);
+  decret_inds: decG(inds);
+  return r;
 }
 
 
