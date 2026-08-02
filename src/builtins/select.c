@@ -65,6 +65,11 @@
 //   SHOULD disregard actual cell width if index range is small
 //   COULD merge to wider elements if indices are in runs (e.g. 0‿1‿6‿7⊸⊏˘ n‿10⥊i16 → 0‿3⊸⊏˘ n‿5⥊i32)
 //   COULD split into multiple index blocks
+// 1-bit elements:
+//   ≤8 bit cells in argument and result:
+//     Widen cells to 8 bits, SIMD lookup table
+//     SHOULD handle multidimensional cells by repeating indices, e.g. 0‿0‿2⊸⊏˘n‿3‿2⥊0
+//   Else, inds⊸⊏⌾⍉ or generic path depending on heuristic
 // Long inds / long cells:
 //   Direct call to select function per cell
 //     COULD have a more direct call that avoids overflow checking & wrapping
@@ -926,6 +931,13 @@ B select_cells_single(usz ind, B x, usz cam, usz l, usz csz) { // ⥊ ind ⊏˘ 
 #endif
 
 #define INDS_BUF_MAX 64 // only need 32 bytes for AVX2 & 16 for NEON, but have more for past-the-end pointers and writes
+
+static Arr* m_tyslice_el(void* data, u8 elt, ux ia) {
+  assert(elt != el_bit);
+  return m_tyslice(data, a(emptyIVec()), t_i8slice + elt-el_i8, ia);
+}
+
+B transp_c1(B t, B x);
 B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (indn↑inds As ie)⊸⊏˘ cam‿csz⥊x; if inds are valid and csz<=128, ie must be <=el_i8
   assert(csz!=0 && cam!=0 && indn!=0);
   assert(csz*cam == IA(x));
@@ -957,6 +969,20 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
       #if SINGELI_AVX2 || SINGELI_NEON
         if (indn<=8 && csz<=8) goto bit_ok;
       #endif
+      if (HEURISTIC(csz<=128 ? indn<192 : indn*5 > csz)) {
+        Arr* xs = TI(x,slice)(x, 0, IA(x));
+        usz* xsh = arr_shAlloc(xs, 2);
+        xsh[0] = cam; xsh[1] = csz;
+        B tr = C1(transp, taga(xs));
+        B warr;
+        if (ie != el_bit) {
+          warr = taga(arr_shVec(m_tyslice_el(inds, ie, indn)));
+        } else {
+          u64* wp; warr = m_bitarrv(&wp, indn);
+          memcpy(wp, inds, (indn+7)>>3);
+        }
+        return C1(transp, C2(select, warr, tr));
+      }
       goto generic_any;
       goto bit_ok; bit_ok:;
     }
@@ -1170,7 +1196,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   
   generic_int:;
   assert(ie!=el_bit && generic_allowed);
-  B indo = taga(arr_shVec(m_tyslice(inds, a(emptyIVec()), t_i8slice + ie-el_i8, indn)));
+  B indo = taga(arr_shVec(m_tyslice_el(inds, ie, indn)));
   return select_cells_base(indo, x, csz, cam);
   
   decG_B_ret:;
