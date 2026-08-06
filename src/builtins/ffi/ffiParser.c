@@ -376,7 +376,7 @@ static NOINLINE B ffiFn_lwax_c2(B t, B w, B x) {
 
 static void* foreign_openLib(B t, B w, char* me) { // consumes w
   char* ws = NULL;
-  if (!q_c0(w)) {
+  if (!q_cval(w, 0)) {
     if (isArr(w) && RNK(w)==1 && IA(w)==2) { // ↑‿path
       SGetU(w);
       B e0 = GetU(w,0);

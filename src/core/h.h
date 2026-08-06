@@ -194,13 +194,15 @@ typedef union B {
   u64 u;
   f64 f;
 } B;
+#define B_DIRECT_F64 1
+#define B_IS_U64 1
 
 FORCE_INLINE u64 r_f64u(f64 x) { u64 r; memcpy(&r,&x,8); return r; }
 FORCE_INLINE f64 r_u64f(u64 x) { f64 r; memcpy(&r,&x,8); return r; }
 FORCE_INLINE u32 r_f32u(f32 x) { u32 r; memcpy(&r,&x,4); return r; }
 FORCE_INLINE f32 r_u32f(u32 x) { f32 r; memcpy(&r,&x,4); return r; }
 FORCE_INLINE u64 r_Bu(B x) { return x.u; }
-FORCE_INLINE f64 r_Bf(B x) { return x.f; }
+FORCE_INLINE f64 r_Bf(B x) { return x.f; } // returns the float value for real numbers, and a (signaling) NaN for everything else
 FORCE_INLINE B r_uB(u64 x) { return (B){.u=x}; }
 FORCE_INLINE B r_fB(f64 x) { return (B){.f=x}; }
 
@@ -490,26 +492,31 @@ FORCE_INLINE bool q_beq(B w, B x) { return w.u == x.u; } // bitwise-equal B valu
 FORCE_INLINE bool q_N   (B x) { return q_beq(x, bi_N); } // is ·
 FORCE_INLINE bool noFill(B x) { return q_beq(x, bi_noFill); }
 FORCE_INLINE bool q_z(B x) { return q_beq(x, bi_z); }
-FORCE_INLINE bool q_c0(B x) { return q_beq(x, m_c32(0)); }
+FORCE_INLINE bool q_cval(B x, u32 val) { return q_beq(x, m_c32(val)); }
+FORCE_INLINE bool q_fval(B x, f64 val) { // intended for constant val
+  assert(val == val);
+  if (val != 0) return q_beq(x, m_f64(val));
+  return r_Bf(x) == 0;
+}
 
 
 NORETURN void expI_f64(f64 what); NORETURN void expI_B(B what);
 NORETURN void expU_f64(f64 what); NORETURN void expU_B(B what);
-FORCE_INLINE bool  o2bG(B x) { return(x.u<<1)!=0;}
-FORCE_INLINE i32   o2iG(B x) { return (i32)x.f; }
-FORCE_INLINE u32   o2cG(B x) { return (u32)x.u; }
-FORCE_INLINE usz   o2sG(B x) { return (usz)x.f; }
-FORCE_INLINE f64   o2fG(B x) { return      x.f; }
-FORCE_INLINE i64 o2i64G(B x) { return (i64)x.f; }
-FORCE_INLINE u64 o2u64G(B x) { return (u64)x.f; }
+FORCE_INLINE bool  o2bG(B x) { debug_assert(({ i32 t; q_i32o(&t,x) && (u32)t<2; })); return (x.u<<1)!=0; }
+FORCE_INLINE i32   o2iG(B x) { debug_assert(q_i32(x)); return (i32)x.f; }
+FORCE_INLINE u32   o2cG(B x) { debug_assert(q_c32(x)); return (u32)x.u; }
+FORCE_INLINE f64   o2fG(B x) { debug_assert(q_f64(x)); return      x.f; }
+FORCE_INLINE usz   o2sG(B x) { debug_assert(({ usz t; q_uszo(&t,x) &&     (u64)t  < (1ULL<<54); })); return (usz)x.f; }
+FORCE_INLINE i64 o2i64G(B x) { debug_assert(({ i64 t; q_i64o(&t,x) && IABS(u64,t) < (1ULL<<54); })); return (i64)x.f; }
+FORCE_INLINE u64 o2u64G(B x) { debug_assert(({ u64 t; q_u64o(&t,x) &&          t  < (1ULL<<54); })); return (u64)x.f; }
 
 FORCE_INLINE bool  o2b(B x) { i32 t; if(!q_i32o(&t,x) || (u32)t >= 2) thrM("Expected boolean"); return t; }
 FORCE_INLINE f64   o2f(B x) { if (!q_f64(x)) thrM("Expected number");    return o2fG(x); }
 FORCE_INLINE u32   o2c(B x) { if (!isC32(x)) thrM("Expected character"); return o2cG(x); }
 FORCE_INLINE i32   o2i(B x) { if (!q_i32(x)) expI_B(x);                  return o2iG(x); }
-FORCE_INLINE usz   o2s(B x) { usz v; if (!q_uszo(&v, x)) expU_B(x);       return v; }
-FORCE_INLINE i64 o2i64(B x) { i64 v; if (!q_i64o(&v, x)) expI_B(x);       return v; }
-FORCE_INLINE u64 o2u64(B x) { u64 v; if (!q_u64o(&v, x)) expU_B(x);       return v; }
+FORCE_INLINE usz   o2s(B x) { usz v; if (!q_uszo(&v, x)) expU_B(x);      return v; }
+FORCE_INLINE i64 o2i64(B x) { i64 v; if (!q_i64o(&v, x)) expI_B(x);      return v; }
+FORCE_INLINE u64 o2u64(B x) { u64 v; if (!q_u64o(&v, x)) expU_B(x);      return v; }
 
 // some aliases for macro-generated code
 typedef u8 c8; typedef u16 c16; typedef u32 c32;

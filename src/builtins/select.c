@@ -948,7 +948,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
   u8 lb = arrTypeWidthLog(TY(x));
   
   if (xe==el_B) {
-    if (sizeof(B) != 8) goto generic_any;
+    if (B_IS_U64) goto generic_any;
     xp = (u8*) arr_bptr(x);
     if (xp == NULL) goto generic_any;
   } else {

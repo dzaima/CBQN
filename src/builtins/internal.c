@@ -128,10 +128,10 @@ B listVariations_c2(B t, B w, B x) {
       for (usz i = 0; i < xia; i++) {
         B c = GetU(x, i);
         if (!isF64(c)) goto noSpec;
-        if (!q_fi32(o2fG(c))) {
+        i32 v;
+        if (!q_i32o(&v, c)) {
           notFloat=true;
         } else {
-          i32 v = o2iG(c);
           if (v>max) max=v;
           if (v<min) min=v;
         }
@@ -491,7 +491,7 @@ B iPureKeep_c1(B t, B x) { return x; }
 B iKeep_c1(B t, B x) { return x; }
 
 B iProperties_c2(B t, B w, B x) {
-  if (!q_c0(w) || !q_c0(x)) thrM("𝕨 •internal.Properties 𝕩: bad arg");
+  if (!q_cval(w,0) || !q_cval(x,0)) thrM("𝕨 •internal.Properties 𝕩: bad arg");
   i32* rp;
   B r = m_i32arrv(&rp, 8);
   rp[0] = sizeof(usz)*8;

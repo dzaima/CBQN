@@ -101,10 +101,11 @@ Functions for converting/using atom types:
   o2b(x)   o2bG(x)   // bool
   o2i(x)   o2iG(x)   // i32
   o2c(x)   o2cG(x)   // c32
-  o2s(x)   o2sG(x)   // usz
   o2f(x)   o2fG(x)   // f64
-  o2i64(x) o2i64G(x) // i64
-  o2u64(x) o2u64G(x) // u64
+  o2s(x)   o2sG(x)   // usz; o2sG, o2i64G, o2u64G can generally can only be called if x has been previously checked to be ≤memory-sized or similar, else they may hit the conversion edge-case (debug builds check for (|𝕩)<2⋆54)
+  o2i64(x) o2i64G(x) // i64; see above note
+  o2u64(x) o2u64G(x) // u64; see above note
+  
   
   // test if f64 or B fit in a specified type:
   q_fbit(x) q_bit(x)

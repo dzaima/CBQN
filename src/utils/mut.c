@@ -291,7 +291,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
       memcpy(mpo, xp, l*sizeof(B));
       return;
     case t_f64arr: case t_f64slice:
-      assert(sizeof(B)==sizeof(f64));
+      assert(B_DIRECT_F64);
       memcpy(mpo, f64any_ptr(x)+xs, l*sizeof(B));
       return;
     default: {
@@ -318,7 +318,7 @@ DEF_G(void, copy, B,             (void* a, usz ms, B x, usz xs, usz l), ms, x, x
   }                                               \
   static void cpy##N##Arr_B(void* rp, void* xp, u64 ia, void* xRaw) { \
     Arr* xa = (Arr*)xRaw; B* bxp = arrv_bptr(xa); \
-    if (bxp!=NULL && sizeof(B)==sizeof(f64)) H2T; \
+    if (bxp!=NULL && B_DIRECT_F64) H2T;           \
     else cpy##N##Arr_BF(rp, xp, ia, xa);          \
   }                                               \
   static copy_fn const copy0_##E##_fns[] = __VA_ARGS__; \
@@ -857,7 +857,7 @@ static NOINLINE DirectArr m_fillarrAs(B x, B fill) { // doesn't consume
   fillarr_setFill(r, fill);
   return (DirectArr){taga(r), fillarrv_ptr(r)};
 }
-static DirectArr m_directarrAs(B x, u8 xe) { // doesn't consume
+DirectArr m_directarrAs(B x, u8 xe) { // doesn't consume
   if (xe==el_B) {
     B fill = getFillR(x);
     if (!noFill(fill)) return m_fillarrAs(x, fill);
@@ -960,8 +960,8 @@ void directSetRange_B  (void* data, ux rs, B x, ux xs, ux l) {
   COPY_TO(data, el_B, rs, x, xs, l);
 }
 
-INIT_GLOBAL M_CopyF copyFns[el_MAX];
-INIT_GLOBAL M_FillF fillFns[el_MAX];
+INIT_GLOBAL CopyRangeFn copyFns[el_MAX];
+INIT_GLOBAL FillRangeFn fillFns[el_MAX];
 INIT_GLOBAL MutFns mutFns[el_MAX+1];
 INIT_GLOBAL u8 el_orArr[el_MAX*16 + el_MAX+1];
 INIT_GLOBAL DirectGet directGetU[el_MAX];

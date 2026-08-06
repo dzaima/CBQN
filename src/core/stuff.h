@@ -13,10 +13,10 @@ void* m_customObj(u64 size, V2v visit, V2v freeO);
 
 // array initialization & metadata stuff
 
-typedef void (*M_CopyF)(void*, usz, B, usz, usz);
-typedef void (*M_FillF)(void*, usz, B, usz);
-extern INIT_GLOBAL M_CopyF copyFns[el_MAX];
-extern INIT_GLOBAL M_FillF fillFns[el_MAX];
+typedef void (*CopyRangeFn)(void* rp, usz rs, B x, usz xs, usz len);
+typedef void (*FillRangeFn)(void* rp, usz rs, B x, usz len);
+extern INIT_GLOBAL CopyRangeFn copyFns[el_MAX];
+extern INIT_GLOBAL FillRangeFn fillFns[el_MAX];
 #if SINGELI_SIMD
   typedef void (*copy_fn)(void*, void*, u64, void*);
   extern INIT_GLOBAL copy_fn tcopy_all[];
@@ -37,6 +37,8 @@ extern INIT_GLOBAL M_FillF fillFns[el_MAX];
     basic_copy_all[re_*8+xe_](RP, XP, LEN); \
   })
 #endif
+#define COPY_GET(ELT) copyFns[ELT]
+#define FILL_GET(ELT) fillFns[ELT]
 #define COPY_TO(WHERE, ELT, MS, X, XS, LEN) copyFns[ELT](WHERE, MS, X, XS, LEN)
 #define FILL_TO(WHERE, ELT, MS, X, LEN) fillFns[ELT](WHERE, MS, X, LEN)
 
@@ -207,7 +209,7 @@ B i64EachDec(i64 v, B x); // v¨ x; consumes x
 
 B bit_negate(B x); // consumes; always produces new array
 void bit_negatePtr(u64* rp, u64* xp, usz count); // count is number of u64-s
-B widenBitArr(B x, ur axis); // consumes x, assumes bitarr; returns some array with cell size padded to the nearest of 8,16,32,64 if ≤64 bits, or a multiple of 64 bits otherwise
+B widenBitArr(B x, ur axis); // consumes x; returns some array with cell size padded to the nearest of 8,16,32,64 if ≤64 bits, or a multiple of 64 bits otherwise
 B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh); // consumes x.val; undoes widenBitArr, overriding shape past axis to cr↑csh
 
 void bitnarrow(void* rp, ux rcsz, void* xp, ux xcsz, ux cam);
@@ -236,6 +238,8 @@ DirectArr toEltypeArr(B x, u8 re); // consumes
 // As such, if an el_B array is reused, all elements effectively have 1 more refcount than they should as x's elements never get freed
 // Otherwise, functionality is the same as if a regular new array was made (i.e. uninitialized elements, may start NOGC)
 DirectArr potentiallyReuse(B x); // doesn't consume
+
+DirectArr m_directarrAs(B x, u8 xe); // returns a new array with thee same shape and fill as x, with the specified eltype
 
 typedef struct {
   B res;

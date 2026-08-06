@@ -175,7 +175,7 @@ NOINLINE Arr* reshape_one(usz nia, B x) {
   } else {
     incBy(x, nia); // in addition with the existing reference, this covers the filled amount & asFill
     UntaggedArr ra = m_barrp_withFill(nia, asFill(x));
-    if (sizeof(B)==8) fill_words(ra.data, x.u, (u64)nia*8);
+    if (B_IS_U64) fill_words(ra.data, x.u, (u64)nia*8);
     else for (usz i = 0; i < nia; i++) ((B*)ra.data)[i] = x;
     r = ra.obj;
     NOGC_E;

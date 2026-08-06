@@ -7,8 +7,8 @@ typedef B (*M_GetF)(void*, usz);
 struct MutFns {
   u8 elType;
   u8 valType;
-  M_CopyF m_copy, m_copyG;
-  M_FillF m_fill, m_fillG;
+  CopyRangeFn m_copy, m_copyG;
+  FillRangeFn m_fill, m_fillG;
   M_SetF  m_set,  m_setG;
   M_GetF m_getU;
 };

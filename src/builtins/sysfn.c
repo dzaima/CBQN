@@ -212,17 +212,17 @@ B grOrd_c2(B t, B w, B x) { // assumes valid arguments
 }
 
 B asrt_c1(B t, B x) {
-  if (LIKELY(isF64(x) && o2fG(x)==1)) return x;
+  if (LIKELY(q_fval(x,1))) return x;
   if (isF64(x)) thrM("Assertion error");
   thr(x);
 }
 B asrt_c2(B t, B w, B x) {
-  if (LIKELY(isF64(x) && o2fG(x)==1)) { dec(w); return x; }
+  if (LIKELY(q_fval(x,1))) { dec(w); return x; }
   dec(x);
   thr(w);
 }
 B casrt_c2(B t, B w, B x) {
-  if (LIKELY(isF64(x) && o2fG(x)==1)) { dec(w); return x; }
+  if (LIKELY(q_fval(x,1))) { dec(w); return x; }
   B fullpath = COMPS_ACTIVE() && o2i(COMPS_CREF(kind))!=COMP_REPL? load_fullpath(COMPS_CREF(path), COMPS_CREF(name)) : bi_N;
   unwindCompiler();
   dec(x);
@@ -254,7 +254,7 @@ B casrt_c2(B t, B w, B x) {
   thr(w);
 }
 B casrt_c1(B t, B x) {
-  if (LIKELY(isF64(x) && o2fG(x)==1)) return x;
+  if (LIKELY(q_fval(x,1))) return x;
   casrt_c2(t, inc(x), x); UD;
 }
 

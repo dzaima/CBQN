@@ -117,8 +117,8 @@ def mulh{a:V, b:V=[_]E if veci{V,16} and hase{V}} = emit{V, intrin_t{V, 'mulhi'}
 def  and_bit_none{x:V, y:V if width{V}<=256 and veci{V} and hase{V, 'SSE4.1'}} = emit{u1, intrin{V, 'testz_', vec_l{V}}, x, y}
 def andn_bit_none{x:V, y:V if width{V}<=256 and veci{V} and hase{V, 'SSE4.1'}} = emit{u1, intrin{V, 'testc_', vec_l{V}}, y, x}
 
-def  and_top_none{x:V, y:V if width{V}<=256 and veci{V} and elwidth{V}>=32 and hasarch{'AVX'}} = emit{u1, intrin{V, 'testz_', vec_s{ty_f{V}}}, x, y}
-def andn_top_none{x:V, y:V if width{V}<=256 and veci{V} and elwidth{V}>=32 and hasarch{'AVX'}} = emit{u1, intrin{V, 'testc_', vec_s{ty_f{V}}}, y, x}
+def  and_top_none{x:V, y:V if width{V}<=256 and veci{V} and elwidth{V}>=32 and hasarch{'AVX'}} = { def VF=ty_f{V}; emit{u1, intrin{V, 'testz_', vec_s{VF}}, VF~~x, VF~~y} }
+def andn_top_none{x:V, y:V if width{V}<=256 and veci{V} and elwidth{V}>=32 and hasarch{'AVX'}} = { def VF=ty_f{V}; emit{u1, intrin{V, 'testc_', vec_s{VF}}, VF~~y, VF~~x} }
 
 # multiplies that only read low 32 bits of arguments
 def mul32{a:V, b:V=[_](u64) if hase{V          }} = emit{V, intrin_t{el_s{V}, 'mul'}, a, b}

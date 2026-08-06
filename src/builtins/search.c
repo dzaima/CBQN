@@ -202,7 +202,7 @@ NOINLINE usz indexOfOne(B l, B e) {
       case el_c16: if (!q_c16(e)) return wia;  v16 = (u16)     o2cG(e); goto chk16;
       case el_c32: if (!q_c32(e)) return wia;  v32 = (u32)     o2cG(e); goto chk32;
       case el_B: {
-        if (isF64(e) && sizeof(B)==sizeof(f64)) { // TODO could also have character atom case
+        if (isF64(e) && B_DIRECT_F64) { // TODO could also have character atom case
           if ((lp = arr_bptr(l)) == NULL) goto generic;
           v64f = o2fG(e);
           goto chk64f;
