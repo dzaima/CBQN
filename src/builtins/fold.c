@@ -742,7 +742,7 @@ B sum_rows_bit(B x, usz n, usz m) {
         for (usz i=0; i<n; i++) rp[i] = POPC(b & loadu_u64((u8*)xp+k*i));
       } else {
         if (m<=58 || m==60) {
-          u64 b = (1ull<<m)-1;
+          u64 b = TAIL(u64,m);
           for (usz i=0, j=0; i<n; i++, j+=m) {
             u64 xw = loadu_u64((u8*)xp+j/8) >> (j%8);
             rp[i] = POPC(b & xw);

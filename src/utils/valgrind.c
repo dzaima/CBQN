@@ -50,7 +50,7 @@ B vg_validateResult(B x) {
       len = (ia>>6)*8;
       if (left) {
         u64 last = ((u64*)data)[len/8];
-        u64 exp = (1ULL<<left) - 1;
+        u64 exp = TAIL(u64, left);
         u64 got = vg_getDefined_u64(last);
         if ((got&exp) != exp) {
           printf("Expected %d defined trailing bits in object at %p, got:\n", left, v(x));
@@ -115,7 +115,7 @@ NOINLINE u64 vg_pext_u64(u64 src, u64 mask) {
     if (!(maskD&c) && undefMask==0) undefMask = (~0ULL)<<ri;
     if (vg_def_u64(mask&c)) r = vg_withBit_u64(r, ri++, (c&src)!=0);
   }
-  if (ri<64) r = r & (1ULL<<ri)-1;
+  if (ri<64) r = r & TAIL(u64, ri);
   r = vg_withDefined_u64(r, vg_getDefined_u64(r) & ~undefMask);
   #if DBG_VG_OVERRIDES
     printf("pext:\n");

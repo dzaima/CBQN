@@ -189,7 +189,7 @@ static inline bool multipleOfPowerOf2(const uint64_t value, const uint32_t p) {
   assert(value != 0);
   assert(p < 64);
   // __builtin_ctzll doesn't appear to be faster here.
-  return (value & ((1ull << p) - 1)) == 0;
+  return (value & TAIL(u64, p)) == 0;
 }
 
 #if defined(HAS_UINT128)

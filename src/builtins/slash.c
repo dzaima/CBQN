@@ -238,7 +238,7 @@ static B compress_grouped(u64* wp, B x, usz wia, usz wsum, u8 xt) { // expected 
 static B where(B x, usz xia, u64 s) {
   B r;
   u64* xp = bitany_ptr(x);
-  usz q=xia%64; if (q) xp[xia/64] &= ((u64)1<<q) - 1;
+  usz q=xia%64; if (q) xp[xia/64] &= TAIL(u64,q);
   if (xia <= 128) {
     #if SINGELI
     i8* rp = m_tyarrv(&r, 1, s, t_i8arr);
@@ -366,7 +366,7 @@ B grade_bool(B x, usz xia, bool up) {
     B notx = bit_negate(incG(x));
     u64* xp0 = bitarr_ptr(notx);
     u64* xp1 = xp;
-    u64 q=xia%64; if (q) { usz e=xia/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
+    u64 q=xia%64; if (q) { usz e=xia/64; u64 m=TAIL(u64,q); xp0[e]&=m; xp1[e]&=m; }
     if (!up) { u64* t=xp1; xp1=xp0; xp0=t; }
     #define SI_GRADE(W) \
       i##W* rp = m_tyarrv(&r, W/8, xia, t_i##W##arr); \
@@ -385,7 +385,7 @@ B grade_bool(B x, usz xia, bool up) {
     for (usz i=0; i<xia; i+=b) {
       vfor (usz j=0; j<BIT_N(b); j++) xp0[j] = ~xp1[j];
       usz b2 = IMIN(b, xia-i);
-      if (b2<b) { u64 q=b2%64; usz e=b2/64; u64 m=((u64)1<<q)-1; xp0[e]&=m; xp1[e]&=m; }
+      if (b2<b) { u64 q=b2%64; usz e=b2/64; u64 m=TAIL(u64,q); xp0[e]&=m; xp1[e]&=m; }
       usz s0=bit_sum(xp0,b2); si_1slash32(xp0, i, rp0, b2, s0); rp0+=s0;
       usz s1=b2-s0;           si_1slash32(xp1, i, rp1, b2, s1); rp1+=s1;
       xp1+= b2/64;
@@ -423,7 +423,7 @@ static B compress(B w, B x, usz wia, u8 xl, u8 xt) {
   u64* wp = bitany_ptr(w);
   u64 we = 0;
   usz ie = wia/64;
-  usz q=wia%64; if (q) we = wp[ie] &= ((u64)1<<q) - 1;
+  usz q=wia%64; if (q) we = wp[ie] &= TAIL(u64,q);
   while (!we) {
     if (RARE(ie==0)) return zeroCells(x);
     we = wp[--ie];

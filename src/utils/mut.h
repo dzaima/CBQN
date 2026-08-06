@@ -99,7 +99,7 @@ SHOULD_INLINE void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
   #define READ (df==0? RDFo(0) : RDFp)
   if (ti!=ei) {
     if (rs&63) {
-      u64 m = (1ULL << (rs&63))-1;
+      u64 m = TAIL(u64, rs&63);
       r[ti] = (READ & ~m)  |  (r[ti] & m);
       ti++;
     }
@@ -108,12 +108,12 @@ SHOULD_INLINE void bit_cpy(u64* r, usz rs, u64* x, usz xs, usz l) {
     else       for (; ti<ei; ti++) r[ti] = RDFp;
     
     if (re&63) {
-      u64 m = (1ULL << (re&63))-1;
+      u64 m = TAIL(u64, re&63);
       r[ti] = (READ & m)  |  (r[ti] & ~m);
     }
   } else if (rs!=re) {
     assert(re!=0); // otherwise rs and re would be in different items, hitting the earlier ti!=ei; re!=0 is required for the mask to work
-    u64 m = ((1ULL << (rs&63))-1) ^ ((1ULL << (re&63))-1);
+    u64 m = TAIL(u64, rs&63) ^ TAIL(u64, re&63);
     r[ti] = (READ & m)  |  (r[ti] & ~m);
   }
   #undef READ

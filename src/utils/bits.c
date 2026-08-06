@@ -180,7 +180,7 @@ NOINLINE void bitnarrow(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for n
       if (xcsz<32) {
         assert(xcsz==8 || xcsz==16);
         bool c8 = xcsz==8;
-        u64 tmsk = (1ull<<rcsz)-1;
+        u64 tmsk = TAIL(u64,rcsz);
         u64 msk0 = tmsk * (c8? 0x0101010101010101 : 0x0001000100010001);
         ux am = c8? cam/8 : cam/4;
         u32 count = POPC(msk0);
@@ -188,7 +188,7 @@ NOINLINE void bitnarrow(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for n
         for (ux i=0; i<am; i++) { ab_add(&ab, _pext_u64(*(u64*)xp, msk0), count); xp = 1+(u64*)xp; }
         u32 tb = c8? cam&7 : (cam&3)<<1;
         if (tb) {
-          u64 msk1 = msk0 & ((1ull<<tb*8)-1);
+          u64 msk1 = msk0 & TAIL(u64, tb*8);
           // printf("narrow tail %4d %016lx count=%d\n", tb, msk1, POPC(msk1));
           ab_add(&ab, _pext_u64(*(u64*)xp, msk1), POPC(msk1));
         }
@@ -213,7 +213,7 @@ NOINLINE void bitnarrow(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for n
   } else {
     assert(xcsz-rcsz<64);
     ux rfu64 = rcsz>>6; // full u64 count per cell in x
-    u64 msk = (1ull<<(rcsz&63))-1;
+    u64 msk = TAIL(u64, rcsz&63);
     for (ux i = 0; i < cam; i++) {
       for (ux j = 0; j < rfu64; j++) ab_add(&ab, loadu_u64(j + (u64*)xp), 64);
       ab_add(&ab, loadu_u64(rfu64 + (u64*)xp)&msk, rcsz&63);
@@ -254,7 +254,7 @@ NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for no
         return;
       }
     #endif
-    u64 tmsk = (1ull<<xcsz)-1;
+    u64 tmsk = TAIL(u64, xcsz);
     #if FAST_PDEP
       if (rcsz<32) {
         assert(rcsz==8 || rcsz==16);
@@ -266,7 +266,7 @@ NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for no
         for (ux i=0; i<am; i++) { *rp64 = _pdep_u64(rbuu58(xp, i*count), msk0); rp64++; }
         u32 tb = c8? cam&7 : (cam&3)<<1;
         if (tb) {
-          u64 msk1 = msk0 & ((1ull<<tb*8)-1);
+          u64 msk1 = msk0 & TAIL(u64, tb*8);
           // printf("widen tail %4d %016lx count=%d\n", tb, msk1, POPC(msk1));
           *rp64 = _pdep_u64(rbuu64(xp, am*count), msk1);
         }
@@ -284,7 +284,7 @@ NOINLINE void bitwiden(void* rp, ux rcsz, void* xp, ux xcsz, ux cam) { // for no
   } else {
     assert((rcsz&63) == 0 && rcsz-xcsz < 64 && (xcsz&63) != 0);
     ux pfu64 = xcsz>>6; // previous full u64 count in cell
-    u64 msk = (1ull<<(xcsz&63))-1;
+    u64 msk = TAIL(u64, xcsz&63);
     for (ux i = 0; i < cam; i++) {
       for (ux j = 0; j < pfu64; j++) rp64[j] = rbuu64(xp, i*xcsz + j*64);
       rp64[pfu64] = rbuu64(xp, i*xcsz + pfu64*64) & msk;

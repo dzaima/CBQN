@@ -107,7 +107,7 @@ NOINLINE B list_range(B x) {
     if (MAY_F(max==2 && xia<=64)) {
       x = toBitAny(C2(eq, x, m_f64(2)));
       u64 m = bit_reverse64_low(~loadu_u64(bitany_ptr(x)), xia);
-      if (xia < 64) m&= (1ull<<xia)-1;
+      if (xia < 64) m&= TAIL(u64,xia);
       u64 c = m;
       for (ux i = 0; i < ria; i++) {
         u64* cr;

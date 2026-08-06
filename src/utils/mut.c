@@ -187,11 +187,11 @@ DEF_S(void, fill, bit, q_bit(x), x, (void* a, usz ms, B x, usz l), ms, x, l) { u
     else   p[ms>>6]&= ~m;
   } else {
     u64 vx = bitx(x);
-    u64 m0 = (1ULL<<(ms&63)) - 1;
+    u64 m0 = TAIL(u64, ms&63);
     if (v) p[ms>>6]|= ~m0;
     else   p[ms>>6]&=  m0;
     for (usz i = (ms>>6)+1; i < (me>>6); i++) p[i] = vx;
-    u64 m1 = (1ULL<<(me&63)) - 1;
+    u64 m1 = TAIL(u64, me&63);
     if (v) p[me>>6]|=  m1;
     else   p[me>>6]&= ~m1;
   }
@@ -924,13 +924,13 @@ NOINLINE void decByMask(u64* mask, B* elts, ux ia, bool inv) {
   u64 xor = inv? U64_MAX : 0;
   ux e = ia>>6;
   for (ux i=0; i<e; i++) BY_MASK(dec, elts + i*64,  xor^mask[i]);
-  if (ia&63)             BY_MASK(dec, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
+  if (ia&63)             BY_MASK(dec, elts + e*64, (xor^mask[e]) & TAIL(u64, ia&63));
 }
 NOINLINE void incByMask(u64* mask, B* elts, ux ia, bool inv) {
   u64 xor = inv? U64_MAX : 0;
   ux e = ia>>6;
   for (ux i=0; i<e; i++) BY_MASK(inc, elts + i*64,  xor^mask[i]);
-  if (ia&63)             BY_MASK(inc, elts + e*64, (xor^mask[e]) & ((1ULL<<(ia&63)) - 1));
+  if (ia&63)             BY_MASK(inc, elts + e*64, (xor^mask[e]) & TAIL(u64, ia&63));
 }
 #undef BY_MASK
 NOINLINE void incEach(B* elts, ux ia) {

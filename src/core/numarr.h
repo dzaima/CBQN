@@ -34,10 +34,10 @@ static inline bool bitp_get(u64* arr, u64 n) {
   return (((u8*)arr)[n>>3] >> (n&7)) & 1;
 }
 static inline u64 bitp_l0(u64* arr, u64 ia) { // last u64 of the array, with the tail set to 0s
-  return ia&63? arr[ia>>6]&((1ULL<<(ia&63))-1) : 0;
+  return ia&63? arr[ia>>6]&TAIL(u64,ia&63) : 0;
 }
 static inline u64 bitp_l1(u64* arr, u64 ia) { // last u64 of the array, with the tail set to 1s
-  return ia&63? arr[ia>>6]|~((1ULL<<(ia&63))-1) : ~0ULL;
+  return ia&63? arr[ia>>6]|~TAIL(u64,ia&63) : ~0ULL;
 }
 static inline u64 bitx(B x) { // repeats the boolean across all 64 bits
   return o2bG(x)? ~(u64)0 : 0;
@@ -46,7 +46,7 @@ static inline bool bit_has(u64* arr, u64 ia, bool v) {
   u64 w = ~-(u64)v;
   u64 e = ia/64, q = ia%64;
   for (usz i=0; i<e; i++) if (arr[i]^w) return 1;
-  return q && ((arr[e]^w) & ((1ULL<<q)-1));
+  return q && ((arr[e]^w) & TAIL(u64,q));
 }
 static inline u64 bit_find(u64* arr, u64 ia, bool v) {
   u64 w = ~-(u64)v;

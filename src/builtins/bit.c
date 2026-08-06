@@ -315,7 +315,7 @@ static B bitop2(B f, B w, B x, enum BitOp2 op, char* name) {
       u64 mul = si_spaced_masks[ow-1];
       u64 wv = loadu_u64(wp);
       if (op <= op_xor) {
-        wv = (wv & ((1ULL<<ow)-1)) * mul;
+        wv = (wv & TAIL(u64,ow)) * mul;
         if (n>0) si_bitwise_as[op]((void*)rp, (void*)xp, wv, (n+7)/8);
       } else {
         OWL_8_64;

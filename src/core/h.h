@@ -83,6 +83,7 @@ typedef size_t ux;
 #define CLZ64(X) __builtin_clzll(X)
 #define CTZ(X) __builtin_ctzll(X)
 #define POPC(X) __builtin_popcountll(X)
+#define TAIL(T, N) (((T)1 << (N)) - 1)
 #define IMAX(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ > b_? a_ : b_; })
 #define IMIN(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); a_ < b_? a_ : b_; })
 #define ICMP(A, B) ({ AUTO a_ = (A); AUTO b_ = (B); (a_>b_?1:0)-(a_<b_?1:0); })

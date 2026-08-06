@@ -1040,7 +1040,7 @@ B select_rows_direct(B x, ux csz, ux cam, void* inds, ux indn, u8 ie) { // ⥊ (
         ux rcsz = csz<<exp;
         assert(rcsz<=8 && rindn<=8);
         
-        ux rcam = (cam + (1<<exp)-1)>>exp;
+        ux rcam = (cam + TAIL(ux,exp))>>exp;
         
         if (rcsz!=8) {
           u64* xp2;
