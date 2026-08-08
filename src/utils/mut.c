@@ -985,6 +985,22 @@ static void cf8_17_32(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+
 static void cf8_33_64(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; MEMCPY2(r, x, 32, d, 32); }
 static void cf8_arb(void* r, ux rs, void* x, ux xs, ux d) { r=rs+(u8*)r; x=xs+(u8*)x; memcpy(r, x, d); }
 
+#define LOW_COPY(RT, RL, T, MIN, MAX) static void cf1_##MIN##_##MAX(void* r, ux rs, void* x, ux xs, ux d) { \
+  ux rtb = sizeof(RT)*8; assert(d <= MAX && MIN < MAX && MAX <= sizeof(T)*8 - 7 && rtb == (1<<RL) && sizeof(RT)>=sizeof(T)); \
+  ux ro = rs & TAIL(ux, RL);                                                 \
+  u8* r1 = (u8*)r + (rs>>RL<<(RL-3));  u8* r2 = r1+sizeof(RT);               \
+  RT xv = loadu_##T((u8*)x + (xs>>3)) >> (xs&7);                             \
+  RT b1 = loadu_##RT(r1),  b2 = loadu_##RT(r2);                              \
+  RT low = TAIL(RT, d);  xv&=low;                                            \
+  storeu_##RT(r1, (b1 & ~(low<<ro)) | (xv<<ro));                             \
+  if (ro+d > rtb) storeu_##RT(r2, (b2 & ~(low>>(rtb-ro))) | (xv>>(rtb-ro))); \
+  /* branch on rs is fine, most usages should be bumping it by a predictable amount */ \
+}
+LOW_COPY(u64, 6, u16, 2, 9)
+LOW_COPY(u64, 6, u32, 10, 25)
+LOW_COPY(u64, 6, u64, 26, 57)
+#undef LOW_COPY
+
 static void cf1_1(void* r, ux rs, void* x, ux xs, ux d) {
   u8* rb = (u8*)r + (rs>>3); rs&= 7;
   u8* xb = (u8*)x + (xs>>3); xs&= 7;
@@ -1006,8 +1022,13 @@ static CFRes cf_get_direct(ux count, void* xp, ux cszBits) {
   r.source = xp;
   if ((cszBits & 7) != 0) {
     r.mul = cszBits;
-    r.data = count * cszBits;
-    r.fn = count==1 && cszBits==1? cf1_1 : cf1_arb;
+    ux bits = count * cszBits;
+    r.data = bits;
+    if      (bits== 1) r.fn = cf1_1;
+    else if (bits<= 9) r.fn = cf1_2_9;
+    else if (bits<=25) r.fn = cf1_10_25;
+    else if (bits<=57) r.fn = cf1_26_57;
+    else r.fn = cf1_arb;
   } else {
     ux cszBytes = cszBits / 8;
     ux bytes = cszBytes * (ux)count;
