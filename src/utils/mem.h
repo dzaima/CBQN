@@ -8,6 +8,11 @@ typedef struct AllocInfo {
   Value* p;
   u64 sz;
 } AllocInfo;
+typedef void (*AllocRangeConsumer)(void* start, ux size, const char* name, void* extra, void* data);
+void forAllMemoryRanges(AllocRangeConsumer f, void* data);
+
+typedef void (*AllocRangeProducer)(AllocRangeConsumer f, void* data);
+void addMemoryRangeSource(AllocRangeProducer f);
 
 #if __has_include(<sys/mman.h>) && __has_include(<unistd.h>) && !WASM && !NO_MMAP
   #include <sys/mman.h>

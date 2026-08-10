@@ -28,6 +28,7 @@ FORCE_INLINE void BN(splitTo)(EmptyValue* c, ux from, ux to, bool notEqual) {
 #if ALLOC_MODE==0 && ENABLE_GC
   STATIC_GLOBAL bool BN(allocMore_rec);
 #endif
+static void BN(forRanges)(AllocRangeConsumer f, void* data);
 
 static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
   if (from >= ALSZ) from = ALSZ;
@@ -80,7 +81,8 @@ static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
   mm_heapAlloc+= sz;
   
   if (alSize+1>=alCap) {
-    alCap = alCap? alCap*2 : 1024;
+    if (alCap==0) addMemoryRangeSource(BN(forRanges));
+    alCap = alCap? alCap*2 : 8;
     al = realloc(al, sizeof(AllocInfo)*alCap);
   }
   al[BN(alSize)++] = (AllocInfo){.p = (Value*)c, .sz = sz};
@@ -190,6 +192,12 @@ NOINLINE u64 BN(heapUsed)() {
   u64 r = 0;
   for (i32 i = 0; i < 64; i++) r+= BN(ctrs)[i]*BSZ(i);
   return r;
+}
+static void BN(forRanges)(AllocRangeConsumer f, void* data) {
+  for (u64 i = 0; i < alSize; i++) {
+    AllocInfo ci = al[i];
+    f(ci.p, ci.sz, STR1(BN()), NULL, data);
+  }
 }
 
 void writeNum(FILE* f, u64 v, i32 len);

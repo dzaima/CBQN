@@ -24,3 +24,25 @@ GLOBAL bool mem_log_enabled;
 #ifndef CLANGD
 #undef MMAP
 #endif
+
+
+typedef struct AllocProducerChain AllocProducerChain;
+struct AllocProducerChain {
+  AllocRangeProducer f;
+  AllocProducerChain* next;
+};
+STATIC_GLOBAL AllocProducerChain* allocProducers;
+void addMemoryRangeSource(AllocRangeProducer f) {
+  AllocProducerChain* prev = allocProducers;
+  allocProducers = malloc(sizeof(AllocProducerChain));
+  allocProducers->next = prev;
+  allocProducers->f = f;
+}
+
+void forAllMemoryRanges(AllocRangeConsumer f, void* data) {
+  AllocProducerChain* c = allocProducers;
+  while (c) {
+    c->f(f, data);
+    c = c->next;
+  }
+}
