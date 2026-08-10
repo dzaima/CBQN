@@ -1,15 +1,10 @@
 #include "utils/interrupt.h"
 #include "utils/toplevel.h"
-#define AllocInfo BN(AllocInfo)
 #define buckets   BN(buckets)
 #define al        BN(al)
 #define alCap     BN(alCap)
 #define alSize    BN(alSize)
 
-typedef struct AllocInfo {
-  Value* p;
-  u64 sz;
-} AllocInfo;
 GLOBAL AllocInfo* al;
 GLOBAL u64 alCap;
 GLOBAL u64 alSize;
@@ -66,7 +61,7 @@ static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
     reqsz = prepAllocSize(reqsz);
   #endif
   if (reqsz != (size_t) reqsz) thrOOM(); // otherwise it gets silently truncated in 32-bit builds
-  #if NO_MMAP
+  #if !HAS_MMAP
     u8* mem = calloc(reqsz, 1);
     if (mem_log_enabled) fprintf(stderr, "\n");
   #else
@@ -211,7 +206,6 @@ void BN(dumpHeap)(FILE* f) {
   fflush(f);
 }
 
-#undef AllocInfo
 #undef buckets
 #undef al
 #undef alSize

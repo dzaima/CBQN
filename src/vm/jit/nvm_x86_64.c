@@ -3,8 +3,8 @@
 #include "utils/file.h"
 #include "utils/talloc.h"
 #include "utils/wyhash.h"
+#include "utils/mem.h"
 #include "vm/vm.h"
-#include <sys/mman.h>
 
 #ifndef USE_PERF
   #define USE_PERF 0 // enable writing symbols to /tmp/perf-<pid>.map
@@ -35,7 +35,7 @@ __attribute__((optnone))
 static void* mmap_nvm(u64 sz) {
   u64 near = (u64)&evalBC;
   u64 MAX_DIST = 1ULL<<30;
-  if (near < MAX_DIST) return mmap(NULL, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1, 0);
+  if (near < MAX_DIST) return mmap_anon(NULL, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_32BIT);
   u64 ps = getPageSize();
   
   i32 attempt = 0;
@@ -51,7 +51,7 @@ static void* mmap_nvm(u64 sz) {
     #elif __FreeBSD__
       noreplace|= MAP_FIXED|MAP_EXCL;
     #endif
-    void* c = mmap((void*)loc, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS|noreplace, -1, 0);
+    void* c = mmap_anon((void*)loc, sz, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_NORESERVE|noreplace);
     if (c==MAP_FAILED) continue;
     
     i64 dist = (i64)near - (i64)c;
@@ -270,9 +270,6 @@ FILE* jit_map;
 #endif
 
 static void* nvm_alloc(u64 sz) {
-  // void* r = mmap(NULL, sz, PROT_EXEC|PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1, 0);
-  // if (r==MAP_FAILED) thrM("JIT: Failed to allocate executable memory");
-  // return r;
   I8Arr* src = mmX_allocN(fsizeof(I8Arr,a,u8,sz), t_i8arr);
   src->ia = sz;
   arr_shVec((Arr*)src);

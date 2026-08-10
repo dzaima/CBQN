@@ -376,7 +376,7 @@ B mmap_file(B path) {
   u64 head = pgsz;
   PLAINLOOP while (head < ALLOC_PADDING) head+= pgsz;
   u64 mmap_size = len+head*2;
-  u8* mmap_start = mmap(NULL, mmap_size, PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  u8* mmap_start = mmap_anon(NULL, mmap_size, PROT_READ, 0);
   if (mmap_start==MAP_FAILED) {
     close(fd);
     thrM("failed to pre-allocate mmap region");

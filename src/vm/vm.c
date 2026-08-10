@@ -10,6 +10,7 @@
 #include "utils/talloc.h"
 #include "utils/interrupt.h"
 #include "utils/toplevel.h"
+#include "utils/mem.h"
 #include "vm/load.h"
 #include <unistd.h>
 
@@ -1180,7 +1181,7 @@ STATIC_GLOBAL usz pageSizeV;
 
 ux getPageSize() {
   #if defined(_WIN32) || defined(_WIN64)
-    #if !NO_MMAP
+    #if HAS_MMAP || !NO_MMAP
       #error "Windows builds must have NO_MMAP=1"
     #endif
     return 1; // doesn't actually need to be accurate if NO_MMAP, which Windows builds should have
@@ -1194,15 +1195,15 @@ static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 co
   usz ps = getPageSize();
   u64 sz = (elSize*count + ps-1)/ps * ps;
   assert(sz%elSize == 0);
-  #if NO_MMAP
+  #if !HAS_MMAP
   void* mem = calloc(sz+ps, 1);
   #else
-  void* mem = mmap(NULL, sz+ps, PROT_READ|PROT_WRITE, MAP_NORESERVE|MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  void* mem = mmap_anon(NULL, sz+ps, PROT_READ|PROT_WRITE, MAP_NORESERVE);
   if (*curr == MAP_FAILED) fatal("Failed to allocate stack");
   #endif
   *curr = *start = mem;
   *end = ((char*)*start)+sz;
-  #if !WASM && !NO_MMAP
+  #if HAS_MMAP
   mprotect(*end, ps, PROT_NONE); // idk first way i found to force erroring on overflow
   #endif
 }
@@ -1449,7 +1450,7 @@ NOINLINE void vm_pstLive() {
 }
 
 
-#if __has_include(<sys/time.h>) && __has_include(<signal.h>) && !NO_MMAP && !WASM
+#if __has_include(<sys/time.h>) && __has_include(<signal.h>) && HAS_MMAP
 #include <sys/time.h>
 #include <signal.h>
 #define PROFILE_BUFFER (1ULL<<25) // number of `Profiler_ent`s
@@ -1544,7 +1545,7 @@ GLOBAL i32 profiler_mode; // 0: freed; 1: bytecode; 2: instruction pointers
 GLOBAL bool profiler_active;
 
 bool profiler_alloc(void) {
-  profiler_buf_s = profiler_buf_c = mmap(NULL, PROFILE_BUFFER*sizeof(Profiler_ent), PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  profiler_buf_s = profiler_buf_c = mmap_anon(NULL, PROFILE_BUFFER*sizeof(Profiler_ent), PROT_READ|PROT_WRITE, 0);
   if (profiler_buf_s == MAP_FAILED) {
     fprintf(stderr, "Failed to allocate profiler buffer\n");
     return false;

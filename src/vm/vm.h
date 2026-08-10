@@ -1,7 +1,6 @@
 #pragma once
-#include "utils/mem.h"
 #if !NO_MMAP
-#include <sys/mman.h>
+  #include <sys/mman.h> // for defined(MAP_FIXED_NOREPLACE)
 #endif
 
 #if defined(JIT_ENABLED)? JIT_ENABLED : ( \
