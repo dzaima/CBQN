@@ -177,7 +177,11 @@ static B parseFFIType0(ArgParseState* st) {
       st->needFull = st0.needFull;
       st->allowMut = st0.allowMut;
       
-      FFICompoundType* r = m_ffiCompound(1, arrElts? cty_tlarr : cty_ptr, FFI_TYPE_VOID, 0);
+      u8 ty;
+      if (ffi_extra_checks) ty = arrElts? cty_tlarrChecked : cty_ptrChecked;
+      else ty = arrElts? cty_tlarr : cty_ptr;
+      FFICompoundType* r = m_ffiCompound(1, ty, FFI_TYPE_VOID, 0);
+      // if pointer fields change, also change the respective field copying in foreignMemCtyCheckedPtrFromBQN!
       r->ptr.inpLen = ARR_INPLEN;
       r->ptr.kind = ptrKind;
       r->ptr.read = read;
@@ -307,12 +311,12 @@ static PreprocessedArg preprocessArg(ParseContext* pc, B* xp) {
 static NOINLINE void computeMutOffsets(B obj, u32 offset) {
   if (isFFIPrim(obj)) return;
   FFICompoundType* ct = c(FFICompoundType, obj);
-  if (ct->cty == cty_ptr) {
+  if (ct->cty == cty_ptr) { doPtr:;
     if (ct->ptr.kind != ptrk_in) ct->a[0].ptr.dataPtrOffset = offset;
   } else if (ct->cty == cty_struct) {
     ux ia = ct->ia;
     for (ux i = 0; i < ia; i++) computeMutOffsets(ct->a[i].o, offset + ct->a[i].st.fieldOffset);
-  }
+  } else if (RARE(ct->cty == cty_ptrChecked)) goto doPtr;
 }
 
 #if GPR6_SYSV64
@@ -580,7 +584,7 @@ B foreignFunction_impl(B t, B w, B x0, char* me) {
     for (ux i = 0; i < mutCount; i++) {
       B o = mutElts[i];
       FFICompoundType* ct = c(FFICompoundType, o);
-      assert(ct->cty == cty_ptr);
+      assert(ct->cty == cty_ptr || ct->cty == cty_ptrChecked);
       extraRet->a[ri++].o = incG(o);
     }
     #if GPR6_SYSV64

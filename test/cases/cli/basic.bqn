@@ -66,6 +66,7 @@
 %USE test ⋄ Test ⟨"-Xhelp=123"⟩ %% ⟨1,⟨⟩,"(self-bin): Flag -Xhelp must not be given a value␊"⟩
 %USE test ⋄ Test ⟨"-Xlog-file"⟩ %% ⟨1,⟨⟩,"(self-bin): Flag -Xlog-file must be given a value␊"⟩
 
+%USE test ⋄ Test ⟨"-Xffi-debug=foo"⟩ %% ⟨1,⟨⟩,"(self-bin): Invalid value for -Xffi-debug␊"⟩
 %USE test ⋄ Test ⟨"-Xrepl-history=foo"⟩ %% ⟨1,⟨⟩,"(self-bin): Invalid value for -Xrepl-history␊"⟩
 %USE test ⋄ Test ⟨"-Xrand-seed=12a"⟩ %% ⟨1,⟨⟩,"(self-bin): Invalid value for -Xrand-seed␊"⟩
 %USE test ⋄ Test ⟨"-Xhash-seed="⟩ %% ⟨1,⟨⟩,"(self-bin): Invalid value for -Xhash-seed␊"⟩

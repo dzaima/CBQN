@@ -26,11 +26,11 @@ test-static: staticTestBin
 	@diff --color -su library.expected static.got
 
 test-extended: lib.so
-	@../../BQN extended.bqn > extended.got
+	@../../BQN $(BQN_FLAGS) extended.bqn > extended.got
 	@diff --color -su extended.expected extended.got
 
 test-lib: lib.so
-	@../../BQN test.bqn > test.got
+	@../../BQN $(BQN_FLAGS) test.bqn > test.got
 	@diff --color -su test.expected test.got
 
 clean:

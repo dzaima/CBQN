@@ -740,6 +740,7 @@ static B funBI_iwInit(B t, B w, B x) { B f=c(BFn,t)->rtInvSwap; if(q_z(f)) f=c(B
 
 
 void* m_customObj(u64 size, V2v visit, V2v freeO) {
+  assert(size >= sizeof(CustomObj));
   CustomObj* r = mm_alloc(size, t_customObj);
   r->visit = visit;
   r->freeO = freeO;

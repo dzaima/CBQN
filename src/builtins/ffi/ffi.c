@@ -12,6 +12,9 @@
   #include "ffiMain.c" // memory copying, core ffiFn_core
   #include "ffiParser.c" // type parsing, main ffiload_c2
   #include "ptrobj.c" // pointer objects
+  #if FFI_CHECKS
+    #include "ffiCheck.c"
+  #endif
   
   static void sysffi_init() {
     // for the combined FFICompoundType + foreign->element allocation

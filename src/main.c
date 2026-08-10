@@ -8,6 +8,7 @@
 #include "utils/time.h"
 #include "utils/interrupt.h"
 #include "utils/toplevel.h"
+#include "builtins/ffi/ffi.h"
 
 #if defined(_WIN32) || defined(_WIN64)
   #include "windows/getline.h"
@@ -993,9 +994,12 @@ static void run_x_arg(char* key, ux keyn, const char* val) {
       "-Xlog-file=<path>    write internal logging to a file instead of stderr\n"
       "-Xrand-seed=<n>      make •rand be `•MakeRand n`\n"
       "-Xhash-seed=<n>      seed for hashing\n"
-      "-Xinternal-seed=<n>  seed for internal randomization (RANDOMIZE_HEURISTICS)\n"
+      "-Xinternal-seed=<n>  seed for internal randomization (RANDOMIZE_HEURISTICS, -Xffi-debug)\n"
       "  (note: seed value can be set to `u`, which will generate and print a random value)\n"
       "-Xfull-stacktraces   don't truncate display of deep stacktraces\n"
+      "-Xffi-debug          make wrong FFI pointer buffer usage fail early, at the cost of performance and never-released memory (~64B/pointer) from preserved bookkeeping\n"
+      "-Xffi-debug=<end|start|rand>\n"
+      "                     whether to precisely catch past-the-end or before-the-start out-of-bounds accesses (default: end)\n"
       "-Xprofile [=freq]    profile execution of everything; similar to `)profile`\n"
       "\n"
       "-Xrepl-history-path=<path>\n"
@@ -1034,6 +1038,15 @@ static void run_x_arg(char* key, ux keyn, const char* val) {
     if (log_file == NULL) arg_bad("Could not open -Xlog-file path for writing");
   } else if (cmpkey(key, keyn, "repl-init", 0)) {
     repl_init();
+  } else if (cmpkey(key, keyn, "ffi-debug", 2)) {
+    u8 align = 1;
+    if (val) {
+      if (!strcmp(val, "end")) align = 1;
+      else if (!strcmp(val, "start")) align = 2;
+      else if (!strcmp(val, "rand")) align = 3;
+      else arg_badVal("ffi-debug");
+    }
+    if (!set_ffi_check(2, align)) arg_bad("-Xffi-debug is not supported in this CBQN");
 #if USE_REPLXX
   } else if (cmpkey(key, keyn, "repl-history", 1)) {
     if (!strcmp(val, "read-only")) repl_historyMode = 1;

@@ -1,12 +1,8 @@
 #pragma once
 
-#include "core.h"
+#include "ffi.h"
 #include "utils/calls.h"
 #include "utils/nfns.h"
-
-#ifndef FFI_CHECKS // enable or disable correctness checks of •FFI
-  #define FFI_CHECKS 1
-#endif
 
 DEFINE_NFN foreignFnDesc;
 
@@ -77,12 +73,14 @@ typedef u8 CompoundType;
 enum CompoundType {
   cty_ptr, // *T, &T
   cty_starr, // non-top-level array, aka struct field or pointer element
-  cty_tlarr, // top-level array, aka pointer but just with fixed length
+  cty_tlarr, // top-level array, aka pointer but just with fixed length; ptrk==ptrk_in
   cty_struct, // {...}
   cty_argData, // main FFIFn argument & result type data holder
   cty_ret1, // only return allowed as result type; when result is a single value ("&", or no mutated args) and freeing temp elements is needed
   cty_retList, // only return allowed as result type; when result is a list
   cty_ptrh, // pointer object holder
+  cty_ptrChecked, // cty_ptr but makes special checked memory
+  cty_tlarrChecked, // cty_tlarr but makes special checked memory
 };
 typedef enum PtrKind {
   ptrk_in, // *T
@@ -98,7 +96,7 @@ typedef struct FFIEnt {
     struct { u32 scratchMemOffset; i32 srcPos; } argData; // cty_argData
     struct { // cty_ptr
       u32 dataPtrOffset; // for ptrk_mut & ptrk_out, where in ScratchMem to read a pointer to my data
-      u32 ptrObjRefOffset; // for ptrk_mut, where in ScratchMem is a `B` of a passed-in pointer object (bi_z if was array)
+      u32 ptrObjRefOffset; // for ptrk_mut, where in ScratchMem is a `B` of a passed-in pointer object (bi_z if was array); or, for cty_*Checked, a TempBlock object
     } ptr;
   };
 } FFIEnt;
@@ -125,11 +123,12 @@ typedef struct FFICompoundType {
 
 static FFICompoundType* m_ffiCompound(u32 ia, CompoundType cty, ux ffiType, ux ffiElts) { // if ffiType!=FFI_TYPE_VOID, sets up a buffer for result->foreign.elements and gives it its null terminator; need to still set size/alignment/elements!
   ux head = fsizeof(FFICompoundType,a,FFIEnt,ia);
-  FFICompoundType* r = mm_alloc(head + (ffiType? sizeof(ffi_type*) * (ffiElts+1) : 0), t_ffiType);
+  bool hasFFIType = ffiType != FFI_TYPE_VOID;
+  FFICompoundType* r = mm_alloc(head + (hasFFIType? sizeof(ffi_type*) * (ffiElts+1) : 0), t_ffiType);
   r->cty = cty;
   r->ia = ia;
   if (ia > 0) NOGC_S;
-  if (ffiType) {
+  if (hasFFIType) {
     r->foreign.type = ffiType;
     ffi_type** elts = r->foreign.elements = (ffi_type**) ((u8*)r + head);
     elts[ffiElts] = NULL;
@@ -239,3 +238,9 @@ static NOINLINE void foreignMemFromBQN(ScratchMem sm, void* mem, B type, B x);
 static NOINLINE void foreignMemWriteHArray(void* mem, B el, B x, ux ia, ux stride);
 static NOINLINE void foreignMemWriteArray(void* mem, B el, B x);
 static NOINLINE B ffiFn_core(FFIFn* f, B* wp, B* xp, B x);
+
+#if FFI_CHECKS
+static B checked_allocBlock(void** mem, ux size, bool writable, B ptrObjRef);
+static B checked_wrap(B ptrObjRef);
+static void* checked_readBlock(B* obj, FFICompoundType* ct);
+#endif

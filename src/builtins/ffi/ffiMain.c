@@ -291,9 +291,9 @@ static NOINLINE B fmtFFITy0(B ty) {
   FFICompoundType* ct = c(FFICompoundType, ty);
   char* name = "T";
   switch (ct->cty) {
-    case cty_tlarr: case cty_starr: name = "[n]T"; break;
+    case cty_tlarr: case cty_starr: case cty_tlarrChecked: name = "[n]T"; break;
     case cty_struct: name = "{...}"; break;
-    case cty_ptr: name = "*T"; break; // doesn't handle &T / ⥊T currently
+    case cty_ptr: case cty_ptrChecked: name = "*T"; break; // doesn't handle &T / ⥊T currently
   }
   return m_c8vec_0(name);
 }
@@ -302,7 +302,7 @@ static NOINLINE B fmtFFICty1(FFICompoundType* ct) {
     default: return m_c8vec_0("(unknown)");
     B arrElt;
     ux eltCount;
-    case cty_tlarr: {
+    case cty_tlarr: case cty_tlarrChecked: {
       arrElt = ct->a[0].o;
       eltCount = arrEltsFromLen(ct->ptr.inpLen, ct);
       goto fmtArr;
@@ -312,10 +312,58 @@ static NOINLINE B fmtFFICty1(FFICompoundType* ct) {
       eltCount = ct->starr.arrElts;
       fmtArr: return make_fmt("[%z]%R", eltCount, fmtFFITy0(arrElt));
     }
-    case cty_ptr: return make_fmt("%S%R", ptrk_names[ct->ptr.kind], fmtFFITy0(ct->a[0].o));
+    case cty_ptr: case cty_ptrChecked: return make_fmt("%S%R", ptrk_names[ct->ptr.kind], fmtFFITy0(ct->a[0].o));
   }
 }
 
+static void checkArrSize(B x, FFICompoundType* ct, ux size) {
+  if (!FFI_CHECKS) return;
+  if (!isArr(x)) thrF("FFI: Expected array to be passed to %R, but got %S", fmtFFICty1(ct), genericDesc(x));
+  if (IA(x) != size) thrF("FFI: Expected %z-element array to be passed to %R, but got array with shape %H", size, fmtFFICty1(ct), x);
+}
+
+#if FFI_CHECKS
+static NOINLINE void foreignMemCtyFromBQN(ScratchMem sm, void* mem, B type, B x);
+static NOINLINE void foreignMemCtyCheckedPtrFromBQN(ScratchMem sm, void* mem, FFICompoundType* ct, B x) {
+  u8 cty0;
+  switch (ct->cty) { default: fatal("bad checked cty");
+    case cty_ptrChecked: cty0 = cty_ptr; break;
+    case cty_tlarrChecked: cty0 = cty_tlarr; break;
+  }
+  FFICompoundType* tmp = m_ffiCompound(1, cty0, FFI_TYPE_VOID, 0);
+  tmp->ptr.inpLen = ct->ptr.inpLen;
+  tmp->ptr.kind = ct->ptr.kind;
+  tmp->ptr.read = ct->ptr.read;
+  tmp->a[0].ptr.ptrObjRefOffset = ct->a[0].ptr.ptrObjRefOffset;
+  tmp->foreign = ct->foreign;
+  tmp->a[0].o = inc(ct->a[0].o);
+  NOGC_E;
+  void* nmem;
+  foreignMemCtyFromBQN(sm, &nmem, tag(tmp, OBJ_TAG), x);
+  ptr_dec(tmp);
+  if (!SM_IS_NONE) { // pointer objects or something
+    B* place = AT_SM(B, ct->a[0].ptr.ptrObjRefOffset);
+    if (!isNsp(x)) {
+      B el = ct->a[0].o;
+      ux size, elsz = foreignSize(el);
+      if (!isArr(x)) {
+        size = elsz * o2u64(x);
+      } else {
+        size = IA(x);
+        if (isFFIPrim(el) && ffiPrimConv(el)!=sty_void) size = size << sty_lb(ffiPrimConv(el)) >> 3;
+        else size = size * elsz;
+      }
+      B ptrObjRef = ct->ptr.kind==ptrk_mut? *place : bi_z;
+      *place = checked_allocBlock(&nmem, size, ct->ptr.kind != ptrk_in, ptrObjRef);
+    } else {
+      *place = checked_wrap(ct->ptr.kind == ptrk_mut? *place : bi_z);
+    }
+    trackTemp(sm, *place);
+  }
+  *(void**)mem = nmem;
+  return;
+}
+#endif
 static NOINLINE void foreignMemCtyFromBQN(ScratchMem sm, void* mem, B type, B x) {
   FFICompoundType* ct = c(FFICompoundType, type);
   switch (ct->cty) { default: UD;
@@ -331,14 +379,12 @@ static NOINLINE void foreignMemCtyFromBQN(ScratchMem sm, void* mem, B type, B x)
       return;
     }
     case cty_starr: { // this needs to be a proper load into variable mem
-      if (FFI_CHECKS && !isArr(x)) thrF("FFI: Expected array to be passed to %R, but got %S", fmtFFICty1(ct), genericDesc(x));
-      if (FFI_CHECKS && IA(x) != ct->starr.inpLen) thrF("FFI: Expected %z-element array to be passed to %R, but got array with shape %H", (ux)ct->starr.inpLen, fmtFFICty1(ct), x);
+      checkArrSize(x, ct, ct->starr.inpLen);
       foreignMemWriteArray(mem, ct->a[0].o, x);
       return;
     }
     case cty_tlarr: {
-      if (FFI_CHECKS && !isArr(x)) thrF("FFI: Expected array to be passed to %R, but got %S", fmtFFICty1(ct), genericDesc(x));
-      if (FFI_CHECKS && IA(x) != ct->ptr.inpLen) thrF("FFI: Expected %z-element array to be passed to %R, but got array with shape %H", (ux)ct->ptr.inpLen, fmtFFICty1(ct), x);
+      checkArrSize(x, ct, ct->ptr.inpLen);
       goto fromPtr;
     }
     case cty_ptr: {
@@ -348,6 +394,11 @@ static NOINLINE void foreignMemCtyFromBQN(ScratchMem sm, void* mem, B type, B x)
       *(void**)mem = PTR_FROM_INT(void, val);
       return;
     }
+#if FFI_CHECKS
+    case cty_tlarrChecked: case cty_ptrChecked: {
+      return foreignMemCtyCheckedPtrFromBQN(sm, mem, ct, x);
+    }
+#endif
   }
 }
 FORCE_INLINE u64 foreignPrimFromBQNImpl(ScratchMem sm, void* mem, PrimType sty, B x, bool retGPR) {
@@ -488,14 +539,27 @@ static NOINLINE B foreignCtyToBQN(void* mem, ScratchMem sm, FFICompoundType* ct)
       return extraRetRet;
     }
     
+    void* data; PtrKind ptrk;
+    #if FFI_CHECKS
+    case cty_ptrChecked: {
+      ptrk = ct->ptr.kind;
+      if (ptrk == ptrk_in) goto ptr_result; // result value
+      B* place = AT_SM(B, ct->a[0].ptr.ptrObjRefOffset);
+      data = checked_readBlock(place, ct);
+      if (data == NULL) goto ptr_plain;
+      else goto ptr_data;
+    }
+    #endif
+    
     case cty_ptr: {
-      PtrKind ptrk = ct->ptr.kind;
-      void* data;
-      if (ptrk == ptrk_in) { // result value
+      ptrk = ct->ptr.kind;
+      if (ptrk == ptrk_in) { ptr_result: MAYBE_UNUSED; // result value
         data = *(void**)mem;
         return m_ptrobj_s(PTR_TO_U64(data), inc(ct->a[0].o));
       } else { // "&T" or "⥊T"
+        ptr_plain: MAYBE_UNUSED;
         data = *AT_SM(void*, ct->a[0].ptr.dataPtrOffset);
+        ptr_data: MAYBE_UNUSED;
         if (ptrk == ptrk_mut) {
           B ptrObj = *AT_SM(B, ct->a[0].ptr.ptrObjRefOffset);
           if (!q_z(ptrObj)) return ptrObj;

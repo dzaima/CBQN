@@ -49,7 +49,10 @@ static bool ty_compat(B a, B b) {
     primA:;
     u8 at = ffiPrimTy(a);
     if (at == sty_void) return true;
-    if (!isFFIPrim(b)) return at == sty_rawPtr && c(FFICompoundType, b)->cty == cty_ptr;
+    if (!isFFIPrim(b)) {
+      u8 cty = c(FFICompoundType, b)->cty;
+      return at == sty_rawPtr && (cty==cty_ptr || (FFI_CHECKS && cty==cty_ptrChecked));
+    }
     u8 bt = ffiPrimTy(b);
     return bt==sty_void || at==bt;
   }
@@ -62,11 +65,11 @@ static bool ty_compat(B a, B b) {
   FFICompoundType* bt = c(FFICompoundType, b);
   if (at->cty != bt->cty) return false;
   switch (at->cty) { default: UD;
-    case cty_tlarr: fatal("top-level arrays shouldn't ever be checked for compatibility");
+    case cty_tlarr: case cty_tlarrChecked: fatal("top-level arrays shouldn't ever be checked for compatibility");
     case cty_starr:
       if (arrEltsFromLen(at->starr.inpLen, at) != arrEltsFromLen(bt->starr.inpLen, bt)) return false;
       goto cmp1;
-    case cty_ptr: cmp1: return ty_compat(at->a[0].o, bt->a[0].o);
+    case cty_ptr: case cty_ptrChecked: cmp1: return ty_compat(at->a[0].o, bt->a[0].o);
     case cty_struct: {
       if (at->ia != bt->ia) return false;
       ux n = at->ia;
