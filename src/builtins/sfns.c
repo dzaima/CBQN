@@ -1416,6 +1416,7 @@ static B pick_replaceOne(B fn, usz pos, B x, usz xia) {
     u8 xt = TY(x);
     void* xp = tyany_ptr(x);
     switch (xt) {
+      case t_bitarr: bitp_set(xp, pos, o2bG(rep)); return x;
       case t_i8arr:  ((i8* )xp)[pos] = o2iG(rep); return x;
       case t_i16arr: ((i16*)xp)[pos] = o2iG(rep); return x;
       case t_i32arr: ((i32*)xp)[pos] = o2iG(rep); return x;
