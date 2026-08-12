@@ -11,7 +11,7 @@ def q_chr{(u16),x} = bcall{u1, 'q_c16', x}
 def q_chr{(u32),x} = bcall{u1, 'q_c32', x}
 def q_fint{T, x:(f64) if isint{T}} = {
   buf:= undefined{T, 1};
-  def ok = emit{u1, merge{'q_f', fmt_type{T}, if (width{T}==64) '' else 'o'}, buf, x}
+  def ok = emit{u1, merge{'q_f', fmt_type{T}, 'o'}, buf, x}
   tup{load{buf}, ok}
 }
 

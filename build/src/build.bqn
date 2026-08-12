@@ -385,7 +385,7 @@ po ← { # parsed options
       ⟨ # clang
         "-Wno-microsoft-anon-tag", "-Wno-bitwise-instead-of-logical", "-Wno-unknown-warning-option"
         "-Wno-pass-failed" # vfor
-      ⟩ ∾ (¬wasm)/⟨"-mllvm", "--x86-cmov-converter=0"⟩ # thing that converts `cmov`s to branching sometimes (?), but we don't want that
+      ⟩ ∾ (arch≡"X86_64")/⟨"-mllvm", "--x86-cmov-converter=0"⟩ # thing that converts `cmov`s to branching sometimes (?), but we don't want that
     ⟩
     args∾↩ minCCFlags
     args∾↩ 0⊑GetLibs@
