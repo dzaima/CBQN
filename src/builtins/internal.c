@@ -308,7 +308,7 @@ B internalTemp_c1(B t, B x) {
   #include "utils/mut.h"
 #endif
 #if RANDOMIZE_HEURISTICS
-  extern u64 heuristic_seed;
+  extern GLOBAL u64 internalRandState;
 #endif
 #if NATIVE_COMPILER
   #include "vm/load.h"
@@ -338,18 +338,16 @@ B internalTemp_c2(B t, B w, B x) {
         if (isC32(x)) { // read seed
           i32* rp;
           r = m_i32arrv(&rp, 2);
-          rp[0] = (u32) heuristic_seed;
-          rp[1] = (u32) (heuristic_seed >> 32);
+          memcpy(rp, &internalRandState, 8);
           return r;
         }
         if (q_i32(x)) { // simple set seed
-          heuristic_seed = o2i(x);
+          internalRandState = o2i(x);
           return x;
         }
         if (isArr(x)) { // full set seed
           x = toI32Any(x);
-          i32* xp = i32any_ptr(x);
-          heuristic_seed = (u32)xp[0] | ((u64)(u32)xp[1])<<32;
+          memcpy(&internalRandState, i32any_ptr(x), 8);
           return x;
         }
         thrM("•internal.Temp: bad RANDOMIZE_HEURISTICS usage");

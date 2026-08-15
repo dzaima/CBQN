@@ -33,3 +33,8 @@
 %USE repl ⋄ REPL ")t:1e1e1 2+2" %% ⟨0,"Bad timing repetition count␊",⟨⟩⟩
 %USE repl ⋄ REPL ")t:9999999999999999999 2+2" %% ⟨0,"Timing repetition count too large␊",⟨⟩⟩
 %USE repl ⋄ REPL ")t:9999999999999999999999999999999999999999999 2+2" %% ⟨0,"Timing repetition count too large␊",⟨⟩⟩
+
+%USE repl ⋄ REPL ")profile@0 2+2" %% ⟨0,⟨⟩,"Cannot profile with 0hz sampling frequency␊"⟩
+%USE repl ⋄ REPL ")profile@ 2+2" %% ⟨0,"Invalid profile sample rate value␊",⟨⟩⟩
+%USE repl ⋄ REPL ")profile@999999999 2+2" %% ⟨0,⟨⟩,"Cannot profile with >999999hz frequency␊"⟩
+%USE repl ⋄ REPL ")profile@99999999999999999999 2+2" %% ⟨0,"Invalid profile sample rate value␊",⟨⟩⟩

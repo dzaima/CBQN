@@ -154,6 +154,7 @@ Run ← { 𝕊 testname:
       {
         enabled ⇐ ¬ (¬o.slow) ∧ Flag "%SLOW"
         EnabledBy ← {enabled∧↩𝕩} {⟨Flag "%"∾𝕩, Flag "%!"∾𝕩⟩}⊸{0‿0𝕊𝕩: 1; 1‿0𝕊𝕩: 𝕩; 0‿1𝕊𝕩: ¬𝕩}
+        "RAND_HEURISTICS" EnabledBy o.randomizeHeuristics
         "DEBUG" EnabledBy o.debug
         "HEAPVERIFY" EnabledBy o.heapverify
         "PROPER_FILLS" EnabledBy o.properFills

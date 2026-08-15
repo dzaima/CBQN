@@ -183,7 +183,7 @@ static B execBlockInplace(Block* block, Scope* sc) { // doesn't consume; execute
 #if JIT_START != -1
 NOINLINE B mnvmExecBodyInplace(Body* body, Scope* sc);
 #endif
-extern GLOBAL bool jit_enabled;
+extern GLOBAL bool cfg_enableJit;
 FORCE_INLINE B execBodyInplaceI(Body* body, Scope* sc, Block* block) { // consumes sc, unlike execBlockInplace
   debug_assert(body->bl == block);
   #if JIT_START != -1

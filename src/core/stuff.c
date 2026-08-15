@@ -608,12 +608,12 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
   #endif
   extern GLOBAL bool cbqn_initialized;
   static void warn_ln(B x) {
-    if (isArr(x)) fprint_fmt(stderr, "%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
+    if (isArr(x)) fprint_fmt(log_file, "%s items, %S, shape=%H\n", IA(x), eltype_repr(TI(x,elType)), x);
     else {
-      fprintf(stderr, "atom: ");
-      if (cbqn_initialized && FORMATTER) { fprintsB(stderr, x = bqn_fmt(inc(x))); dec(x); }
-      else fprintI(stderr, x);
-      fprintf(stderr, "\n");
+      log_printf("atom: ");
+      if (cbqn_initialized && FORMATTER) { fprintsB(log_file, x = bqn_fmt(inc(x))); dec(x); }
+      else fprintI(log_file, x);
+      log_printf("\n");
     }
   }
   void warn_slow1(char* s, B x) {
@@ -621,41 +621,39 @@ DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
     if (always) s++;
     else if (isArr(x) && IA(x)<100) return;
     ONLY_ALWAYS;
-    fprintf(stderr, "slow %s: ", s); warn_ln(x);
-    fflush(stderr);
+    log_printf("slow %s: ", s); warn_ln(x);
+    fflush(log_file);
   }
   void warn_slow2(char* s, B w, B x) {
     bool always = '!'==*s;
     if (always) s++;
     else if ((isArr(w)||isArr(x))  &&  (!isArr(w) || IA(w)<50)  &&  (!isArr(x) || IA(x)<50)) return;
     ONLY_ALWAYS;
-    fprintf(stderr, "slow %s:\n  𝕨: ", s); warn_ln(w);
-    fprintf(stderr, "  𝕩: "); warn_ln(x);
-    fflush(stderr);
+    log_printf("slow %s:\n  𝕨: ", s); warn_ln(w);
+    log_printf("  𝕩: "); warn_ln(x);
+    fflush(log_file);
   }
   void warn_slow3(char* s, B w, B x, B y) {
     bool always = '!'==*s;
     if (always) s++;
     else if ((isArr(w)||isArr(x))  &&  (!isArr(w) || IA(w)<50)  &&  (!isArr(x) || IA(x)<50)) return;
     ONLY_ALWAYS;
-    fprintf(stderr, "slow %s:\n  𝕨: ", s); warn_ln(w);
-    fprintf(stderr, "  𝕩: "); warn_ln(x);
-    fprintf(stderr, "  f: "); warn_ln(y);
-    fflush(stderr);
+    log_printf("slow %s:\n  𝕨: ", s); warn_ln(w);
+    log_printf("  𝕩: "); warn_ln(x);
+    log_printf("  f: "); warn_ln(y);
+    fflush(log_file);
   }
 #endif
 
 #if RANDOMIZE_HEURISTICS
-  #include "utils/wyhash.h"
   #ifndef MATCH_ERROR_MESSAGES
     #define MATCH_ERROR_MESSAGES 1
   #endif
   
-  u64 heuristic_seed;
   bool heuristic_rand(bool heuristic, bool true_req, bool false_req) {
     assert(heuristic? true_req : false_req);
     if (!true_req | !false_req) return heuristic;
-    return wyrand(&heuristic_seed) & 1;
+    return internalRand() & 1;
   }
   
   

@@ -5,9 +5,9 @@
   static void mm_freeFreedAndMerge(void);
   #include "utils/time.h"
   #if GC_LOG_DETAILED
-    GLOBAL bool gc_log_enabled = true;
+    GLOBAL bool cfg_gcLog = true;
   #else
-    GLOBAL bool gc_log_enabled;
+    GLOBAL bool cfg_gcLog;
   #endif
 #endif
 
@@ -197,7 +197,7 @@ void gc_forceGC(bool toplevel) {
     gc_preGC(toplevel);
     gc_running = 1;
     u64 startTime=0, startSize=0;
-    if (gc_log_enabled) {
+    if (cfg_gcLog) {
       startTime = nsTime();
       startSize = tot_heapUsed();
       #if GC_LOG_DETAILED
@@ -208,15 +208,16 @@ void gc_forceGC(bool toplevel) {
     }
     gc_run(toplevel);
     u64 endSize = tot_heapUsed();
-    if (gc_log_enabled) {
-      fprintf(stderr, "GC:%s before: "N64d"B/"N64d"B", toplevel?" toplevel;":"", startSize, mm_heapAlloc);
+    if (cfg_gcLog) {
+      log_printf("GC:%s before: "N64d"B/"N64d"B", toplevel?" toplevel;":"", startSize, mm_heapAlloc);
       #if GC_LOG_DETAILED
-        fprintf(stderr, "; kept "N64d"B="N64d" objs, freed "N64d"B, incl. directly "N64d"B="N64d" objs", gcs_visitBytes, gcs_visitCount, startSize-endSize, gcs_freedBytes, gcs_freedCount);
-        fprintf(stderr, "; unknown refs: "N64d"B="N64d" objs", gcs_unkRefsBytes, gcs_unkRefsCount);
+        log_printf("; kept "N64d"B="N64d" objs, freed "N64d"B, incl. directly "N64d"B="N64d" objs", gcs_visitBytes, gcs_visitCount, startSize-endSize, gcs_freedBytes, gcs_freedCount);
+        log_printf("; unknown refs: "N64d"B="N64d" objs", gcs_unkRefsBytes, gcs_unkRefsCount);
       #else
-        fprintf(stderr, "; freed "N64d"B, left "N64d"B", startSize-endSize, endSize);
+        log_printf("; freed "N64d"B, left "N64d"B", startSize-endSize, endSize);
       #endif
-      fprintf(stderr, "; took %.3fms\n", (nsTime()-startTime)/1e6);
+      log_printf("; took %.3fms\n", (nsTime()-startTime)/1e6);
+      fflush(log_file);
     }
     gc_lastGCUsed[0] = endSize;
     gc_lastGCUsed[toplevel] = endSize;

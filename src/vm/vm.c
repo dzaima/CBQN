@@ -981,10 +981,10 @@ NOINLINE Scope* m_scope(Body* body, Scope* psc, u16 varAm, i32 initVarAm, B* ini
 
 B execBlockInplaceImpl(Body* body, Scope* sc, Block* block) { return execBodyInplaceI(block->bodies[0], sc, block); }
 
-GLOBAL bool jit_enabled = true;
+GLOBAL bool cfg_enableJit = true;
 #if JIT_START != -1
 B mnvmExecBodyInplace(Body* body, Scope* sc) {
-  if (!jit_enabled) return evalBC(body, sc, body->bl);
+  if (!cfg_enableJit) return evalBC(body, sc, body->bl);
   Nvm_res r = m_nvm(body);
   body->nvm = r.p;
   body->nvmRefs = r.refs;
@@ -1428,14 +1428,14 @@ native_print:
   }
 }
 
-GLOBAL bool omitStackEntries = true;
+GLOBAL bool cfg_fullStacktraces = false;
 NOINLINE void vm_pst(Env* s, Env* e) { // e not included
   assert(s<=e);
   i64 l = e-s;
   i64 i = l-1;
   while (i>=0) {
     Env* c = s+i;
-    if (l>30 && i==l-10 && omitStackEntries) {
+    if (l>30 && i==l-10 && !cfg_fullStacktraces) {
       fprintf(stderr, "("N64d" entries omitted)\n", l-20);
       i = 10;
     }
@@ -1510,16 +1510,17 @@ NOINLINE B gsc_exec_inplace(B src, B path, B args);
 
 static bool setProfHandler(i32 mode) {
   struct sigaction act = {};
+  act.sa_flags = SA_RESTART;
   switch (mode) {
-    default: printf("Unsupported profiling mode\n"); return false;
+    default: fprintf(stderr, "Unsupported profiling mode\n"); return false;
     case 0: act.sa_handler = SIG_DFL; break;
     case 1: act.sa_handler = profiler_bc_handler; break;
     #if PROFILE_IP
-    case 2: act.sa_sigaction = profiler_ip_handler; act.sa_flags=SA_SIGINFO;
+    case 2: act.sa_sigaction = profiler_ip_handler; act.sa_flags|=SA_SIGINFO;
     #endif
   }
-  if (sigaction(SIGALRM/*SIGPROF*/, &act, NULL)) {
-    printf("Failed to set profiling signal handler\n");
+  if (sigaction(SIGALRM /*SIGPROF*/, &act, NULL)) {
+    fprintf(stderr, "Failed to set profiling signal handler\n");
     return false;
   }
   return true;
@@ -1530,8 +1531,8 @@ static bool setProfTimer(i64 us) {
   timer.it_value.tv_usec=us;
   timer.it_interval.tv_sec=0;
   timer.it_interval.tv_usec=us;
-  if (setitimer(ITIMER_REAL/*ITIMER_PROF*/, &timer, NULL)) {
-    printf("Failed to start sampling timer\n");
+  if (setitimer(ITIMER_REAL /*ITIMER_PROF*/, &timer, NULL)) {
+    fprintf(stderr, "Failed to start sampling timer\n");
     return false;
   }
   return true;
@@ -1545,6 +1546,10 @@ GLOBAL i32 profiler_mode; // 0: freed; 1: bytecode; 2: instruction pointers
 GLOBAL bool profiler_active;
 
 bool profiler_alloc(void) {
+  if (profiler_mode!=0) {
+    fprintf(stderr, "Already profiling!\n");
+    return false;
+  }
   profiler_buf_s = profiler_buf_c = mmap_anon(NULL, PROFILE_BUFFER*sizeof(Profiler_ent), PROT_READ|PROT_WRITE, 0);
   if (profiler_buf_s == MAP_FAILED) {
     fprintf(stderr, "Failed to allocate profiler buffer\n");
@@ -1557,14 +1562,18 @@ bool profiler_alloc(void) {
 void profiler_free(void) {
   profiler_mode = 0;
   munmap(profiler_buf_s, PROFILE_BUFFER*sizeof(Profiler_ent));
+  profiler_buf_s = profiler_buf_c = profiler_buf_e = NULL;
 }
 
 bool profiler_start(i32 mode, i64 hz) { // 1: bytecode; 2: instruction pointers
+  if (hz==0) { fprintf(stderr, "Cannot profile with 0hz sampling frequency\n"); return false; }
+  if (hz>999999) { fprintf(stderr, "Cannot profile with >999999hz frequency\n"); return false; }
   assert(mode==1 || mode==2);
   i64 us = 999999/hz;
   profiler_mode = mode;
   profiler_active = true;
-  return setProfHandler(mode) && setProfTimer(us);
+  if (!(setProfHandler(mode) && setProfTimer(us))) { fprintf(stderr, "Failed to enable profiler\n"); return false; }
+  return true;
 }
 bool profiler_stop(void) {
   if (profiler_mode==0) return false;
@@ -1610,9 +1619,9 @@ usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[ENT_SP
       i32* cMap = i32arr_ptr(arr);
       if (cs >= IA(arr)) {
         if (!warnedCollision) {
-          printf("Warning: bytecode size mismatch between samples");
-          if (!q_N(path)) print_fmt(" for path %B", path);
-          printf("; results may be inaccurate.\n");
+          fprintf(stderr, "Warning: bytecode size mismatch between samples");
+          if (!q_N(path)) fprint_fmt(stderr, " for path %B", path);
+          fprintf(stderr, "; results may be inaccurate.\n");
           warnedCollision = true;
         }
       } else {
@@ -1629,15 +1638,15 @@ usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[ENT_SP
   return compCount;
 }
 
-void profiler_displayResults(void) {
+void profiler_displayResults(FILE* f) {
   ux count = (u64)(profiler_buf_c-profiler_buf_s);
-  printf("Got %zu samples\n", count);
+  fprintf(f, "Got %zu samples\n", count);
   if (profiler_mode==1) {
     B compList, mapList;
     u64 specialResults[ENT_SP_END] = {0};
     usz compCount = profiler_getResults(&compList, &mapList, specialResults, true);
     
-    if (specialResults[ENT_SP_GC] > 0) printf("GC: "N64d" samples\n", specialResults[ENT_SP_GC]);
+    if (specialResults[ENT_SP_GC] > 0) fprintf(f, "GC: "N64d" samples\n", specialResults[ENT_SP_GC]);
     
     SGetU(compList) SGetU(mapList)
     for (usz i = 0; i < compCount; i++) {
@@ -1649,12 +1658,12 @@ void profiler_displayResults(void) {
       usz ia = IA(mapObj);
       for (usz i = 0; i < ia; i++) sum+= m[i];
       
-      if (q_N(c->fullpath)) printf("(anonymous)");
-      else printsB(c->fullpath);
+      if (q_N(c->fullpath)) fprintf(f, "(anonymous)");
+      else fprintsB(f, c->fullpath);
       if (q_N(c->src)) {
-        printf(": "N64d" samples\n", sum);
+        fprintf(f, ": "N64d" samples\n", sum);
       } else {
-        printf(": "N64d" samples:\n", sum);
+        fprintf(f, ": "N64d" samples:\n", sum);
         B src = c->src;
         SGetU(src)
         usz sia = IA(src);
@@ -1665,10 +1674,10 @@ void profiler_displayResults(void) {
           curr+= m[i];
           if (c=='\n' || i==sia-1) {
             Arr* sl = arr_shVec(TI(src,slice)(incG(src), pi, i-pi+(c=='\n'?0:1)));
-            if (curr==0) printf("      │");
-            else printf("%6d│", curr);
-            printsB(taga(sl));
-            printf("\n");
+            if (curr==0) fprintf(f, "      │");
+            else fprintf(f, "%6d│", curr);
+            fprintsB(f, taga(sl));
+            fprintf(f, "\n");
             ptr_dec(sl);
             curr = 0;
             pi = i+1;
@@ -1683,15 +1692,12 @@ void profiler_displayResults(void) {
     f64* rp; B r = m_f64arrv(&rp, count);
     PLAINLOOP for (ux i = 0; i < count; i++) rp[i] = profiler_buf_s[i].ip;
     gsc_exec_inplace(utf8Decode0("profilerResult←•args⋄@"), bi_N, r);
-    printf("wrote result to profilerResult\n");
+    fprintf(f, "wrote result to profilerResult\n");
 #endif
   } else fatal("profiler_displayResults called with unexpected active mode");
 }
 #else
-bool profiler_alloc() {
-  printf("Profiler not supported\n");
-  return false;
-}
+bool profiler_alloc() { fprintf(stderr, "Profiler not supported\n"); return false; }
 bool profiler_start(i32 mode, i64 hz) { return false; }
 bool profiler_stop() { return false; }
 void profiler_free() { thrM("Profiler not supported"); }

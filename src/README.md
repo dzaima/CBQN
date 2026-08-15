@@ -477,8 +477,6 @@ Most toggles require a value of `1` to be enabled.
 #define MM 1             // memory manager; 0 - malloc (no GC); 1 - buddy; 2 - 2buddy
 #define HEAP_MAX U64_MAX // initial heap max size (overridable via -M)
 #define JIT_ENABLED (u)  // force-enable or force-disable JIT (x86_64-only)
-#define RANDSEED (u)     // seed for initializing •rand (if undefined, uses time)
-#define HASHSEED 0       // seed for hashing secret (0 uses time)
 #define JIT_START 2      // number of calls for when to start JITting (x86_64-only); default is 2, defined in vm.h
         // -1: never JIT (≈ JIT_ENABLED=0)
         //  0: JIT everything
@@ -509,7 +507,7 @@ Most toggles require a value of `1` to be enabled.
 #define TEST_UTILS  DEBUG // enable test utilities in •internal.Temp
 #define HEAP_VERIFY     0 // verify that reference counts are correct
 #define RT_VERIFY       0 // compare native and runtime versions of primitives
-#define USE_PERF        0 // write a /tmp/perf-<pid>.map for JITted things for linux perf
+#define RANDOMIZE_HEURISTICS 0 // make various heuristics return random values for expanded coverage
 #define GC_LOG_DETAILED 0 // slightly more stats on GC logging
 #define DEBUG_VM        0 // print evaluation of every bytecode
 #define USE_VALGRIND    0 // adjust memory manager & code for valgrind usage

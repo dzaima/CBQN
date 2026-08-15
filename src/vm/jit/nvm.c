@@ -13,3 +13,7 @@ u64 mm_heapUsed();
     return mm_heapUsed();
   }
 #endif
+
+#if !ENABLE_PERF_MAP
+  bool cfg_enablePerfMap(void) { return false; }
+#endif

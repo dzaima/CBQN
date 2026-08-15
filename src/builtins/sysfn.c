@@ -660,15 +660,11 @@ B makeRand_c1(B t, B x) {
   for (i32 i = 2; i < 5; i++) nfn_swapObj(sc->vars[i], incG(r));
   return r;
 }
+INIT_GLOBAL u64 cfg_randSeed = U64_MAX; // set by main.c
 STATIC_GLOBAL B randNS;
 B getRandNS(void) {
   if (randNS.u == 0) {
-    #ifndef RANDSEED
-      randNS = c1G(bi_makeRand, m_f64(nsTime()));
-    #else
-      randNS = c1G(bi_makeRand, m_f64(RANDSEED));
-    #endif
-    gc_add(randNS);
+    gc_add(randNS = c1G(bi_makeRand, m_f64(cfg_randSeed==U64_MAX? nsTime() : cfg_randSeed)));
   }
   return incG(randNS);
 }

@@ -88,15 +88,17 @@ NOINLINE u64 bqn_hashObj(B x, const u64 secret[4]) { // TODO manual separation o
 
 
 INIT_GLOBAL u64 wy_secret[4];
+INIT_GLOBAL u64 cfg_hashSeed = U64_MAX; // set by main.c
+GLOBAL u64 internalRandState = 0; // set by main.c and internal.c
+u64 internalRand() {
+  return wyrand(&internalRandState);
+}
 
 void hash_init(void) {
   u64 bad1=0xa0761d6478bd642full; // values wyhash64 is afraid of
   u64 bad2=0xe7037ed1a0b428dbull;
-  #if HASHSEED
-    u64 seed = HASHSEED;
-  #else
-    u64 seed = nsTime();
-  #endif
+  u64 seed = cfg_hashSeed;
+  if (seed == U64_MAX) seed = nsTime();
   again:
   make_secret(seed++, wy_secret);
   for (u64 i = 0; i < 4; i++) if(wy_secret[i]==bad1 || wy_secret[i]==bad2) goto again;

@@ -6,8 +6,12 @@
 #include "utils/mem.h"
 #include "vm/vm.h"
 
-#ifndef USE_PERF
-  #define USE_PERF 0 // enable writing symbols to /tmp/perf-<pid>.map
+#ifndef ENABLE_PERF_MAP // enable -Xjit-perf-map
+  #if __has_include(<unistd.h>) && (__linux__ || __unix__)
+    #define ENABLE_PERF_MAP 1
+  #else
+    #define ENABLE_PERF_MAP 0
+  #endif
 #endif
 #ifndef WRITE_ASM
   #define WRITE_ASM 0 // writes on every compilation, overriding the previous; view with:
@@ -60,7 +64,7 @@ static void* mmap_nvm(u64 sz) {
   }
 }
 
-extern GLOBAL bool mem_log_enabled;
+extern GLOBAL bool cfg_memLog;
 #define MMAP(SZ) mmap_nvm(SZ)
 #define  MUL 1
 #define ALLOC_MODE 1
@@ -259,14 +263,16 @@ INS B i_RETD(Scope* sc) {
 
 #include "x86_64.h"
 
-#if USE_PERF
-#include <unistd.h>
-#include "utils/file.h"
-FILE* perf_map;
-u32 perfid = 0;
+#if ENABLE_PERF_MAP
+  #include <unistd.h>
+  #include "utils/file.h"
+  static bool perfmap_on;
+  static FILE* perfmap_file;
+  static ux perfmap_id = 0;
+  bool cfg_enablePerfMap(void) { return perfmap_on = true; }
 #endif
 #if STORE_JIT_MAP
-FILE* jit_map;
+  FILE* jit_map;
 #endif
 
 static void* nvm_alloc(u64 sz) {
@@ -276,7 +282,10 @@ static void* nvm_alloc(u64 sz) {
   return src->a;
 }
 void nvm_free(u8* ptr) {
-  if (!USE_PERF) mmX_free((Value*)RFLD(ptr, I8Arr, a));
+  #if ENABLE_PERF_MAP
+    if (perfmap_file != NULL) return;
+  #endif
+  mmX_free((Value*)RFLD(ptr, I8Arr, a));
 }
 
 
@@ -567,18 +576,26 @@ void freeOpt(OptRes o) {
 #endif
 
 static void onJIT(Body* body, u8* binEx, u64 sz) {
-  #if USE_PERF
-    if (!perf_map) {
-      B s = m_c8vec_0("/tmp/perf-"); AFMT("%l.map", getpid());
-      perf_map = file_open(s, "open", "wab");
-      printsB(s); printf(": map\n");
-      dec(s);
+  #if ENABLE_PERF_MAP
+    if (perfmap_on) {
+      if (!perfmap_file) {
+        B s = make_fmt("/tmp/perf-%l.map", getpid());
+        perfmap_file = file_open(s, "open", "wab");
+        dec(s);
+      }
+      FILE* f = perfmap_file;
+      fprintf(f, N64x" "N64x" JIT %zu: BC@%u in ", (u64)binEx, sz, perfmap_id++, body->bl->map[0]);
+      B path = body->bl->comp->fullpath;
+      if (isArr(path)) {
+        usz ia = IA(path); SGetU(path)
+        for (ux i = 0; i < ia; i++) {
+          u32 c = o2cG(GetU(path, i));
+          fputc(c>=' ' && c<='~'? c : '?', f);
+        }
+      } else fprintf(f, "(unknown)");
+      fprintf(f, "\n");
+      fflush(f);
     }
-    u32 bcPos = body->bl->map[0];
-    // printf("JIT %d:\n", perfid);
-    // vm_printPos(body->comp, bcPos, -1);
-    fprintf(perf_map, N64x" "N64x" JIT %d: BC@%u\n", (u64)binEx, sz, perfid++, bcPos);
-    fflush(perf_map);
   #endif
   #if WRITE_ASM
     write_asm(binEx, sz);

@@ -150,6 +150,8 @@ static void storeu_u16(void* p, u16 v) { memcpy(p, &v, 2); }  static u16 loadu_u
   #define printf(...) replxx_print(global_replxx, __VA_ARGS__)
   #define fprintf(f, ...) replxx_print(global_replxx, __VA_ARGS__)
 #endif
+extern INIT_GLOBAL FILE* log_file;
+#define log_printf(...) fprintf(log_file, __VA_ARGS__)
 
 #if USZ_64
   typedef u64 usz;
@@ -315,6 +317,7 @@ typedef struct Arr {
   #define NOGC_CHECK(M)
   #define HEURISTIC_BOUNDED(X, TRUE_REQ, FALSE_REQ) (X)
 #endif
+u64 internalRand(void);
 #if RANDOMIZE_HEURISTICS
   bool heuristic_rand(bool heuristic, bool true_req, bool false_req);
   #undef HEURISTIC_BOUNDED

@@ -56,26 +56,24 @@ static bool isCmd(char* s, char** e, const char* cmd) {
   return t.r;
 }
 
-static NOINLINE i64 readInt(char** p) {
+static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or missing number
   char* c = *p;
-  i64 am = 0;
+  u64 am = 0;
   while (*c>='0' & *c<='9') {
+    if (am >= U64_MAX/10) { *p = NULL; return 0; }
     am = am*10 + (*c - '0');
     c++;
   }
-  *p = c;
+  *p = c==*p? NULL : c;
   return am;
 }
+
 
 
 #if USE_REPLXX
   #include <replxx.h>
   #include <errno.h>
   #include "utils/cstr.h"
-  GLOBAL Replxx* global_replxx;
-  INIT_GLOBAL bool replxx_read_only = false;
-  STATIC_GLOBAL char* global_histfile;
-  STATIC_GLOBAL u32 cfg_prefixChar = U'\\';
   
   static i8 const themes[3][12][3] = {
     // {-1,-1,-1} for default/unchanged color, {-1,-1,n} for grayscale 0…23, else RGB 0…5
@@ -117,9 +115,15 @@ static NOINLINE i64 readInt(char** p) {
   typedef i8 Theme[12][3];
   STATIC_GLOBAL ReplxxColor theme_replxx[12];
   
-  STATIC_GLOBAL i32 cfg_theme = 1;
-  STATIC_GLOBAL bool cfg_enableKeyboard = true;
-  STATIC_GLOBAL B cfg_path;
+  STATIC_GLOBAL u32 replcfg_prefixChar = U'\\';
+  STATIC_GLOBAL i32 replcfg_theme = 1;
+  STATIC_GLOBAL bool replcfg_enableKeyboard = true;
+  STATIC_GLOBAL B replcfg_path;
+  
+  
+  INIT_GLOBAL u8 repl_historyMode = 2; // 0: don't load or save; 1: don't save; 2: load and save
+  STATIC_GLOBAL char* repl_histfile = NULL;
+  GLOBAL Replxx* global_replxx;
   
   static char* const command_completion[] = {
     ")ex ",
@@ -144,16 +148,16 @@ static NOINLINE i64 readInt(char** p) {
   
   NOINLINE void cfg_changed(void) {
     B s = emptyCVec();
-    AFMT("theme=%i\nkeyboard=%i\nprefix=%i\n", cfg_theme, cfg_enableKeyboard, cfg_prefixChar);
+    AFMT("theme=%i\nkeyboard=%i\nprefix=%i\n", replcfg_theme, replcfg_enableKeyboard, replcfg_prefixChar);
     if (CATCH) { freeThrown(); goto end; }
-    path_wChars(incG(cfg_path), s);
+    path_wChars(incG(replcfg_path), s);
     popCatch();
     end: decG(s);
   }
   
   NOINLINE void cfg_set_theme(i32 num, bool writeCfg) {
     if (num>=3) return;
-    cfg_theme = num;
+    replcfg_theme = num;
     i8 const (*data)[3] = themes[num];
     for (int i = 0; i < 12; i++) {
       i8 v0 = data[i][0];
@@ -164,7 +168,7 @@ static NOINLINE i64 readInt(char** p) {
     if (writeCfg) cfg_changed();
   }
   void cfg_set_keyboard(bool enable, bool writeCfg) {
-    cfg_enableKeyboard = enable;
+    replcfg_enableKeyboard = enable;
     if (writeCfg) cfg_changed();
   }
   
@@ -450,7 +454,7 @@ static NOINLINE i64 readInt(char** p) {
   
   STATIC_GLOBAL B b_key, b_val;
   void modified_replxx(char** s_res, int* p_res, void* userData) {
-    if (!cfg_enableKeyboard) return;
+    if (!replcfg_enableKeyboard) return;
     CATCH_OOM(return)
     TmpState t = getState();
     B s = t.s;
@@ -462,7 +466,7 @@ static NOINLINE i64 readInt(char** p) {
     if (inBackslash) {
       if (!slice_equal(b_pv, 0,    s, 0,   pos-1)) goto stop;
       if (!slice_equal(b_pv, b_pp, s, pos, IA(s)-pos)) goto stop;
-      if (o2cG(IGet(s,pos-1)) == cfg_prefixChar) goto stop; // always make sure that the prefix char typed in twice types in the prefix char
+      if (o2cG(IGet(s,pos-1)) == replcfg_prefixChar) goto stop; // always make sure that the prefix char typed in twice types in the prefix char
       usz mapPos = o2i(C1(pick, C2(indexOf, incG(b_key), IGet(s,pos-1))));
       if (mapPos==IA(b_key)) goto stop;
       
@@ -471,7 +475,7 @@ static NOINLINE i64 readInt(char** p) {
       *p_res = t2.pos;
       goto stop;
     } else {
-      if (o2cG(IGetU(s,b_pp))==cfg_prefixChar) {
+      if (o2cG(IGetU(s,b_pp))==replcfg_prefixChar) {
         inBackslash = true;
         *s_res = malloc_B(incG(b_pv)); // will be free()'d by replxx
         *p_res = b_pp;
@@ -488,15 +492,6 @@ static NOINLINE i64 readInt(char** p) {
     end_noPrev:
     decG(s);
     popCatch();
-  }
-  
-  
-  void before_exit(void) {
-    if (global_replxx!=NULL && global_histfile!=NULL) {
-      if (!replxx_read_only) replxx_history_save(global_replxx, global_histfile);
-      replxx_end(global_replxx);
-      global_replxx = NULL;
-    }
   }
   
   static NOINLINE B path_rel_dec(B base, B rel) {
@@ -516,27 +511,27 @@ static NOINLINE i64 readInt(char** p) {
   
   static void cbqn_init_replxx() {
     B cfg = get_config_path(true, "cbqn_repl.txt");
-    cfg_path = gc_add(cfg);
+    replcfg_path = gc_add(cfg);
     
-    if (path_type(incG(cfg_path))==0) {
+    if (path_type(incG(replcfg_path))==0) {
       cfg_set_theme(1, false);
       cfg_set_keyboard(true, false);
     } else {
-      B lns = path_lines(incG(cfg_path));
+      B lns = path_lines(incG(replcfg_path));
       SGetU(lns)
       for (usz i = 0; i < IA(lns); i++) {
         B ln = GetU(lns, i);
         char* s = toCStr(ln); char* e;
-        if      (isCmd(s, &e, "theme="   )) cfg_theme          = e[0]-'0';
-        else if (isCmd(s, &e, "keyboard=")) cfg_enableKeyboard = e[0]-'0';
+        if      (isCmd(s, &e, "theme="   )) replcfg_theme          = e[0]-'0';
+        else if (isCmd(s, &e, "keyboard=")) replcfg_enableKeyboard = e[0]-'0';
         #if !NO_RYU
-        else if (isCmd(s, &e, "prefix="  )) cfg_prefixChar     = readInt(&e);
+        else if (isCmd(s, &e, "prefix="  )) replcfg_prefixChar     = readu64part(&e);
         #endif
         freeCStr(s);
       }
       decG(lns);
-      cfg_set_theme(cfg_theme, false);
-      cfg_set_keyboard(cfg_enableKeyboard, false);
+      cfg_set_theme(replcfg_theme, false);
+      cfg_set_keyboard(replcfg_enableKeyboard, false);
     }
     
     b_key = gc_add(m_c32vec_0(U"\"`1234567890-=~!@#$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'ASDFGHJKL:|zxcvbnm,./ZXCVBNM<>? "));
@@ -564,8 +559,6 @@ static NOINLINE i64 readInt(char** p) {
     replxx_disable_bracketed_paste(global_replxx);
     return r;
   }
-#else
-  void before_exit(void) { }
 #endif
 
 B m_state(B path, B name, B args);
@@ -582,7 +575,7 @@ bool profiler_alloc(void);
 bool profiler_start(i32 mode, i64 hz);
 bool profiler_stop(void);
 void profiler_free(void);
-void profiler_displayResults(void);
+void profiler_displayResults(FILE* f);
 void clearImportCache(void);
 
 #if NATIVE_COMPILER && !ONLY_NATIVE_COMP
@@ -614,8 +607,9 @@ static NOINLINE f64 timeBlockN(Block* block, i64 rep) {
 bool ryu_s2d_n(u8* buffer, int len, f64* result);
 #endif
 
+#define DEFAULT_PROFILE_SAMPLERATE 5000
 void heap_printInfoStr(char* str);
-extern GLOBAL bool gc_log_enabled, mem_log_enabled;
+extern GLOBAL bool cfg_gcLog, cfg_memLog;
 void cbqn_runLine0(char* ln, i64 read) {
   if (ln[0]==0 || read==0) return;
   
@@ -653,9 +647,8 @@ void cbqn_runLine0(char* ln, i64 read) {
       mode = 4;
       goto profile_init; profile_init:;
       char* cpos = cmdE;
-      profile = '@'==*(cpos-1)? readInt(&cpos) : 5000;
-      if (profile==0) { printf("Cannot profile with 0hz sampling frequency\n"); return; }
-      if (profile>999999) { printf("Cannot profile with >999999hz frequency\n"); return; }
+      profile = '@'==*(cpos-1)? readu64part(&cpos) : DEFAULT_PROFILE_SAMPLERATE;
+      if (cpos == NULL) { printf("Invalid profile sample rate value\n"); return; }
       code = utf8Decode0(cpos);
       output = 0;
 #if PROFILE_IP
@@ -683,8 +676,8 @@ void cbqn_runLine0(char* ln, i64 read) {
       output = 0;
     } else if (isCmd(cmdS, &cmdE, "mem ")) {
       if (strcmp(cmdE,"log")==0) {
-        mem_log_enabled^= true;
-        printf("Allocation logging %s\n", mem_log_enabled? "enabled" : "disabled");
+        cfg_memLog^= true;
+        printf("Allocation logging %s\n", cfg_memLog? "enabled" : "disabled");
       } else {
         heap_printInfoStr(cmdE);
       }
@@ -724,8 +717,8 @@ void cbqn_runLine0(char* ln, i64 read) {
     } else if (isCmd(cmdS, &cmdE, "kb ")) {
       if (*cmdE == 0) {
         kb_toggle:
-        cfg_set_keyboard(!cfg_enableKeyboard, true);
-        printf("Backslash input %s\n", cfg_enableKeyboard? "enabled" : "disabled");
+        cfg_set_keyboard(!replcfg_enableKeyboard, true);
+        printf("Backslash input %s\n", replcfg_enableKeyboard? "enabled" : "disabled");
       } else {
         B a = utf8Decode0(cmdE);
         if (IA(a)==0) goto kb_toggle;
@@ -734,7 +727,7 @@ void cbqn_runLine0(char* ln, i64 read) {
         } else {
           u32 c = o2cG(IGetU(a,0));
           printf("Backslash input prefix character set to U+%04x\n", c);
-          cfg_prefixChar = c;
+          replcfg_prefixChar = c;
           cfg_changed();
         }
         decG(a);
@@ -794,8 +787,8 @@ void cbqn_runLine0(char* ln, i64 read) {
             printf("GC disabled\n");
           }
         } else if (strcmp(cmdE,"log")==0) {
-          gc_log_enabled^= true;
-          printf("GC logging %s\n", gc_log_enabled? "enabled" : "disabled");
+          cfg_gcLog^= true;
+          printf("GC logging %s\n", cfg_gcLog? "enabled" : "disabled");
         } else printf("Unknown GC command\n");
       #else
         printf("Macro ENABLE_GC was false at compile-time, cannot GC\n");
@@ -865,7 +858,7 @@ void cbqn_runLine0(char* ln, i64 read) {
     if (profiler_alloc() && profiler_start(mode==5? 2 : 1, profile)) {
       res = execBlockInplace(block, gsc);
       profiler_stop();
-      profiler_displayResults();
+      profiler_displayResults(stderr);
       profiler_free();
     }
     popCatch();
@@ -937,14 +930,134 @@ void cbqn_evalSrc(char* src, i64 len) {
   }
 #endif
 
+INIT_GLOBAL FILE* log_file;
+STATIC_GLOBAL bool cfg_profileGlobal;
+
 #if EMCC
 int main() {
   repl_init();
 }
 #elif !CBQN_LIB
+
 #if HAS_VERSION
-extern char* const cbqn_versionInfo;
+  extern char* const cbqn_versionInfo;
 #endif
+extern GLOBAL bool cfg_fullStacktraces;
+extern INIT_GLOBAL u64 cfg_randSeed, cfg_hashSeed;
+extern GLOBAL u64 internalRandState;
+
+INIT_GLOBAL char* cbqn_self = "CBQN";
+#include <stdarg.h>
+__attribute__((format(printf, 1, 2)))
+static NOINLINE NORETURN void arg_bad(const char* format, ...) {
+  va_list a;
+  va_start(a, format);
+  fprintf(stderr, "%s: ", cbqn_self);
+  vfprintf(stderr, format, a);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+static NOINLINE NORETURN void arg_badVal(const char* key) {
+  arg_bad("Invalid value for -X%s", key);
+}
+static NOINLINE bool cmpkey(char* mem, ux len, const char* exp, u8 mode) { // mode: 0:no value; 1: needs value; 2: optional
+  bool same = len==strlen(exp) && !memcmp(mem, exp, len);
+  if (mode!=2 && same && (mem[len]!=0) != (mode==1)) arg_bad("Flag -X%s must%s be given a value", exp, mode==0? " not" : "");
+  return same;
+}
+static NOINLINE u64 arg_u64(const char* key, const char* val0) {
+  char* val = (char*) val0;
+  u64 r = readu64part(&val);
+  if (!val || *val) arg_badVal(key);
+  return r;
+}
+static NOINLINE u64 arg_getSeed(const char* key, const char* val) {
+  u64 r;
+  if (val[0] == 'u' && !val[1]) {
+    u64 tmp = internalRandState;
+    internalRandState = nsTime();
+    r = internalRand() & 0xffffffffffff;
+    log_printf("Using: -X%s=" N64u "\n", key, r);
+    internalRandState = tmp;
+  } else {
+    r = arg_u64(key, val);
+  }
+  return r;
+}
+static void run_x_arg(char* key, ux keyn, const char* val) {
+  if (cmpkey(key, keyn, "help", 0)) {
+    printf(
+      "Note that behavior or availability of theese options may change between CBQN versions, or differ across OSes or architectures.\n"
+      "Note that arguments are parsed and evaluated in order; certain options may be non-functional if executed after any BQN code is executed.\n"
+      "Available -X options:\n"
+      "-Xlog-file=<path>    write internal logging to a file instead of stderr\n"
+      "-Xrand-seed=<n>      make •rand be `•MakeRand n`\n"
+      "-Xhash-seed=<n>      seed for hashing\n"
+      "-Xinternal-seed=<n>  seed for internal randomization (RANDOMIZE_HEURISTICS)\n"
+      "  (note: seed value can be set to `u`, which will generate and print a random value)\n"
+      "-Xfull-stacktraces   don't truncate display of deep stacktraces\n"
+      "-Xprofile [=freq]    profile execution of everything; similar to `)profile`\n"
+      "\n"
+      "-Xrepl-history-path=<path>\n"
+      "                     use the specified file path for loading/saving REPL history\n"
+      "-Xrepl-history=<read-only|none>\n"
+      "                     disable writing, or also reading, of REPL history\n"
+      "\n"
+      "-Xjit-disable        disable JIT compilation; will be slower than if CBQN was compiled with JIT disabled!\n"
+      "-Xjit-perf-map       write out /tmp/perf-<pid>.map of JIT mappings for linux perf; makes JIT code never get freed\n"
+      "-Xmem-log            log on new requested heap memory blocks; same as `)mem log`\n"
+      "-Xgc-log             log on GC; same as `)gc log`\n"
+      "-Xgc-disable         disable mark&sweep GC; same as `)gc disable`\n"
+      "-Xrepl-init          initialize CBQN & the REPL, but don't execute anything yet\n"
+    );
+    exit(0);
+  } else if (cmpkey(key, keyn, "jit-perf-map", 0)) {
+    bool cfg_enablePerfMap(void);
+    if (!cfg_enablePerfMap()) arg_bad("-Xjit-perf-map not available in this CBQN build");
+  } else if (cmpkey(key, keyn, "internal-seed", 1)) {
+    internalRandState = arg_getSeed("internal-seed", val);
+  } else if (cmpkey(key, keyn, "profile", 2)) {
+    u64 rate = val? arg_u64("profile", val) : DEFAULT_PROFILE_SAMPLERATE;
+    repl_init();
+    if (!profiler_alloc() || !profiler_start(1, rate)) exit(1);
+    cfg_profileGlobal = true;
+  } else if (cmpkey(key, keyn, "rand-seed", 1)) {
+    cfg_randSeed = arg_getSeed("rand-seed", val);
+  } else if (cmpkey(key, keyn, "hash-seed", 1)) {
+    cfg_hashSeed = arg_getSeed("hash-seed", val);
+  } else if (cmpkey(key, keyn, "jit-disable", 0)) {
+    cfg_enableJit = false;
+  } else if (cmpkey(key, keyn, "mem-log", 0)) {
+    cfg_memLog = true;
+  } else if (cmpkey(key, keyn, "log-file", 1)) {
+    log_file = fopen(val, "wb");
+    if (log_file == NULL) arg_bad("Could not open -Xlog-file path for writing");
+  } else if (cmpkey(key, keyn, "repl-init", 0)) {
+    repl_init();
+#if USE_REPLXX
+  } else if (cmpkey(key, keyn, "repl-history", 1)) {
+    if (!strcmp(val, "read-only")) repl_historyMode = 1;
+    else if (!strcmp(val, "none")) repl_historyMode = 0;
+    else arg_badVal("repl-history");
+  } else if (cmpkey(key, keyn, "repl-history-path", 1)) {
+    repl_histfile = strdup(val);
+#endif
+#if ENABLE_GC
+  } else if (cmpkey(key, keyn, "gc-disable", 0)) {
+    gc_disable();
+  } else if (cmpkey(key, keyn, "full-stacktraces", 0)) {
+    cfg_fullStacktraces = true;
+  } else if (cmpkey(key, keyn, "gc-log", 0)) {
+    cfg_gcLog = true;
+#else
+  } else if (cmpkey(key, keyn, "gc-disable", 0) || cmpkey(key, keyn, "gc-log", 0)) {
+    arg_bad("GC not supported in this CBQN build");
+#endif
+  } else {
+    arg_bad("Unknown -X option: -X%s", key);
+  }
+}
+
 int main(int argc, char* argv[]) {
   #if USE_REPLXX_IO
     cbqn_init();
@@ -953,15 +1066,18 @@ int main(int argc, char* argv[]) {
   
   bool startREPL = argc==1;
   bool silentREPL = false;
-  bool execStdin = false;
+  cbqn_self = argv[0];
+  log_file = stderr;
+  char* mainFileToExecute;
   if (!startREPL) {
     i32 i = 1;
     while (i!=argc) {
       char* carg = argv[i];
       if (carg[0]!='-') break;
-      if (carg[1]==0) { execStdin=true; i++; break; }
       i++;
+      if (!carg[1]) { mainFileToExecute = NULL; goto execFile; }
       if (carg[1]=='-') {
+        if (!carg[2]) goto endOfArgs;
         if (!strcmp(carg, "--help")) {
           print_help:
           printf(
@@ -974,11 +1090,10 @@ int main(int argc, char* argv[]) {
           "  -M num     set maximum heap size to num megabytes\n"
           "  -r         start the REPL after executing all arguments\n"
           "  -s         start a silent REPL\n"
+          "  -X         various internal/debugging options; see -Xhelp\n"
           "  --help     show this help text\n"
-          #if HAS_VERSION
           "  --version  display CBQN version information\n"
-          #endif
-          , argv[0]);
+          , cbqn_self);
           exit(0);
         } else if (!strcmp(carg, "--version")) {
           #if HAS_VERSION
@@ -987,35 +1102,25 @@ int main(int argc, char* argv[]) {
             printf("CBQN, unknown version\n");
           #endif
           exit(0);
-        #if USE_REPLXX
-        } else if (!strcmp(carg, "--replxx-read-only")) {
-          replxx_read_only = true;
-          continue;
-        } else if (!strcmp(carg, "--disable-jit")) {
-          jit_enabled = false;
-          continue;
-        #endif
         } else {
-          printf("%s: Unknown option: %s\n", argv[0], carg);
-          exit(1);
+          arg_bad("Unknown option: %s", carg);
         }
       } else {
         carg++;
         char c;
         while ((c = *carg++)) {
-          switch(c) { default: fprintf(stderr, "%s: Unknown option: -%c\n", argv[0], c); exit(1);
-            #define REQARG(X) if(*carg) { fprintf(stderr, "%s: -%s must end the option\n", argv[0], #X); exit(1); } if (i==argc) { fprintf(stderr, "%s: -%s requires an argument\n", argv[0], #X); exit(1); }
-            case 'f': repl_init(); REQARG(f); goto execFile;
-            case 'e': { repl_init(); REQARG(e);
+          switch(c) { default: arg_bad("Unknown option: -%c", c);
+            #define REQARG(X) ({ if(*carg) arg_bad("Value of -%s must be in a separate argument", #X); if (i==argc) arg_bad("-%s requires an argument", #X); argv[i++]; })
+            case 'f': repl_init(); mainFileToExecute = REQARG(f); goto execFile;
+            case 'e': { repl_init(); char* val = REQARG(e);
               RUN_START;
-              dec(gsc_exec_inplace(utf8Decode0(argv[i++]), "(-e)", emptySVec()));
+              dec(gsc_exec_inplace(utf8Decode0(val), "(-e)", emptySVec()));
               RUN_END;
               break;
             }
-            case 'L': { repl_init(); break; } // just initialize. mostly for perf testing
-            case 'p': { repl_init(); REQARG(p);
+            case 'p': { repl_init(); char* val = REQARG(p);
               RUN_START;
-              B r = gsc_exec_inplace(utf8Decode0(argv[i++]), "(-p)", emptySVec());
+              B r = gsc_exec_inplace(utf8Decode0(val), "(-p)", emptySVec());
               if (FORMATTER) { r = bqn_fmt(r); printsB(r); }
               else { printI(r); }
               dec(r);
@@ -1023,22 +1128,22 @@ int main(int argc, char* argv[]) {
               printf("\n");
               break;
             }
-            case 'o': { repl_init(); REQARG(o);
+            case 'o': { repl_init(); char* val = REQARG(o);
               RUN_START;
-              B r = gsc_exec_inplace(utf8Decode0(argv[i++]), "(-o)", emptySVec());
+              B r = gsc_exec_inplace(utf8Decode0(val), "(-o)", emptySVec());
               if (isAtm(r) || RNK(r)!=1) thrM("(-o): Value to print must be a string");
               printsB(r); decG(r);
               printf("\n");
               RUN_END;
               break;
             }
-            case 'M': { REQARG(M);
-              char* str = argv[i++];
+            case 'M': {
+              char* str = REQARG(M);
               u64 am = 0;
               while (*str) {
                 char c = *str++;
-                if (c<'0' | c>'9') { printf("%s: -M: Argument not a number\n", argv[0]); exit(1); }
-                if (am>1ULL<<48) { printf("%s: -M: Too large\n", argv[0]); exit(1); }
+                if (c<'0' | c>'9') arg_bad("-M: Argument not a number");
+                if (am>1ULL<<48) arg_bad("-M: Too large");
                 am = am*10 + c-48;
               }
               mm_heapMax = am*1024*1024;
@@ -1047,33 +1152,35 @@ int main(int argc, char* argv[]) {
             case 'h': goto print_help;
             case 'r': { startREPL=true;                  break; }
             case 's': { startREPL=true; silentREPL=true; break; }
+            case 'X': goto arg_x;
           }
         }
       }
+      if (0) { arg_x:;
+        char* val = strchr(carg, '=');
+        ux keyn = val==NULL? strlen(carg) : val-carg;
+        run_x_arg(carg, keyn, val? val+1 : NULL);
+      }
     }
-    execFile:
-    if (i!=argc || execStdin) {
+    endOfArgs:;
+    
+    if (i<argc) {
+      mainFileToExecute = argv[i++];
+      execFile:;
       repl_init();
-      B src;
-      if (!execStdin) src = utf8Decode0(argv[i++]);
+      B src = mainFileToExecute? utf8Decode0(mainFileToExecute) : utf8DecodeA(stream_bytes(stdin));
       B args;
       if (i==argc) {
         args = emptySVec();
       } else {
         M_HARR(ap, argc-i)
         for (usz j = 0; j < argc-i; j++) HARR_ADD(ap, j, utf8Decode0(argv[i+j]));
-        args = HARR_FV(ap);
+        args = withFill(HARR_FV(ap), emptyCVec());
       }
       
       RUN_START; // top-level in main(), don't need to catch
       
-      B execRes;
-      if (execStdin) {
-        execRes = gsc_exec_inplace(utf8DecodeA(stream_bytes(stdin)), "(stdin)", args);
-      } else {
-        execRes = bqn_execFile(src, args);
-      }
-      dec(execRes);
+      dec(mainFileToExecute? bqn_execFile(src, args) : gsc_exec_inplace(src, "(stdin)", args));
       
       #if HEAP_VERIFY
         cbqn_heapVerify();
@@ -1089,12 +1196,15 @@ int main(int argc, char* argv[]) {
         cbqn_init_replxx();
       #endif
       
-      B f = get_config_path(false, ".cbqn_repl_history");
-      char* histfile = toCStr(f);
-      dec(f);
-      gc_add(tag(TOBJ(histfile), OBJ_TAG));
-      replxx_history_load(global_replxx, histfile);
-      global_histfile = histfile;
+      if (repl_historyMode != 0) {
+        if (repl_histfile == NULL) {
+          B f = get_config_path(false, ".cbqn_repl_history");
+          repl_histfile = toCStr(f);
+          dec(f);
+          gc_add(tag(TOBJ(repl_histfile), OBJ_TAG));
+        }
+        replxx_history_load(global_replxx, repl_histfile);
+      }
       
       replxx_set_ignore_case(global_replxx, true);
       replxx_set_highlighter_callback(global_replxx, highlighter_replxx, NULL);
@@ -1114,7 +1224,7 @@ int main(int argc, char* argv[]) {
         }
         replxx_history_add(global_replxx, ln);
         cbqn_runLine((char*)ln, strlen(ln));
-        if (!replxx_read_only) replxx_history_save(global_replxx, histfile);
+        if (repl_historyMode == 2) replxx_history_save(global_replxx, repl_histfile);
       }
     }
     else
@@ -1142,3 +1252,18 @@ int main(int argc, char* argv[]) {
   bqn_exit(0);
 }
 #endif
+
+void before_exit(void) {
+  if (cfg_profileGlobal) {
+    profiler_stop();
+    profiler_displayResults(log_file);
+    profiler_free();
+  }
+  #if USE_REPLXX
+    if (global_replxx!=NULL && repl_histfile!=NULL) {
+      if (repl_historyMode == 2) replxx_history_save(global_replxx, repl_histfile);
+      replxx_end(global_replxx);
+      global_replxx = NULL;
+    }
+  #endif
+}

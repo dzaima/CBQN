@@ -56,7 +56,7 @@ static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
     thrOOM();
   }
   
-  if (mem_log_enabled) fprintf(stderr, "requesting "N64u" more " STR1(BN()) " heap (during allocation of "N64u"B t_%s)", sz, (u64)BSZ(bucket), type_repr(type));
+  if (cfg_memLog) fprintf(stderr, "requesting "N64u" more " STR1(BN()) " heap (during allocation of "N64u"B t_%s)", sz, (u64)BSZ(bucket), type_repr(type));
   u64 reqsz = sz;
   #if ALLOC_MODE==0
     reqsz = prepAllocSize(reqsz);
@@ -64,10 +64,10 @@ static NOINLINE void* BN(allocateMore)(ux bucket, u8 type, ux from, ux to) {
   if (reqsz != (size_t) reqsz) thrOOM(); // otherwise it gets silently truncated in 32-bit builds
   #if !HAS_MMAP
     u8* mem = calloc(reqsz, 1);
-    if (mem_log_enabled) fprintf(stderr, "\n");
+    if (cfg_memLog) fprintf(stderr, "\n");
   #else
     u8* mem = MMAP(reqsz);
-    if (mem_log_enabled) fprintf(stderr, ": %s\n", mem==MAP_FAILED? "failed" : "success");
+    if (cfg_memLog) fprintf(stderr, ": %s\n", mem==MAP_FAILED? "failed" : "success");
     if (mem==MAP_FAILED) thrOOM();
   #endif
   if (PTR_TO_U64(mem)+sz > (1ULL<<48)) fatal("mmap returned address range above 2⋆48");
