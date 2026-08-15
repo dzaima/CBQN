@@ -380,7 +380,7 @@ B squeeze_chrOut(B x); // consumes; squeeze_chrTry but without re_out
 // comparisons
 
 SHOULD_INLINE i32 floatCompare(f64 w, f64 x) { // w •Cmp x
-  if (RARE(w!=w || x!=x)) return (w!=w) - (x!=x);
+  if (!LIKELY(w==w && x==x)) return (x==x) - (w==w);
   #if __x86_64__
     return (w>x) - !(w>=x); // slightly better codegen from being able to reuse the same compare instruction
   #else
