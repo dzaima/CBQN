@@ -2,7 +2,6 @@
 #include "utils/mut.h"
 
 static NOINLINE void copy_B_generic(B* rp, Arr* xa, ux xs, ux l) {
-  SLOW1("copying generic array segment", x);
   AS2B get = TIv(xa, get);
   for (ux i = 0; i < l; i++) rp[i] = get(xa, xs+i);
 }

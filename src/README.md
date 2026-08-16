@@ -509,7 +509,6 @@ Most toggles require a value of `1` to be enabled.
 #define TEST_UTILS  DEBUG // enable test utilities in •internal.Temp
 #define HEAP_VERIFY     0 // verify that reference counts are correct
 #define RT_VERIFY       0 // compare native and runtime versions of primitives
-#define WARN_SLOW       0 // log on various slow operations
 #define USE_PERF        0 // write a /tmp/perf-<pid>.map for JITted things for linux perf
 #define GC_LOG_DETAILED 0 // slightly more stats on GC logging
 #define DEBUG_VM        0 // print evaluation of every bytecode
@@ -531,4 +530,5 @@ Most toggles require a value of `1` to be enabled.
 #define VM_POS 1      // whether to store detailed execution position information for stacktraces
 #define OBJ_COUNTER 0 // store a unique allocation number with each object; superseded by the existence of https://rr-project.org/
 #define OBJ_TRACK (u) // object ID to track
+#define WARN_SLOW   0 // log on various slow operations
 ```

@@ -6,7 +6,7 @@
 #warning "USE_VALGRIND=1 and MM=0 don't work well together; CBQN requires the ability to read past the end of allocations, but malloc doesn't provide that."
 #endif
 
-void gc_add(B x) { }
+B gc_add(B x) { return x; }
 void gc_addFn(vfn f) { }
 void gc_add_ref(B* x) { }
 bool gc_maybeGC(bool toplevel) { return false; }
