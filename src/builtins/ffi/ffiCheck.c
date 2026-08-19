@@ -1,13 +1,17 @@
 #include "utils/mem.h"
 #include "ffiCore.c"
-#if !HAS_MMAP
+#ifdef _WIN32
+  #include <windows.h>
+#endif
+#if !HAS_MMAP && !defined(_WIN32)
   STATIC_GLOBAL bool no_mmap_msg;
 #endif
 GLOBAL u16 ffi_extra_checks;
 
+static void handler_core(char* raw, uintptr_t mem);
+
 #if __has_include(<signal.h>) && !defined(_WIN32)
   #include <signal.h>
-  static void handler_core(char* raw, uintptr_t mem);
   STATIC_GLOBAL volatile bool handler_active;
   static void handler_action(int a, siginfo_t* info, void* b) {
     if (handler_active) __builtin_trap();
@@ -29,6 +33,29 @@ GLOBAL u16 ffi_extra_checks;
     return sigaction(SIGSEGV, &act, NULL) == 0
         && sigaction(SIGBUS,  &act, NULL) == 0;
   }
+#elif defined(_WIN32)
+  STATIC_GLOBAL volatile bool handler_active;
+  static LONG WINAPI handler_action(EXCEPTION_POINTERS* info) {
+    if (info->ExceptionRecord->ExceptionCode != EXCEPTION_ACCESS_VIOLATION) {
+      return EXCEPTION_CONTINUE_SEARCH;
+    }
+    if (handler_active) __builtin_trap();
+    handler_active = true;
+    handler_core("ACCESS_VIOLATION", (uintptr_t)info->ExceptionRecord->ExceptionInformation[1]);
+    abort();
+  }
+  STATIC_GLOBAL PVOID hHandler;
+  static bool handler_set(bool enable) {
+    if (enable == (hHandler != NULL)) return true;
+    if (enable) {
+      hHandler = AddVectoredExceptionHandler(1, handler_action);
+      return hHandler != NULL;
+    } else {
+      if (RemoveVectoredExceptionHandler(hHandler) == 0) return false;
+      hHandler = NULL;
+      return true;
+    }
+  }
 #else
   static bool handler_set(bool enable) { return false; }
 #endif
@@ -38,6 +65,8 @@ bool set_ffi_check(u8 mode, u8 alignment) {
   MAYBE_UNUSED bool handler_ok = handler_set(ffi_extra_checks != 0);
   #if HAS_MMAP
     if (!handler_ok) fprintf(stderr, "Note: SIGSEGV/SIGBUS handler not available; FFI debugging won't give pretty messages\n");
+  #elif defined(_WIN32)
+    if (!handler_ok) fprintf(stderr, "Note: exception handler not available; FFI debugging won't give pretty messages\n");
   #else
     if (!no_mmap_msg) fprintf(stderr, "Note: mmap not available in this CBQN build; FFI debugging functionality is heavily reduced\n");
     no_mmap_msg = true;
@@ -80,6 +109,9 @@ void tempBlock_free(Value* v) { TempBlock* b = (TempBlock*)v;
     b->inner->freed = true;
     #if HAS_MMAP
       mmap_anon(b->inner->readable, b->inner->szx, PROT_NONE, MAP_FIXED);
+    #elif defined(_WIN32)
+      DWORD oldProtect;
+      VirtualProtect(b->inner->readable, b->inner->szx, PAGE_NOACCESS, &oldProtect);
     #endif
   }
 }
@@ -94,7 +126,7 @@ void checked_forRanges(AllocRangeConsumer f, void* data) {
       f(i->readable, i->szx, checked_innerBuffer, i, data);
       i = i->next;
     }
-    #if HAS_MMAP
+    #if HAS_MMAP || defined(_WIN32)
     f(o->start, o->capacity, checked_outerBuffer, o, data);
     #endif
     o = o->next;
@@ -132,6 +164,9 @@ static B checked_allocBlock(void** mem, ux size, bool writable, B ptrObjRef) {
     #if HAS_MMAP
       void* outerMem = mmap_anon(NULL, cap, PROT_NONE, 0);
       if (outerMem == MAP_FAILED) thrM("FFI: Failed to run mmap for checked memory");
+    #elif defined(_WIN32)
+      void* outerMem = VirtualAlloc(NULL, cap, MEM_RESERVE, PAGE_NOACCESS);
+      if (outerMem == NULL) thrM("FFI: Failed to reserve checked memory");
     #else
       void* outerMem = NULL;
     #endif
@@ -139,7 +174,7 @@ static B checked_allocBlock(void** mem, ux size, bool writable, B ptrObjRef) {
     *checked_lastOuter = (CheckedOuterBlock) { .start = outerMem, .capacity=cap, .offset=0, .last=NULL, .next=prev };
   }
   
-  #if HAS_MMAP
+  #if HAS_MMAP || defined(_WIN32)
     u8* block = (u8*) checked_lastOuter->start + checked_lastOuter->offset;
   #else
     u8* block = malloc(needed);
@@ -151,14 +186,20 @@ static B checked_allocBlock(void** mem, ux size, bool writable, B ptrObjRef) {
   bool alignStart = align0==2 || (align0==3 && (internalRand()&1));
   void* tgt = alignStart? readable : readable + szx - size;
   *mem = tgt;
-  
-  #if HAS_MMAP
-    if (size) mprotect(readable, size, PROT_READ|PROT_WRITE);
-  #endif
-  if (size) memcpy(tgt, src, size);
-  #if HAS_MMAP
-    if (!writable && size) mprotect(readable, size, PROT_READ);
-  #endif
+
+  if (size) {
+    #if HAS_MMAP
+      mprotect(readable, size, PROT_READ|PROT_WRITE);
+    #elif defined(_WIN32)
+      VirtualAlloc(readable, size, MEM_COMMIT, PAGE_READWRITE);
+    #endif
+    memcpy(tgt, src, size);
+    #if HAS_MMAP
+      if (!writable) mprotect(readable, size, PROT_READ);
+    #elif defined(_WIN32)
+      if (!writable) { DWORD oldProtect; VirtualProtect(readable, size, PAGE_READONLY, &oldProtect); }
+    #endif
+  }
   // log_printf("  got %p (%p..%p)\n", block, readable, readable+szx);
   
   CheckedInnerBlock* inner = malloc(sizeof(CheckedInnerBlock));
