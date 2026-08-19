@@ -1551,7 +1551,7 @@ bool profiler_alloc(void) {
     fprintf(stderr, "Already profiling!\n");
     return false;
   }
-  profiler_buf_s = profiler_buf_c = mmap_anon(NULL, PROFILE_BUFFER*sizeof(Profiler_ent), PROT_READ|PROT_WRITE, 0);
+  profiler_buf_s = profiler_buf_c = mmap_anon(NULL, PROFILE_BUFFER*sizeof(Profiler_ent), PROT_READ|PROT_WRITE, MAP_NORESERVE);
   if (profiler_buf_s == MAP_FAILED) {
     fprintf(stderr, "Failed to allocate profiler buffer\n");
     return false;
@@ -1566,7 +1566,26 @@ void profiler_free(void) {
   profiler_buf_s = profiler_buf_c = profiler_buf_e = NULL;
 }
 
+// GLOBAL bool profiler_initialized;
+// static void profiler_gcFn(void) { // currently just avoiding needing to GC-root profiler
+//   Profiler_ent* start = profiler_buf_s;
+//   Profiler_ent* end = *(Profiler_ent* volatile*) &profiler_buf_c; // this read may happen in parallel to the profiler running
+//   if (start==NULL || end==NULL) return;
+//   Profiler_ent* c = start;
+//   while (c < end) {
+//     if (c->bcPos == ~ENT_SP_GC) continue;
+//     Comp* comp = c->comp;
+//     if (comp->refc <= 0 || PTY(comp)!=t_comp) continue;
+//     mm_visitP(comp);
+//     c++;
+//   }
+// }
+
 bool profiler_start(i32 mode, i64 hz) { // 1: bytecode; 2: instruction pointers
+  // if (!profiler_initialized) {
+  //   profiler_initialized = true;
+  //   gc_addFn(profiler_gcFn);
+  // }
   if (hz==0) { fprintf(stderr, "Cannot profile with 0hz sampling frequency\n"); return false; }
   if (hz>999999) { fprintf(stderr, "Cannot profile with >999999hz frequency\n"); return false; }
   assert(mode==1 || mode==2);
@@ -1593,6 +1612,7 @@ usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[ENT_SP
   usz compCount = 0;
   void* map = profiler_makeMap();
   bool warnedCollision = false;
+  ux badComps = 0;
   
   while (c!=profiler_buf_c) {
     usz bcPos = c->bcPos;
@@ -1600,6 +1620,10 @@ usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[ENT_SP
       specialResults[~bcPos]++;
     } else {
       Comp* comp = c->comp;
+      if (comp->refc <= 0 || PTY(comp)!=t_comp) {
+        badComps++;
+        goto ignoreEntry;
+      }
       B path = comp->fullpath;
       i32 idx = profiler_index(&map, q_N(path) || comp->kind==COMP_REPL? tag(comp, OBJ_TAG) : path);
       if (idx == compCount) {
@@ -1620,9 +1644,9 @@ usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[ENT_SP
       i32* cMap = i32arr_ptr(arr);
       if (cs >= IA(arr)) {
         if (!warnedCollision) {
-          fprintf(stderr, "Warning: bytecode size mismatch between samples");
-          if (!q_N(path)) fprint_fmt(stderr, " for path %B", path);
-          fprintf(stderr, "; results may be inaccurate.\n");
+          log_printf("Warning: Bytecode size mismatch between samples");
+          if (!q_N(path)) fprint_fmt(log_file, " for path %B", path);
+          log_printf("; results may be inaccurate.\n");
           warnedCollision = true;
         }
       } else {
@@ -1630,8 +1654,10 @@ usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[ENT_SP
       }
       // for (usz i = cs; i <= ce; i++) cMap[i]++;
     }
+    ignoreEntry:;
     c++;
   }
+  if (badComps) log_printf("Warning: Had %zu profiled entries had an invalid or freed compiled object reference\n", badComps);
   profiler_freeMap(map);
   
   *compListRes = compList;
@@ -1703,7 +1729,8 @@ bool profiler_start(i32 mode, i64 hz) { return false; }
 bool profiler_stop() { return false; }
 void profiler_free() { thrM("Profiler not supported"); }
 usz profiler_getResults(B* compListRes, B* mapListRes, u64 specialResults[], bool keyPath) { thrM("Profiler not supported"); }
-void profiler_displayResults() { thrM("Profiler not supported"); }
+void profiler_displayResults(FILE* f) { thrM("Profiler not supported"); }
+GLOBAL bool profiler_active = false;
 #endif
 
 void unwindEnv(Env* envNew) {

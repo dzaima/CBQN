@@ -189,11 +189,13 @@ static void gc_preGC(bool toplevel) {
 
 GLOBAL u64 gc_lastGCUsed[2]; // 0: any; 1: top-level
 GLOBAL bool gc_running;
+extern GLOBAL bool profiler_active;
 void gc_forceGC(bool toplevel) {
   #if ENABLE_GC
     #if TOPLEVEL_GC
       run_pressure();
     #endif
+    if (profiler_active) toplevel = false; // profiler keeps Comp pointers but doesn't gc-root them
     gc_preGC(toplevel);
     gc_running = 1;
     u64 startTime=0, startSize=0;

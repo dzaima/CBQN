@@ -946,7 +946,7 @@ void cbqn_evalSrc(char* src, i64 len) {
 #endif
 
 INIT_GLOBAL FILE* log_file;
-STATIC_GLOBAL bool cfg_profileGlobal;
+extern GLOBAL bool profiler_active;
 
 #if EMCC
 int main() {
@@ -1038,7 +1038,6 @@ static void run_x_arg(char* key, ux keyn, const char* val) {
     u64 rate = val? arg_u64("profile", val) : DEFAULT_PROFILE_SAMPLERATE;
     repl_init();
     if (!profiler_alloc() || !profiler_start(1, rate)) exit(1);
-    cfg_profileGlobal = true;
   } else if (cmpkey(key, keyn, "rand-seed", 1)) {
     cfg_randSeed = arg_getSeed("rand-seed", val);
   } else if (cmpkey(key, keyn, "hash-seed", 1)) {
@@ -1281,7 +1280,7 @@ int main(int argc, char* argv[]) {
 #endif
 
 void before_exit(void) {
-  if (cfg_profileGlobal) {
+  if (profiler_active) {
     profiler_stop();
     profiler_displayResults(log_file);
     profiler_free();
