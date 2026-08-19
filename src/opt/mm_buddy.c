@@ -47,11 +47,15 @@ FORCE_INLINE u64 limitLen(u64 l) {
 static u64* tallocSizePtr(void* ptr, u64 end) {
   return (u64*)((u8*)ptr + end - 8);
 }
+static NORETURN void flush_abort() {
+  fflush(NULL);
+  abort();
+}
 void tailVerifySetMinTallocSize(void* ptr, u64 bytes) {
   u64 end = mm_size(ptr);
   if (bytes >= mm_sizeUsable(ptr)) {
     printf("Bad tailVerifySetMinTallocSize: setting to "N64u" bytes, "N64u" available\n", bytes, mm_sizeUsable(ptr));
-    __builtin_trap();
+    flush_abort();
   }
   u64 prev = *tallocSizePtr(ptr, end);
   if (prev > bytes) return;
@@ -70,11 +74,11 @@ void tailVerifyAlloc(void* ptr, u64 filled, ux logAlloc, u8 type) {
 void verifyEnd(void* ptr, u64 sz, u64 start, u64 end) {
   if (end+VERIFY_TAIL > sz) {
     printf("Bad used range for %p: "N64u".."N64u", allocation size "N64u", usable "N64u"\n", ptr, start, end, sz, sz-VERIFY_TAIL);
-    __builtin_trap();
+    flush_abort();
   }
 }
 void tailVerifyReinit(void* ptr, u64 filled, u64 end) {
-  if(filled>end || filled<=8) { printf("Bad reinit arguments: "N64u".."N64u"\n", filled, end); __builtin_trap(); }
+  if(filled>end || filled<=8) { printf("Bad reinit arguments: "N64u".."N64u"\n", filled, end); flush_abort(); }
   verifyEnd(ptr, mm_size(ptr), filled, end);
   tailVerifyInit(ptr, filled, end, mm_size(ptr));
 }
@@ -105,8 +109,7 @@ NOINLINE NORETURN void tailFail(u64 got, u64 exp, void* ptr, u64 off, int len, u
   
   if (((Value*)ptr)->refc==0) ((Value*)ptr)->refc = 1010101009; // this allocation was just about to be freed, so refcount 0 is understandable
   g_iv(ptr);
-  fflush(stdout); fflush(stderr);
-  __builtin_trap();
+  flush_abort();
 }
 void tailVerifyCheck(void* ptr) {
   u64 filled; u64 ia; Arr* xa = ptr;

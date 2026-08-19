@@ -1768,9 +1768,8 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
     vm_pst(envCurr+1, envEnd);
     before_exit();
     #if DEBUG
-    fflush(stdout);
-    fflush(stderr);
-    __builtin_trap();
+    fflush(NULL);
+    abort();
     #else
     exit(1);
     #endif

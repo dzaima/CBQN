@@ -12,20 +12,20 @@ void before_exit(void);
 #if DEBUG_VM
   void print_vmStack(void);
 #endif
-GLOBAL bool inErr;
+GLOBAL bool inFatal;
 NORETURN NOINLINE void fatal(char* s) {
   NOGC_E;
   #if MM!=0
     gc_depth=1;
   #endif
-  if (inErr) {
+  if (inFatal) {
     fputs("\nCBQN encountered a fatal error during information printing of another fatal error. Exiting without printing more info.\n", stderr);
     #if DEBUG
       __builtin_trap();
     #endif
     exit(1);
   }
-  inErr = true;
+  inFatal = true;
   fputs("CBQN encountered a fatal error: ", stderr); fflush(stderr);
   fputs(s, stderr); fflush(stderr);
   fputc('\n', stderr); fflush(stderr);
@@ -34,10 +34,8 @@ NORETURN NOINLINE void fatal(char* s) {
     print_vmStack(); fflush(stderr);
   #endif
   before_exit();
-  #if DEBUG || USE_VALGRIND
-    __builtin_trap();
-  #endif
-  exit(1);
+  fflush(NULL);
+  abort();
 }
 
 NOINLINE B c1F(B f, B x) { dec(x); errMd(f);
