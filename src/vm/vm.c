@@ -1178,24 +1178,18 @@ void md1Bl_print(FILE* f, B x) { fprintf(f,"{1-modifier block}"); }
 void md2Bl_print(FILE* f, B x) { fprintf(f,"{2-modifier block}"); }
 B block_decompose(B x);
 
-STATIC_GLOBAL usz pageSizeV;
-
+STATIC_GLOBAL ux pageSizeV;
 ux getPageSize() {
-  #if defined(_WIN32) || defined(_WIN64)
-    #if HAS_MMAP || !NO_MMAP
-      #error "Windows builds must have NO_MMAP=1"
-    #endif
-    if (pageSizeV==0) {
+  if (pageSizeV == 0) {
+    #if defined(_WIN32)
       SYSTEM_INFO info;
       GetSystemInfo(&info);
       pageSizeV = info.dwPageSize;
-    }
-    // doesn't actually need to be accurate if NO_MMAP, which Windows builds should have
-    return pageSizeV;
-  #else
-    if (pageSizeV==0) pageSizeV = sysconf(_SC_PAGESIZE);
-    return pageSizeV;
-  #endif
+    #else
+      pageSizeV = sysconf(_SC_PAGESIZE);
+    #endif
+  }
+  return pageSizeV;
 }
 
 static void allocStack(void** curr, void** start, void** end, i32 elSize, i32 count) {
