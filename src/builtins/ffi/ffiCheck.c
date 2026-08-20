@@ -105,16 +105,15 @@ STATIC_GLOBAL CheckedOuterBlock* checked_lastOuter;
 static const char* checked_outerBuffer = "FFI buffer place";
 static const char* checked_innerBuffer = "FFI pointer buffer";
 void tempBlock_free(Value* v) { TempBlock* b = (TempBlock*)v;
-  // log_printf("TempBlock free %p %ld\n", b->inner->readable, b->inner->szx);
   if (b->inner) {
+    // log_printf("TempBlock free %p %ld\n", b->inner->readable, b->inner->szx);
     b->inner->freed = true;
     if (b->inner->szx == 0) return;
     #if HAS_MMAP
       mmap_anon(b->inner->readable, b->inner->szx, PROT_NONE, MAP_FIXED);
     #elif defined(_WIN32)
-      DWORD oldProtect;
-      if (!VirtualProtect(b->inner->readable, b->inner->szx, PAGE_NOACCESS, &oldProtect)) {
-        thrF("FFI: Failed to set checked memory no-access: %S", winError());
+      if (!VirtualFree(b->inner->readable, b->inner->szx, MEM_DECOMMIT)) {
+        log_printf("FFI: Failed to decommit checked memory: %s\n", winError());
       }
     #endif
   }
