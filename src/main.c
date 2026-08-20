@@ -157,7 +157,7 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
   }
   
   NOINLINE void cfg_set_theme(i32 num, bool writeCfg) {
-    if (num>=3) return;
+    if (num>=3 || num<0) return;
     replcfg_theme = num;
     i8 const (*data)[3] = themes[num];
     for (int i = 0; i < 12; i++) {
