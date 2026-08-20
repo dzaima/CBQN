@@ -960,6 +960,7 @@ int main() {
 extern GLOBAL bool cfg_fullStacktraces;
 extern INIT_GLOBAL u64 cfg_randSeed, cfg_hashSeed;
 extern GLOBAL u64 internalRandState;
+STATIC_GLOBAL bool cfg_implicitREPL = true;
 
 INIT_GLOBAL char* cbqn_self = "CBQN";
 #include <stdarg.h>
@@ -1027,6 +1028,7 @@ static void run_x_arg(char* key, ux keyn, const char* val) {
       "-Xgc-log             log on GC; same as `)gc log`\n"
       "-Xgc-disable         disable mark&sweep GC; same as `)gc disable`\n"
       "-Xrepl-init          initialize CBQN & the REPL, but don't execute anything yet\n"
+      "-Xno-implicit-repl   disable implicit REPL\n"
     );
     exit(0);
   } else if (cmpkey(key, keyn, "jit-perf-map", 0)) {
@@ -1051,6 +1053,8 @@ static void run_x_arg(char* key, ux keyn, const char* val) {
     if (log_file == NULL) arg_bad("Could not open -Xlog-file path for writing");
   } else if (cmpkey(key, keyn, "repl-init", 0)) {
     repl_init();
+  } else if (cmpkey(key, keyn, "no-implicit-repl", 0)) {
+    cfg_implicitREPL = false;
   } else if (cmpkey(key, keyn, "ffi-debug", 2)) {
     u8 align = 1;
     if (val) {
@@ -1090,12 +1094,12 @@ int main(int argc, char* argv[]) {
     cbqn_init_replxx();
   #endif
   
-  bool startREPL = argc==1;
+  bool forceREPL = false;
   bool silentREPL = false;
   cbqn_self = argv[0];
   log_file = stderr;
   char* mainFileToExecute;
-  if (!startREPL) {
+  if (argc > 1) {
     i32 i = 1;
     while (i!=argc) {
       char* carg = argv[i];
@@ -1137,14 +1141,14 @@ int main(int argc, char* argv[]) {
         while ((c = *carg++)) {
           switch(c) { default: arg_bad("Unknown option: -%c", c);
             #define REQARG(X) ({ if(*carg) arg_bad("Value of -%s must be in a separate argument", #X); if (i==argc) arg_bad("-%s requires an argument", #X); argv[i++]; })
-            case 'f': repl_init(); mainFileToExecute = REQARG(f); goto execFile;
-            case 'e': { repl_init(); char* val = REQARG(e);
+            case 'f': { repl_init(); mainFileToExecute = REQARG(f); goto execFile; }
+            case 'e': { repl_init(); char* val = REQARG(e); cfg_implicitREPL = false;
               RUN_START;
               dec(gsc_exec_inplace(utf8Decode0(val), "(-e)", emptySVec()));
               RUN_END;
               break;
             }
-            case 'p': { repl_init(); char* val = REQARG(p);
+            case 'p': { repl_init(); char* val = REQARG(p); cfg_implicitREPL = false;
               RUN_START;
               B r = gsc_exec_inplace(utf8Decode0(val), "(-p)", emptySVec());
               if (FORMATTER) { r = bqn_fmt(r); printsB(r); }
@@ -1154,7 +1158,7 @@ int main(int argc, char* argv[]) {
               printf("\n");
               break;
             }
-            case 'o': { repl_init(); char* val = REQARG(o);
+            case 'o': { repl_init(); char* val = REQARG(o); cfg_implicitREPL = false;
               RUN_START;
               B r = gsc_exec_inplace(utf8Decode0(val), "(-o)", emptySVec());
               if (isAtm(r) || RNK(r)!=1) thrM("(-o): Value to print must be a string");
@@ -1176,8 +1180,8 @@ int main(int argc, char* argv[]) {
               break;
             }
             case 'h': goto print_help;
-            case 'r': { startREPL=true;                  break; }
-            case 's': { startREPL=true; silentREPL=true; break; }
+            case 'r': { forceREPL=true;                  break; }
+            case 's': { forceREPL=true; silentREPL=true; break; }
             case 'X': goto arg_x;
           }
         }
@@ -1194,6 +1198,7 @@ int main(int argc, char* argv[]) {
       mainFileToExecute = argv[i++];
       execFile:;
       repl_init();
+      cfg_implicitREPL = false;
       B src = mainFileToExecute? utf8Decode0(mainFileToExecute) : utf8DecodeA(stream_bytes(stdin));
       B args;
       if (i==argc) {
@@ -1214,7 +1219,7 @@ int main(int argc, char* argv[]) {
       RUN_END;
     }
   }
-  if (startREPL) {
+  if (forceREPL || cfg_implicitREPL) {
     repl_init();
     #if USE_REPLXX
     if (!silentREPL) {
