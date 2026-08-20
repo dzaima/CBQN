@@ -12,6 +12,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
   #include "windows/getline.h"
+  #include "windows/utf16.h"
 #endif
 
 
@@ -501,12 +502,25 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
     return res;
   }
   static NOINLINE B get_config_path(bool inConfigDir, char* name) {
+  #ifdef _WIN32
+    (void) inConfigDir;
+    WCHAR* local_app_data = _wgetenv(L"LOCALAPPDATA");
+    B p;
+    if (!local_app_data) {
+      p = m_c8vec_0(".");
+    } else {
+      p = path_rel_dec(utf16Decode0(local_app_data), m_c8vec_0("CBQN"));
+      // create the directory if it doesn't exist
+      if (path_type(incG(p))==0 && !dir_create(p)) { decG(p); p = m_c8vec_0("."); }
+    }
+  #else
     char* history_dir = getenv("XDG_DATA_HOME");
     bool addConfig = false;
     if (!history_dir) { history_dir = getenv("HOME"); if (history_dir) addConfig = inConfigDir; }
     if (!history_dir) history_dir = ".";
     B p = utf8Decode0(history_dir);
     if (addConfig) p = path_rel_dec(p, m_c8vec_0(".config"));
+  #endif
     return path_rel_dec(p, m_c8vec_0(name));
   }
   
