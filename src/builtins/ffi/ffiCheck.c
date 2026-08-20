@@ -1,6 +1,7 @@
 #include "utils/mem.h"
 #include "ffiCore.c"
 #ifdef _WIN32
+  #include "windows/winError.h"
   #include <windows.h>
 #endif
 #if !HAS_MMAP && !defined(_WIN32)
@@ -112,7 +113,9 @@ void tempBlock_free(Value* v) { TempBlock* b = (TempBlock*)v;
       mmap_anon(b->inner->readable, b->inner->szx, PROT_NONE, MAP_FIXED);
     #elif defined(_WIN32)
       DWORD oldProtect;
-      VirtualProtect(b->inner->readable, b->inner->szx, PAGE_NOACCESS, &oldProtect);
+      if (!VirtualProtect(b->inner->readable, b->inner->szx, PAGE_NOACCESS, &oldProtect)) {
+        thrF("FFI: Failed to set checked memory no-access: %S", winError());
+      }
     #endif
   }
 }
@@ -167,7 +170,7 @@ static B checked_allocBlock(void** mem, ux size, bool writable, B ptrObjRef) {
       if (outerMem == MAP_FAILED) thrM("FFI: Failed to run mmap for checked memory");
     #elif defined(_WIN32)
       void* outerMem = VirtualAlloc(NULL, cap, MEM_RESERVE, PAGE_NOACCESS);
-      if (outerMem == NULL) thrM("FFI: Failed to reserve checked memory");
+      if (outerMem == NULL) thrF("FFI: Failed to reserve checked memory: %S", winError());
     #else
       void* outerMem = NULL;
     #endif
@@ -192,13 +195,20 @@ static B checked_allocBlock(void** mem, ux size, bool writable, B ptrObjRef) {
     #if HAS_MMAP
       mprotect(readable, size, PROT_READ|PROT_WRITE);
     #elif defined(_WIN32)
-      VirtualAlloc(readable, size, MEM_COMMIT, PAGE_READWRITE);
+      if (VirtualAlloc(readable, size, MEM_COMMIT, PAGE_READWRITE) == NULL) {
+        thrF("FFI: Failed to commit read-write checked memory: %S", winError());
+      }
     #endif
     memcpy(tgt, src, size);
     #if HAS_MMAP
       if (!writable) mprotect(readable, size, PROT_READ);
     #elif defined(_WIN32)
-      if (!writable) { DWORD oldProtect; VirtualProtect(readable, size, PAGE_READONLY, &oldProtect); }
+      if (!writable) {
+        DWORD oldProtect;
+        if (!VirtualProtect(readable, size, PAGE_READONLY, &oldProtect)) {
+          thrF("FFI: Failed to set checked memory read-only: %S", winError());
+        }
+      }
     #endif
   }
   // log_printf("  got %p (%p..%p)\n", block, readable, readable+szx);
