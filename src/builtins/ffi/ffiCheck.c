@@ -107,6 +107,7 @@ void tempBlock_free(Value* v) { TempBlock* b = (TempBlock*)v;
   // log_printf("TempBlock free %p %ld\n", b->inner->readable, b->inner->szx);
   if (b->inner) {
     b->inner->freed = true;
+    if (b->inner->szx == 0) return;
     #if HAS_MMAP
       mmap_anon(b->inner->readable, b->inner->szx, PROT_NONE, MAP_FIXED);
     #elif defined(_WIN32)
