@@ -13,6 +13,9 @@
 #include "utils/mem.h"
 #include "vm/load.h"
 #include <unistd.h>
+#if defined(_WIN32)
+  #include <windows.h>
+#endif
 
 #ifndef UNWIND_COMPILER // whether to hide stackframes of the compiler in compiling errors
   #define UNWIND_COMPILER 1
@@ -1175,16 +1178,20 @@ void md1Bl_print(FILE* f, B x) { fprintf(f,"{1-modifier block}"); }
 void md2Bl_print(FILE* f, B x) { fprintf(f,"{2-modifier block}"); }
 B block_decompose(B x);
 
-#if !defined(_WIN32) && !defined(_WIN64)
 STATIC_GLOBAL usz pageSizeV;
-#endif
 
 ux getPageSize() {
   #if defined(_WIN32) || defined(_WIN64)
     #if HAS_MMAP || !NO_MMAP
       #error "Windows builds must have NO_MMAP=1"
     #endif
-    return 1; // doesn't actually need to be accurate if NO_MMAP, which Windows builds should have
+    if (pageSizeV==0) {
+      SYSTEM_INFO info;
+      GetSystemInfo(&info);
+      pageSizeV = info.dwPageSize;
+    }
+    // doesn't actually need to be accurate if NO_MMAP, which Windows builds should have
+    return pageSizeV;
   #else
     if (pageSizeV==0) pageSizeV = sysconf(_SC_PAGESIZE);
     return pageSizeV;
