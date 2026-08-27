@@ -947,19 +947,10 @@ void cbqn_evalSrc(char* src, i64 len) {
 INIT_GLOBAL FILE* log_file;
 extern GLOBAL bool profiler_active;
 
-#if EMCC
-int main() {
-  repl_init();
-}
-#elif !CBQN_LIB
-
-#if HAS_VERSION
-  extern char* const cbqn_versionInfo;
-#endif
 extern GLOBAL bool cfg_fullStacktraces;
 extern INIT_GLOBAL u64 cfg_randSeed, cfg_hashSeed;
 extern GLOBAL u64 internalRandState;
-STATIC_GLOBAL bool cfg_implicitREPL = true;
+STATIC_GLOBAL MAYBE_UNUSED bool cfg_implicitREPL = true;
 
 INIT_GLOBAL char* cbqn_self = "CBQN";
 #include <stdarg.h>
@@ -999,7 +990,7 @@ static NOINLINE u64 arg_getSeed(const char* key, const char* val) {
   }
   return r;
 }
-static void run_x_arg(char* key, ux keyn, const char* val) {
+void run_x_arg(char* key, ux keyn, const char* val) { // also called by •internal.XOpt
   if (cmpkey(key, keyn, "help", 0)) {
     printf(
       "Note that behavior or availability of theese options may change between CBQN versions, or differ across OSes or architectures.\n"
@@ -1087,6 +1078,15 @@ static void run_x_arg(char* key, ux keyn, const char* val) {
   }
 }
 
+#if EMCC
+int main() {
+  repl_init();
+}
+#elif !CBQN_LIB
+
+#if HAS_VERSION
+  extern char* const cbqn_versionInfo;
+#endif
 int main(int argc, char* argv[]) {
   #if USE_REPLXX_IO
     cbqn_init();

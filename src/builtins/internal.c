@@ -438,6 +438,26 @@ B heapDump_c1(B t, B x) {
   return x;
 }
 
+void run_x_arg(char* key, ux keyn, const char* val); // from main.c
+NOINLINE B iXOpt_c2(B t, B w, B x) {
+  char* wp = NULL;
+  x = vfyStr(x, "•internal.XOpt", "𝕩");
+  if (!q_N(w)) {
+    x = vec_addN(x, m_c32('='));
+    wp = toCStr(vfyStr(w, "•internal.XOpt", "𝕨"));
+  }
+  char* xp = toCStr(x);
+  run_x_arg(xp, strlen(xp) - (wp!=NULL), wp);
+  if (wp!=NULL) freeCStr(wp);
+  freeCStr(xp);
+  decG(x);
+  dec(w);
+  return m_c32(0);
+}
+B iXOpt_c1(B t, B x) {
+  return iXOpt_c2(t, bi_N, x);
+}
+
 B internalGC_c1(B t, B x) {
   #if ENABLE_GC
     gc_forceGC(false);
@@ -573,8 +593,8 @@ B getInternalNS(void) {
     #undef F
     
     #define F(X) incG(bi_##X),
-    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep", "purekeep", "pureshow","listvariations","variation","clearrefs", "hasfill", "withfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats", "objflags", "properties", "validate", "indistinguishable");
-    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(iPureKeep)F(iPureShow)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(iWithFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats)F(iObjFlags)F(iProperties)F(iValidate)F( indistinguishable));
+    Body* d =    m_nnsDesc("type","eltype","refc","squeeze","ispure","info", "keep", "purekeep", "pureshow","listvariations","variation","clearrefs", "hasfill", "withfill","unshare","deepsqueeze","heapdump","eequal",        "gc",        "temp","heapstats", "objflags", "properties", "validate", "indistinguishable", "xopt");
+    internalNS = m_nns(d,F(itype)F(elType)F(refc)F(squeeze)F(isPure)F(info)F(iKeep)F(iPureKeep)F(iPureShow)F(listVariations)F(variation)F(clearRefs)F(iHasFill)F(iWithFill)F(unshare)F(deepSqueeze)F(heapDump)F(eequal)F(internalGC)F(internalTemp)F(heapStats)F(iObjFlags)F(iProperties)F(iValidate)F( indistinguishable)F(iXOpt));
     #undef F
     gc_add(internalNS);
   }
