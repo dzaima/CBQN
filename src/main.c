@@ -1233,7 +1233,10 @@ int main(int argc, char* argv[]) {
           dec(f);
           gc_add(tag(TOBJ(repl_histfile), OBJ_TAG));
         }
-        replxx_history_load(global_replxx, repl_histfile);
+        if (replxx_history_load(global_replxx, repl_histfile) == HistoryLoadIncorrectFormat) {
+          fprintf(stderr, "REPL history file at \"%s\" is of incorrect format; disabling REPL history loading and saving\n", repl_histfile);
+          repl_historyMode = 1;
+        }
       }
       
       replxx_set_ignore_case(global_replxx, true);
