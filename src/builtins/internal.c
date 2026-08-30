@@ -23,6 +23,7 @@ B itype_c1(B t, B x) {
     else if (isTag(x)) r = m_c8vec_0("tagged tag");
     else if (isVar(x)) r = m_c8vec_0("tagged var");
     else if (isExt(x)) r = m_c8vec_0("tagged extvar");
+    else if (isRaw(x)) r = m_c8vec_0("tagged raw");
     else               r = m_c8vec_0("tagged unknown");
   }
   dec(x);

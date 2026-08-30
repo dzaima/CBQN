@@ -64,7 +64,6 @@
   #endif
   
   #define BV2W(X) PTR_FROM_INT(BVW,X)
-  static bool isRaw(B x) { return x.u>>48 == RAW_TAG; }
   static B bv_get(BQNV v) {
     B r = BV2W(v)->value;
     bqnv_assert(!isRaw(r));

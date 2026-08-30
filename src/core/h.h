@@ -438,6 +438,7 @@ FORCE_INLINE bool isMd2(B x) { return (x.u>>48) == MD2_TAG; }
 FORCE_INLINE bool isMd (B x) { return (x.u>>49) ==(MD2_TAG>>1); }
 FORCE_INLINE bool isNsp(B x) { return (x.u>>48) == NSP_TAG; }
 FORCE_INLINE bool isObj(B x) { return (x.u>>48) == OBJ_TAG; }
+FORCE_INLINE bool isRaw(B x) { return (x.u>>48) == RAW_TAG; }
 // FORCE_INLINE bool isVal(B x) { return ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0); }
 // FORCE_INLINE bool isF64(B x) { return ((x.u>>51&0xFFF) != 0xFFE)  |  ((x.u<<1)==(r_Bu(m_f64(1.0/0.0))<<1)); }
 FORCE_INLINE bool isVal(B x) { return (x.u - (((u64)VAL_TAG<<51) + 1)) < ((1ull<<51) - 1); } // ((x.u>>51) == VAL_TAG)  &  ((x.u<<13) != 0);

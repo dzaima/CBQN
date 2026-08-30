@@ -158,6 +158,7 @@ NOINLINE void fprintI(FILE* f, B x) {
   else if (q_beq(x, bi_noVar)) fprintf(f, "(unset variable placeholder)");
   else if (q_beq(x, bi_okHdr)) fprintf(f, "(accepted SETH placeholder)");
   else if (q_beq(x, bi_noFill)) fprintf(f, "(no fill placeholder)");
+  else if (isRaw(x)) fprintf(f, "(raw 0x%012" PRIx64 ")", (u64)c(Value,x));
   else fprintf(f, "(todo tag "N64x")", x.u>>48);
 }
 
