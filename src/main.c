@@ -926,7 +926,7 @@ void cbqn_runLine(char* ln, i64 len) {
 void cbqn_evalSrc(char* src, i64 len) {
   Run e = run_start();
   B code = utf8Decode(src, len);
-  B resFmt = bqn_fmt(bqn_exec(code, bi_N));
+  B resFmt = bqn_fmt(bqn_exec(code, defaultUnknownState()));
   printsB(resFmt); dec(resFmt);
   printf("\n");
   run_end(e);
