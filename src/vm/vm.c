@@ -1382,7 +1382,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
 }
 
 extern GLOBAL bool cbqn_initialized;
-NOINLINE void vm_printPos(FILE* f, Comp* comp, i32 bcPos, i64 pos) {
+static void vm_printPos(FILE* f, bool* forceNative, Comp* comp, i32 bcPos, i64 pos) {
   B src = comp->src;
   if (!q_N(src) && !q_N(comp->indices)) {
     B inds = IGetU(comp->indices, 0); usz cs = o2s(IGetU(inds,bcPos));
@@ -1392,10 +1392,7 @@ NOINLINE void vm_printPos(FILE* f, Comp* comp, i32 bcPos, i64 pos) {
     
     
     // want to try really hard to print errors
-    if (!cbqn_initialized || gc_running) goto native_print;
-    #if FORCE_NATIVE_ERROR_PRINT
-      goto native_print;
-    #endif
+    if (!cbqn_initialized || gc_running || *forceNative) goto native_print;
     if (CATCH) { freeThrown(); goto native_print; }
     
     B msg = vm_fmtPoint(src, emptyCVec(), comp->kind==COMP_REPL? bi_N : comp->fullpath, cs, ce);
@@ -1406,7 +1403,7 @@ NOINLINE void vm_printPos(FILE* f, Comp* comp, i32 bcPos, i64 pos) {
     return;
     
 native_print:
-    freeThrown();
+    *forceNative = true;
     int start = fprintf(f, "at ");
     usz srcL = IA(src);
     SGetU(src)
@@ -1434,6 +1431,7 @@ NOINLINE void vm_pst(FILE* f, Env* s, Env* e) { // e not included
   assert(s<=e);
   i64 l = e-s;
   i64 i = l-1;
+  bool forceNative = false;
   while (i>=0) {
     Env* c = s+i;
     if (l>30 && i==l-10 && !cfg_fullStacktraces) {
@@ -1442,7 +1440,7 @@ NOINLINE void vm_pst(FILE* f, Env* s, Env* e) { // e not included
     }
     Comp* comp = c->sc->body->bl->comp;
     i32 bcPos = c->pos&1? ((u32)c->pos)>>1 : BCPOS(c->sc->body, PTR_FROM_INT(u32, c->pos));
-    vm_printPos(f, comp, bcPos, i);
+    vm_printPos(f, &forceNative, comp, bcPos, i);
     i--;
   }
 }

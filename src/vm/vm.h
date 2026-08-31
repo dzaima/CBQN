@@ -248,7 +248,6 @@ static inline void popEnv() {
 FORCE_INLINE i32 argCount(u8 ty, bool imm) { return (imm?0:3) + ty + (ty>0); }
 FORCE_INLINE i32 blockGivenVars(Block* bl) { return argCount(bl->ty, bl->imm); }
 void vm_pst(FILE* f, Env* s, Env* e);
-void vm_printPos(FILE* f, Comp* comp, i32 bcPos, i64 pos);
 NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce); // consumes prepend
 NOINLINE void printErrMsg(FILE* f, B msg);
 NOINLINE void unwindEnv(Env* envNew); // envNew==envStart-1 for emptying the env stack
