@@ -203,7 +203,7 @@ typedef struct ArgParseState {
   bool allowMut; // whether &T / ⥊T are allowed
 } ArgParseState;
 
-typedef struct { u32* start; u32* end; } U32Span;
+typedef struct U32Span { u32* start; u32* end; } U32Span;
 static NOINLINE U32Span toC32Null(B* xp, bool acceptEmpty) { // assumes *xp is already a string
   ux ia = IA(*xp);
   u32* src;
