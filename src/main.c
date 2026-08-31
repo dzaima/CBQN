@@ -902,8 +902,8 @@ void cbqn_runLine(char* ln, i64 len) {
   Run e = run_start();
   if(CATCH) {
     cbqn_takeInterrupts(false);
-    fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fprintf(stderr, "\n");
-    vm_pst(envCurr+1, envStart+envPrevHeight);
+    fprintf(stderr, "Error: "); printErrMsg(stderr, thrownMsg); fprintf(stderr, "\n");
+    vm_pst(stderr, envCurr+1, envStart+envPrevHeight);
     freeThrown();
     #if HEAP_VERIFY
       cbqn_heapVerify();

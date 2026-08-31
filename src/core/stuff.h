@@ -2,7 +2,7 @@
  #define MAP_NORESERVE 0 // apparently needed for freebsd or something
 #endif
 
-void vm_pstLive(void);
+void vm_pstLive(FILE* f);
 
 typedef struct CustomObj {
   struct Value;

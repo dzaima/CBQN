@@ -26,10 +26,10 @@ NORETURN NOINLINE void fatal(char* s) {
     exit(1);
   }
   inFatal = true;
-  fputs("CBQN encountered a fatal error: ", stderr); fflush(stderr);
+  fputs("CBQN encountered a fatal error: ", stderr); fflush(NULL);
   fputs(s, stderr); fflush(stderr);
   fputc('\n', stderr); fflush(stderr);
-  vm_pstLive(); fflush(stderr); fflush(stdout);
+  vm_pstLive(stderr); fflush(stderr);
   #if DEBUG_VM
     print_vmStack(); fflush(stderr);
   #endif
@@ -556,7 +556,7 @@ DEBUG_FN void   g_p(B x) { fprintI(stderr,x); fprintf(stderr,"\n"); fflush(stder
 DEBUG_FN void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); }
 DEBUG_FN void   g_pv(void* x) { ignore_bad_tag=true; fprintI(stderr,tag(x,OBJ_TAG)); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
 DEBUG_FN void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(info, m_f64(1), inc(xo)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
-DEBUG_FN void   g_pst(void) { vm_pstLive(); fflush(stdout); fflush(stderr); }
+DEBUG_FN void   g_pst(void) { vm_pstLive(stderr); fflush(stdout); fflush(stderr); }
 
 #if DEBUG
   GLOBAL bool cbqn_noAlloc;

@@ -40,8 +40,8 @@ static   void* BN(allocL)(ux bucket, u8 type) {
     x->uid = currObjCounter++;
     #ifdef OBJ_TRACK
     if (x->uid == OBJ_TRACK) {
-      printf("Tracked object "N64u" created at:\n", (u64)OBJ_TRACK);
-      vm_pstLive();
+      log_printf("Tracked object "N64u" created at:\n", (u64)OBJ_TRACK);
+      vm_pstLive(log_file);
     }
     #endif
   #endif

@@ -59,7 +59,7 @@ WMd2* lastWM2;
       {       printf("got:"); printI(GOT); printf(" / "); printsB(C2(info, m_i32(1), inc(GOT))); printf("\n"); fflush(stdout); } \
       {       printf("exp:"); printI(EXP); printf(" / "); printsB(C2(info, m_i32(1), inc(EXP))); printf("\n"); fflush(stdout); } \
     }                      \
-    vm_pstLive(); exit(1); \
+    vm_pstLive(stdout); exit(1); \
   }}
 #endif
 

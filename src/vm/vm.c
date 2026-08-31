@@ -1382,7 +1382,7 @@ NOINLINE B vm_fmtPoint(B src, B prepend, B path, usz cs, usz ce) { // consumes p
 }
 
 extern GLOBAL bool cbqn_initialized;
-NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
+NOINLINE void vm_printPos(FILE* f, Comp* comp, i32 bcPos, i64 pos) {
   B src = comp->src;
   if (!q_N(src) && !q_N(comp->indices)) {
     B inds = IGetU(comp->indices, 0); usz cs = o2s(IGetU(inds,bcPos));
@@ -1399,55 +1399,55 @@ NOINLINE void vm_printPos(Comp* comp, i32 bcPos, i64 pos) {
     if (CATCH) { freeThrown(); goto native_print; }
     
     B msg = vm_fmtPoint(src, emptyCVec(), comp->kind==COMP_REPL? bi_N : comp->fullpath, cs, ce);
-    fprintsB(stderr, msg);
+    fprintsB(f, msg);
     dec(msg);
-    fprintf(stderr, "\n");
+    fprintf(f, "\n");
     popCatch();
     return;
     
 native_print:
     freeThrown();
-    int start = fprintf(stderr, "at ");
+    int start = fprintf(f, "at ");
     usz srcL = IA(src);
     SGetU(src)
     usz srcS = cs;   while (srcS>0 && o2cG(GetU(src,srcS-1))!='\n') srcS--;
-    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cG(GetU(src, srcE)); if(chr=='\n')break; fprintCodepoint(stderr, chr); srcE++; }
+    usz srcE = srcS; while (srcE<srcL) { u32 chr = o2cG(GetU(src, srcE)); if(chr=='\n')break; fprintCodepoint(f, chr); srcE++; }
     if (ce>srcE) ce = srcE;
     cs-= srcS; ce-= srcS;
-    fprintf(stderr, "\n");
-    for (i32 i = 0; i < cs+start; i++) fprintf(stderr, " ");
-    for (i32 i = cs; i < ce; i++) fprintf(stderr, "^");
-    fprintf(stderr, "\n");
+    fprintf(f, "\n");
+    for (i32 i = 0; i < cs+start; i++) fprintf(f, " ");
+    for (i32 i = cs; i < ce; i++) fprintf(f, "^");
+    fprintf(f, "\n");
     return;
     
     //print_BCStream((u32*)i32arr_ptr(comp->bc)+bcPos);
   } else {
     #if DEBUG
-      if (pos!=-1) fprintf(stderr, N64d": ", pos);
-      fprintf(stderr, "source unknown\n");
+      if (pos!=-1) fprintf(f, N64d": ", pos);
+      fprintf(f, "source unknown\n");
     #endif
   }
 }
 
 GLOBAL bool cfg_fullStacktraces = false;
-NOINLINE void vm_pst(Env* s, Env* e) { // e not included
+NOINLINE void vm_pst(FILE* f, Env* s, Env* e) { // e not included
   assert(s<=e);
   i64 l = e-s;
   i64 i = l-1;
   while (i>=0) {
     Env* c = s+i;
     if (l>30 && i==l-10 && !cfg_fullStacktraces) {
-      fprintf(stderr, "("N64d" entries omitted)\n", l-20);
+      fprintf(f, "("N64d" entries omitted)\n", l-20);
       i = 10;
     }
     Comp* comp = c->sc->body->bl->comp;
     i32 bcPos = c->pos&1? ((u32)c->pos)>>1 : BCPOS(c->sc->body, PTR_FROM_INT(u32, c->pos));
-    vm_printPos(comp, bcPos, i);
+    vm_printPos(f, comp, bcPos, i);
     i--;
   }
 }
-NOINLINE void vm_pstLive() {
-  vm_pst(envStart, envCurr+1);
+NOINLINE void vm_pstLive(FILE* f) {
+  vm_pst(f, envStart, envCurr+1);
 }
 
 
@@ -1755,9 +1755,9 @@ NOINLINE bool isStr(B x) {
   for (usz i = 0; i < ia; i++) if (!isC32(GetU(x,i))) return false;
   return true;
 }
-NOINLINE void printErrMsg(B msg) {
-  if (isStr(msg)) fprintsB(stderr, msg);
-  else fprintI(stderr, msg);
+NOINLINE void printErrMsg(FILE* f, B msg) {
+  if (isStr(msg)) fprintsB(f, msg);
+  else fprintI(f, msg);
 }
 
 
@@ -1789,10 +1789,10 @@ NOINLINE NORETURN void throwImpl(bool rethrow) {
   } else { // uncaught error
 #endif
     assert(cf==cfStart);
-    fprintf(stderr, "Error: "); printErrMsg(thrownMsg); fprintf(stderr,"\n"); fflush(stderr);
+    fprintf(stderr, "Error: "); printErrMsg(stderr, thrownMsg); fprintf(stderr,"\n"); fflush(stderr);
     Env* envEnd = envStart+envPrevHeight;
     unwindEnv(envStart-1);
-    vm_pst(envCurr+1, envEnd);
+    vm_pst(stderr, envCurr+1, envEnd);
     before_exit();
     #if DEBUG
     fflush(NULL);

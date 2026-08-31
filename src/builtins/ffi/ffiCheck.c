@@ -293,6 +293,6 @@ MAYBE_UNUSED static void handler_core(char* raw, uintptr_t mem) {
     fflush(stderr);
   }
   fprintf(stderr, "Attempting to print BQN stacktrace:\n");
-  vm_pstLive();
+  vm_pstLive(stderr);
   fflush(stderr);
 }
