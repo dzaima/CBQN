@@ -33,6 +33,11 @@
 (<4)˙´↕6 %% <4
 (<4)˙˝↕6‿0 %% <4
 
+!"Cannot call a 1-modifier as a function" % ({¨}⋈⊢) 2
+!"Cannot call a 2-modifier as a function" % 2 ({∘}⋈⊢) 2
+!"foo" % ({∘}⋈!) "foo"
+!"bar" % "bar" ({{!𝔽‿𝕩}}⋈!) 2
+
 # ⊣⊢ as operands
 ⟨⊢,⊣⟩ {i𝕊m: F←I _m ⋄ ! F⊸≡ ↕0 ⋄ ! @⊸F⊸≡ ""}⌜ ⟨˘,¨,⌜,`⟩
 %USE k ⋄ (⟨⊢,⊣⟩ {i𝕊m: I _m !∘≡ I _k _m}⌜ ⟨˘,¨,⌜,´,˝,`⟩) {𝕎𝕩}⌜ ⟨↕10, 4‿0‿2⥊¨"abc"⟩

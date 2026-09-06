@@ -44,15 +44,16 @@ B fork_c1_nff(B t, B x) {
 }
 B fork_c1(B t, B x) {
   FC1 fn;
-  B g = c(Fork,t)->g; if (!isFun(g)) { fn=fork_c1_general; goto go; }
-  B h = c(Fork,t)->h; if (!isFun(h)) { fn=fork_c1_general; goto go; }
+  B g = c(Fork,t)->g; if (RARE(!isFun(g))) { general: fn=fork_c1_general; goto go; }
+  B h = c(Fork,t)->h; if (!isFun(h)) goto general;
   B f = c(Fork,t)->f;
   if (isFun(f)) { fn=fork_c1_fff; goto go; }
+  if (RARE(isMd(f))) goto general;
   if (isVal(f)) { fn=fork_c1_vff; goto go; }
   else          { fn=fork_c1_nff; goto go; }
   
   go:
-  c(Fun,t)->c1=fn;
+  c(Fun,t)->c1 = fn;
   return c(Fun,t)->c1(t, x);
 }
 
@@ -76,15 +77,16 @@ B fork_c2_nff(B t, B w, B x) {
 }
 B fork_c2(B t, B w, B x) {
   FC2 fn;
-  B g = c(Fork,t)->g; if (!isFun(g)) { fn=fork_c2_general; goto go; }
-  B h = c(Fork,t)->h; if (!isFun(h)) { fn=fork_c2_general; goto go; }
+  B g = c(Fork,t)->g; if (RARE(!isFun(g))) { general: fn=fork_c2_general; goto go; }
+  B h = c(Fork,t)->h; if (!isFun(h)) goto general;
   B f = c(Fork,t)->f;
   if (isFun(f)) { fn=fork_c2_fff; goto go; }
+  if (RARE(isMd(f))) goto general;
   if (isVal(f)) { fn=fork_c2_vff; goto go; }
   else          { fn=fork_c2_nff; goto go; }
   
   go:
-  c(Fun,t)->c2=fn;
+  c(Fun,t)->c2 = fn;
   return c(Fun,t)->c2(t, w, x);
 }
 
