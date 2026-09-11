@@ -146,9 +146,9 @@ static void storeu_u16(void* p, u16 v) { memcpy(p, &v, 2); }  static u16 loadu_u
 
 #if USE_REPLXX_IO
   #include <replxx.h>
-  extern GLOBAL Replxx* global_replxx;
-  #define printf(...) replxx_print(global_replxx, __VA_ARGS__)
-  #define fprintf(f, ...) replxx_print(global_replxx, __VA_ARGS__)
+  extern GLOBAL Replxx* replxx_global;
+  #define printf(...) replxx_print(replxx_global, __VA_ARGS__)
+  #define fprintf(f, ...) replxx_print(replxx_global, __VA_ARGS__)
 #endif
 extern INIT_GLOBAL FILE* log_file;
 #define log_printf(...) fprintf(log_file, __VA_ARGS__)

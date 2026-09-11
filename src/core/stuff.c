@@ -557,6 +557,10 @@ DEBUG_FN void   g_i(B x) { B r = info_c2(x, m_f64(1), inc(x)); fprintI(stderr,r)
 DEBUG_FN void   g_pv(void* x) { ignore_bad_tag=true; fprintI(stderr,tag(x,OBJ_TAG)); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
 DEBUG_FN void   g_iv(void* x) { ignore_bad_tag=true; B xo = tag(x, OBJ_TAG); B r = C2(info, m_f64(1), inc(xo)); fprintI(stderr,r); dec(r); fprintf(stderr,"\n"); fflush(stderr); ignore_bad_tag=false; }
 DEBUG_FN void   g_pst(void) { vm_pstLive(stderr); fflush(stdout); fflush(stderr); }
+#if !CBQN_LIB && !WASM
+void repl_loop(bool silent, bool forcePlaintext);
+DEBUG_FN void   g_repl(bool pretty) { repl_loop(false, !pretty); }
+#endif
 
 #if DEBUG
   GLOBAL bool cbqn_noAlloc;

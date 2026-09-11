@@ -125,7 +125,8 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
   
   INIT_GLOBAL u8 repl_historyMode = 2; // 0: don't load or save; 1: don't save; 2: load and save
   STATIC_GLOBAL char* repl_histfile = NULL;
-  GLOBAL Replxx* global_replxx;
+  GLOBAL Replxx* replxx_global;
+  STATIC_GLOBAL bool replxx_replInitialized; // can separately initialize the replxx_global object (just for its Windows I/O), and the properties needed for a REPL
   
   static char* const command_completion[] = {
     ")ex ",
@@ -175,7 +176,8 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
   }
   
   extern INIT_GLOBAL u32* const dsv_text[];
-  STATIC_GLOBAL B sysvalNames, sysvalNamesNorm;
+  STATIC_GLOBAL B repl_sysvalNames, repl_sysvalNamesNorm;
+  STATIC_GLOBAL B repl_kbKey, repl_kbVal; // keyboard ascii → BQN mapping
   
   NOINLINE void fill_color(ReplxxColor* cols, int s, int e, ReplxxColor col) {
     PLAINLOOP for (int i = s; i < e; i++) cols[i] = col;
@@ -319,7 +321,7 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
         
         switch (mode) {
           case 0: vars = listVars(gsc); break;
-          case 1: vars = incG(sysvalNames); break;
+          case 1: vars = incG(repl_sysvalNames); break;
           case 2: vars = allNsFields(); break;
           case 3: {
             usz n = sizeof(command_completion)/sizeof(char*);
@@ -334,7 +336,7 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
         for (usz i = 0; i < via; i++) {
           i32 matchState=0; B match=bi_N; usz matchLen=0, skip=0;
           for (usz j = 0; j < (mode==1? 2 : 1); j++) {
-            match = j? harr_ptr(sysvalNamesNorm)[i] : GetU(vars,i);
+            match = j? harr_ptr(repl_sysvalNamesNorm)[i] : GetU(vars,i);
             bool doNorm = mode==1? j : true;
             matchLen = IA(match);
             usz wlen = doNorm? normLen : wl;
@@ -398,13 +400,13 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
   
   static NOINLINE TmpState getState() {
     ReplxxState st;
-    replxx_get_state(global_replxx, &st);
+    replxx_get_state(replxx_global, &st);
     return (TmpState){.s = utf8Decode0(st.text), .pos = st.cursorPosition};
   }
   static NOINLINE void setState(TmpState s) { // consumes s.s
     char* r = malloc_B(s.s);
     ReplxxState st = (ReplxxState){.text = r, .cursorPosition = s.pos};
-    replxx_set_state(global_replxx, &st);
+    replxx_set_state(replxx_global, &st);
     free(r);
   }
   static NOINLINE TmpState insertChar(u32 p, bool replace) {
@@ -420,28 +422,28 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
     
     return (TmpState){.s = s, .pos = replace? pos : pos+1};
   }
-  STATIC_GLOBAL B b_pv;
-  STATIC_GLOBAL int b_pp;
-  STATIC_GLOBAL bool inBackslash;
-  static void stopBackslash() { inBackslash = false; }
-  NOINLINE void setPrev(B s, u64 pos) { // consumes
-    decG(b_pv);
-    b_pv = s;
-    b_pp = pos;
+  STATIC_GLOBAL B repl_pv; // replxx line content, as of last setPrev / setPrevNow call
+  STATIC_GLOBAL int repl_pp; // cursor position in the above
+  STATIC_GLOBAL bool repl_inBackslash;
+  static void stopBackslash() { repl_inBackslash = false; }
+  NOINLINE void setPrev(B s, int pos) { // consumes
+    decG(repl_pv);
+    repl_pv = s;
+    repl_pp = pos;
   }
   NOINLINE void setPrevNow() {
     ReplxxState st;
-    replxx_get_state(global_replxx, &st);
+    replxx_get_state(replxx_global, &st);
     setPrev(utf8Decode0(st.text), st.cursorPosition);
   }
   ReplxxActionResult enter_replxx(int code, void* data) {
-    if (inBackslash) {
+    if (repl_inBackslash) {
       setState(insertChar('\n', false));
       stopBackslash();
       setPrevNow();
       return REPLXX_ACTION_RESULT_CONTINUE;
     }
-    return replxx_invoke(global_replxx, REPLXX_ACTION_COMMIT_LINE, 0);
+    return replxx_invoke(replxx_global, REPLXX_ACTION_COMMIT_LINE, 0);
   }
   static NOINLINE bool slice_equal(B a, usz as, B b, usz bs, usz l) {
     B ac = vec_slice(a, as, l);
@@ -454,33 +456,32 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
   B indexOf_c2(B, B, B);
   B pick_c1(B, B);
   
-  STATIC_GLOBAL B b_key, b_val;
   void modified_replxx(char** s_res, int* p_res, void* userData) {
     if (!replcfg_enableKeyboard) return;
     CATCH_OOM(return)
     TmpState t = getState();
     B s = t.s;
     u64 pos = t.pos;
-    if (equal(b_pv, s) && pos==b_pp) goto end_withPrev; // sometimes this is called when nothing actually changed
+    if (equal(repl_pv, s) && pos==repl_pp) goto end_withPrev; // sometimes this is called when nothing actually changed
     
-    if (IA(b_pv)+1 != IA(s)  ||  b_pp+1 != pos) goto stop; // user did something other than type a single character
+    if (IA(repl_pv)+1 != IA(s)  ||  repl_pp+1 != pos) goto stop; // user did something other than type a single character
     
-    if (inBackslash) {
-      if (!slice_equal(b_pv, 0,    s, 0,   pos-1)) goto stop;
-      if (!slice_equal(b_pv, b_pp, s, pos, IA(s)-pos)) goto stop;
+    if (repl_inBackslash) {
+      if (!slice_equal(repl_pv, 0,       s, 0,   pos-1)) goto stop;
+      if (!slice_equal(repl_pv, repl_pp, s, pos, IA(s)-pos)) goto stop;
       if (o2cG(IGet(s,pos-1)) == replcfg_prefixChar) goto stop; // always make sure that the prefix char typed in twice types in the prefix char
-      usz mapPos = o2i(C1(pick, C2(indexOf, incG(b_key), IGet(s,pos-1))));
-      if (mapPos==IA(b_key)) goto stop;
+      usz mapPos = o2i(C1(pick, C2(indexOf, incG(repl_kbKey), IGet(s,pos-1))));
+      if (mapPos==IA(repl_kbKey)) goto stop;
       
-      TmpState t2 = insertChar(o2c(IGetU(b_val, mapPos)), true);
+      TmpState t2 = insertChar(o2c(IGetU(repl_kbVal, mapPos)), true);
       *s_res = malloc_B(t2.s); // will be free()'d by replxx
       *p_res = t2.pos;
       goto stop;
     } else {
-      if (o2cG(IGetU(s,b_pp))==replcfg_prefixChar) {
-        inBackslash = true;
-        *s_res = malloc_B(incG(b_pv)); // will be free()'d by replxx
-        *p_res = b_pp;
+      if (o2cG(IGetU(s,repl_pp))==replcfg_prefixChar) {
+        repl_inBackslash = true;
+        *s_res = malloc_B(incG(repl_pv)); // will be free()'d by replxx
+        *p_res = repl_pp;
         // restore state to previous one, and don't call setPrev as that'll set it to the updated one
         goto end_noPrev;
       }
@@ -524,7 +525,13 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
     return path_rel_dec(p, m_c8vec_0(name));
   }
   
-  static void cbqn_init_replxx() {
+  static void repl_initReplxx(bool forLoop) {
+    if (replxx_global == NULL) {
+      replxx_global = replxx_init();
+    }
+    if (!forLoop || replxx_replInitialized) return;
+    replxx_replInitialized = true;
+    
     B cfg = get_config_path(true, "cbqn_repl.txt");
     replcfg_path = gc_add(cfg);
     
@@ -549,29 +556,51 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
       cfg_set_keyboard(replcfg_enableKeyboard, false);
     }
     
-    b_key = gc_add(m_c32vec_0(U"\"`1234567890-=~!@#$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'ASDFGHJKL:|zxcvbnm,./ZXCVBNM<>? "));
-    b_val = gc_add(m_c32vec_0( U"˙˜˘¨⁼⌜´˝7∞¯•÷×¬⎉⚇⍟◶⊘⎊⍎⍕⟨⟩√⋆⌽𝕨∊↑∧y⊔⊏⊐π←→↙𝕎⍷𝕣⍋YU⊑⊒⍳⊣⊢⍉𝕤↕𝕗𝕘⊸∘○⟜⋄↩↖𝕊D𝔽𝔾«J⌾»·|⥊𝕩↓∨⌊n≡∾≍≠⋈𝕏C⍒⌈N≢≤≥⇐‿"));
-    sysvalNames = emptyHVec();
-    sysvalNamesNorm = emptyHVec();
+    repl_kbKey = gc_add(m_c32vec_0(U"\"`1234567890-=~!@#$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'ASDFGHJKL:|zxcvbnm,./ZXCVBNM<>? "));
+    repl_kbVal = gc_add(m_c32vec_0( U"˙˜˘¨⁼⌜´˝7∞¯•÷×¬⎉⚇⍟◶⊘⎊⍎⍕⟨⟩√⋆⌽𝕨∊↑∧y⊔⊏⊐π←→↙𝕎⍷𝕣⍋YU⊑⊒⍳⊣⊢⍉𝕤↕𝕗𝕘⊸∘○⟜⋄↩↖𝕊D𝔽𝔾«J⌾»·|⥊𝕩↓∨⌊n≡∾≍≠⋈𝕏C⍒⌈N≢≤≥⇐‿"));
+    repl_sysvalNames = emptyHVec();
+    repl_sysvalNamesNorm = emptyHVec();
     u32* const* c = dsv_text;
     while (*c) { bool unused;
       B str = m_c32vec_0(*(c++));
-      sysvalNames = vec_addN(sysvalNames, str);
-      sysvalNamesNorm = vec_addN(sysvalNamesNorm, str_norm(c32any_ptr(str), IA(str), &unused));
+      repl_sysvalNames = vec_addN(repl_sysvalNames, str);
+      repl_sysvalNamesNorm = vec_addN(repl_sysvalNamesNorm, str_norm(c32any_ptr(str), IA(str), &unused));
     }
-    gc_add(sysvalNames);
-    gc_add(sysvalNamesNorm);
-    gc_add_ref(&b_pv);
+    gc_add(repl_sysvalNames);
+    gc_add(repl_sysvalNamesNorm);
     
-    global_replxx = replxx_init();
-    b_pv = emptyCVec();
-    b_pp = 0;
+    repl_pv = emptyCVec();
+    repl_pp = 0;
+    gc_add_ref(&repl_pv);
+    
+    if (repl_historyMode != 0) {
+      if (repl_histfile == NULL) {
+        B f = get_config_path(false, ".cbqn_repl_history");
+        repl_histfile = toCStr(f);
+        dec(f);
+        gc_add(tag(TOBJ(repl_histfile), OBJ_TAG));
+      }
+      if (replxx_history_load(replxx_global, repl_histfile) == HistoryLoadIncorrectFormat) {
+        fprintf(stderr, "REPL history file at \"%s\" is of incorrect format; disabling REPL history loading and saving\n", repl_histfile);
+        repl_historyMode = 1;
+      }
+    }
+    
+    replxx_set_ignore_case(replxx_global, true);
+    replxx_set_highlighter_callback(replxx_global, highlighter_replxx, NULL);
+    replxx_set_hint_callback(replxx_global, hint_replxx, NULL);
+    replxx_set_completion_callback(replxx_global, complete_replxx, NULL);
+    replxx_bind_key(replxx_global, REPLXX_KEY_ENTER, enter_replxx, NULL);
+    replxx_set_modify_callback(replxx_global, modified_replxx, NULL);
+    replxx_bind_key_internal(replxx_global, REPLXX_KEY_CONTROL('N'), "history_next");
+    replxx_bind_key_internal(replxx_global, REPLXX_KEY_CONTROL('P'), "history_previous");
+    replxx_set_max_history_size(replxx_global, 50000);
   }
   const char* cbqn_replxx_input(char* prefix) {
     setPrev(emptyCVec(), 0);
-    replxx_enable_bracketed_paste(global_replxx);
-    const char* r = replxx_input(global_replxx, prefix);
-    replxx_disable_bracketed_paste(global_replxx);
+    replxx_enable_bracketed_paste(replxx_global);
+    const char* r = replxx_input(replxx_global, prefix);
+    replxx_disable_bracketed_paste(replxx_global);
     return r;
   }
 #endif
@@ -624,7 +653,7 @@ bool ryu_s2d_n(u8* buffer, int len, f64* result);
 #define DEFAULT_PROFILE_SAMPLERATE 5000
 void heap_printInfoStr(char* str);
 extern GLOBAL bool cfg_gcLog, cfg_memLog;
-void cbqn_runLine0(char* ln, i64 read) {
+void cbqn_runLine0(char* ln, i64 read, bool* shouldExit) {
   if (ln[0]==0 || read==0) return;
   
   B code;
@@ -650,7 +679,7 @@ void cbqn_runLine0(char* ln, i64 read) {
       toUTF8(u, ascii);
       dec(u);
       ascii[len] = '\0';
-      cbqn_runLine0(ascii, len+1);
+      cbqn_runLine0(ascii, len+1, shouldExit);
       TFREE(ascii);
       return;
     } else if (isCmd(cmdS, &cmdE, "t ") || isCmd(cmdS, &cmdE, "time ")) {
@@ -729,7 +758,9 @@ void cbqn_runLine0(char* ln, i64 read) {
       return;
 #if USE_REPLXX
     } else if (isCmd(cmdS, &cmdE, "kb ")) {
-      if (*cmdE == 0) {
+      if (!replxx_replInitialized) {
+        printf("REPLXX is not loaded\n");
+      } else if (*cmdE == 0) {
         kb_toggle:
         cfg_set_keyboard(!replcfg_enableKeyboard, true);
         printf("Backslash input %s\n", replcfg_enableKeyboard? "enabled" : "disabled");
@@ -748,14 +779,16 @@ void cbqn_runLine0(char* ln, i64 read) {
       }
       return;
     } else if (isCmd(cmdS, &cmdE, "theme ")) {
-      if      (strcmp(cmdE,"dark" )==0) cfg_set_theme(1, true);
+      if (!replxx_replInitialized) printf("REPLXX is not loaded\n");
+      else if (strcmp(cmdE,"dark" )==0) cfg_set_theme(1, true);
       else if (strcmp(cmdE,"light")==0) cfg_set_theme(2, true);
       else if (strcmp(cmdE,"none" )==0) cfg_set_theme(0, true);
       else printf("Unknown theme\n");
       return;
 #endif
     } else if (isCmd(cmdS, &cmdE, "exit") || isCmd(cmdS, &cmdE, "off")) {
-      bqn_exit(0);
+      *shouldExit = true;
+      return;
     } else if (isCmd(cmdS, &cmdE, "vars")) {
       B r = listVars(gsc);
       if (q_N(r)) {
@@ -895,7 +928,7 @@ void cbqn_runLine0(char* ln, i64 read) {
   
 }
 
-void cbqn_runLine(char* ln, i64 len) {
+void cbqn_runLine1(char* ln, i64 len, bool* shouldExit) {
   #if DEBUG
   ux cfh = cfHeight();
   #endif
@@ -912,7 +945,7 @@ void cbqn_runLine(char* ln, i64 len) {
     return;
   }
   cbqn_takeInterrupts(true);
-  cbqn_runLine0(ln, len);
+  cbqn_runLine0(ln, len, shouldExit);
   #if HEAP_VERIFY
     cbqn_heapVerify();
   #endif
@@ -923,6 +956,11 @@ void cbqn_runLine(char* ln, i64 len) {
 }
 
 #if WASM
+void cbqn_runLine(char* ln, i64 len) {
+  bool shouldExit = false;
+  cbqn_runLine1(ln, len, &shouldExit);
+  if (shouldExit) bqn_exit(0);
+}
 void cbqn_evalSrc(char* src, i64 len) {
   Run e = run_start();
   B code = utf8Decode(src, len);
@@ -1088,71 +1126,48 @@ int main() {
   extern char* const cbqn_versionInfo;
 #endif
 
-static void repl_loop(bool silentREPL) {
+void repl_loop(bool silent, bool forcePlaintext) {
   repl_init();
+  bool shouldExit = false;
   #if USE_REPLXX
-  if (!silentREPL) {
-    #if !USE_REPLXX_IO
-      cbqn_init_replxx();
-    #endif
+  if (!silent && !forcePlaintext) {
+    repl_initReplxx(true);
     
-    if (repl_historyMode != 0) {
-      if (repl_histfile == NULL) {
-        B f = get_config_path(false, ".cbqn_repl_history");
-        repl_histfile = toCStr(f);
-        dec(f);
-        gc_add(tag(TOBJ(repl_histfile), OBJ_TAG));
-      }
-      if (replxx_history_load(global_replxx, repl_histfile) == HistoryLoadIncorrectFormat) {
-        fprintf(stderr, "REPL history file at \"%s\" is of incorrect format; disabling REPL history loading and saving\n", repl_histfile);
-        repl_historyMode = 1;
-      }
-    }
-    
-    replxx_set_ignore_case(global_replxx, true);
-    replxx_set_highlighter_callback(global_replxx, highlighter_replxx, NULL);
-    replxx_set_hint_callback(global_replxx, hint_replxx, NULL);
-    replxx_set_completion_callback(global_replxx, complete_replxx, NULL);
-    replxx_bind_key(global_replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
-    replxx_set_modify_callback(global_replxx, modified_replxx, NULL);
-    replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('N'), "history_next");
-    replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('P'), "history_previous");
-    replxx_set_max_history_size(global_replxx, 50000);
-    
-    while(true) {
+    while (true) {
       const char* ln = cbqn_replxx_input("   ");
       if (ln==NULL) {
         if (errno==0) printf("\n");
         break;
       }
-      replxx_history_add(global_replxx, ln);
-      cbqn_runLine((char*)ln, strlen(ln));
-      if (repl_historyMode == 2) replxx_history_save(global_replxx, repl_histfile);
-    }
-  }
-  else
-  #endif
-  {
-    while (true) {
-      if (!silentREPL) {
-        printf("   ");
-        fflush(stdout);
+      replxx_history_add(replxx_global, ln);
+      cbqn_runLine1((char*)ln, strlen(ln), &shouldExit);
+      if (shouldExit) break; // don't need to save here, the ensuing bqn_exit will; not that saving the ")off" command is particularly important
+      if (repl_historyMode == 2) {
+        replxx_history_save(replxx_global, repl_histfile);
       }
-      char* ln = NULL;
-      size_t gl = 0;
-      i64 read = getline(&ln, &gl, stdin);
-      if (read<=0 || ln[0]==0) { if(!silentREPL) printf("\n"); break; }
-      if (ln[read-1]==10) ln[--read] = 0;
-      if (ln[read-1]==13) ln[--read] = 0;
-      cbqn_runLine(ln, read);
-      free(ln);
     }
+    return;
+  }
+  #endif
+  while (!shouldExit) {
+    if (!silent) {
+      printf("   ");
+      fflush(stdout);
+    }
+    char* ln = NULL;
+    size_t gl = 0;
+    i64 read = getline(&ln, &gl, stdin);
+    if (read<=0 || ln[0]==0) { if(!silent) printf("\n"); break; }
+    if (ln[read-1]==10) ln[--read] = 0;
+    if (ln[read-1]==13) ln[--read] = 0;
+    cbqn_runLine1(ln, read, &shouldExit);
+    free(ln);
   }
 }
 int main(int argc, char* argv[]) {
   #if USE_REPLXX_IO
     cbqn_init();
-    cbqn_init_replxx();
+    repl_initReplxx(false);
   #endif
   
   bool forceREPL = false;
@@ -1280,7 +1295,7 @@ int main(int argc, char* argv[]) {
       RUN_END;
     }
   }
-  if (forceREPL || cfg_implicitREPL) repl_loop(silentREPL);
+  if (forceREPL || cfg_implicitREPL) repl_loop(silentREPL, false);
   #if HEAP_VERIFY
     cbqn_heapVerify();
   #endif
@@ -1295,10 +1310,10 @@ void before_exit(void) {
     profiler_free();
   }
   #if USE_REPLXX
-    if (global_replxx!=NULL && repl_histfile!=NULL) {
-      if (repl_historyMode == 2) replxx_history_save(global_replxx, repl_histfile);
-      replxx_end(global_replxx);
-      global_replxx = NULL;
+    if (replxx_global!=NULL && repl_histfile!=NULL) {
+      if (repl_historyMode == 2) replxx_history_save(replxx_global, repl_histfile);
+      replxx_end(replxx_global);
+      replxx_global = NULL;
     }
   #endif
 }
