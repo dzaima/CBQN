@@ -1087,6 +1087,68 @@ int main() {
 #if HAS_VERSION
   extern char* const cbqn_versionInfo;
 #endif
+
+static void repl_loop(bool silentREPL) {
+  repl_init();
+  #if USE_REPLXX
+  if (!silentREPL) {
+    #if !USE_REPLXX_IO
+      cbqn_init_replxx();
+    #endif
+    
+    if (repl_historyMode != 0) {
+      if (repl_histfile == NULL) {
+        B f = get_config_path(false, ".cbqn_repl_history");
+        repl_histfile = toCStr(f);
+        dec(f);
+        gc_add(tag(TOBJ(repl_histfile), OBJ_TAG));
+      }
+      if (replxx_history_load(global_replxx, repl_histfile) == HistoryLoadIncorrectFormat) {
+        fprintf(stderr, "REPL history file at \"%s\" is of incorrect format; disabling REPL history loading and saving\n", repl_histfile);
+        repl_historyMode = 1;
+      }
+    }
+    
+    replxx_set_ignore_case(global_replxx, true);
+    replxx_set_highlighter_callback(global_replxx, highlighter_replxx, NULL);
+    replxx_set_hint_callback(global_replxx, hint_replxx, NULL);
+    replxx_set_completion_callback(global_replxx, complete_replxx, NULL);
+    replxx_bind_key(global_replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
+    replxx_set_modify_callback(global_replxx, modified_replxx, NULL);
+    replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('N'), "history_next");
+    replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('P'), "history_previous");
+    replxx_set_max_history_size(global_replxx, 50000);
+    
+    while(true) {
+      const char* ln = cbqn_replxx_input("   ");
+      if (ln==NULL) {
+        if (errno==0) printf("\n");
+        break;
+      }
+      replxx_history_add(global_replxx, ln);
+      cbqn_runLine((char*)ln, strlen(ln));
+      if (repl_historyMode == 2) replxx_history_save(global_replxx, repl_histfile);
+    }
+  }
+  else
+  #endif
+  {
+    while (true) {
+      if (!silentREPL) {
+        printf("   ");
+        fflush(stdout);
+      }
+      char* ln = NULL;
+      size_t gl = 0;
+      i64 read = getline(&ln, &gl, stdin);
+      if (read<=0 || ln[0]==0) { if(!silentREPL) printf("\n"); break; }
+      if (ln[read-1]==10) ln[--read] = 0;
+      if (ln[read-1]==13) ln[--read] = 0;
+      cbqn_runLine(ln, read);
+      free(ln);
+    }
+  }
+}
 int main(int argc, char* argv[]) {
   #if USE_REPLXX_IO
     cbqn_init();
@@ -1218,67 +1280,7 @@ int main(int argc, char* argv[]) {
       RUN_END;
     }
   }
-  if (forceREPL || cfg_implicitREPL) {
-    repl_init();
-    #if USE_REPLXX
-    if (!silentREPL) {
-      #if !USE_REPLXX_IO
-        cbqn_init_replxx();
-      #endif
-      
-      if (repl_historyMode != 0) {
-        if (repl_histfile == NULL) {
-          B f = get_config_path(false, ".cbqn_repl_history");
-          repl_histfile = toCStr(f);
-          dec(f);
-          gc_add(tag(TOBJ(repl_histfile), OBJ_TAG));
-        }
-        if (replxx_history_load(global_replxx, repl_histfile) == HistoryLoadIncorrectFormat) {
-          fprintf(stderr, "REPL history file at \"%s\" is of incorrect format; disabling REPL history loading and saving\n", repl_histfile);
-          repl_historyMode = 1;
-        }
-      }
-      
-      replxx_set_ignore_case(global_replxx, true);
-      replxx_set_highlighter_callback(global_replxx, highlighter_replxx, NULL);
-      replxx_set_hint_callback(global_replxx, hint_replxx, NULL);
-      replxx_set_completion_callback(global_replxx, complete_replxx, NULL);
-      replxx_bind_key(global_replxx, REPLXX_KEY_ENTER, enter_replxx, NULL);
-      replxx_set_modify_callback(global_replxx, modified_replxx, NULL);
-      replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('N'), "history_next");
-      replxx_bind_key_internal(global_replxx, REPLXX_KEY_CONTROL('P'), "history_previous");
-      replxx_set_max_history_size(global_replxx, 50000);
-      
-      while(true) {
-        const char* ln = cbqn_replxx_input("   ");
-        if (ln==NULL) {
-          if (errno==0) printf("\n");
-          break;
-        }
-        replxx_history_add(global_replxx, ln);
-        cbqn_runLine((char*)ln, strlen(ln));
-        if (repl_historyMode == 2) replxx_history_save(global_replxx, repl_histfile);
-      }
-    }
-    else
-    #endif
-    {
-      while (true) {
-        if (!silentREPL) {
-          printf("   ");
-          fflush(stdout);
-        }
-        char* ln = NULL;
-        size_t gl = 0;
-        i64 read = getline(&ln, &gl, stdin);
-        if (read<=0 || ln[0]==0) { if(!silentREPL) printf("\n"); break; }
-        if (ln[read-1]==10) ln[--read] = 0;
-        if (ln[read-1]==13) ln[--read] = 0;
-        cbqn_runLine(ln, read);
-        free(ln);
-      }
-    }
-  }
+  if (forceREPL || cfg_implicitREPL) repl_loop(silentREPL);
   #if HEAP_VERIFY
     cbqn_heapVerify();
   #endif
