@@ -1146,8 +1146,9 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     B c = GetU(x, i);
     if (isAtm(c) || RNK(c)!=1) thrM("•SH: 𝕩 must be a list of strings");
     u64 len = utf16lenB(c);
-    TALLOC(WCHAR, wstr, len);
+    TALLOC(WCHAR, wstr, len+1);
     toUTF16(c, wstr);
+    wstr[len] = 0;
 
     // https://learn.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
     u64 backslashes = 0;
