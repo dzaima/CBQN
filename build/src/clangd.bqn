@@ -127,7 +127,7 @@ Finish ⇐ { 𝕊 write:
     "clangd compile commands" res _doWrite AtRoot "build/compile_commands.json"
   }
   
-  AtRootRel ← "../"⊸•file.At
+  AtRootRel ← ⊢
   
   {
     singeliState≡@? @;
