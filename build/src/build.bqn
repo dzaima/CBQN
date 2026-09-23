@@ -218,13 +218,13 @@ po ← { # parsed options
   
   Max1 "REPLXX"‿"wasi"‿"emcc"
   Max1 "shared"‿"static-lib"
-  "static-lib"‿"shared" NotWith "REPLXX"‿"emcc"
+  "static-lib"‿"shared" NotWith ⋈"REPLXX"
   
   
   sharedLib ← GetOpt "shared"
   staticLib ⇐ GetOpt "static-lib"
   staticBin ⇐ GetOpt "static-bin"
-  lib ← staticLib ∨ sharedLib
+  lib ⇐ staticLib ∨ sharedLib
   native ⇐ 0 DOpt "native"
   emcc ⇐ GetOpt "emcc"
   wasi ← GetOpt "wasi"
@@ -334,9 +334,9 @@ po ← { # parsed options
   
   output ⇐ GetOpt "OUTPUT"
   output ↩ •wdpath•file.At {𝕊:
+    staticLib? "libcbqn.a";
     wasi? "BQN.wasm";
     emcc? ".";
-    staticLib? "libcbqn.a";
     sharedLib? {macos? "libcbqn.dylib"; windows? "cbqn.dll"; "libcbqn.so"};
     windows? "BQN.exe";
     "BQN"
@@ -859,7 +859,7 @@ outPath ← •wdpath •file.At po.output
   # else, regular build
   success ← Run cachedBin
   { 𝕊:
-    po.emcc?
+    po.emcc? ¬po.lib?
       Cp ← {
         src ← AtRoot linkerCache.File 𝕩
         SH⍟(•file.Exists src) ⟨"cp", "--", src, outPath •file.At 𝕩⟩
