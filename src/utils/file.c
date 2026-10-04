@@ -9,6 +9,7 @@
 
 #if defined(_WIN32)
   #include "windows/winFile.c"
+  #include "windows/winError.h"
 #else
   #include "utils/mem.h"
   #include "utils/cstr.h"
@@ -227,6 +228,12 @@ B path_withTrailingSlash(B path) {
   return path;
 }
 
+#if defined(_WIN32)
+#define realpathError winError()
+#else
+#define realpathError strerror(errno)
+#endif
+
 B path_abs(B path) {
   assert(isStr(path));
   #if WASM
@@ -235,7 +242,7 @@ B path_abs(B path) {
   if (q_N(path)) return path;
   OsStr p = toOsStr(path);
   OsStr res = realpath(p, NULL);
-  if (res==NULL) thrF("Failed to resolve \"%R\": %S", path, strerror(errno));
+  if (res==NULL) thrF("Failed to resolve \"%R\": %S", path, realpathError);
   B r = OsStrDecode0(res);
   free(res);
   dec(path);
@@ -243,6 +250,8 @@ B path_abs(B path) {
   return r;
   #endif
 }
+
+#undef realpathError
 
 CharBuf get_chars(B x) {
   char* buf;
@@ -328,7 +337,6 @@ B path_list(B path) {
 #include <unistd.h>
 #else
 #include <windows.h>
-#include "windows/winError.h"
 #endif
 
 typedef struct MmapHolder {
