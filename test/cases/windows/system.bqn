@@ -73,3 +73,12 @@
 !"•file.At: Drive-specific relative paths not supported" % f←•BQN "•file.At" ⋄ F "C:foo/bar"
 !"•file.At: Using relative path with no absolute base path known" % f←•BQN "•file.At" ⋄ F "/foo/bar"
 f←•BQN "•file.At" ⋄ F¨ "C:/foo/bar"‿"\\"‿"//foo/bar/baz" %% "C:/foo/bar"‿"\\"‿"//foo/bar/baz"
+
+# •file.RealPath
+%DEF _noWinError {𝔽⎊{𝕊: !(∧`·¬·»≠↑""": "⊸⍷)⊸/ •CurrentError@}}
+!"Failed to resolve ""C:\Users\file that doesn't exist""" % •file.RealPath %USE _noWinError "C:\Users\file that doesn't exist"
+
+%DEF rmdir Rmdir ← {•file.Exists 𝕩? ⊑•SH ⟨ "Powershell.exe", "-Command", "Remove-Item -LiteralPath '"∾𝕩∾"'"⟩; 0} •file.At 
+%USE rmdir ⋄ Rmdir "testdirNested" %% 0
+¯22↑•file.Createdir "testdirNested" %% "\testDir\testdirNested"
+¯8↑•file.RealPath "testdirNested/.././" %% "\testDir"

@@ -24,8 +24,53 @@ static bool isPathSep(uint32_t c) {
   return c=='/' || c=='\\';
 }
 
+static void winTryStripVerbatimPrefix(WCHAR* buffer, DWORD dwLength) {
+  static const WCHAR prefix[] = L"\\\\?\\";
+  static const u64 prefix_len = sizeof(prefix)/sizeof(WCHAR) - 1;
+  static const WCHAR unc_prefix[] = L"\\\\?\\UNC\\";
+  static const u64 unc_prefix_len = sizeof(unc_prefix)/sizeof(WCHAR) - 1;
+  static const WCHAR colon_sep[] = L":\\";
+  static const u64 colon_sep_len = sizeof(colon_sep)/sizeof(WCHAR) - 1;
+
+  if (dwLength > unc_prefix_len && wcsncmp(buffer, unc_prefix, unc_prefix_len) == 0) {
+    // replace "\\?\UNC\" with "\\" at the beginning of the buffer
+    // the string already starts with "\\"
+    memmove(buffer + 2, buffer + unc_prefix_len, (dwLength - unc_prefix_len + 1) * sizeof(WCHAR));
+  } else if (dwLength > prefix_len && wcsncmp(buffer, prefix, prefix_len) == 0) {
+    // remove "\\?\" prefix if there is a drive letter following it
+    if (dwLength >= prefix_len + 1 + colon_sep_len && 
+      wcsncmp(buffer + prefix_len + 1, colon_sep, colon_sep_len) == 0) {
+      memmove(buffer, buffer + prefix_len, (dwLength - prefix_len + 1) * sizeof(WCHAR));
+    }
+    // otherwise, e.g. for volume GUID paths, the prefix cannot be stripped
+  }
+}
+
+// resolved_path should always be NULL as it is ignored here
+// this function does not set errno, need to use winError() for error reporting
 static WCHAR* realpath(const WCHAR*__restrict path, WCHAR*__restrict resolved_path) {
-  return _wfullpath(NULL, path, 0);
+  (void)resolved_path; // ignore
+
+  HANDLE hFile = CreateFileW(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+    NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  if (hFile == INVALID_HANDLE_VALUE) { return NULL; }
+  DWORD dwSize = 512; // > MAX_PATH for a good enough initial size
+  WCHAR* buffer = NULL;
+  while (1) {
+    buffer = malloc(dwSize * sizeof(WCHAR));
+    if (buffer == NULL) { break; }
+    DWORD dwLength = GetFinalPathNameByHandleW(hFile, buffer, dwSize, VOLUME_NAME_DOS);
+    if (dwLength == 0) { free(buffer); buffer = NULL; break; }
+    if (dwLength < dwSize) {
+      winTryStripVerbatimPrefix(buffer, dwLength);
+      break;
+    }
+    free(buffer);
+    buffer = NULL;
+    dwSize = dwLength;
+  }
+  CloseHandle(hFile);
+  return buffer;
 }
 
 // ⟨absoluteFollows, prefixEnd↑x⟩ is one of:
