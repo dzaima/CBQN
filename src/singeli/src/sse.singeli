@@ -26,7 +26,7 @@ def   rcpE{a:([4]f32)} = emit{[4]f32, '_mm_rcp_ps', a}
 def and_bit_none{x:T, y:T if w128i{T}} = all_hom{(x & y) == T**0}
 
 def top_to_int{x:T if w128{T, 8}} = emit{u16, '_mm_movemask_epi8', x}
-def top_to_int{x:T if w128{T, 16}} = top_to_int{packs{[8]i16~~x, [8]i16**0}}
+def top_to_int{x:T if w128{T, 16}} = cast_i{u8, top_to_int{packs{[8]i16~~x, [8]i16**0}}}
 def top_to_int{x:T if w128{T, 32}} = emit{u8, '_mm_movemask_ps', v2f{x}}
 def top_to_int{x:T if w128{T, 64}} = emit{u8, '_mm_movemask_pd', v2d{x}}
 def hom_to_int{x:T if w128{T}} = top_to_int{x}

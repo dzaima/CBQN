@@ -15,7 +15,7 @@ def store_blended_hom{p:*E, m:M=[k]_, v:V=[k]E if w256i{M} and width{E}<=16 and 
 def top_to_int{x:T if w256{T, 8}} = emit{u32, '_mm256_movemask_epi8', x}
 def top_to_int{x:T if w256{T, 16}} = {
   msk:u32 = top_to_int{emit{[32]u8, '_mm256_packs_epi16', x, [16]u16**0}}
-  (msk&255) | (msk>>8)
+  cast_i{u16, (msk&255) | (msk>>8)}
 }
 
 def any_hom{x:T if w256i{T}} = ~emit{u1, '_mm256_testz_si256', v2i{x}, v2i{x}}
