@@ -75,8 +75,8 @@
 f←•BQN "•file.At" ⋄ F¨ "C:/foo/bar"‿"\\"‿"//foo/bar/baz" %% "C:/foo/bar"‿"\\"‿"//foo/bar/baz"
 
 # •file.RealPath
-!"Failed to resolve ""C:\NUL"": The parameter is incorrect. " % •file.RealPath "C:\NUL"
-!"Failed to resolve ""C:\Users\file that doesn't exist"": The system cannot find the file specified. " % •file.RealPath "C:\Users\file that doesn't exist"
+%DEF _noWinError {𝔽⎊{𝕊: !(∧`·¬·»≠↑""": "⊸⍷)⊸/ •CurrentError@}}
+!"Failed to resolve ""C:\Users\file that doesn't exist""" % •file.RealPath %USE _noWinError "C:\Users\file that doesn't exist"
 
 %DEF rmdir Rmdir ← {•file.Exists 𝕩? ⊑•SH ⟨ "Powershell.exe", "-Command", "Remove-Item -LiteralPath '"∾𝕩∾"'"⟩; 0} •file.At 
 %USE rmdir ⋄ Rmdir "testdirNested" %% 0
