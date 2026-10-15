@@ -4,15 +4,16 @@
 
 ## Running
 
-1. `make`
-    - Add `FFI=0` if your system doesn't have libffi
+1. Clone the repo with `git` (plain source archives won't work as they're missing git submodules)
+2. Run `make`
     - Use `gmake` on BSD
-    - Add `REPLXX=0` if C++ is unavailable (will remove line editing/coloring/name completion in the REPL)
-    - Run `sudo make install` afterwards to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); `sudo make uninstall` to uninstall
-    - `make clean` to get to a clean build state
-2. `./BQN somefile.bqn` to execute a file, or `./BQN` for a REPL
+    - libffi is needed by default; if it's unavailable and `•FFI` is not needed, add `FFI=0`
+    - If a C++ compiler is unavailable, `REPLXX=0` can be added (will remove line editing/coloring/completion support in the REPL!)
+    - `make clean` to get to a clean build state if necessary
+3. `./BQN somefile.bqn` to execute a file, or `./BQN` for a REPL
+4. Optional: run `sudo make install` to install into `/usr/local/bin/bqn` (a `PREFIX=/some/path` argument will install to `/some/path/bin/bqn`); also installs `bqnffi.h`, and, if built with `make shared-o3`, the shared library; `sudo make uninstall` to remove the files this creates
 
-Alternatively, third-party packages (and other ways to run BQN) are listed [here](https://mlochbaum.github.io/BQN/running.html); CBQN packaging status:
+Alternatively, third-party packages and builds (and other ways to run BQN), including Windows binaries, are listed [here](https://mlochbaum.github.io/BQN/running.html); CBQN packaging status:
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/cbqn.svg)](https://repology.org/project/cbqn/versions)
 
