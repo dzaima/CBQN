@@ -67,6 +67,8 @@ a←10‿10‿10⥊↕1000 ⋄ ! a ≡ a⌾((↕≢a)⊸⊑) a
 # !% ⊢⌾⊑ 4 # TODO enable
 # !% ⊢⌾(⊑⊑) 4 # TODO enable
 
+
+
 # ⊏
 n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡ r⌾(i⊸⊏) a
 !"𝕨⊏𝕩: 𝕩 cannot be a unit" % 0‿0⌾(0‿0⊸⊏) <0
@@ -137,6 +139,17 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 %USE eqvar ⋄ 2‿3‿2‿1 {'?'¨⌾(𝕨⊸⊏) 𝕩}_eqvar "abcdefgh" %% "a???efgh"
 %USE eqvar ⋄ 2‿3‿2‿1 {'𝕨'¨⌾(𝕨⊸⊏) 𝕩}_eqvar "abcdefgh" %% "a𝕨𝕨𝕨efgh"
 
+!"𝔽⌾⊏: 𝔽 must return an array with the same shape as its input (⟨3⟩ ≡ ≢𝕩, ⟨⟩ ≡ shape of result of 𝔽)" % 'a'⌾⊏ "abc"
+!"𝔽⌾⊏: 𝔽 must return an array with the same shape as its input (4‿4 ≡ ≢𝕩, ⟨5⟩ ≡ shape of result of 𝔽)" % ∾⟜1⌾⊏ 4‿4⥊↕16
+!"𝔽⌾⊏: 𝔽 must return an array with the same shape as its input (4‿4‿4 ≡ ≢𝕩, 1‿4‿4 ≡ shape of result of 𝔽)" % ≍⌾⊏ 4‿4‿4⥊↕16
+!"𝔽⌾⊏: 𝔽 must return an array with the same shape as its input (4‿4‿4 ≡ ≢𝕩, 4‿4‿1 ≡ shape of result of 𝔽)" % ≍⎉0⌾⊏ 4‿4‿4⥊↕16
+!"𝔽⌾⊏: 𝔽 must return an array with the same shape as its input (3‿4‿5 ≡ ≢𝕩, 5‿4 ≡ shape of result of 𝔽)" % ⍉⌾⊏ 3‿4‿5⥊1
+%USE eqvar ⋄ {(<0)⌾⊏ 𝕩}_eqvar 1‿1‿0‿1‿1‿0 %% 0‿1‿0‿1‿1‿0
+%USE eqvar ⋄ "ABC" {𝕨⌾⊏ 𝕩}_eqvar 4‿3⥊'a'+↕12 %% 4‿3⥊"ABCdefghijkl"
+%USE eqvar ⋄ (≍"ABC") {𝕨⌾⊏ 𝕩}_eqvar 4‿1‿3⥊'a'+↕12 %% 4‿1‿3⥊"ABCdefghijkl"
+%USE eqvar ⋄ (2‿2⥊1‿1‿0‿1) {𝕨⌾⊏ 𝕩}_eqvar 3‿2‿2⥊1‿0‿0 %% 3‿2‿2⥊1‿1‿0‿1‿0‿0‿1‿0‿0‿1‿0‿0
+
+
 
 # ⥊
 !"𝔽⌾⥊: 𝔽 must return an array with the same shape as its input (16 ≡ ≢⥊𝕩, ⟨17⟩ ≡ shape of result of 𝔽)" % 1⊸∾⌾⥊ 4‿4⥊↕16
@@ -173,6 +186,7 @@ n←500 ⋄ a←↕n ⋄ i←(-n)+↕2×n ⋄ r←⌽(2×n)⥊a ⋄ ! (⌽a) ≡
 1⊸+⌾(2‿2⊸⥊) 5 %% <6
 !"⌾: Incompatible result elements in structural Under" % 1‿2⊸+⌾(2‿2⊸⥊) 5
 10‿20‿30⊸+˘⌾(4‿3⊸⥊) 1‿2‿3 %% 11‿22‿33
+
 
 
 # /

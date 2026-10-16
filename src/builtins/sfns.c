@@ -1441,7 +1441,6 @@ B pick_uc1(B t, B o, B x) {
 
 
 B select_replace(u32 chr, B w, B x, B rep, usz wia, usz xl, usz xcia);
-B select_ucw(B t, B o, B w, B x);
 B select_c2(B,B,B);
 B pick_ucw(B t, B o, B w, B x) {
   if (RARE(isAtm(x))) def: return def_fn_ucw(t, o, w, x);
@@ -1769,6 +1768,19 @@ B join_powd(bool aft, i64 am, B w, B x) {
   return join_cycled(aft, wc, w, x, SH(x)+xr-cr, cr);
 }
 
+B select_ucw(B t, B o, B w, B x);
+B select_c1(B, B);
+B select_uc1(B t, B o, B x) {
+  B n = c1(o, select_c1(t, inc(x))); // select_c1 will error if x is atom
+  if (isAtm(n) || RNK(n)+1 != RNK(x) || !eqShPart(SH(x)+1, SH(n), RNK(n))) thrF("𝔽⌾⊏: 𝔽 must return an array with the same shape as its input (%H ≡ ≢𝕩, %H ≡ shape of result of 𝔽)", x, n);
+  
+  u8 re = el_or(TI(x,elType), TI(n,elType));
+  DIRECTARR_COPY(r, re, x);
+  DIRECTARR_REPLACE_RANGE(r, 0, n, 0, IA(n));
+  decG(n);
+  return r.obj;
+}
+
 B reverse_ucw(B t, B o, B w, B x) { return reverse_ix(bi_z, w, c1(o, reverse_c2(t, inc(w), x))); }
 B reverse_uc1(B t, B o, B x) { return C1(reverse,      c1(o, reverse_c1(t, x))); }
 B enclose_uc1(B t, B o, B x) { return enclose_im(bi_z, c1(o, m_unit(x))); }
@@ -1782,7 +1794,8 @@ void sfns_init(void) {
   c(BFn,bi_reverse)->uc1 = reverse_uc1;
   c(BFn,bi_reverse)->ucw = reverse_ucw;
   c(BFn,bi_pick)->ucw = pick_ucw;
-  c(BFn,bi_select)->ucw = select_ucw; // TODO move to new init fn
+  c(BFn,bi_select)->ucw = select_ucw;
+  c(BFn,bi_select)->uc1 = select_uc1;
   c(BFn,bi_shape)->ucw = shape_ucw;
   c(BFn,bi_shape)->uc1 = shape_uc1;
   c(BFn,bi_take)->ucw = take_ucw;
