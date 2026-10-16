@@ -23,7 +23,7 @@ a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
 {123456 ⋄ 1‿{2} ⋄ ⟨1⟩ ⋄ 1‿{1+5}} %% 1‿6
 
 # headers/assignment
-!"Square brackets can't be empty" % •BQN⎊{𝕊: !{𝕩/˜∧`𝕩≠@+10} •CurrentError@} "[]"
+!"Square bracket literals can't be empty" % •BQN⎊{𝕊: !{𝕩/˜∧`𝕩≠@+10} •CurrentError@} "[]"
 {⟨[]⇐x⟩: 1; 0} {x⇐[1‿2,3‿4]} %% 0
 {⟨[]⇐x⟩: 1; 0} {x⇐0‿2‿3⥊0} %% 1
 {⟨[1‿2,3‿4]⇐x⟩: 1; 0} {x⇐1+2‿2⥊↕4} %% 1
