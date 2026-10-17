@@ -512,7 +512,7 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
   B o = c(WrappedObj,s)->obj;
   if (!isArr(x) || RNK(x)==0) {
     if (hdr) return false;
-    else thrF("[…]%c𝕩: 𝕩 cannot have rank 0", upd? U'↩' : U'←');
+    else thrF("[…]%c𝕩: 𝕩 cannot %S", upd? U'↩' : U'←', isArr(x)? "have rank 0" : "be an atom");
   }
   
   B* op = harr_ptr(o);
@@ -520,7 +520,7 @@ FORCE_INLINE bool v_merge(Scope* pscs[], B s, B x, bool upd, bool hdr) {
   
   if (SH(x)[0] != oia) {
     if (hdr) return false;
-    else thrF("[…]%c𝕩: Target length & leading axis of 𝕩 didn't match", upd? U'↩' : U'←');
+    else thrF("[…]%c𝕩: Mismatched length (expected leading axis of length %s, got %01H)", upd? U'↩' : U'←', oia, x);
   }
   if (oia == 0) { /*no need to do anything*/ }
   else if (RNK(x)==1) {
@@ -557,8 +557,11 @@ NOINLINE void v_setF(Scope* pscs[], B s, B x, bool upd) {
   if (isArr(s)) { VTY(s, t_harr);
     B* sp = harr_ptr(s);
     usz ia = IA(s);
-    if (isAtm(x) || !eqShape(s, x)) {
-      if (!isNsp(x)) thrM("Assignment: Mismatched shape for spread assignment");
+    assert(RNK(s)==1);
+    if (isAtm(x) || RNK(x)!=1 || ia!=IA(x)) {
+      if (!isNsp(x)) {
+        thrF("Assignment: Mismatched length (expected %s-element list, got %01H)", IA(s), x);
+      }
       for (u64 i = 0; i < ia; i++) {
         B c = sp[i];
         if (isVar(c)) {

@@ -58,12 +58,24 @@ a←"zero"‿"one" ⋄ !a≡a⊸{𝕩?1⊑𝕨;0⊑𝕨}¨0‿1
 !"Attempting to read variable which is not yet defined" % a←1 ⋄ {a‿b⊢↩↕2} ⋄ b←2
 !"Assignment: Attempting to modify variable which is not yet defined" % a←1 ⋄ {a‿b↩↕2} ⋄ b←2
 !"Attempting to read variable which is not yet defined" % a←1 ⋄ {a‿b (↕10)˙↩} ⋄ b←2
-!"Assignment: Mismatched shape for spread assignment" % a‿b←1
-!"Assignment: Mismatched shape for spread assignment" % a‿b←1‿2‿3
-!"Assignment: Mismatched shape for spread assignment" % ⟨a⟩←<1
-!"Assignment: Mismatched shape for spread assignment" % ⟨⟩←1
-!"Assignment: Mismatched shape for spread assignment" % ⟨⟩←⟨1⟩
+!"Assignment: Mismatched length (expected 2-element list, got atom)" % a‿b←1
+!"Assignment: Mismatched length (expected 2-element list, got shape ⟨3⟩)" % a‿b←1‿2‿3
+!"Assignment: Mismatched length (expected 1-element list, got unit array)" % ⟨a⟩←<1
+!"Assignment: Mismatched length (expected 0-element list, got atom)" % ⟨⟩←1
+!"Assignment: Mismatched length (expected 0-element list, got shape ⟨1⟩)" % ⟨⟩←⟨1⟩
+!"Assignment: Mismatched length (expected 0-element list, got shape 0‿2)" % ⟨⟩←0‿2⥊2
+!"Assignment: Mismatched length (expected 2-element list, got shape 2‿2)" % a‿b←2‿2⥊2
+!"Assignment: Mismatched length (expected 3-element list, got shape 3‿4‿5)" % a‿b‿c←3‿4‿5⥊'a'
+!"[…]←𝕩: 𝕩 cannot be an atom" % [] ← 1
+!"[…]←𝕩: 𝕩 cannot have rank 0" % [] ← <0
+!"[…]←𝕩: 𝕩 cannot have rank 0" % [a] ← <⋈1
+!"[…]←𝕩: Mismatched length (expected leading axis of length 0, got shape ⟨2⟩)" % [] ← ↕2
+!"[…]←𝕩: Mismatched length (expected leading axis of length 0, got shape 2‿0)" % [] ← 2‿0⥊0
+!"[…]←𝕩: Mismatched length (expected leading axis of length 2, got shape 3‿3)" % [a‿b‿c,d‿e‿f] ← 3‿3⥊0
+!"[…]←𝕩: Mismatched length (expected leading axis of length 2, got shape 0‿2‿3‿4)" % [a,b] ← 0‿2‿3‿4⥊0
 ⟨⟩←⟨⟩ %% ⟨⟩
+[]←⟨⟩ %% ⟨⟩
+[]←0‿2⥊0 %% 0‿2⥊0
 
 # mid-update variable behavior
 %USE jiteq ⋄ {𝕊: a←"foo" ⋄ {𝕊:a!↩@}⎊•CurrentError @ ⋄     1} _jiteq @ %% 1
