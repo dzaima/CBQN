@@ -606,8 +606,8 @@ static ApdFn* const apd_sh2_fns[];
     COPY0_TO(m->a, E, p0, x, xe, cia);              \
   }
 
-#define APD_SH1_CHK(N) if (RARE(isAtm(x) || RNK(x)!=1     || cia!=IA(x)                     )) { apd_sh_fail(m,x,N); return; }
-#define APD_SHH_CHK(N) if (RARE(isAtm(x) || RNK(x)!=m->cr || !eqShPart(m->csh, SH(x), m->cr))) { apd_sh_fail(m,x,N); return; }
+#define APD_SH1_CHK(N) if (RARE(isAtm(x) || RNK(x)!=1 || cia!=IA(x)                   )) { apd_sh_fail(m,x,N); return; }
+#define APD_SHH_CHK(N) if (RARE(isAtm(x) || !ptr_eqShape(m->csh, RNK(x), SH(x), m->cr))) { apd_sh_fail(m,x,N); return; }
 #define APD_WATOM(N, A, EB, E, WATOM) \
   if (RARE(!q_##E(x))) APD_WIDEN(N, A); \
   usz p0 = APD_POS(EB);                 \

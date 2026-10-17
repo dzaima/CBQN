@@ -333,7 +333,7 @@ B narrowWidenedBitArr(B x, ur axis, ur cr, usz* csh) { // for now assumes the bi
   // printf("narrowWidenedBitArr ia=%d axis=%d cr=%d ocsz=%d xcsz=%d\n", IA(x), axis, cr, ocsz, xcsz);
   assert((xcsz&7) == 0 && ocsz<xcsz && ocsz!=0);
   if (xcsz==ocsz) {
-    if (RNK(x)-axis == cr && eqShPart(SH(x)+axis, csh, cr)) return x;
+    if (ptr_eqShape(SH(x)+axis, RNK(x)-axis, csh, cr)) return x;
     Arr* r = cpyWithShape(x);
     ShArr* rsh = m_shArr(axis+cr);
     shcpy(rsh->a, SH(x), axis);

@@ -697,7 +697,7 @@ NOINLINE B for_cells_AS(B f, B w, B x, ur wcr, ur wr, u32 chr) { // F⟜x⎉wcr 
     }
     if (IA(w)!=0 && isPervasiveDy(f)) {
       if (isAtm(x)) return c2(f, w, x);
-      if (RNK(x)!=wcr || !eqShPart(SH(x), wsh+wk, wcr)) goto generic;
+      if (!ptr_eqShape(SH(x), RNK(x), wsh+wk, wcr)) goto generic;
       if (TI(w,elType)==el_B || TI(x,elType)==el_B || HEURISTIC(IA(x)>(2048*8)>>arrTypeBitsLog(TY(x)) && IA(w)!=IA(x))) goto generic;
       return c2(f, w, C2(shape, C1(fne, incG(w)), x));
     }
@@ -808,7 +808,7 @@ NOINLINE B for_cells_SA(B f, B w, B x, ur xcr, ur xr, u32 chr) { // w⊸F⎉xcr 
       default: if (isPervasiveDy(f)) {
         if (isAtm(w)) return c2(f, w, x);
         if (IA(x)==0) break;
-        if (RNK(w)!=xcr || !eqShPart(SH(w), xsh+xk, xcr)) break;
+        if (!ptr_eqShape(SH(w), RNK(w), xsh+xk, xcr)) break;
         if (TI(w,elType)==el_B || TI(x,elType)==el_B || HEURISTIC(IA(w)>(2048*8)>>arrTypeBitsLog(TY(w)) && IA(w)!=IA(x))) break;
         return c2(f, C2(shape, C1(fne, incG(x)), w), x);
       }
