@@ -228,3 +228,9 @@ bytecodeMessage:
 ifeq ($(i_USE_BC_SUBMODULE),1)
 	@echo "Using precompiled bytecode; see readme for how to build your own"
 endif
+
+clean-specific:
+	rm -f $(bd)/*.o
+	rm -f $(bd)/*.d
+	rm -f $(bd)/BQN
+	rmdir $(bd); true

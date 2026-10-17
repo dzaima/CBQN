@@ -133,11 +133,6 @@ clean-build:
 	rm -f build/obj/*/*.o
 	rm -f build/obj/*/*.d
 	rm -f build/obj/*/BQN
-clean-specific:
-	rm -f $(bd)/*.o
-	rm -f $(bd)/*.d
-	rm -f $(bd)/BQN
-	rmdir $(bd); true
 clean-submodules:
 	git submodule deinit build/singeliSubmodule/ build/replxxSubmodule/ build/bytecodeSubmodule/
 clean-obj2:
