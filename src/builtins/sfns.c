@@ -1095,13 +1095,15 @@ B couple_c1(B t, B x) {
   return taga(r);
 }
 B couple_c2(B t, B w, B x) {
-  if (isAtm(w)&isAtm(x)) return m_vec2(w, x);
-  if (isAtm(w)) w = m_unit(w);
-  if (isAtm(x)) x = m_unit(x);
+  if (RARE(isAtm(w))) {
+    if (isAtm(x)) return m_vec2(w, x);
+    w = m_unit(w);
+  }
+  if (RARE(isAtm(x))) x = m_unit(x);
   if (!eqShape(w, x)) thrF("𝕨≍𝕩: 𝕨 and 𝕩 must have equal shapes (%H ≡ ≢𝕨, %H ≡ ≢𝕩)", w, x);
-  usz ia = IA(w);
   ur wr = RNK(w);
   if (wr==UR_MAX) thrM("𝕨≍𝕩: Result rank too large");
+  usz ia = IA(w);
   MAKE_MUT_INIT_WITHFILL(r, ia*2, el_or(TI(w,elType), TI(x,elType)), fill_both(w, x)); MUTG_INIT(r);
   mut_copyG(r, 0,  w, 0, ia);
   mut_copyG(r, ia, x, 0, ia);
