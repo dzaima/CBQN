@@ -180,6 +180,7 @@ Namespace of various internal functions. May change at any time.
 | `•internal.Temp`              | Place to test new features or temporarily expose some internal function |
 | `•internal.Properties`        | Various build properties |
 | `•internal.Validate`          | Validate that `𝕩` has correct flags set |
+| `•internal.NativePrint`       | Print `𝕩` using the native formatter; default `𝕨` is `1`; if `2|𝕨`, add a trailing newline; `⌊𝕨÷2` determines where to print to: 0→stdout, 1→stderr, 2→logfile |
 | `•internal.XOpt`              | Equivalent to a command-line argument of `-X<𝕩>` or `-X<𝕩>=<𝕨>`; note that some of the options may break or not function properly if set with this if they expect to be set before CBQN initialization! |
 
 # FFI

@@ -1706,7 +1706,7 @@ INIT_GLOBAL u32* const dsv_text[] = {
   U"•foreign.Function",U"•foreign.null",U"•foreign.Pointer",U"•foreign.ReadBytesTo0",U"•foreign.ReadCharsTo0",U"•foreign.Sizeof",U"•foreign.Value",
   
   U"•internal.ClearRefs",U"•internal.DeepSqueeze",U"•internal.EEqual",U"•internal.ElType",U"•internal.GC",U"•internal.HasFill",U"•internal.HeapDump",
-  U"•internal.HeapStats",U"•internal.Indistinguishable",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.ObjFlags",
+  U"•internal.HeapStats",U"•internal.Indistinguishable",U"•internal.Info",U"•internal.IsPure",U"•internal.Keep",U"•internal.ListVariations",U"•internal.NativePrint",U"•internal.ObjFlags",
   U"•internal.PureKeep",U"•internal.PureShow",U"•internal.Refc",U"•internal.Squeeze",U"•internal.Temp",U"•internal.Type",U"•internal.Unshare",U"•internal.Validate",U"•internal.Variation",U"•internal.WithFill",U"•internal.XOpt",
   
   U"•math.Acos",U"•math.Acosh",U"•math.Asin",U"•math.Asinh",U"•math.Atan",U"•math.Atan2",U"•math.Atanh",U"•math.Cbrt",U"•math.Comb",U"•math.Cos",U"•math.Cosh",
