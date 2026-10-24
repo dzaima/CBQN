@@ -116,7 +116,7 @@ Run ← { 𝕊 testname:
   {
     1≤≠lns?
     "### WHOLE-FILE-TEST" ≡ ⊑lns?
-    lns ↩ ⟨"("⟩∾(1↓lns)∾⟨")"⟩
+    lns ↩ ⟨"(", ""⟩∾(1↓lns)∾⟨")"⟩
     ;@
   }
   defk‿defv ← ⟨"IS_HEAPVERIFY"⟩‿⟨"heapverify←"∾•Repr o.heapverify⟩
