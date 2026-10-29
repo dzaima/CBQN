@@ -58,7 +58,7 @@ static unsigned int __stdcall winThreadRead(void* arg0) {
   return dwResult;
 }
 
-static DWORD winCmd(WCHAR* arg,
+static DWORD winCmd(WCHAR* appName, WCHAR* cmdLine,
   u64 iLen, char* iBuf,
   DWORD* code,
   u64* oLen, char** oBuf,
@@ -96,8 +96,15 @@ static DWORD winCmd(WCHAR* arg,
   ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
 
   // Create the child process
-  BOOL bSuccess = CreateProcessW(NULL, arg, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
-  if (!bSuccess) { return GetLastError(); }
+  BOOL bSuccess = CreateProcessW(appName, cmdLine, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+  if (!bSuccess) {
+    dwResult = GetLastError();
+    // Close all handles
+    CloseHandle(hInpR); CloseHandle(hInpW);
+    CloseHandle(hOutR); CloseHandle(hOutW);
+    CloseHandle(hErrR); CloseHandle(hErrW);
+    return dwResult;
+  }
 
   // Close the unneeded handles
   CloseHandle(hInpR);
@@ -148,3 +155,149 @@ error:
 
   return dwResult;
 }
+
+// helpers
+
+#define WIN_MY_ALLOC(T,N,AM) T* N = malloc((AM)*sizeof(T)); if (N == NULL) thrOOM();
+
+static WCHAR* winWcsDup(WCHAR* str) {
+  size_t len = wcslen(str);
+  WIN_MY_ALLOC(WCHAR, dup, len+1);
+  memcpy(dup, str, (len+1) * sizeof(WCHAR));
+  return dup;
+}
+
+static WCHAR* winGetEnvVar(WCHAR* name) {
+  DWORD dwSize = 1024;
+  WCHAR* buffer = NULL;
+  while (1) {
+    WCHAR* newBuffer = realloc(buffer, dwSize * sizeof(WCHAR));
+    if (newBuffer == NULL) { free(buffer); thrOOM(); }
+    buffer = newBuffer;
+    DWORD dwLength = GetEnvironmentVariableW(name, buffer, dwSize);
+    if (dwLength == 0) { free(buffer); buffer = NULL; break; }
+    if (dwLength < dwSize) { break; }
+    dwSize = dwLength;
+  }
+  return buffer;
+}
+
+static bool winFileExists(WCHAR* path) {
+  DWORD attrs = GetFileAttributesW(path);
+  return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
+}
+
+static void winSlashToPathSep(WCHAR* path) {
+  if (path == NULL) { return; }
+  for (WCHAR* p = path; *p != L'\0'; ++p) {
+    if (*p == L'/') { *p = L'\\'; }
+  }
+}
+
+// input should only use '\\' as path separators
+
+static bool winHasExt(WCHAR* path) {
+  const WCHAR* dot = wcsrchr(path, L'.');
+  const WCHAR* sep = wcsrchr(path, L'\\');
+  return dot != NULL && (sep == NULL || dot > sep);
+}
+
+static bool winHasPathSep(WCHAR* path) {
+  const WCHAR* sep = wcschr(path, L'\\');
+  return sep != NULL;
+}
+
+static WCHAR* winWcsJoin(WCHAR* a, size_t aLen, WCHAR* b, size_t bLen, WCHAR sep) {
+  if (a == NULL || b == NULL) { return NULL; }
+  size_t sepLen = sep==L'\0' ? 0 : 1;
+  WIN_MY_ALLOC(WCHAR, path, aLen+sepLen+bLen+1);
+  memcpy(path, a, aLen * sizeof(WCHAR));
+  if (sepLen > 0) { path[aLen] = sep; }
+  memcpy(path + aLen + sepLen, b, bLen * sizeof(WCHAR));
+  path[aLen + sepLen + bLen] = L'\0';
+  return path;
+}
+
+struct winWstrView {
+  WCHAR* ptr;
+  size_t len;
+};
+
+static void winTrimToken(struct winWstrView* token) {
+  WCHAR* start = token->ptr;
+  WCHAR* end = token->ptr + token->len;
+  // trim leading and trailing quotes
+  while (start < end && (*start == L'\'' || *start == L'\"')) { start++; }
+  while (end > start && (*(end - 1) == L'\'' || *(end - 1) == L'\"')) { end--; }
+  // trim trailing path separators
+  while (end > start && (*(end - 1) == L'\\' || *(end - 1) == L'/')) { end--; }
+  token->ptr = start;
+  token->len = (size_t)(end - start);
+}
+
+static bool winNextSemiToken(WCHAR* input, size_t inputLen, size_t* cursor, struct winWstrView* token) {
+  if (*cursor >= inputLen) { return false; }
+  size_t start = *cursor;
+  while (*cursor < inputLen && input[*cursor] != L';') {
+    (*cursor)++;
+  }
+  token->ptr = input + start;
+  token->len = *cursor - start;
+  winTrimToken(token);
+  if (*cursor < inputLen && input[*cursor] == L';') {
+    (*cursor)++;
+  }
+  return true;
+}
+
+static WCHAR* winSearchInPath(WCHAR* name) {
+  WCHAR* path = winGetEnvVar(L"PATH");
+  // cannot find PATH env variable
+  if (path == NULL) { return NULL; }
+
+  WCHAR* resolved = NULL;
+  size_t cursor = 0;
+  size_t pathLen = wcslen(path);
+  size_t nameLen = wcslen(name);
+  struct winWstrView dir;
+  while (winNextSemiToken(path, pathLen, &cursor, &dir)) {
+    if (dir.len == 0) { continue; }
+
+    WCHAR* candidate = winWcsJoin(dir.ptr, dir.len, name, nameLen, L'\\');
+    if (winFileExists(candidate)) {
+      resolved = candidate;
+      break;
+    }
+    free(candidate);
+  }
+
+  free(path);
+  return resolved;
+}
+
+// resolve application name for CreateProcessW (winCmd):
+// 1. if the name already has a file extension, use it as is; otherwise, append ".exe"
+// 2. if the name is a relative or absolute path, use it as is; otherwise, search for it in PATH
+// PATHEXT is not used
+// input should only use '\\' as path separators
+static WCHAR* winResolveApplicationName(WCHAR* app) {
+  static WCHAR exeExt[] = L".exe";
+  static size_t exeExtLen = sizeof(exeExt) / sizeof(WCHAR) - 1;
+
+  WCHAR* name = winWcsDup(app);
+
+  if (!winHasExt(name)) {
+    WCHAR* oldName = name;
+    name = winWcsJoin(name, wcslen(name), exeExt, exeExtLen, L'\0');
+    free(oldName);
+  }
+
+  if (winHasPathSep(name)) { return name; } // let CreateProcessW handle it
+
+  WCHAR* resolved = winSearchInPath(name);
+  winSlashToPathSep(resolved); // PATH entries may contain '/'
+  free(name);
+  return resolved;
+}
+
+#undef WIN_MY_ALLOC

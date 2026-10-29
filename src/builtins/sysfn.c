@@ -1140,7 +1140,8 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
 
 static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args
-  TSALLOC(WCHAR, arg, 8);
+  WCHAR* appName = NULL;
+  TSALLOC(WCHAR, cmdLine, 8);
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
@@ -1150,30 +1151,39 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     toUTF16(c, wstr);
     wstr[len] = 0;
 
+    if (i == 0) {
+      winSlashToPathSep(wstr);
+      // resolve application name
+      appName = winResolveApplicationName(wstr);
+      if (appName==NULL) thrF("•SH: Failed to resolve executable \"%R\"", c);
+    } else {
+      TSADD(cmdLine, L' ');
+    }
+
     // https://learn.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
     u64 backslashes = 0;
     bool quote = len==0 || NULL!=wcspbrk(wstr, L" \t\n\v\"");
-    if (quote) { TSADD(arg, L'\"'); }
+    if (quote) { TSADD(cmdLine, L'\"'); }
     for (u64 j = 0; j < len; ++j) {
       WCHAR x = wstr[j];
       if (x==L'\\') {
         backslashes += 1;
       } else {
         if (x==L'\"') {
-          for (u64 k = 0; k < 1+backslashes; ++k) { TSADD(arg, L'\\'); }
+          for (u64 k = 0; k < 1+backslashes; ++k) { TSADD(cmdLine, L'\\'); }
         }
         backslashes = 0;
       }
-      TSADD(arg, x);
+      TSADD(cmdLine, x);
     }
     if (quote) {
-      for (u64 k = 0; k < backslashes; ++k) { TSADD(arg, L'\\'); }
-      TSADD(arg, L'\"');
+      for (u64 k = 0; k < backslashes; ++k) { TSADD(cmdLine, L'\\'); }
+      TSADD(cmdLine, L'\"');
     }
 
-    TSADD(arg, (xia==i+1)? L'\0' : L' ');
     TFREE(wstr);
   }
+  TSADD(cmdLine, L'\0');
 
   // allocate stdin
   char* iBuf;
@@ -1192,9 +1202,10 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   DWORD code = -1;
   u64 oLen = 0; char* oBuf;
   u64 eLen = 0; char* eBuf;
-  DWORD dwResult = winCmd(arg, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
+  DWORD dwResult = winCmd(appName, cmdLine, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
-  TSFREE(arg);
+  TSFREE(cmdLine);
+  free(appName);
   if (dwResult != ERROR_SUCCESS) {
     thrF("•SH: Failed to run command: %S", winErrorEx(dwResult));
   }
