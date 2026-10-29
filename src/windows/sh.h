@@ -42,7 +42,7 @@ static unsigned int __stdcall winThreadRead(void* arg0) {
       break;
     }
     char* newBuf = realloc(rBuf, (dwHasRead+dwRead)*sizeof(char));
-    if (newBuf == NULL) { dwResult = GetLastError(); break; }
+    if (newBuf == NULL) { dwResult = ERROR_NOT_ENOUGH_MEMORY; break; }
     rBuf = newBuf;
     memcpy(&rBuf[dwHasRead], buf, dwRead);
     dwHasRead += dwRead;
@@ -112,18 +112,20 @@ static DWORD winCmd(WCHAR* appName, WCHAR* cmdLine,
   CloseHandle(hErrW);
 
   // Spawn the thread to deal with redirected io
-  ThreadIO data0 = {hInpW, iBuf, iLen};
-  ThreadIO data1 = {hOutR, NULL, 0};
-  ThreadIO data2 = {hErrR, NULL, 0};
+  ThreadIO datas[3] = {
+    {hInpW, iBuf, iLen},
+    {hOutR, NULL, 0},
+    {hErrR, NULL, 0}
+  };
 
   DWORD exitCode = -1;
   HANDLE lpThreads[3];
-  lpThreads[0] = (HANDLE)_beginthreadex(NULL, 0, winThreadWrite, (void*)&data0, 0, NULL);
-  lpThreads[1] = (HANDLE)_beginthreadex(NULL, 0, winThreadRead,  (void*)&data1, 0, NULL);
-  lpThreads[2] = (HANDLE)_beginthreadex(NULL, 0, winThreadRead,  (void*)&data2, 0, NULL);
+  lpThreads[0] = (HANDLE)_beginthreadex(NULL, 0, winThreadWrite, (void*)&datas[0], 0, NULL);
+  lpThreads[1] = (HANDLE)_beginthreadex(NULL, 0, winThreadRead,  (void*)&datas[1], 0, NULL);
+  lpThreads[2] = (HANDLE)_beginthreadex(NULL, 0, winThreadRead,  (void*)&datas[2], 0, NULL);
 
   for (int i = 0; i < 3; ++i) {
-    if (lpThreads[i] == NULL) { dwResult = GetLastError(); goto error; }
+    if (lpThreads[i] == NULL) { dwResult = ERROR_NO_SYSTEM_RESOURCES; goto error; }
   }
 
   // Wait for the threads
@@ -144,12 +146,21 @@ static DWORD winCmd(WCHAR* appName, WCHAR* cmdLine,
 
   // Give outputs
   *code = exitCode;
-  *oLen = data1.len; *oBuf = data1.buf;
-  *eLen = data2.len; *eBuf = data2.buf;
+  *oLen = datas[1].len; *oBuf = datas[1].buf;
+  *eLen = datas[2].len; *eBuf = datas[2].buf;
 
 error:
-  // Close handles
-  for (int i = 0; i < 3; ++i) { CloseHandle(lpThreads[i]); }
+  // Clean up
+  if (dwResult != ERROR_SUCCESS) { TerminateProcess(pi.hProcess, 1); }
+  for (int i = 0; i < 3; ++i) {
+    if (lpThreads[i] == NULL) {
+      // Close the unused handle
+      CloseHandle(datas[i].hndl);
+    } else {
+      WaitForSingleObject(lpThreads[i], INFINITE);
+      CloseHandle(lpThreads[i]);
+    }
+  }
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
 
