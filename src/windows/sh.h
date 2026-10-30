@@ -205,6 +205,13 @@ static void winSlashToPathSep(WCHAR* path) {
   }
 }
 
+static void winRemoveTrailingGarbage(WCHAR* path) {
+  if (path == NULL) { return; }
+  size_t len = wcslen(path);
+  while (len > 0 && (path[len-1] == L'.' || path[len-1] == L' ')) { len--; }
+  path[len] = L'\0';
+}
+
 // input should only use '\\' as path separators
 
 static bool winHasExt(WCHAR* path) {
@@ -216,6 +223,21 @@ static bool winHasExt(WCHAR* path) {
 static bool winHasPathSep(WCHAR* path) {
   const WCHAR* sep = wcschr(path, L'\\');
   return sep != NULL;
+}
+
+static bool winIsBatchFile(WCHAR* path) {
+  const size_t len = wcslen(path);
+  if (len < 4) { return false; }
+  const WCHAR* ext = path + len - 4;
+  return _wcsnicmp(ext, L".bat", 4) == 0 || _wcsnicmp(ext, L".cmd", 4) == 0;
+}
+
+static bool winEnsureNoNull(WCHAR* str, u64 len) {
+  if (str == NULL) { return false; }
+  for (u64 i = 0; i < len; i++) {
+    if (str[i] == L'\0') { return false; }
+  }
+  return true;
 }
 
 static WCHAR* winWcsJoin(WCHAR* a, size_t aLen, WCHAR* b, size_t bLen, WCHAR sep) {

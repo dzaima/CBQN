@@ -1140,6 +1140,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
 
 static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args
+  bool isBatch = false;
   WCHAR* appName = NULL;
   TSALLOC(WCHAR, cmdLine, 8);
   SGetU(x)
@@ -1151,25 +1152,45 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     toUTF16(c, wstr);
     wstr[len] = 0;
 
+    if (!winEnsureNoNull(wstr, len)) thrM("•SH: argument contains @");
+
+    WCHAR* src = wstr;
     if (i == 0) {
       winSlashToPathSep(wstr);
       // resolve application name
       appName = winResolveApplicationName(wstr);
       if (appName==NULL) thrF("•SH: Failed to resolve executable \"%R\"", c);
+      winRemoveTrailingGarbage(appName);
+      if (winIsBatchFile(appName)) {
+        // attempt to handle batch files
+        // for now, fall back to letting CreateProcessW handle it
+        // not handling batch specific escaping rules is technically very dangerous
+        isBatch = true;
+        src = appName;
+        len = wcslen(src);
+      }
     } else {
       TSADD(cmdLine, L' ');
     }
 
+    // references:
     // https://learn.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
+    // https://holyblackcat.github.io/blog/2026/09/05/escaping-createprocess-arguments.html (approach not followed)
+    // the algorithm we use:
+    // 1. if the argument contains whitespace or quotes, it needs to be quoted
+    // 2. backslashes before quotes need to be escaped
     u64 backslashes = 0;
-    bool quote = len==0 || NULL!=wcspbrk(wstr, L" \t\n\v\"");
+    bool quote = i==0 || len==0 || NULL!=wcspbrk(src, L" \t\n\v\"");
     if (quote) { TSADD(cmdLine, L'\"'); }
     for (u64 j = 0; j < len; ++j) {
-      WCHAR x = wstr[j];
+      WCHAR x = src[j];
       if (x==L'\\') {
         backslashes += 1;
       } else {
         if (x==L'\"') {
+          // every backslash before a quote needs to be escaped by another backslash
+          // (only add once for each backslash because the backslashes themselves are already added)
+          // one extra backslash to escape the quote
           for (u64 k = 0; k < 1+backslashes; ++k) { TSADD(cmdLine, L'\\'); }
         }
         backslashes = 0;
@@ -1177,6 +1198,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
       TSADD(cmdLine, x);
     }
     if (quote) {
+      // every backslash before a quote needs to be escaped by another backslash (see above)
       for (u64 k = 0; k < backslashes; ++k) { TSADD(cmdLine, L'\\'); }
       TSADD(cmdLine, L'\"');
     }
@@ -1202,7 +1224,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   DWORD code = -1;
   u64 oLen = 0; char* oBuf;
   u64 eLen = 0; char* eBuf;
-  DWORD dwResult = winCmd(appName, cmdLine, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
+  DWORD dwResult = winCmd(isBatch? NULL : appName, cmdLine, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
   TSFREE(cmdLine);
   free(appName);
