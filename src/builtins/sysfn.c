@@ -1138,9 +1138,16 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
 #include "windows/utf16.h"
 #include "windows/sh.h"
 
+struct WinPathInfo {
+  ux prefixEnd;
+  bool absoluteFollows;
+} winPathInfo(B x);
+
 static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args
-  TSALLOC(WCHAR, arg, 8);
+  bool isBatch = false;
+  WCHAR* appName = NULL;
+  TSALLOC(WCHAR, cmdLine, 8);
   SGetU(x)
   for (u64 i = 0; i < xia; i++) {
     B c = GetU(x, i);
@@ -1150,30 +1157,70 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     toUTF16(c, wstr);
     wstr[len] = 0;
 
+    if (!winEnsureNoNull(wstr, len)) thrM("•SH: Argument contains @");
+
+    WCHAR* src = wstr;
+    if (i == 0) {
+      winSlashToPathSep(wstr);
+      // TODO handle relative paths properly (note: PATH can contain relative paths too)
+      if (winHasPathSep(wstr)) {
+        struct WinPathInfo pi = winPathInfo(c);
+        if (!pi.absoluteFollows || pi.prefixEnd == 1) thrM("•SH: Executable path must be absolute");
+        // a file path, let CreateProcessW handle it
+        appName = winWcsDup(wstr);
+      } else {
+        // resolve application name in env variable PATH
+        appName = winResolveApplicationNameInPath(wstr);
+        if (appName==NULL) thrF("•SH: Failed to resolve executable \"%R\"", c);
+      }
+      winRemoveTrailingGarbage(appName);
+      if (winIsBatchFile(appName)) {
+        // attempt to handle batch files
+        // for now, fall back to letting CreateProcessW handle it
+        // not handling batch specific escaping rules is technically very dangerous
+        // TODO handle batch files properly
+        isBatch = true;
+        src = appName;
+        len = wcslen(src);
+      }
+    } else {
+      TSADD(cmdLine, L' ');
+    }
+
+    // cmdLine is one single string, so we need to quote each argument and concatenate them together
+    // references:
     // https://learn.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
+    // https://holyblackcat.github.io/blog/2026/09/05/escaping-createprocess-arguments.html (approach not followed)
+    // the algorithm we use:
+    // 1. if the argument contains whitespace or quotes, it needs to be quoted
+    // 2. backslashes before quotes need to be escaped
     u64 backslashes = 0;
-    bool quote = len==0 || NULL!=wcspbrk(wstr, L" \t\n\v\"");
-    if (quote) { TSADD(arg, L'\"'); }
+    bool quote = i==0 || len==0 || NULL!=wcspbrk(src, L" \t\n\v\"");
+    if (quote) { TSADD(cmdLine, L'\"'); }
     for (u64 j = 0; j < len; ++j) {
-      WCHAR x = wstr[j];
+      WCHAR x = src[j];
       if (x==L'\\') {
         backslashes += 1;
       } else {
         if (x==L'\"') {
-          for (u64 k = 0; k < 1+backslashes; ++k) { TSADD(arg, L'\\'); }
+          // every backslash before a quote needs to be escaped by another backslash
+          // (only add once for each backslash because the backslashes themselves are already added)
+          // one extra backslash to escape the quote
+          for (u64 k = 0; k < 1+backslashes; ++k) { TSADD(cmdLine, L'\\'); }
         }
         backslashes = 0;
       }
-      TSADD(arg, x);
+      TSADD(cmdLine, x);
     }
     if (quote) {
-      for (u64 k = 0; k < backslashes; ++k) { TSADD(arg, L'\\'); }
-      TSADD(arg, L'\"');
+      // every backslash before a quote needs to be escaped by another backslash (see above)
+      for (u64 k = 0; k < backslashes; ++k) { TSADD(cmdLine, L'\\'); }
+      TSADD(cmdLine, L'\"');
     }
 
-    TSADD(arg, (xia==i+1)? L'\0' : L' ');
     TFREE(wstr);
   }
+  TSADD(cmdLine, L'\0');
 
   // allocate stdin
   char* iBuf;
@@ -1192,9 +1239,10 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
   DWORD code = -1;
   u64 oLen = 0; char* oBuf;
   u64 eLen = 0; char* eBuf;
-  DWORD dwResult = winCmd(arg, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
+  DWORD dwResult = winCmd(isBatch? NULL : appName, cmdLine, iLen, iBuf, &code, &oLen, &oBuf, &eLen, &eBuf);
   if (iLen>0) { if (raw) free_chars(iBufRaw); else TFREE(iBuf); }  // FREE_INPUT
-  TSFREE(arg);
+  TSFREE(cmdLine);
+  free(appName);
   if (dwResult != ERROR_SUCCESS) {
     thrF("•SH: Failed to run command: %S", winErrorEx(dwResult));
   }
