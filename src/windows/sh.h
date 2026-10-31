@@ -308,12 +308,12 @@ static WCHAR* winSearchInPath(WCHAR* name) {
   return resolved;
 }
 
-// resolve application name for CreateProcessW (winCmd):
+// resolve application name in PATH for CreateProcessW (winCmd):
 // 1. if the name already has a file extension, use it as is; otherwise, append ".exe"
-// 2. if the name is a relative or absolute path, use it as is; otherwise, search for it in PATH
+// 2. search for it in PATH
 // PATHEXT is not used
 // input should only use '\\' as path separators
-static WCHAR* winResolveApplicationName(WCHAR* app) {
+static WCHAR* winResolveApplicationNameInPath(WCHAR* app) {
   static WCHAR exeExt[] = L".exe";
   static size_t exeExtLen = sizeof(exeExt) / sizeof(WCHAR) - 1;
 
@@ -324,8 +324,6 @@ static WCHAR* winResolveApplicationName(WCHAR* app) {
     name = winWcsJoin(name, wcslen(name), exeExt, exeExtLen, L'\0');
     free(oldName);
   }
-
-  if (winHasPathSep(name)) { return name; } // let CreateProcessW handle it
 
   WCHAR* resolved = winSearchInPath(name);
   winSlashToPathSep(resolved); // PATH entries may contain '/'

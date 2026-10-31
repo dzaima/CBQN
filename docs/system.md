@@ -228,7 +228,10 @@ These `•SH` extensions may change in the future if a different interface is st
 
 The executable (first item of the right argument) is resolved following these rules:
 
-- If the name has no file extension, `.exe` is appended.
-- If the name contains no path separator (`\` or `/`), it is searched for in the directories specified by the environment variable `PATH`. The current directory is not searched.
+- If the name is a fully absolute path (`C:\…`, `\\server\share\…`), it is used as is.
+- If the name contains a path separator but is not fully absolute (`.\foo.exe`, `sub\foo.exe`, `\foo.exe`), it is rejected.
+- Otherwise it is treated as a bare program name:
+  - if it has no file extension, `.exe` is appended (a trailing `.` counts as an extension and suppresses this);
+  - It is searched for in the directories specified by the environment variable `PATH`. The current directory is not searched.
 
 Arguments are quoted following the [CommandLineToArgV convention](https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments); programs that parse their command line differently (notably `cmd.exe` and batch scripts) may not receive them as given.

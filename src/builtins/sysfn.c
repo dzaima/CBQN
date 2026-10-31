@@ -1138,6 +1138,11 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
 #include "windows/utf16.h"
 #include "windows/sh.h"
 
+struct WinPathInfo {
+  ux prefixEnd;
+  bool absoluteFollows;
+} winPathInfo(B x);
+
 static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_errp) {
   // allocate args
   bool isBatch = false;
@@ -1152,19 +1157,28 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
     toUTF16(c, wstr);
     wstr[len] = 0;
 
-    if (!winEnsureNoNull(wstr, len)) thrM("•SH: argument contains @");
+    if (!winEnsureNoNull(wstr, len)) thrM("•SH: Argument contains @");
 
     WCHAR* src = wstr;
     if (i == 0) {
       winSlashToPathSep(wstr);
-      // resolve application name
-      appName = winResolveApplicationName(wstr);
-      if (appName==NULL) thrF("•SH: Failed to resolve executable \"%R\"", c);
+      // TODO handle relative paths properly (note: PATH can contain relative paths too)
+      if (winHasPathSep(wstr)) {
+        struct WinPathInfo pi = winPathInfo(c);
+        if (!pi.absoluteFollows || pi.prefixEnd == 1) thrM("•SH: Executable path must be absolute");
+        // a file path, let CreateProcessW handle it
+        appName = winWcsDup(wstr);
+      } else {
+        // resolve application name in env variable PATH
+        appName = winResolveApplicationNameInPath(wstr);
+        if (appName==NULL) thrF("•SH: Failed to resolve executable \"%R\"", c);
+      }
       winRemoveTrailingGarbage(appName);
       if (winIsBatchFile(appName)) {
         // attempt to handle batch files
         // for now, fall back to letting CreateProcessW handle it
         // not handling batch specific escaping rules is technically very dangerous
+        // TODO handle batch files properly
         isBatch = true;
         src = appName;
         len = wcslen(src);
@@ -1173,6 +1187,7 @@ static i32 sh_core(bool raw, B x, usz xia, B inObj, u64 iLen, B* s_outp, B* s_er
       TSADD(cmdLine, L' ');
     }
 
+    // cmdLine is one single string, so we need to quote each argument and concatenate them together
     // references:
     // https://learn.microsoft.com/en-gb/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
     // https://holyblackcat.github.io/blog/2026/09/05/escaping-createprocess-arguments.html (approach not followed)
