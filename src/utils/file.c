@@ -136,7 +136,7 @@ B path_lines(B path) { // consumes; TODO rewrite this, it's horrible
     else pos++;
   }
   ptr_dec(tf);
-  return HARR_FV(r);
+  return withFill(HARR_FV(r), emptyCVec());
 }
 
 
