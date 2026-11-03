@@ -379,6 +379,10 @@ B mmap_file(B path) {
   freeCStr(p);
   if (fd==-1) thrF("Failed to open file: %S", strerror(errno));
   u64 len = lseek(fd, 0, SEEK_END);
+  if (len == 0) {
+    close(fd);
+    return emptyCVec();
+  }
   
   u64 pgsz = getPageSize();
   u64 head = pgsz;

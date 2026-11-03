@@ -206,6 +206,11 @@ f←•ReBQN {Remap⇐{code⇐"2×"∾𝕩, map⇐⋈⟜(1⊸+) 0‿0∾↕≠�
 •FBytes "testfile.bqn" %% @+97‿98‿99‿10‿100‿101‿102‿240‿157‿149‿169
 •FLines "testfile.bqn" %% "abc"‿"def𝕩"
 ! 97‿98‿99‿10‿100‿101‿102‿240‿157‿149‿169 ≡ @-˜ •file.MapBytes "testfile.bqn"
+"empty.txt" •FBytes ⟨⟩
+•file.MapBytes "empty.txt" %%% ""
+•FChars "empty.txt" %%% ""
+•FBytes "empty.txt" %%% ""
+•FLines "empty.txt" %%% ⟨⟩
 
 •file.Name "testfile3B.bqn" •file.Rename "testfile3.bqn" %% "testfile3B.bqn"
 !"𝕨 •file.Rename 𝕩: Failed to rename file" % "testfile3B.bqn" •file.Rename "testfile.bqn"
