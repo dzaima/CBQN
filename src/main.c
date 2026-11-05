@@ -466,6 +466,7 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
     
     if (IA(repl_pv)+1 != IA(s)  ||  repl_pp+1 != pos) goto stop; // user did something other than type a single character
     
+    #define SET_STR(X) ({ char* newStr = malloc_B(X); free(*s_res); *s_res = newStr; }) // free replxx's allocated input, and insert own one that replxx will then free
     if (repl_inBackslash) {
       if (!slice_equal(repl_pv, 0,       s, 0,   pos-1)) goto stop;
       if (!slice_equal(repl_pv, repl_pp, s, pos, IA(s)-pos)) goto stop;
@@ -474,19 +475,20 @@ static NOINLINE u64 readu64part(char** p) { // writes NULL to *p on too-large or
       if (mapPos==IA(repl_kbKey)) goto stop;
       
       TmpState t2 = insertChar(o2c(IGetU(repl_kbVal, mapPos)), true);
-      *s_res = malloc_B(t2.s); // will be free()'d by replxx
+      SET_STR(t2.s);
       *p_res = t2.pos;
       goto stop;
     } else {
       if (o2cG(IGetU(s,repl_pp))==replcfg_prefixChar) {
         repl_inBackslash = true;
-        *s_res = malloc_B(incG(repl_pv)); // will be free()'d by replxx
+        SET_STR(incG(repl_pv));
         *p_res = repl_pp;
         // restore state to previous one, and don't call setPrev as that'll set it to the updated one
         goto end_noPrev;
       }
       goto end_withPrev;
     }
+    #undef SET_STR
     
     stop:
     stopBackslash();
