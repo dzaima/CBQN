@@ -82,7 +82,7 @@ typedef struct WinPathInfo {
   ux prefixEnd;
   bool absoluteFollows;
 } WinPathInfo;
-static NOINLINE WinPathInfo winPathInfo(B x) {
+NOINLINE WinPathInfo winPathInfo(B x) {
   ux ia = IA(x);
   if (ia == 0) return (WinPathInfo){0, false};
   SGetU(x);
